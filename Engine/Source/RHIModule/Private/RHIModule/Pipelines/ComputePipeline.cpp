@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<ComputePipeline> ComputePipeline::Create(RefPtr<Shader> shader)
+	IntRef<ComputePipeline> ComputePipeline::Create(IntRef<Shader> shader)
 	{
 		return RHIModule::GetInstance().CreateComputePipeline(shader);
 	}

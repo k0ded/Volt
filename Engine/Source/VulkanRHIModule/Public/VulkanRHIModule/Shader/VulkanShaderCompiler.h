@@ -62,6 +62,6 @@ namespace Volt::RHI
 		Vector<std::filesystem::path> m_includeDirectories;
 		Vector<std::string> m_macros;
 
-		RefPtr<ShaderCache> m_shaderCache;
+		IntRef<ShaderCache> m_shaderCache;
 	};
 }

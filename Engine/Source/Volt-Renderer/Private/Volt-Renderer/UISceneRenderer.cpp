@@ -113,7 +113,7 @@ namespace Volt
 	{
 	}
 
-	void UISceneRenderer::OnRender(RefPtr<RHI::Image> targetImage, const glm::mat4& projectionMatrix)
+	void UISceneRenderer::OnRender(IntRef<RHI::Image> targetImage, const glm::mat4& projectionMatrix)
 	{
 #if 0
 		RenderGraphBlackboard blackboard;

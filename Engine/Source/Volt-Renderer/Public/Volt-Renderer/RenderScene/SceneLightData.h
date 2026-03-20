@@ -41,8 +41,8 @@ namespace Volt
 		glm::vec3 direction;
 
 		// Skylight
-		RefPtr<RHI::Image> diffuseIBL;
-		RefPtr<RHI::Image> specularIBL;
+		IntRef<RHI::Image> diffuseIBL;
+		IntRef<RHI::Image> specularIBL;
 		float lod;
 		bool show;
 

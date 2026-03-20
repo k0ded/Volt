@@ -7,7 +7,7 @@
 
 namespace Volt::RHI::BufferUtility
 {
-	void StagedBufferUpload(RefPtr<RHI::Buffer> buffer, const void* data, uint64_t size)
+	void StagedBufferUpload(IntRef<RHI::Buffer> buffer, const void* data, uint64_t size)
 	{
 		RHI::BufferDesc stagingBufferDesc{};
 		stagingBufferDesc.elementSize = 1;
@@ -16,7 +16,7 @@ namespace Volt::RHI::BufferUtility
 		stagingBufferDesc.usage = BufferUsage::TransferSrc | BufferUsage::StorageBuffer;
 		stagingBufferDesc.debugName = "Staging Buffer";
 
-		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingBufferDesc);
+		IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingBufferDesc);
 
 		{
 			void* mappedPtr = stagingBuffer->Map<void>();
@@ -24,7 +24,7 @@ namespace Volt::RHI::BufferUtility
 			stagingBuffer->Unmap();
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		IntRef<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
 		commandBuffer->Begin();
 
@@ -57,7 +57,7 @@ namespace Volt::RHI::BufferUtility
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 	}
 
-	RefPtr<Volt::RHI::Buffer> ResizeBufferIfRequired(RefPtr<RHI::Buffer> buffer, uint64_t numElements)
+	IntRef<Volt::RHI::Buffer> ResizeBufferIfRequired(IntRef<RHI::Buffer> buffer, uint64_t numElements)
 	{
 		if (buffer->GetNumElements() >= numElements)
 		{

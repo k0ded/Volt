@@ -22,8 +22,8 @@ namespace Volt::RHI
 	public:
 		~BufferView() override = default;
 
-		static RefPtr<BufferView> Create(const BufferViewDesc& desc, RawPtr<Buffer> buffer);
-		static RefPtr<BufferView> Create(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
+		static IntRef<BufferView> Create(const BufferViewDesc& desc, RawPtr<Buffer> buffer);
+		static IntRef<BufferView> Create(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual bool IsTexelBufferView() const = 0;
 		virtual const BufferViewDesc& GetDesc() const = 0;

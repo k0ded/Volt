@@ -20,7 +20,7 @@ namespace Volt::RHI
 		/*
 			Image Interface
 		*/
-		RefPtr<ImageView> GetView(const ImageViewDesc& desc) override;
+		IntRef<ImageView> GetView(const ImageViewDesc& desc) override;
 		VT_INLINE const uint32_t GetWidth() const override { return m_desc.width; }
 		VT_INLINE const uint32_t GetHeight() const override { return m_desc.height; }
 		VT_INLINE const uint32_t GetDepth() const override { return m_desc.depth; }

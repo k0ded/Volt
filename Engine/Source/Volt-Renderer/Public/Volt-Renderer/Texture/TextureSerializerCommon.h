@@ -16,6 +16,6 @@ namespace Volt::TextureSerializerCommon
 		size_t dataOffset;
 	};
 
-	VTR_API DataBuffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);
-	VTR_API void UploadImageData(RefPtr<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const DataBuffer& dataBuffer, bool waitForGPU = false);
+	VTR_API DataBuffer GetImageDataBuffer(IntRef<RHI::Image> image, Vector<TextureMip>& outMips);
+	VTR_API void UploadImageData(IntRef<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const DataBuffer& dataBuffer, bool waitForGPU = false);
 }

@@ -15,9 +15,9 @@ namespace Volt
 		PipelineStateCache();
 		~PipelineStateCache();
 
-		static RefPtr<RHI::RenderPipeline> GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo);
-		static RefPtr<RHI::ComputePipeline> GetComputePipeline(RefPtr<RHI::Shader> computeShader);
-		static void InvalidatePipelinesWithReferenceToShader(RefPtr<RHI::Shader> shader);
+		static IntRef<RHI::RenderPipeline> GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo);
+		static IntRef<RHI::ComputePipeline> GetComputePipeline(IntRef<RHI::Shader> computeShader);
+		static void InvalidatePipelinesWithReferenceToShader(IntRef<RHI::Shader> shader);
 
 	private:
 		enum class PipelineCreationState : uint8_t
@@ -49,7 +49,7 @@ namespace Volt
 					return *this;
 				}
 
-				RefPtr<T> pipeline;
+				IntRef<T> pipeline;
 				std::atomic<PipelineCreationState> state = PipelineCreationState::Invalid;
 			};
 

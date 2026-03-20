@@ -21,15 +21,15 @@ namespace Volt
 	{
 	public:
 		Texture2D(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data);
-		Texture2D(RefPtr<RHI::Image> image);
+		Texture2D(IntRef<RHI::Image> image);
 		Texture2D() = default;
 		~Texture2D() override;
 
 		const uint32_t GetWidth() const;
 		const uint32_t GetHeight() const;
 
-		inline const RefPtr<RHI::Image> GetImage() const { return m_image; }
-		void SetImage(RefPtr<RHI::Image> image);
+		inline const IntRef<RHI::Image> GetImage() const { return m_image; }
+		void SetImage(IntRef<RHI::Image> image);
 
 		static AssetType GetStaticType() { return AssetTypes::Texture; }
 		AssetType GetType() const override { return GetStaticType(); }
@@ -37,9 +37,9 @@ namespace Volt
 		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 		static Ref<Texture2D> Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data = nullptr);
-		static Ref<Texture2D> Create(RefPtr<RHI::Image> image);
+		static Ref<Texture2D> Create(IntRef<RHI::Image> image);
 
 	private:
-		RefPtr<RHI::Image> m_image;
+		IntRef<RHI::Image> m_image;
 	};
 }

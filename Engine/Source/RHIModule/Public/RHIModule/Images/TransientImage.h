@@ -17,9 +17,9 @@ namespace Volt::RHI
 	public: 
 		~TransientImage() override = default;
 
-		virtual void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
+		virtual void BindMemory(IntRef<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
 
-		VTRHI_API static RefPtr<TransientImage> Create(const ImageDesc& desc);
+		VTRHI_API static IntRef<TransientImage> Create(const ImageDesc& desc);
 
 	protected:
 		TransientImage() = default;

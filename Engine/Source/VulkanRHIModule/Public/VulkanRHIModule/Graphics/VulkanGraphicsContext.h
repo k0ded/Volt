@@ -29,10 +29,10 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE VkDescriptorSetLayout_T* GetEmptyDescriptorSetLayout() const { return m_emptyDescriptorSetLayout; }
 
 	protected:
-		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
+		IntRef<GPUAllocator> GetDefaultAllocatorImpl() override;
 
-		RefPtr<GraphicsDevice> GetGraphicsDevice() const override;
-		RefPtr<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const override;
+		IntRef<GraphicsDevice> GetGraphicsDevice() const override;
+		IntRef<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const override;
 
 		void* GetHandleImpl() const override;
 
@@ -50,11 +50,11 @@ namespace Volt::RHI
 		VkDebugUtilsMessengerEXT_T* m_debugMessenger = nullptr;
 		VkDescriptorSetLayout_T* m_emptyDescriptorSetLayout = nullptr;
 
-		RefPtr<GraphicsDevice> m_graphicsDevice;
-		RefPtr<PhysicalGraphicsDevice> m_physicalDevice;
+		IntRef<GraphicsDevice> m_graphicsDevice;
+		IntRef<PhysicalGraphicsDevice> m_physicalDevice;
 
-		RefPtr<GPUAllocator> m_defaultAllocator;
-		RefPtr<GPUAllocator> m_transientAllocator;
+		IntRef<GPUAllocator> m_defaultAllocator;
+		IntRef<GPUAllocator> m_transientAllocator;
 
 		Ref<VulkanDebugLayer> m_debugLayer;
 		Ref<VulkanDescriptorHeap> m_descriptorHeap;

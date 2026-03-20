@@ -24,12 +24,12 @@ namespace Volt
 	{
 	public:
 		RenderTexture() = default;
-		RenderTexture(RefPtr<RHI::Image> image)
+		RenderTexture(IntRef<RHI::Image> image)
 			: m_image(image)
 		{ }
 
-		VT_INLINE void SetResource(RefPtr<RHI::Image> image) { m_image = image; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetResource() const { return m_image; }
+		VT_INLINE void SetResource(IntRef<RHI::Image> image) { m_image = image; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetResource() const { return m_image; }
 		
 		VT_NODISCARD bool IsValid() const
 		{
@@ -37,7 +37,7 @@ namespace Volt
 		}
 
 	private:
-		RefPtr<RHI::Image> m_image;
+		IntRef<RHI::Image> m_image;
 	};
 
 	class VTR_API RenderMaterial
@@ -60,7 +60,7 @@ namespace Volt
 		void ClearStatus();
 
 		// Note: This function may be called from any thread during rendering.
-		void BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, RefPtr<RHI::RenderPipeline> renderPipeline) const;
+		void BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, IntRef<RHI::RenderPipeline> renderPipeline) const;
 
 		VT_INLINE void SetMaterialBlendMode(MaterialBlendMode materialBlendMode) { m_materialBlendMode = materialBlendMode; }
 		VT_INLINE void SetIsDoubleSided(bool isDoubleSided) { m_isDoubleSided = isDoubleSided; }
@@ -72,13 +72,13 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool GetIsDoubleSided() const { return m_isDoubleSided; }
 
 		template<typename T>
-		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader() 
+		VT_NODISCARD IntRef<RHI::Shader> GetPixelShader() 
 		{ 
 			return m_shaderMap.GetShader<T>(); 
 		}
 
 		template<typename T>
-		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader(const typename T::PermutationVector& permutationVector)
+		VT_NODISCARD IntRef<RHI::Shader> GetPixelShader(const typename T::PermutationVector& permutationVector)
 		{
 			return m_shaderMap.GetShader<T>(permutationVector); 
 		}

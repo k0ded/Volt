@@ -18,27 +18,27 @@ namespace Volt::RHI
 		Shutdown();
 	}
 
-	RefPtr<GPUAllocator> D3D12GraphicsContext::GetDefaultAllocatorImpl()
+	IntRef<GPUAllocator> D3D12GraphicsContext::GetDefaultAllocatorImpl()
 	{
 		return m_defaultAllocator;
 	}
 
-	RefPtr<GPUAllocator> D3D12GraphicsContext::GetTransientAllocatorImpl()
+	IntRef<GPUAllocator> D3D12GraphicsContext::GetTransientAllocatorImpl()
 	{
 		return m_transientAllocator;
 	}
 
-	RefPtr<ResourceStateTracker> D3D12GraphicsContext::GetResourceStateTrackerImpl()
+	IntRef<ResourceStateTracker> D3D12GraphicsContext::GetResourceStateTrackerImpl()
 	{
 		return m_resourceStateTracker;
 	}
 
-	RefPtr<GraphicsDevice> D3D12GraphicsContext::GetGraphicsDevice() const
+	IntRef<GraphicsDevice> D3D12GraphicsContext::GetGraphicsDevice() const
 	{
 		return m_graphicsDevice;
 	}
 
-	RefPtr<PhysicalGraphicsDevice> D3D12GraphicsContext::GetPhysicalGraphicsDevice() const
+	IntRef<PhysicalGraphicsDevice> D3D12GraphicsContext::GetPhysicalGraphicsDevice() const
 	{
 		return m_physicalDevice;
 	}
@@ -75,7 +75,7 @@ namespace Volt::RHI
 		}
 #endif
 
-		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
+		m_resourceStateTracker = IntRef<ResourceStateTracker>::Create();
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 		m_transientAllocator = TransientGPUAllocator::Create();
 

@@ -38,7 +38,7 @@ namespace Volt
 	namespace ComputeShaderUtils
 	{
 		template<typename ShaderType>
-		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RenderGraphPassFlags flags, const glm::uvec3& dispatchSize)
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RenderGraphPassFlags flags, const glm::uvec3& dispatchSize)
 		{
 			renderGraph.AddPass(passName,
 				RenderGraphPassFlags::Compute | flags,
@@ -52,13 +52,13 @@ namespace Volt
 		}
 
 		template<typename ShaderType>
-		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, const glm::uvec3& dispatchSize)
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, const glm::uvec3& dispatchSize)
 		{
 			AddPass<ShaderType>(renderGraph, passName, shader, passParameters, RenderGraphPassFlags::None, dispatchSize);
 		}
 
 		template<typename ShaderType>
-		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RenderGraphPassFlags flags, RGBufferRef indirectArgsBuffer, uint64_t argsOffset)
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RenderGraphPassFlags flags, RGBufferRef indirectArgsBuffer, uint64_t argsOffset)
 		{
 			renderGraph.AddPass(passName,
 				RenderGraphPassFlags::Compute | flags,
@@ -72,7 +72,7 @@ namespace Volt
 		}
 
 		template<typename ShaderType>
-		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RGBufferRef indirectArgsBuffer, uint64_t argsOffset)
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RGBufferRef indirectArgsBuffer, uint64_t argsOffset)
 		{
 			AddPass<ShaderType>(renderGraph, passName, shader, passParameters, RenderGraphPassFlags::None, indirectArgsBuffer, argsOffset);
 		}

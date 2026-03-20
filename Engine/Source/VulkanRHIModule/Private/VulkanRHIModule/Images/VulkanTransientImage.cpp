@@ -37,7 +37,7 @@ namespace Volt::RHI
 		}
 	}
 
-	RefPtr<ImageView> VulkanTransientImage::GetView(const ImageViewDesc& desc)
+	IntRef<ImageView> VulkanTransientImage::GetView(const ImageViewDesc& desc)
 	{
 		ImageViewDesc tempDesc = desc;
 
@@ -164,11 +164,11 @@ namespace Volt::RHI
 		return m_memoryRequirements.size;
 	}
 
-	void VulkanTransientImage::BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
+	void VulkanTransientImage::BindMemory(IntRef<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
 	{
 		auto device = GraphicsContext::GetDevice();
 
-		RefPtr<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
+		IntRef<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
 		vkBindImageMemory(device->GetHandle<VkDevice>(), m_imageHandle, vkHeap->GetPageMemoryHandle(pageIndex), offset);
 	}
 }

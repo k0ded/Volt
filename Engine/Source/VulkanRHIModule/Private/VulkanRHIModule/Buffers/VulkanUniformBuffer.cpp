@@ -61,7 +61,7 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
+	IntRef<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
 	{
 		return BufferView::Create(desc, this);
 	}

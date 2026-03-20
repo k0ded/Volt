@@ -42,7 +42,7 @@ namespace Volt
 	{
 	}
 
-	TAATechnique::Output TAATechnique::Execute(const RenderView& view, RefPtr<RHI::Image> prevAccumulation)
+	TAATechnique::Output TAATechnique::Execute(const RenderView& view, IntRef<RHI::Image> prevAccumulation)
 	{
 		SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
 

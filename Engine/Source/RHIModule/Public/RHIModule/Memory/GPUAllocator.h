@@ -44,7 +44,7 @@ namespace Volt::RHI
 	public:
 		virtual ~DefaultGPUAllocator() override = default;
 
-		static RefPtr<DefaultGPUAllocator> Create();
+		static IntRef<DefaultGPUAllocator> Create();
 
 	protected:
 		DefaultGPUAllocator() = default;

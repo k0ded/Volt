@@ -136,7 +136,7 @@ namespace Volt::RHI
 			::ResetEvent(m_windowsPresentFenceEvent);
 		}
 
-		for (RefPtr<Fence> fence : m_renderFences)
+		for (IntRef<Fence> fence : m_renderFences)
 		{
 			fence->WaitUntilSignaled();
 		}
@@ -170,7 +170,7 @@ namespace Volt::RHI
 		return m_height;
 	}
 
-	RefPtr<Image> D3D12Swapchain::GetCurrentImage() const
+	IntRef<Image> D3D12Swapchain::GetCurrentImage() const
 	{
 		return m_perImageData[m_currentImageIndex].imageReference;
 	}
@@ -193,7 +193,7 @@ namespace Volt::RHI
 
 	void D3D12Swapchain::Release()
 	{
-		for (RefPtr<Fence> fence : m_renderFences)
+		for (IntRef<Fence> fence : m_renderFences)
 		{
 			fence->WaitUntilSignaled();
 		}

@@ -14,11 +14,11 @@ namespace Volt::RHI
 	class VulkanComputePipeline final : public ComputePipeline
 	{
 	public:
-		VulkanComputePipeline(RefPtr<Shader> shader);
+		VulkanComputePipeline(IntRef<Shader> shader);
 		~VulkanComputePipeline() override;
 
 		void Invalidate() override;
-		RefPtr<Shader> GetShader() const override;
+		IntRef<Shader> GetShader() const override;
 		bool IsValid() const override;
 		bool HasInlineParameters() const override;
 		size_t GetHash() const override;
@@ -37,7 +37,7 @@ namespace Volt::RHI
 		void Release();
 		void GenerateHash();
 
-		RefPtr<Shader> m_shader;
+		IntRef<Shader> m_shader;
 		size_t m_hash;
 
 		DescriptorSetLayoutBuilder::DescriptorSets m_descriptorSets;

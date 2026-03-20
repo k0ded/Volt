@@ -10,7 +10,7 @@
 #include <AssetSystem/SourceAssetManager.h>
 #include <EventSystem/EventListener.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt
 {

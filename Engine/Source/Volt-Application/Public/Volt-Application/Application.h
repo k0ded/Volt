@@ -13,7 +13,7 @@
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
 class Log;

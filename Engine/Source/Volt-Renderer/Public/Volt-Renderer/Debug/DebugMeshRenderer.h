@@ -34,8 +34,8 @@ namespace Volt
 			const TQS& transform, 
 			const glm::vec4& userData,
 			RHI::RenderPipelineCreateInfo pipelineInfo, 
-			RefPtr<RHI::Shader> vertexShader, 
-			RefPtr<RHI::Shader> pixelShader);
+			IntRef<RHI::Shader> vertexShader, 
+			IntRef<RHI::Shader> pixelShader);
 
 	private:
 		struct MeshDrawCommandBucket
@@ -60,7 +60,7 @@ namespace Volt
 		};
 
 		MeshDrawCommandBucket& GetOrCreateBucket(MeshDrawCommandHashKey hashKey);
-		MeshDrawCommandSortKey GetSortKeyFromMaterial(RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, RenderMaterial& renderMaterial);
+		MeshDrawCommandSortKey GetSortKeyFromMaterial(IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader, RenderMaterial& renderMaterial);
 		uint64_t GetMaterialPermutationHash(RenderMaterial& renderMaterial);
 
 		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;

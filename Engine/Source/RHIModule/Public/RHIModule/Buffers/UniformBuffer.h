@@ -18,13 +18,13 @@ namespace Volt::RHI
 	public:
 		~UniformBuffer() override = default;
 
-		virtual RefPtr<BufferView> GetView(const BufferViewDesc& desc = {}) = 0;
+		virtual IntRef<BufferView> GetView(const BufferViewDesc& desc = {}) = 0;
 		virtual uint64_t GetSize() const = 0;
 		virtual void Unmap() = 0;
 
 		template<typename T> inline T* Map();
 
-		VTRHI_API static RefPtr<UniformBuffer> Create(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr);
+		VTRHI_API static IntRef<UniformBuffer> Create(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr);
 
 	protected:
 		virtual void* MapInternal() = 0;

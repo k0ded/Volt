@@ -11,11 +11,11 @@ namespace Volt
 	class TransientBufferResource : public RGRHIBufferResource
 	{
 	public:
-		TransientBufferResource(RefPtr<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated);
+		TransientBufferResource(IntRef<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated);
 		~TransientBufferResource() override = default;
 
-		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
-		VT_INLINE RefPtr<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }
+		VT_INLINE IntRef<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
+		VT_INLINE IntRef<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }
 		VT_INLINE bool IsTransientlyAllocated() const override { return m_isTransientlyAllocated; }
 		VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
@@ -39,7 +39,7 @@ namespace Volt
 
 	private:
 		TransientBufferViewCache m_viewCache;
-		RefPtr<RHI::Buffer> m_buffer;
+		IntRef<RHI::Buffer> m_buffer;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
@@ -51,11 +51,11 @@ namespace Volt
 	class TransientTextureResource : public RGRHITextureResource
 	{
 	public:
-		TransientTextureResource(RefPtr<RHI::Image> image, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated);
+		TransientTextureResource(IntRef<RHI::Image> image, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated);
 		~TransientTextureResource() override = default;
 
-		VT_INLINE RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
-		VT_INLINE RefPtr<RHI::Image> GetRHITexture() const override { return m_image; }
+		VT_INLINE IntRef<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
+		VT_INLINE IntRef<RHI::Image> GetRHITexture() const override { return m_image; }
 		VT_INLINE bool IsTransientlyAllocated() const override { return m_isTransientlyAllocated; }
 		VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
@@ -79,7 +79,7 @@ namespace Volt
 
 	private:
 		TransientImageViewCache m_viewCache;
-		RefPtr<RHI::Image> m_image;
+		IntRef<RHI::Image> m_image;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
@@ -91,11 +91,11 @@ namespace Volt
 	class TransientUniformBufferResource : public RGRHIUniformBufferResource
 	{
 	public:
-		TransientUniformBufferResource(RefPtr<RHI::UniformBuffer> uniformBuffer, size_t hash, uint64_t framesToKeepAlive);
+		TransientUniformBufferResource(IntRef<RHI::UniformBuffer> uniformBuffer, size_t hash, uint64_t framesToKeepAlive);
 		~TransientUniformBufferResource() override = default;
 
-		RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
-		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer() const override { return m_uniformBuffer; }
+		IntRef<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
+		IntRef<RHI::UniformBuffer> GetRHIUniformBuffer() const override { return m_uniformBuffer; }
 	
 		VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
@@ -119,7 +119,7 @@ namespace Volt
 
 	private:
 		TransientUniformBufferViewCache m_viewCache;
-		RefPtr<RHI::UniformBuffer> m_uniformBuffer;
+		IntRef<RHI::UniformBuffer> m_uniformBuffer;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;

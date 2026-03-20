@@ -11,9 +11,9 @@ namespace Volt::RHI
 	{
 	public:
 		virtual void Invalidate() = 0;
-		virtual bool IsShaderInTable(RefPtr<Shader> shader) const = 0;
+		virtual bool IsShaderInTable(IntRef<Shader> shader) const = 0;
 
-		static RefPtr<ShaderBindingTable> Create(RefPtr<RayTracingPipeline> pipeline);
+		static IntRef<ShaderBindingTable> Create(IntRef<RayTracingPipeline> pipeline);
 
 	protected:
 		ShaderBindingTable() = default;

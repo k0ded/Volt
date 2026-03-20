@@ -22,7 +22,7 @@ namespace Volt
 		}
 	}
 
-	RefPtr<Asset> AssetAllocator::AllocateAssetWithType(AssetType type)
+	IntRef<Asset> AssetAllocator::AllocateAssetWithType(AssetType type)
 	{
 		VT_ENSURE(m_assetAllocator.contains(type->GetGUID()));
 
@@ -31,7 +31,7 @@ namespace Volt
 		Asset* assetPtr = allocator->AllocateDefault();
 		assetPtr->AssignAssetHandle(AssetHandle{});
 
-		return RefPtr<Asset>::AttachNoRef(assetPtr);
+		return IntRef<Asset>::AttachNoRef(assetPtr);
 	}
 
 	void AssetAllocator::FreeAsset(AssetType assetType, Asset* asset)

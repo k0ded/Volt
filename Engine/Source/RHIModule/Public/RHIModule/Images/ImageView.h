@@ -23,7 +23,7 @@ namespace Volt::RHI
 	class VTRHI_API ImageView : public ArenaRHIInterface
 	{
 	public:
-		static RefPtr<ImageView> Create(const ImageViewDesc& specification, RawPtr<Image> image);
+		static IntRef<ImageView> Create(const ImageViewDesc& specification, RawPtr<Image> image);
 
 		virtual PixelFormat GetFormat() const = 0;
 		virtual ImageAspect GetImageAspect() const = 0;

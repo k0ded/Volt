@@ -111,11 +111,11 @@ namespace Volt
 		}
 
 		VT_NODISCARD VT_INLINE const RGTextureSRVDesc& GetDesc() const { return m_desc; }
-		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }
-		VT_INLINE RefPtr<RHI::ImageView> GetRHIView() { return m_rhiView; }
+		VT_INLINE void AssignRHIView(IntRef<RHI::ImageView> view) { m_rhiView = view; }
+		VT_INLINE IntRef<RHI::ImageView> GetRHIView() { return m_rhiView; }
 
 	private:
-		RefPtr<RHI::ImageView> m_rhiView;
+		IntRef<RHI::ImageView> m_rhiView;
 		RGTextureSRVDesc m_desc;
 	};
 
@@ -148,11 +148,11 @@ namespace Volt
 		}
 
 		VT_NODISCARD VT_INLINE const RGTextureUAVDesc& GetDesc() const { return m_desc; }
-		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }
-		VT_INLINE RefPtr<RHI::ImageView> GetRHIView() { return m_rhiView; }
+		VT_INLINE void AssignRHIView(IntRef<RHI::ImageView> view) { m_rhiView = view; }
+		VT_INLINE IntRef<RHI::ImageView> GetRHIView() { return m_rhiView; }
 
 	private:
-		RefPtr<RHI::ImageView> m_rhiView;
+		IntRef<RHI::ImageView> m_rhiView;
 		RGTextureUAVDesc m_desc;
 	};
 }

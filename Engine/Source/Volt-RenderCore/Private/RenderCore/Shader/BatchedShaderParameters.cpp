@@ -6,19 +6,19 @@
 
 namespace Volt
 {
-	void BatchedShaderParameters::AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView)
+	void BatchedShaderParameters::AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::BufferView> bufferView)
 	{
 		BatchedBufferShaderBinding* parameter = m_allocator.Allocate<BatchedBufferShaderBinding>(bindingName, resourceType, bufferView);
 		m_bindings.emplace_back(parameter);
 	}
 
-	void BatchedShaderParameters::AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView)
+	void BatchedShaderParameters::AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::ImageView> imageView)
 	{
 		BatchedTextureShaderBinding* parameter = m_allocator.Allocate<BatchedTextureShaderBinding>(bindingName, resourceType, imageView);
 		m_bindings.emplace_back(parameter);
 	}
 
-	void BatchedShaderParameters::AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler)
+	void BatchedShaderParameters::AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::SamplerState> sampler)
 	{
 		BatchedSamplerShaderBinding* parameter = m_allocator.Allocate<BatchedSamplerShaderBinding>(bindingName, resourceType, sampler);
 		m_bindings.emplace_back(parameter);

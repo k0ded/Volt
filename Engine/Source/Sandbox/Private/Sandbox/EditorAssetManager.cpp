@@ -200,7 +200,7 @@ void EditorAssetCache::Clear()
 	m_cache.clear();
 }
 
-void EditorAssetCache::AddAsset(RefPtr<Volt::Asset> asset)
+void EditorAssetCache::AddAsset(IntRef<Volt::Asset> asset)
 {
 	VT_ENSURE(asset->GetAssetHandle() != Volt::Asset::Null());
 
@@ -230,7 +230,7 @@ void EditorAssetCache::RemoveAsset(Volt::AssetHandle assetHandle)
 	}
 }
 
-RefPtr<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
+IntRef<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
 {
 	VT_ENSURE(assetHandle != Volt::Asset::Null());
 
@@ -243,7 +243,7 @@ RefPtr<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
 	return nullptr;
 }
 
-bool EditorAssetCache::TryGetAsset(Volt::AssetHandle assetHandle, RefPtr<Volt::Asset>& outAsset)
+bool EditorAssetCache::TryGetAsset(Volt::AssetHandle assetHandle, IntRef<Volt::Asset>& outAsset)
 {
 	uint64_t hashIndex;
 	bool found = m_hashTable.Get(assetHandle, hashIndex);

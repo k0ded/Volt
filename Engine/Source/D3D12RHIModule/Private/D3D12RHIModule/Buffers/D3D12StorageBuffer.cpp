@@ -12,7 +12,7 @@
 
 namespace Volt::RHI
 {
-	D3D12StorageBuffer::D3D12StorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator)
+	D3D12StorageBuffer::D3D12StorageBuffer(const BufferDesc& desc, IntRef<GPUAllocator> allocator)
 		: m_allocator(allocator), m_desc(desc)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
@@ -77,7 +77,7 @@ namespace Volt::RHI
 		SetName(m_desc.debugName);
 
 		// Copy old data to new buffer
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 
 		commandBuffer->Begin();
 
@@ -141,7 +141,7 @@ namespace Volt::RHI
 		memcpy_s(mappedPtr, size, data, size);
 		stagingAllocation->Unmap();
 
-		RefPtr<CommandBuffer> cmdBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> cmdBuffer = CommandBuffer::Create();
 		cmdBuffer->Begin();
 		cmdBuffer->BeginMarker(std::format("Updating data in {}", m_desc.debugName), { 1.f, 1.f, 1.f, 1.f });
 
@@ -172,7 +172,7 @@ namespace Volt::RHI
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}
 
-	void D3D12StorageBuffer::SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size)
+	void D3D12StorageBuffer::SetData(IntRef<CommandBuffer> commandBuffer, const void* data, const size_t size)
 	{
 		BufferDesc stagingDesc{};
 		stagingDesc.count = 1;
@@ -210,9 +210,9 @@ namespace Volt::RHI
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}
 
-	RefPtr<BufferView> D3D12StorageBuffer::GetView(const BufferViewDesc& desc)
+	IntRef<BufferView> D3D12StorageBuffer::GetView(const BufferViewDesc& desc)
 	{
-		RefPtr<BufferView> bufferView = BufferView::Create(desc, this);
+		IntRef<BufferView> bufferView = BufferView::Create(desc, this);
 		return bufferView;
 	}
 

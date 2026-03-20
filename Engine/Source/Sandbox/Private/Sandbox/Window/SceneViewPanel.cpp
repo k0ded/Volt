@@ -781,7 +781,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		{
 			auto& transformComponent = entity.GetComponent<Volt::TransformComponent>();
 
-			RefPtr<Volt::RHI::Image> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
+			IntRef<Volt::RHI::Image> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
 			std::string visibleId = "##visible" + entity.ToString();
 			if (UI::ImageButton(visibleId, UI::GetTextureID(visibleIcon), { imageSize, imageSize }))
 			{
@@ -817,7 +817,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 			ImGui::SameLine();
 
-			RefPtr<Volt::RHI::Image> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
+			IntRef<Volt::RHI::Image> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
 			std::string lockedId = "##locked" + entity.ToString();
 			if (UI::ImageButton(lockedId, UI::GetTextureID(lockedIcon), { imageSize, imageSize }))
 			{

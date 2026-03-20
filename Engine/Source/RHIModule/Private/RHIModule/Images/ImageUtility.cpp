@@ -9,7 +9,7 @@
 
 namespace Volt::RHI::ImageUtility
 {
-	DataBuffer ReadbackPixel(RefPtr<RHI::Image> image, uint32_t pixelX, uint32_t pixelY, uint32_t pixelZ)
+	DataBuffer ReadbackPixel(IntRef<RHI::Image> image, uint32_t pixelX, uint32_t pixelY, uint32_t pixelZ)
 	{
 		const ImageDesc& imageDesc = image->GetDesc();
 
@@ -22,11 +22,11 @@ namespace Volt::RHI::ImageUtility
 		stagingDesc.memoryUsage = MemoryUsage::GPUToCPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
+		IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
 		const ResourceState currentState = image->GetResourceStateTracker().GetResourceState(0);
 
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 
 		commandBuffer->Begin();
 

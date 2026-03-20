@@ -9,12 +9,12 @@ namespace Volt::RHI
 { 
 	struct RayTracingPipelineCreateInfo
 	{
-		Vector<RefPtr<Shader>> rayGenTable;
-		Vector<RefPtr<Shader>> missTable;
-		Vector<RefPtr<Shader>> closestHitTable;
-		Vector<RefPtr<Shader>> anyHitTable;
-		Vector<RefPtr<Shader>> intersectionTable;
-		Vector<RefPtr<Shader>> callableTable;
+		Vector<IntRef<Shader>> rayGenTable;
+		Vector<IntRef<Shader>> missTable;
+		Vector<IntRef<Shader>> closestHitTable;
+		Vector<IntRef<Shader>> anyHitTable;
+		Vector<IntRef<Shader>> intersectionTable;
+		Vector<IntRef<Shader>> callableTable;
 	};
 
 	class VTRHI_API RayTracingPipeline : public RHIInterface
@@ -22,9 +22,9 @@ namespace Volt::RHI
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
-		virtual bool IsShaderInPipeline(RefPtr<Shader> shader) const = 0;
+		virtual bool IsShaderInPipeline(IntRef<Shader> shader) const = 0;
 
-		static RefPtr<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);
+		static IntRef<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);
 
 	protected:
 		RayTracingPipeline() = default;

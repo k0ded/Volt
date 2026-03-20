@@ -55,30 +55,30 @@ namespace Volt
 
 	struct BatchedBufferShaderBinding : public BatchedShaderBinding
 	{
-		BatchedBufferShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::BufferView> inBufferView)
+		BatchedBufferShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, IntRef<RHI::BufferView> inBufferView)
 			: BatchedShaderBinding(inBindingName, inResourceType), bufferView(inBufferView)
 		{ }
 
-		RefPtr<RHI::BufferView> bufferView;
+		IntRef<RHI::BufferView> bufferView;
 	};
 
 	struct BatchedTextureShaderBinding : public BatchedShaderBinding
 	{
-		BatchedTextureShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::ImageView> inImageView)
+		BatchedTextureShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, IntRef<RHI::ImageView> inImageView)
 			: BatchedShaderBinding(inBindingName, inResourceType), imageView(inImageView)
 		{ }
 
-		RefPtr<RHI::ImageView> imageView;
+		IntRef<RHI::ImageView> imageView;
 	};
 
 	struct BatchedSamplerShaderBinding : public BatchedShaderBinding
 	{
-		BatchedSamplerShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::SamplerState> inSampler)
+		BatchedSamplerShaderBinding(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, IntRef<RHI::SamplerState> inSampler)
 			: BatchedShaderBinding(inBindingName, inResourceType), sampler(inSampler)
 		{
 		}
 
-		RefPtr<RHI::SamplerState> sampler;
+		IntRef<RHI::SamplerState> sampler;
 	};
 
 	struct BatchedShaderParameter
@@ -98,9 +98,9 @@ namespace Volt
 		inline static constexpr size_t NumMaxShaderBindings = 64;
 		inline static constexpr size_t NumMaxShaderParameters = 16;
 
-		void AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView);
-		void AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView);
-		void AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler);
+		void AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::BufferView> bufferView);
+		void AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::ImageView> imageView);
+		void AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, IntRef<RHI::SamplerState> sampler);
 		void AddShaderParameter(const StringHash parameterName, const void* data, const size_t size);
 
 		VT_INLINE ArrayView<BatchedShaderParameter*> GetShaderParameters() const { return m_parameters; }

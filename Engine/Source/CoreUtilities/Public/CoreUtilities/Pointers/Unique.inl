@@ -105,6 +105,12 @@ constexpr bool Unique<T, DestructorType>::operator==(const Unique& other) const
 }
 
 template<typename T, typename DestructorType>
+constexpr bool Unique<T, DestructorType>::operator==(std::nullptr_t) const
+{
+	return m_ptr == nullptr;
+}
+
+template<typename T, typename DestructorType>
 constexpr Unique<T, DestructorType>::operator bool() const
 {
 	return m_ptr != nullptr;

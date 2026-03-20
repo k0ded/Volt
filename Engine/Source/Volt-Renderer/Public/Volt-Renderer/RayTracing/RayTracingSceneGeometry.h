@@ -19,8 +19,8 @@ namespace Volt
 
 	struct RayTracingSceneGeometryCreateInfo
 	{
-		RefPtr<RHI::Buffer> vertexPositionsBuffer;
-		RefPtr<RHI::Buffer> indexBuffer;
+		IntRef<RHI::Buffer> vertexPositionsBuffer;
+		IntRef<RHI::Buffer> indexBuffer;
 
 		Vector<RayTracingSceneGeometryInfo> geometries;
 	};
@@ -36,6 +36,6 @@ namespace Volt
 		static Ref<RayTracingSceneGeometry> Create(const RayTracingSceneGeometryCreateInfo& createInfo);
 
 	private:
-		RefPtr<RHI::AccelerationStructure> m_accelerationStructure;
+		IntRef<RHI::AccelerationStructure> m_accelerationStructure;
 	};
 }

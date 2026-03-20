@@ -61,9 +61,9 @@ namespace Volt::RHI
 		return m_desc.numElements;
 	}
 
-	RefPtr<BufferView> VulkanTransientBuffer::GetView(const BufferViewDesc& desc)
+	IntRef<BufferView> VulkanTransientBuffer::GetView(const BufferViewDesc& desc)
 	{
-		RefPtr<BufferView> bufferView = BufferView::Create(desc, this);
+		IntRef<BufferView> bufferView = BufferView::Create(desc, this);
 		return bufferView;
 	}
 
@@ -141,11 +141,11 @@ namespace Volt::RHI
 		return m_desc.elementSize * m_desc.numElements;
 	}
 
-	void VulkanTransientBuffer::BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
+	void VulkanTransientBuffer::BindMemory(IntRef<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
 	{
 		auto device = GraphicsContext::GetDevice();
 
-		RefPtr<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
+		IntRef<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
 		vkBindBufferMemory(device->GetHandle<VkDevice>(), m_bufferHandle, vkHeap->GetPageMemoryHandle(pageIndex), offset);
 
 		VkBufferDeviceAddressInfo deviceAddressInfo{};

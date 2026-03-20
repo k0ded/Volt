@@ -16,7 +16,7 @@ namespace Volt
 
 	namespace Utility
 	{
-		inline static const size_t GetComputeShaderHash(RefPtr<RHI::Shader> shader)
+		inline static const size_t GetComputeShaderHash(IntRef<RHI::Shader> shader)
 		{
 			return shader->GetHash();
 		}
@@ -76,7 +76,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	RefPtr<RHI::RenderPipeline> PipelineStateCache::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
+	IntRef<RHI::RenderPipeline> PipelineStateCache::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -110,7 +110,7 @@ namespace Volt
 		return nullptr;
 	}
 
-	RefPtr<RHI::ComputePipeline> PipelineStateCache::GetComputePipeline(RefPtr<RHI::Shader> computeShader)
+	IntRef<RHI::ComputePipeline> PipelineStateCache::GetComputePipeline(IntRef<RHI::Shader> computeShader)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -144,7 +144,7 @@ namespace Volt
 		return nullptr;
 	}
 
-	void PipelineStateCache::InvalidatePipelinesWithReferenceToShader(RefPtr<RHI::Shader> shader)
+	void PipelineStateCache::InvalidatePipelinesWithReferenceToShader(IntRef<RHI::Shader> shader)
 	{
 		if (shader->GetShaderStage() == RHI::ShaderStage::Compute)
 		{

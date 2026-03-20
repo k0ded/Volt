@@ -73,7 +73,7 @@ void VisProxyContextManager::AddVisProxy(const VisProxyContextType& visProxyCont
 class EditorDrawInterface
 {
 public:
-	void DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World, bool excludeFromGrid = false);
+	void DrawIcon(IntRef<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World, bool excludeFromGrid = false);
 
 	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World);
 	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World);
@@ -95,7 +95,7 @@ public:
 private:
 	struct DrawCommand
 	{
-		RefPtr<Volt::RHI::Image> texture;
+		IntRef<Volt::RHI::Image> texture;
 		Ref<Volt::Mesh> mesh;
 		Ref<Volt::RenderMaterial> material;
 

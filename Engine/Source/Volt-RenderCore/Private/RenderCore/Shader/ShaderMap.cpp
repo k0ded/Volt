@@ -50,7 +50,7 @@ namespace Volt
 			return hash;
 		}
 
-		inline static const size_t GetShaderBindingTableHash(RefPtr<RHI::RayTracingPipeline> pipeline)
+		inline static const size_t GetShaderBindingTableHash(IntRef<RHI::RayTracingPipeline> pipeline)
 		{
 			return pipeline.GetHash();
 		}
@@ -79,7 +79,7 @@ namespace Volt
 	{
 		const bool isSourceFile = filepath.extension() == L".hlsl";
 
-		Vector<RefPtr<RHI::Shader>> touchedShaders;
+		Vector<IntRef<RHI::Shader>> touchedShaders;
 
 		// Find all shaders that have any reference to the file.
 		if (isSourceFile)
@@ -153,7 +153,7 @@ namespace Volt
 		return true;
 	}
 
-	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader, bool hasPermutations)
+	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader, bool hasPermutations)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
 
@@ -162,7 +162,7 @@ namespace Volt
 		shaderBucket.baseShader = shader;
 	}
 	  
-	RefPtr<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
+	IntRef<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
 		std::scoped_lock lock{ s_instance->m_rayTracingCacheMutex };
 		const size_t hash = Utility::GetRayTracingPipelineHash(pipelineInfo);
@@ -175,14 +175,14 @@ namespace Volt
 			return pipeline;
 		}
 
-		RefPtr<RHI::RayTracingPipeline> pipeline = RHI::RayTracingPipeline::Create(pipelineInfo);
+		IntRef<RHI::RayTracingPipeline> pipeline = RHI::RayTracingPipeline::Create(pipelineInfo);
 		s_instance->m_rayTracingPipelineCache[hash] = pipeline;
 
 		VT_ENSURE(pipeline->IsValid());
 		return pipeline;
 	}
 
-	RefPtr<RHI::ShaderBindingTable> ShaderMap::GetShaderBindingTable(RefPtr<RHI::RayTracingPipeline> pipeline)
+	IntRef<RHI::ShaderBindingTable> ShaderMap::GetShaderBindingTable(IntRef<RHI::RayTracingPipeline> pipeline)
 	{
 		std::scoped_lock lock{ s_instance->m_shaderBindingTableMutex };
 		const size_t hash = Utility::GetShaderBindingTableHash(pipeline);
@@ -193,13 +193,13 @@ namespace Volt
 			return sbt;
 		}
 
-		RefPtr<RHI::ShaderBindingTable> sbt = RHI::ShaderBindingTable::Create(pipeline);
+		IntRef<RHI::ShaderBindingTable> sbt = RHI::ShaderBindingTable::Create(pipeline);
 		s_instance->m_shaderBindingTableCache[hash] = sbt;
 
 		return sbt;
 	}
 
-	RefPtr<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
+	IntRef<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
 	{
 		VT_ENSURE(m_shaderMap.contains(typeIndex));
 	
@@ -224,7 +224,7 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
+	IntRef<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
 	{
 		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
 		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
@@ -237,7 +237,7 @@ namespace Volt
 		createInfo.permutationConfig = std::move(permutationConfig);
 		createInfo.forceCompile = false;
 
-		RefPtr<RHI::Shader> shader;
+		IntRef<RHI::Shader> shader;
 		{
 			VT_PROFILE_SCOPE("Compile shader permutation");
 			shader = RHI::Shader::Create(createInfo);

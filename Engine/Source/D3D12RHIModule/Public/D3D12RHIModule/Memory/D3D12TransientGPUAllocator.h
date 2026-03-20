@@ -39,11 +39,11 @@ namespace Volt::RHI
 		void DestroyOrphanBuffer(Handle<Allocation> allocation);
 		void DestroyOrphanImage(Handle<Allocation> allocation);
 
-		VT_NODISCARD RefPtr<TransientHeap> CreateNewImageHeap();
-		VT_NODISCARD RefPtr<TransientHeap> CreateNewBufferHeap();
+		VT_NODISCARD IntRef<TransientHeap> CreateNewImageHeap();
+		VT_NODISCARD IntRef<TransientHeap> CreateNewBufferHeap();
 
-		Vector<RefPtr<TransientHeap>> m_bufferHeaps;
-		Vector<RefPtr<TransientHeap>> m_imageHeaps;
+		Vector<IntRef<TransientHeap>> m_bufferHeaps;
+		Vector<IntRef<TransientHeap>> m_imageHeaps;
 
 		AllocationCache m_allocationCache{};
 	};

@@ -5,12 +5,12 @@
 
 namespace Volt::RHI 
 {
-	RefPtr<BufferView> BufferView::Create(const BufferViewDesc& specification, RawPtr<Buffer> buffer)
+	IntRef<BufferView> BufferView::Create(const BufferViewDesc& specification, RawPtr<Buffer> buffer)
 	{
 		return RHIModule::GetInstance().CreateBufferView(specification, buffer);
 	}
 
-	RefPtr<BufferView> BufferView::Create(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer)
+	IntRef<BufferView> BufferView::Create(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer)
 	{
 		return RHIModule::GetInstance().CreateBufferView(specification, buffer);
 	}

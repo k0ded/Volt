@@ -42,7 +42,7 @@ namespace Volt::TextureSerializerCommon
 		Vector<Mip> mips;
 	};
 
-	DataBuffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips)
+	DataBuffer GetImageDataBuffer(IntRef<RHI::Image> image, Vector<TextureMip>& outMips)
 	{
 		const RHI::ImageDesc& imageDesc = image->GetDesc();
 
@@ -50,7 +50,7 @@ namespace Volt::TextureSerializerCommon
 		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(imageDesc.format);
 
 		// Create per mip staging buffer
-		Vector<RefPtr<RHI::Buffer>> stagingBuffers;
+		Vector<IntRef<RHI::Buffer>> stagingBuffers;
 		stagingBuffers.resize(imageDesc.mips);
 
 		size_t totalImageSize = 0;
@@ -73,8 +73,8 @@ namespace Volt::TextureSerializerCommon
 			totalImageSize += mipSize;
 		}
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 
@@ -140,7 +140,7 @@ namespace Volt::TextureSerializerCommon
 		return dataBuffer;
 	}
 
-	void UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const DataBuffer& dataBuffer, bool waitForGPU)
+	void UploadImageData(IntRef<RHI::Image> image, RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const DataBuffer& dataBuffer, bool waitForGPU)
 	{
 		TextureData texData{};
 		texData.SetupMips(mips, dataBuffer);
@@ -173,10 +173,10 @@ namespace Volt::TextureSerializerCommon
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
+		IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 

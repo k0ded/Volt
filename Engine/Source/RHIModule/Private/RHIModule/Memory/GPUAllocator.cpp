@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<DefaultGPUAllocator> DefaultGPUAllocator::Create()
+	IntRef<DefaultGPUAllocator> DefaultGPUAllocator::Create()
 	{
 		return RHIModule::GetInstance().CreateDefaultAllocator();
 	}

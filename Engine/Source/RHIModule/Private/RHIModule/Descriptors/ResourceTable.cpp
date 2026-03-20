@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<ResourceTable> ResourceTable::Create()
+	IntRef<ResourceTable> ResourceTable::Create()
 	{
 		return RHIModule::GetInstance().CreateResourceTable();
 	}

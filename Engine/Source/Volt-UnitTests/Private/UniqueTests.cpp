@@ -189,6 +189,13 @@ namespace UnitTests
 		ASSERT_FALSE(a == c);
 	}
 
+	// operator==
+	TEST(Unique, EqualityOperatorNullptr)
+	{
+		Unique<TestValue> a;
+		ASSERT_FALSE(a == nullptr);
+	}
+
 	// Reset
 	TEST(Unique, Reset)
 	{

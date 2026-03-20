@@ -36,154 +36,154 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.SetSize(RHI::RHICapabilities::NumFramesInFlight);
 	}
 	
-	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const
+	IntRef<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const
 	{
-		RefPtr<BufferView> bufferView = RefPtr<D3D12BufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
+		IntRef<BufferView> bufferView = IntRef<D3D12BufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
 
 		return bufferView;
 	}
 
-	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
+	IntRef<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
 	{
-		RefPtr<BufferView> bufferView = RefPtr<D3D12BufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
+		IntRef<BufferView> bufferView = IntRef<D3D12BufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
 
 		return bufferView;
 	}
 
-	RefPtr<CommandBuffer> D3D12RHIModule::CreateCommandBuffer(QueueType queueType) const
+	IntRef<CommandBuffer> D3D12RHIModule::CreateCommandBuffer(QueueType queueType) const
 	{
-		return RefPtr<D3D12CommandBuffer>::Create(queueType);
+		return IntRef<D3D12CommandBuffer>::Create(queueType);
 	}
 	
-	RefPtr<StorageBuffer> D3D12RHIModule::CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
+	IntRef<StorageBuffer> D3D12RHIModule::CreateStorageBuffer(const BufferDesc& desc, IntRef<GPUAllocator> allocator) const
 	{
-		RefPtr<D3D12StorageBuffer> buffer = RefPtr<D3D12StorageBuffer>::AttachNoRef(m_storageBufferArena.Allocate(desc, allocator));
+		IntRef<D3D12StorageBuffer> buffer = IntRef<D3D12StorageBuffer>::AttachNoRef(m_storageBufferArena.Allocate(desc, allocator));
 		buffer->SetArena(&m_storageBufferArena);
 
 		return buffer;
 	}
 
-	RefPtr<UniformBuffer> D3D12RHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const
+	IntRef<UniformBuffer> D3D12RHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const
 	{
-		RefPtr<UniformBuffer> uniformBuffer = RefPtr<D3D12UniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
+		IntRef<UniformBuffer> uniformBuffer = IntRef<D3D12UniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
 		uniformBuffer->SetArena(&m_uniformBufferArena);
 	
 		return uniformBuffer;
 	}
 
-	RefPtr<GraphicsContext> D3D12RHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
+	IntRef<GraphicsContext> D3D12RHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12GraphicsContext>::Create(createInfo);
+		return IntRef<D3D12GraphicsContext>::Create(createInfo);
 	}
 	
-	RefPtr<GraphicsDevice> D3D12RHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const
+	IntRef<GraphicsDevice> D3D12RHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const
 	{
-		return RefPtr<D3D12GraphicsDevice>::Create(createInfo, physicalGraphicsDevice, enableDebugLayer);
+		return IntRef<D3D12GraphicsDevice>::Create(createInfo, physicalGraphicsDevice, enableDebugLayer);
 	}
 	
-	RefPtr<PhysicalGraphicsDevice> D3D12RHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const
+	IntRef<PhysicalGraphicsDevice> D3D12RHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const
 	{
-		return RefPtr<D3D12PhysicalGraphicsDevice>::Create(createInfo, enableDebugLayer);
+		return IntRef<D3D12PhysicalGraphicsDevice>::Create(createInfo, enableDebugLayer);
 	}
 	
-	RefPtr<Swapchain> D3D12RHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
+	IntRef<Swapchain> D3D12RHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12Swapchain>::Create(createInfo);
+		return IntRef<D3D12Swapchain>::Create(createInfo);
 	}
 	
-	RefPtr<Image> D3D12RHIModule::CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const
+	IntRef<Image> D3D12RHIModule::CreateImage(const ImageDesc& specification, const void* data, IntRef<GPUAllocator> allocator) const
 	{
-		RefPtr<D3D12Image> image = RefPtr<D3D12Image>::AttachNoRef(m_imageArena.Allocate(specification, data, allocator));
+		IntRef<D3D12Image> image = IntRef<D3D12Image>::AttachNoRef(m_imageArena.Allocate(specification, data, allocator));
 		image->SetArena(&m_imageArena);
 
 		return image;
 	}
 	
-	RefPtr<Image> D3D12RHIModule::CreateImage(const SwapchainImageDesc& specification) const
+	IntRef<Image> D3D12RHIModule::CreateImage(const SwapchainImageDesc& specification) const
 	{
-		RefPtr<D3D12Image> image = RefPtr<D3D12Image>::AttachNoRef(m_imageArena.Allocate(specification));
+		IntRef<D3D12Image> image = IntRef<D3D12Image>::AttachNoRef(m_imageArena.Allocate(specification));
 		image->SetArena(&m_imageArena);
 
 		return image;
 	}
 
-	RefPtr<ImageView> D3D12RHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
+	IntRef<ImageView> D3D12RHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
 	{
-		RefPtr<ImageView> imageView = RefPtr<D3D12ImageView>::AttachNoRef(m_imageViewArena.Allocate(specification, image));
+		IntRef<ImageView> imageView = IntRef<D3D12ImageView>::AttachNoRef(m_imageViewArena.Allocate(specification, image));
 		imageView->SetArena(&m_imageViewArena);
 
 		return imageView;
 	}
 
-	RefPtr<SamplerState> D3D12RHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
+	IntRef<SamplerState> D3D12RHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
-		RefPtr<SamplerState> samplerState = RefPtr<D3D12SamplerState>::AttachNoRef(m_samplerStateArena.Allocate(createInfo));
+		IntRef<SamplerState> samplerState = IntRef<D3D12SamplerState>::AttachNoRef(m_samplerStateArena.Allocate(createInfo));
 		samplerState->SetArena(&m_samplerStateArena);
 
 		return samplerState;
 	}
 	
-	RefPtr<DefaultGPUAllocator> D3D12RHIModule::CreateDefaultAllocator() const
+	IntRef<DefaultGPUAllocator> D3D12RHIModule::CreateDefaultAllocator() const
 	{
-		return RefPtr<D3D12DefaultGPUAllocator>::Create();
+		return IntRef<D3D12DefaultGPUAllocator>::Create();
 	}
 	
-	RefPtr<TransientGPUAllocator> D3D12RHIModule::CreateTransientAllocator() const
+	IntRef<TransientGPUAllocator> D3D12RHIModule::CreateTransientAllocator() const
 	{
-		return RefPtr<D3D12TransientGPUAllocator>::Create();
+		return IntRef<D3D12TransientGPUAllocator>::Create();
 	}
 	
-	RefPtr<TransientHeap> D3D12RHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
+	IntRef<TransientHeap> D3D12RHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12TransientHeap>::Create(createInfo);
+		return IntRef<D3D12TransientHeap>::Create(createInfo);
 	}
 	
-	RefPtr<RenderPipeline> D3D12RHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
+	IntRef<RenderPipeline> D3D12RHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12RenderPipeline>::Create(createInfo);
+		return IntRef<D3D12RenderPipeline>::Create(createInfo);
 	}
 	
-	RefPtr<ComputePipeline> D3D12RHIModule::CreateComputePipeline(RefPtr<Shader> shader) const
+	IntRef<ComputePipeline> D3D12RHIModule::CreateComputePipeline(IntRef<Shader> shader) const
 	{
-		return RefPtr<D3D12ComputePipeline>::Create(shader);
+		return IntRef<D3D12ComputePipeline>::Create(shader);
 	}
 
-	RefPtr<RayTracingPipeline> D3D12RHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	IntRef<RayTracingPipeline> D3D12RHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
 	{
 		VT_ENSURE(false);
 
-		return RefPtr<RayTracingPipeline>();
+		return IntRef<RayTracingPipeline>();
 	}
 	
-	RefPtr<Shader> D3D12RHIModule::CreateShader(const ShaderCreateInfo& specification) const
+	IntRef<Shader> D3D12RHIModule::CreateShader(const ShaderCreateInfo& specification) const
 	{
-		return RefPtr<D3D12Shader>::Create(specification);
+		return IntRef<D3D12Shader>::Create(specification);
 	}
 	
-	RefPtr<ShaderCompiler> D3D12RHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
+	IntRef<ShaderCompiler> D3D12RHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12ShaderCompiler>::Create(createInfo);
+		return IntRef<D3D12ShaderCompiler>::Create(createInfo);
 	}
 	
-	RefPtr<Fence> D3D12RHIModule::CreateFence() const
+	IntRef<Fence> D3D12RHIModule::CreateFence() const
 	{
-		return RefPtr<D3D12Fence>::Create();
+		return IntRef<D3D12Fence>::Create();
 	}
 
-	RefPtr<AccelerationStructure> D3D12RHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	IntRef<AccelerationStructure> D3D12RHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
 	{
 		VT_ENSURE(false);
 
-		return RefPtr<AccelerationStructure>();
+		return IntRef<AccelerationStructure>();
 	}
 
-	RefPtr<ShaderBindingTable> D3D12RHIModule::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	IntRef<ShaderBindingTable> D3D12RHIModule::CreateShaderBindingTable(IntRef<RayTracingPipeline> pipeline) const
 	{
 		VT_ENSURE(false);
 
-		return RefPtr<ShaderBindingTable>();
+		return IntRef<ShaderBindingTable>();
 	}
 	
 	void D3D12RHIModule::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)
@@ -223,7 +223,7 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.FlushAll();
 	}
 
-	RefPtr<RayTracingResourceTable> D3D12RHIModule::CreateRayTracingResourceTable() const
+	IntRef<RayTracingResourceTable> D3D12RHIModule::CreateRayTracingResourceTable() const
 	{
 		return nullptr;
 	}
@@ -233,12 +233,12 @@ namespace Volt::RHI
 
 	}
 
-	RefPtr<CommandBuffer> D3D12RHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
+	IntRef<CommandBuffer> D3D12RHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
 	{
 		return nullptr;
 	}
 
-	RefPtr<Shader> D3D12RHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
+	IntRef<Shader> D3D12RHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
 	{
 		VT_ENSURE_NO_ENTRY();
 		return nullptr;

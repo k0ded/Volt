@@ -176,7 +176,7 @@ namespace Volt
 			return {};
 		}
 
-		RefPtr<RHI::Image> environmentTextureImage;
+		IntRef<RHI::Image> environmentTextureImage;
 
 		// Get the image from the environment texture.
 		{
@@ -417,8 +417,8 @@ namespace Volt
 		GeneratePreIntegratedBRDFPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedBRDFPS::Parameters>();
 		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
 
-		RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedBRDFPS>();
+		IntRef<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		IntRef<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedBRDFPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
 			RenderGraphPassFlags::Raster,

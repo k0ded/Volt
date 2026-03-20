@@ -6,7 +6,7 @@
 
 #include <SubSystem/SubSystem.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
 VT_DECLARE_LOG_CATEGORY_EXPORT(VTRC_API, LogShaderSubSystem, LogVerbosity::Trace);
@@ -30,8 +30,8 @@ namespace Volt
 	private:
 		void LoadRegisteredShaders();
 
-		RefPtr<RHI::ShaderCompiler> m_shaderCompiler;
-		RefPtr<RHI::ShaderCache> m_shaderCache;
+		IntRef<RHI::ShaderCompiler> m_shaderCompiler;
+		IntRef<RHI::ShaderCache> m_shaderCache;
 		Unique<ShaderMap> m_shaderMap;
 		Unique<PipelineStateCache> m_pipelineStateCache;
 	};

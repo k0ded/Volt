@@ -3,7 +3,7 @@
 #include "AssetSystem/Asset.h"
 
 #include <CoreUtilities/Containers/AtomicHashTable.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt
 {
@@ -15,9 +15,9 @@ namespace Volt
 
 		VTAS_API void Clear();
 
-		VTAS_API bool TryPublish(AssetHandle assetHandle, RefPtr<Asset> asset, uint64_t generation);
+		VTAS_API bool TryPublish(AssetHandle assetHandle, IntRef<Asset> asset, uint64_t generation);
 		VTAS_API bool TryRemove(AssetHandle assetHandle, uint64_t generation);
-		VTAS_API bool TryGet(AssetHandle assetHandle, uint64_t generation, RefPtr<Asset>& outAsset);
+		VTAS_API bool TryGet(AssetHandle assetHandle, uint64_t generation, IntRef<Asset>& outAsset);
 
 	private:
 		struct Container

@@ -11,7 +11,7 @@
 
 namespace Volt::RHI
 {
-	D3D12ComputePipeline::D3D12ComputePipeline(RefPtr<Shader> shader)
+	D3D12ComputePipeline::D3D12ComputePipeline(IntRef<Shader> shader)
 		: m_shader(shader)
 	{
 		Invalidate();
@@ -114,7 +114,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	RefPtr<Shader> D3D12ComputePipeline::GetShader() const
+	IntRef<Shader> D3D12ComputePipeline::GetShader() const
 	{
 		return m_shader;
 	}

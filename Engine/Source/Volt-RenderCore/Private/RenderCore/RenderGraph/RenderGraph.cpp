@@ -1287,7 +1287,7 @@ namespace Volt
 			}
 
 			// If the resource is external the RHI resource has been assigned at this point.
-			RefPtr<RHI::RHIResource> rhiResource = GetRHIResource(resource);
+			IntRef<RHI::RHIResource> rhiResource = GetRHIResource(resource);
 
 			if (resource->GetResourceType() == RGResourceType::Buffer)
 			{
@@ -1338,7 +1338,7 @@ namespace Volt
 
 			if (lastAccessPass)
 			{
-				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIBuffer();
+				IntRef<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIBuffer();
 				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
 				rhiResource->GetResourceStateTrackerMutable().Transition(0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
 			}
@@ -1356,7 +1356,7 @@ namespace Volt
 
 		if (texture->GetRHIResource())
 		{
-			RefPtr<RHI::RHIResource> rhiResource = texture->GetRHIResource()->GetRHITexture();
+			IntRef<RHI::RHIResource> rhiResource = texture->GetRHIResource()->GetRHITexture();
 
 			for (uint32_t i = 0; i < texture->lastAccess.size(); ++i)
 			{
@@ -1390,7 +1390,7 @@ namespace Volt
 
 			if (lastAccessPass)
 			{
-				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIUniformBuffer();
+				IntRef<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIUniformBuffer();
 				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
 				rhiResource->GetResourceStateTrackerMutable().Transition(0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
 			}
@@ -1571,7 +1571,7 @@ namespace Volt
 		return textureUAV;
 	}
 
-	RGBufferRef RenderGraph::RegisterExternalBuffer(RefPtr<RHI::Buffer> buffer)
+	RGBufferRef RenderGraph::RegisterExternalBuffer(IntRef<RHI::Buffer> buffer)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(buffer);
@@ -1605,7 +1605,7 @@ namespace Volt
 		return bufferResource;
 	}
 
-	RGUniformBufferRef RenderGraph::RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer)
+	RGUniformBufferRef RenderGraph::RegisterExternalUniformBuffer(IntRef<RHI::UniformBuffer> uniformBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1634,7 +1634,7 @@ namespace Volt
 		return bufferResource;
 	}
 
-	RGTextureRef RenderGraph::RegisterExternalTexture(RefPtr<RHI::Image> texture)
+	RGTextureRef RenderGraph::RegisterExternalTexture(IntRef<RHI::Image> texture)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1673,13 +1673,13 @@ namespace Volt
 		return textureResource;
 	}
 
-	void RenderGraph::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
+	void RenderGraph::EnqueueTextureExtraction(RGTextureRef texture, IntRef<RHI::Image>* outImage)
 	{
 		texture->m_isExtracted = true;
 		m_textureExtractions.emplace_back(texture, outImage);
 	}
 
-	void RenderGraph::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::Buffer>* outBuffer)
+	void RenderGraph::EnqueueBufferExtraction(RGBufferRef buffer, IntRef<RHI::Buffer>* outBuffer)
 	{
 		buffer->m_isExtracted = true;
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
@@ -1723,7 +1723,7 @@ namespace Volt
 		Ref<GPUReadbackBuffer> readbackBuffer = CreateRef<GPUReadbackBuffer>(dataSize);
 		RGBufferRef dstBuffer = RegisterExternalBuffer(readbackBuffer->GetBuffer());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
+		IntRef<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackBufferParameters* parameters = AllocParameters<ReadbackBufferParameters>();
 		parameters->SrcBuffer = srcBuffer;
@@ -1760,7 +1760,7 @@ namespace Volt
 		Ref<GPUReadbackTexture> readbackTexture = CreateRef<GPUReadbackTexture>(srcTexture->GetDesc());
 		RGTextureRef dstTexture = RegisterExternalTexture(readbackTexture->GetImage());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
+		IntRef<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackTextureParameters* parameters = AllocParameters<ReadbackTextureParameters>();
 		parameters->SrcTexture = srcTexture;
@@ -1875,7 +1875,7 @@ namespace Volt
 		}
 
 		// Each execution range gets their own command buffer.
-		Vector<RefPtr<PooledCommandBuffer>> commandBuffers;
+		Vector<IntRef<PooledCommandBuffer>> commandBuffers;
 		commandBuffers.resize(passExecutionRanges.size());
 
 		for (size_t i = 0; i < passExecutionRanges.size(); ++i)
@@ -1890,7 +1890,7 @@ namespace Volt
 		// This data pointer is destroyed in the execution job.
 
 		// Create a temporary reference to the execution fence here to keep it alive.
-		RefPtr<RHI::Fence> executionFence = m_executionFence;
+		IntRef<RHI::Fence> executionFence = m_executionFence;
 
 		void* tempRenderGraphStorage = Memory::Malloc(sizeof(RenderGraph), alignof(RenderGraph));
 		new (tempRenderGraphStorage) RenderGraph(std::move(*this));
@@ -1899,11 +1899,11 @@ namespace Volt
 
 		// This function executes the provided pass range.
 		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer, const PassExecutionRange& executionRange,
-			const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
+			const Vector<IntRef<PooledCommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
 			GlobalMemoryStackMark memMark;
 
-			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index)->Get();
+			IntRef<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index)->Get();
 
 			commandBuffer->Begin();
 
@@ -1950,7 +1950,7 @@ namespace Volt
 		shaderParameterUniformBuffer->Unmap();
 
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<IntRef<PooledCommandBuffer>>& commandBuffers, IntRef<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
@@ -2064,7 +2064,7 @@ namespace Volt
 		}
 	}
 
-	void RenderGraph::InsertBarriersIntoCommandBuffer(const RGCompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
+	void RenderGraph::InsertBarriersIntoCommandBuffer(const RGCompiledPass::PassBarriers& passBarriers, const IntRef<RHI::CommandBuffer>& commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -2107,7 +2107,7 @@ namespace Volt
 		commandBuffer->ResourceBarrier(resultBarriers);
 	}
 
-	void RenderGraph::InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer)
+	void RenderGraph::InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const IntRef<RHI::CommandBuffer>& commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -2142,11 +2142,11 @@ namespace Volt
 		m_registeredExternalResources[resource] = handle;
 	}
 
-	RefPtr<Volt::RHI::RHIResource> RenderGraph::GetRHIResource(RGResourceRef resource)
+	IntRef<Volt::RHI::RHIResource> RenderGraph::GetRHIResource(RGResourceRef resource)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<Volt::RHI::RHIResource> rhiResource;
+		IntRef<Volt::RHI::RHIResource> rhiResource;
 
 		switch (resource->GetResourceType())
 		{

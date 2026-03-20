@@ -2,7 +2,7 @@
 
 #include "AssetSystem/AssetManagerCommon.h"
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 // Note: Kept outside of Volt namespace for ease of use.
 
@@ -12,7 +12,7 @@ class AssetReference
 public:
 	AssetReference() = default;
 
-	AssetReference(RefPtr<T> asset) noexcept
+	AssetReference(IntRef<T> asset) noexcept
 		: m_asset(asset)
 	{}
 
@@ -104,7 +104,7 @@ public:
 		return m_asset != nullptr;
 	}
 
-	VT_INLINE RefPtr<T> GetRaw() const
+	VT_INLINE IntRef<T> GetRaw() const
 	{
 		return m_asset;
 	}
@@ -121,5 +121,5 @@ private:
 	template<typename U>
 	friend class AssetReference;
 
-	RefPtr<T> m_asset;
+	IntRef<T> m_asset;
 };

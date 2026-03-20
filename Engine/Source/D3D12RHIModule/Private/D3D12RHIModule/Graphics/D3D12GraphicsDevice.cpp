@@ -24,9 +24,9 @@ namespace Volt::RHI
 		InitializeProperties();
 		InitializeCapabilities();
 
-		m_deviceQueues[QueueType::Graphics] = RefPtr<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
-		m_deviceQueues[QueueType::TransferCopy] = RefPtr<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
-		m_deviceQueues[QueueType::Compute] = RefPtr<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Compute });
+		m_deviceQueues[QueueType::Graphics] = IntRef<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
+		m_deviceQueues[QueueType::TransferCopy] = IntRef<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
+		m_deviceQueues[QueueType::Compute] = IntRef<D3D12DeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Compute });
 	}
 
 	D3D12GraphicsDevice::~D3D12GraphicsDevice()
@@ -43,7 +43,7 @@ namespace Volt::RHI
 #endif
 	}
 
-	RefPtr<DeviceQueue> D3D12GraphicsDevice::GetDeviceQueue(QueueType queueType) const
+	IntRef<DeviceQueue> D3D12GraphicsDevice::GetDeviceQueue(QueueType queueType) const
 	{
 		return m_deviceQueues.at(queueType);
 	}

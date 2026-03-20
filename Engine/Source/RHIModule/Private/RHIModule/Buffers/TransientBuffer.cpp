@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<TransientBuffer> TransientBuffer::Create(const BufferDesc& desc)
+	IntRef<TransientBuffer> TransientBuffer::Create(const BufferDesc& desc)
 	{
 		return RHIModule::GetInstance().CreateTransientBuffer(desc);
 	}

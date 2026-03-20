@@ -36,7 +36,7 @@ namespace Volt::RHI
 		Vector<std::filesystem::path> includeDirectories;
 		Vector<std::string> initialMacros;
 	
-		RefPtr<ShaderCache> shaderCache;
+		IntRef<ShaderCache> shaderCache;
 		ShaderCompilerFlags flags = ShaderCompilerFlags::None;
 		ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::Disable;
 		std::filesystem::path shaderDebugInfoPath;
@@ -85,7 +85,7 @@ namespace Volt::RHI
 		static void AddMacro(const std::string& macroName);
 		static void RemoveMacro(std::string_view macroName);
 		
-		static RefPtr<ShaderCompiler> Create(const ShaderCompilerCreateInfo& createInfo);
+		static IntRef<ShaderCompiler> Create(const ShaderCompilerCreateInfo& createInfo);
 
 	protected:
 		ShaderCompiler();

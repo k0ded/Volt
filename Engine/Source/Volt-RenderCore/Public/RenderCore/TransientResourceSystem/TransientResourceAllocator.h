@@ -54,8 +54,8 @@ namespace Volt
 		Vector<TransientTextureResourceRef> m_textureCache;
 		Vector<TransientUniformBufferResourceRef> m_uniformBufferCache;
 
-		RefPtr<RHI::TransientHeap> m_bufferHeap;
-		RefPtr<RHI::TransientHeap> m_textureHeap;
+		IntRef<RHI::TransientHeap> m_bufferHeap;
+		IntRef<RHI::TransientHeap> m_textureHeap;
 
 		PagedAtomicArenaAllocator<TransientBufferResource, 512> m_transientBufferAllocator;
 		PagedAtomicArenaAllocator<TransientTextureResource, 512> m_transientTextureAllocator;

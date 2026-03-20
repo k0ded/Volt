@@ -6,7 +6,7 @@
 
 #include <WindowModule/WindowHandle.h>
 #include <CoreUtilities/Core.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Circuit
 {
@@ -31,7 +31,7 @@ namespace Circuit
 	class CIRCUIT_API CircuitRenderer
 	{
 	public:
-		CircuitRenderer(CircuitWindow& targetCircuitWindow, RefPtr<Volt::RHI::ResourceTable> resourceTable);
+		CircuitRenderer(CircuitWindow& targetCircuitWindow, IntRef<Volt::RHI::ResourceTable> resourceTable);
 		~CircuitRenderer();
 
 		void OnRender();
@@ -45,8 +45,8 @@ namespace Circuit
 		uint32_t m_width;
 		uint32_t m_height;
 
-		RefPtr<Volt::RHI::Image> m_outputImage;
-		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
+		IntRef<Volt::RHI::Image> m_outputImage;
+		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 	};

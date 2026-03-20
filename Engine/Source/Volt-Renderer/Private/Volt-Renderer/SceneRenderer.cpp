@@ -96,7 +96,7 @@ namespace Volt
 		m_shouldResize = true;
 	}
 
-	RefPtr<RHI::Image> SceneRenderer::GetFinalImage()
+	IntRef<RHI::Image> SceneRenderer::GetFinalImage()
 	{
 		return m_outputImage;
 	}

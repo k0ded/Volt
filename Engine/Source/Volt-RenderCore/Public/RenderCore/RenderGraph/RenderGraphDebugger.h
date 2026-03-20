@@ -8,7 +8,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/ArrayView.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 

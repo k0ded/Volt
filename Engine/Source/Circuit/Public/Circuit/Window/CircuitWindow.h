@@ -47,7 +47,7 @@ namespace Circuit
 		const Volt::WindowHandle m_windowHandle;
 
 		Ref<CircuitRenderer> m_renderer;
-		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
+		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
 
 		glm::u16vec2 m_windowSize;
 		std::string m_title;

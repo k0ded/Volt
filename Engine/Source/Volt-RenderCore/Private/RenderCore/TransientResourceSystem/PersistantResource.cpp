@@ -5,21 +5,21 @@
 namespace Volt
 {
 
-	PersistantBufferResource::PersistantBufferResource(RefPtr<RHI::Buffer> buffer)
+	PersistantBufferResource::PersistantBufferResource(IntRef<RHI::Buffer> buffer)
 		: m_viewCache(this),
 		m_buffer(buffer)
 	{
 
 	}
 
-	PersistantTextureResource::PersistantTextureResource(RefPtr<RHI::Image> image)
+	PersistantTextureResource::PersistantTextureResource(IntRef<RHI::Image> image)
 		: m_viewCache(this),
 		m_image(image)
 	{
 
 	}
 
-	PersistantUniformBufferResource::PersistantUniformBufferResource(RefPtr<RHI::UniformBuffer> uniformBuffer)
+	PersistantUniformBufferResource::PersistantUniformBufferResource(IntRef<RHI::UniformBuffer> uniformBuffer)
 		: m_viewCache(this),
 		m_uniformBuffer(uniformBuffer)
 	{

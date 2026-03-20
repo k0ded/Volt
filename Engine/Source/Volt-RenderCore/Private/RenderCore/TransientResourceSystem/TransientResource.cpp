@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	TransientUniformBufferResource::TransientUniformBufferResource(RefPtr<RHI::UniformBuffer> uniformBuffer, size_t hash, uint64_t framesToKeepAlive)
+	TransientUniformBufferResource::TransientUniformBufferResource(IntRef<RHI::UniformBuffer> uniformBuffer, size_t hash, uint64_t framesToKeepAlive)
 		: m_uniformBuffer(uniformBuffer),
 		m_hash(hash),
 		m_viewCache(this),
@@ -15,7 +15,7 @@ namespace Volt
 
 	}
 
-	TransientBufferResource::TransientBufferResource(RefPtr<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated)
+	TransientBufferResource::TransientBufferResource(IntRef<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated)
 		: m_buffer(buffer),
 		m_hash(hash),
 		m_viewCache(this),
@@ -27,7 +27,7 @@ namespace Volt
 
 	}
 
-	TransientTextureResource::TransientTextureResource(RefPtr<RHI::Image> image, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated)
+	TransientTextureResource::TransientTextureResource(IntRef<RHI::Image> image, size_t hash, uint64_t framesToKeepAlive, bool isTransientlyAllocated)
 		: m_image(image),
 		m_hash(hash),
 		m_viewCache(this),

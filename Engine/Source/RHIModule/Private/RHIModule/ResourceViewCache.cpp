@@ -26,7 +26,7 @@ namespace Volt::RHI
 
 	}
 
-	RefPtr<ImageView> ImageViewCache::GetOrCreateView(const ImageViewDesc& desc)
+	IntRef<ImageView> ImageViewCache::GetOrCreateView(const ImageViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 

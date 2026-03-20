@@ -27,9 +27,9 @@ namespace Volt
 		UISceneRenderer(const UISceneRendererSpecification& specification);
 		~UISceneRenderer();
 
-		void OnRender(RefPtr<RHI::Image> targetImage, const glm::mat4& projectionMatrix);
+		void OnRender(IntRef<RHI::Image> targetImage, const glm::mat4& projectionMatrix);
 
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetIDImage() const { return m_widgetIDImage; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetIDImage() const { return m_widgetIDImage; }
 
 	private:
 		struct VertexIndexCounts
@@ -44,7 +44,7 @@ namespace Volt
 		bool m_isEditor = false;
 
 		Ref<UIScene> m_scene;
-		RefPtr<RHI::Image> m_widgetIDImage;
+		IntRef<RHI::Image> m_widgetIDImage;
 		RHI::CommandBufferSet m_commandBufferSet;
 	};
 }

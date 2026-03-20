@@ -18,7 +18,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE const FontMetrics& GetMetrics() const { return m_metrics; }
 		VT_NODISCARD VT_INLINE const FontGeometry& GetGeometry() const { return m_fontGeometry; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetAtlas() const { return m_atlas; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetAtlas() const { return m_atlas; }
 
 		static AssetType GetStaticType() { return AssetTypes::Font; }
 		AssetType GetType() const override { return GetStaticType(); };
@@ -28,7 +28,7 @@ namespace Volt
 	private:
 		friend class FontSourceImporter;
 
-		RefPtr<RHI::Image> m_atlas;
+		IntRef<RHI::Image> m_atlas;
 		FontMetrics m_metrics;
 		FontGeometry m_fontGeometry;
 	};

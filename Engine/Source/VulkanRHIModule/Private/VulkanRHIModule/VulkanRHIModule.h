@@ -29,45 +29,45 @@ namespace Volt::RHI
 	public:
 		VulkanRHIModule();
 
-		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const override;
-		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const override;
+		IntRef<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const override;
+		IntRef<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const override;
 
-		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
-		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const override;
+		IntRef<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
+		IntRef<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const override;
 
-		RefPtr<Buffer> CreateBuffer(const BufferDesc& desc) const override;
-		RefPtr<TransientBuffer> CreateTransientBuffer(const BufferDesc& desc) const override;
-		RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
+		IntRef<Buffer> CreateBuffer(const BufferDesc& desc) const override;
+		IntRef<TransientBuffer> CreateTransientBuffer(const BufferDesc& desc) const override;
+		IntRef<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
 
-		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
-		RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const override;
-		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const override;
-		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
+		IntRef<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
+		IntRef<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const override;
+		IntRef<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const override;
+		IntRef<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
-		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data) const override;
-		RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const override;
-		RefPtr<TransientImage> CreateTransientImage(const ImageDesc& desc) const override;
+		IntRef<Image> CreateImage(const ImageDesc& specification, const void* data) const override;
+		IntRef<Image> CreateImage(const SwapchainImageDesc& specification) const override;
+		IntRef<TransientImage> CreateTransientImage(const ImageDesc& desc) const override;
 
-		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const override;
-		RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
+		IntRef<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const override;
+		IntRef<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
 
-		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;
-		RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
+		IntRef<DefaultGPUAllocator> CreateDefaultAllocator() const override;
+		IntRef<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
 
-		RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;
-		RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader) const override;
-		RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const override;
+		IntRef<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;
+		IntRef<ComputePipeline> CreateComputePipeline(IntRef<Shader> shader) const override;
+		IntRef<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const override;
 
-		RefPtr<Shader> CreateShader(const ShaderCreateInfo& specification) const override;
-		RefPtr<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const override;
-		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
+		IntRef<Shader> CreateShader(const ShaderCreateInfo& specification) const override;
+		IntRef<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const override;
+		IntRef<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
-		RefPtr<Fence> CreateFence() const override;
+		IntRef<Fence> CreateFence() const override;
 	
-		RefPtr<ResourceTable> CreateResourceTable() const override;
+		IntRef<ResourceTable> CreateResourceTable() const override;
 
-		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
-		RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const override;
+		IntRef<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
+		IntRef<ShaderBindingTable> CreateShaderBindingTable(IntRef<RayTracingPipeline> pipeline) const override;
 
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;

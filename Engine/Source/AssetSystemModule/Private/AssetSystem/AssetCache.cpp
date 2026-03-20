@@ -34,7 +34,7 @@ namespace Volt
 		m_cache.clear();
 	}
 
-	bool AssetCache::TryPublish(AssetHandle assetHandle, RefPtr<Asset> asset, uint64_t generation)
+	bool AssetCache::TryPublish(AssetHandle assetHandle, IntRef<Asset> asset, uint64_t generation)
 	{
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
@@ -95,7 +95,7 @@ namespace Volt
 		return found;
 	}
 
-	bool AssetCache::TryGet(AssetHandle assetHandle, uint64_t generation, RefPtr<Asset>& outAsset)
+	bool AssetCache::TryGet(AssetHandle assetHandle, uint64_t generation, IntRef<Asset>& outAsset)
 	{
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
@@ -119,7 +119,7 @@ namespace Volt
 	
 			if (assetPtr->GetRefCount() > 0)
 			{
-				outAsset = RefPtr<Asset>::Attach(assetPtr);
+				outAsset = IntRef<Asset>::Attach(assetPtr);
 			}
 			else
 			{

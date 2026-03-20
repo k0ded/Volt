@@ -34,8 +34,8 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 

@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<ImageView> ImageView::Create(const ImageViewDesc& specification, RawPtr<Image> image)
+	IntRef<ImageView> ImageView::Create(const ImageViewDesc& specification, RawPtr<Image> image)
 	{
 		return RHIModule::GetInstance().CreateImageView(specification, image);
 	}

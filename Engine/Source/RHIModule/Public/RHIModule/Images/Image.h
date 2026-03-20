@@ -14,7 +14,7 @@ namespace Volt::RHI
 	class Image : public RHIResource
 	{
 	public:
-		virtual RefPtr<ImageView> GetView(const ImageViewDesc& desc = {}) = 0;
+		virtual IntRef<ImageView> GetView(const ImageViewDesc& desc = {}) = 0;
 		virtual const ImageAspect GetImageAspect() const = 0;
 
 		virtual const uint32_t GetWidth() const = 0;
@@ -24,8 +24,8 @@ namespace Volt::RHI
 		virtual const bool IsSwapchainImage() const = 0;
 		virtual const ImageDesc& GetDesc() const = 0;
 
-		VTRHI_API static RefPtr<Image> Create(const ImageDesc& specification, const void* data = nullptr);
-		VTRHI_API static RefPtr<Image> Create(const SwapchainImageDesc& specification);
+		VTRHI_API static IntRef<Image> Create(const ImageDesc& specification, const void* data = nullptr);
+		VTRHI_API static IntRef<Image> Create(const SwapchainImageDesc& specification);
 
 	protected:
 		Image() = default;

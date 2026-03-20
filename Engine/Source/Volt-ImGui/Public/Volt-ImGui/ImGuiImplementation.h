@@ -42,7 +42,7 @@ namespace Volt
 		ImFont* AddFont(const std::filesystem::path& fontPath);
 		Vector<ImFont*> AddFonts(const Vector<std::filesystem::path>& fontPaths);
 
-		ImTextureID GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex);
+		ImTextureID GetTextureID(IntRef<RHI::Image> image, int32_t mipIndex);
 
 	private:
 		struct ContextData
@@ -54,7 +54,7 @@ namespace Volt
 
 		struct PerWindowData
 		{
-			RefPtr<RHI::Image> renderTarget;
+			IntRef<RHI::Image> renderTarget;
 		};
 
 		void Initialize();
@@ -71,7 +71,7 @@ namespace Volt
 
 		Vector<ContextData> m_contextStack;
 
-		RefPtr<RHI::UniformBuffer> m_copyGlobalsUniformBuffer;
+		IntRef<RHI::UniformBuffer> m_copyGlobalsUniformBuffer;
 
 		Unique<ImGuiRenderTargetManager> m_renderTargetManager;
 	};

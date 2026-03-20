@@ -17,7 +17,7 @@ namespace Volt::RHI
 	public:
 		virtual uint64_t GetDeviceAddress() const = 0;
 		
-		static RefPtr<AccelerationStructure> Create(const AccelerationStructureCreateInfo& createInfo);
+		static IntRef<AccelerationStructure> Create(const AccelerationStructureCreateInfo& createInfo);
 
 	protected:
 		AccelerationStructure() = default;

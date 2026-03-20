@@ -11,11 +11,11 @@ namespace Volt::RHI
 	class D3D12ComputePipeline final : public ComputePipeline
 	{
 	public:
-		D3D12ComputePipeline(RefPtr<Shader> shader);
+		D3D12ComputePipeline(IntRef<Shader> shader);
 		~D3D12ComputePipeline() override;
 
 		void Invalidate() override;
-		RefPtr<Shader> GetShader() const override;
+		IntRef<Shader> GetShader() const override;
 		bool IsValid() const override;
 		bool HasInlineParameters() const override;
 		size_t GetHash() const override;
@@ -31,7 +31,7 @@ namespace Volt::RHI
 		void Release();
 		void GenerateHash();
 
-		RefPtr<Shader> m_shader;
+		IntRef<Shader> m_shader;
 		size_t m_hash;
 
 		ComPtr<ID3D12PipelineState> m_pipeline;

@@ -12,7 +12,7 @@ namespace Volt::RHI
 	class D3D12StorageBuffer : public StorageBuffer
 	{
 	public:
-		D3D12StorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator = nullptr);
+		D3D12StorageBuffer(const BufferDesc& desc, IntRef<GPUAllocator> allocator = nullptr);
 		~D3D12StorageBuffer() override;
 
 		void Resize(const uint64_t size) override;
@@ -25,9 +25,9 @@ namespace Volt::RHI
 
 		void Unmap() override;
 		void SetData(const void* data, const size_t size) override;
-		void SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size) override;
+		void SetData(IntRef<CommandBuffer> commandBuffer, const void* data, const size_t size) override;
 
-		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
+		IntRef<BufferView> GetView(const BufferViewDesc& desc) override;
 
 		inline constexpr ResourceType GetType() const override { return ResourceType::StorageBuffer; }
 		void SetName(const std::string& name) override;

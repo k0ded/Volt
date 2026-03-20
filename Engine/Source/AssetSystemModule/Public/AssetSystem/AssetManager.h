@@ -11,7 +11,7 @@
 
 #include <LogModule/Log.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h> 
+#include <CoreUtilities/Pointers/IntRef.h> 
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/WorkQueue.h>
 
@@ -153,13 +153,13 @@ namespace Volt
 
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
 
-		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
-		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
+		VTAS_API void LoadAsset(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState);
+		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState);
 
-		VTAS_API RefPtr<Asset> TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated);
+		VTAS_API IntRef<Asset> TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated);
 
-		VTAS_API void AddAssetToCache(RefPtr<Asset> asset);
-		RefPtr<Asset> TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle);
+		VTAS_API void AddAssetToCache(IntRef<Asset> asset);
+		IntRef<Asset> TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle);
 
 		void QueueAssetForDestruction(AssetRefCounter* assetRefCounter);
 		void UnloadAndFreeAsset(AssetUnloadData& assetUnloadData);
@@ -207,7 +207,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
+		IntRef<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
 
 		if (wasCreated)
 		{
@@ -268,7 +268,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
+		IntRef<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
 
 		if (wasCreated)
 		{
@@ -357,7 +357,7 @@ namespace Volt
 	template<VoltAssetType T, typename... Args>
 	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args)
 	{
-		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
+		IntRef<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
 		newAsset->AssignAssetHandle(assetHandle);
 
 		AssetMetadata metadata{};

@@ -122,8 +122,8 @@ namespace Volt
 		}
 
 		// Composite all windows render targets to their respective swapchains.
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		// Update globals
 		{
@@ -198,8 +198,8 @@ namespace Volt
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
-			RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-			RefPtr<RHI::Shader> pixelShader;
+			IntRef<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+			IntRef<RHI::Shader> pixelShader;
 
 			if (swapchain.IsHDREnabled())
 			{
@@ -316,7 +316,7 @@ namespace Volt
 		return resultFonts;
 	}
 
-	ImTextureID ImGuiImplementation::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex)
+	ImTextureID ImGuiImplementation::GetTextureID(IntRef<RHI::Image> image, int32_t mipIndex)
 	{
 		return GetActiveRenderer()->AddTexture(image);
 	}

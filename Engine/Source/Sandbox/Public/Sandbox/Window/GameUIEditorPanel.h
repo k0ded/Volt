@@ -8,7 +8,7 @@
 #include <WindowModule/Events/WindowEvents.h>
 
 #include <RHIModule/Images/Image.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
@@ -61,7 +61,7 @@ private:
 	glm::vec2 m_viewportSize = { 1280.f, 720.f };
 
 	Ref<Volt::UIScene> m_uiScene;
-	RefPtr<Volt::RHI::Image> m_viewportImage;
+	IntRef<Volt::RHI::Image> m_viewportImage;
 
 	Unique<Volt::UISceneRenderer> m_uiSceneRenderer;
 };

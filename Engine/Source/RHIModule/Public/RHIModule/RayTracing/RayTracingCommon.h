@@ -77,9 +77,9 @@ namespace Volt::RHI
 
 	struct AccelerationStructureGeometryInfo
 	{
-		RefPtr<Buffer> vertexPositionsBuffer;
-		RefPtr<Buffer> indexBuffer;
-		RefPtr<Buffer> instancesBuffer;
+		IntRef<Buffer> vertexPositionsBuffer;
+		IntRef<Buffer> indexBuffer;
+		IntRef<Buffer> instancesBuffer;
 
 		PixelFormat vertexFormat;
 		uint32_t vertexStride;
@@ -95,8 +95,8 @@ namespace Volt::RHI
 	{
 		Vector<AccelerationStructureGeometryInfo> geometries;
 
-		RefPtr<AccelerationStructure> srcAccelerationStructure;
-		RefPtr<AccelerationStructure> dstAccelerationStructure;
+		IntRef<AccelerationStructure> srcAccelerationStructure;
+		IntRef<AccelerationStructure> dstAccelerationStructure;
 
 		AccelerationStructureType type;
 		AccelerationStructureBuildFlags flags;

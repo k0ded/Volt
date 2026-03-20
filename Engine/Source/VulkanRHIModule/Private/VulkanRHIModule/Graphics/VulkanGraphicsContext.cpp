@@ -32,17 +32,17 @@ namespace Volt::RHI
 		Shutdown();
 	}
 
-	RefPtr<GPUAllocator> VulkanGraphicsContext::GetDefaultAllocatorImpl()
+	IntRef<GPUAllocator> VulkanGraphicsContext::GetDefaultAllocatorImpl()
 	{
 		return m_defaultAllocator;
 	}
 
-	RefPtr<GraphicsDevice> VulkanGraphicsContext::GetGraphicsDevice() const
+	IntRef<GraphicsDevice> VulkanGraphicsContext::GetGraphicsDevice() const
 	{
 		return m_graphicsDevice;
 	}
 
-	RefPtr<PhysicalGraphicsDevice> VulkanGraphicsContext::GetPhysicalGraphicsDevice() const
+	IntRef<PhysicalGraphicsDevice> VulkanGraphicsContext::GetPhysicalGraphicsDevice() const
 	{
 		return m_physicalDevice;
 	} 

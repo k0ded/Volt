@@ -46,7 +46,7 @@ namespace Volt::RHI
 		const uint32_t GetWidth() const override;
 		const uint32_t GetHeight() const override;
 		const PixelFormat GetFormat() const override;
-		RefPtr<Image> GetCurrentImage() const override;
+		IntRef<Image> GetCurrentImage() const override;
 		bool IsHDREnabled() const override;
 
 		inline VkImage_T* GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).image; }
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		{
 			VkImage_T* image = nullptr;
 			VkSemaphore_T* renderSemaphore = nullptr;
-			RefPtr<Image> imageReference;
+			IntRef<Image> imageReference;
 		};
 
 		struct SwapchainCapabilities
@@ -106,7 +106,7 @@ namespace Volt::RHI
 		SwapchainCapabilities m_capabilities{};
 		SwapchainCreateInfo m_createInfo{};
 
-		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
+		Vector<IntRef<CommandBuffer>> m_commandBuffers;
 		Vector<PerFrameInFlightData> m_perFrameInFlightData{};
 		Vector<PerImageData> m_perImageData{};
 

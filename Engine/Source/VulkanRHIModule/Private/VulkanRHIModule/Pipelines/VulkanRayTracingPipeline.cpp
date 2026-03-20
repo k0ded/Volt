@@ -290,7 +290,7 @@ namespace Volt::RHI
 		return m_pipeline != nullptr;
 	}
 
-	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader> shader) const
+	bool VulkanRayTracingPipeline::IsShaderInPipeline(IntRef<Shader> shader) const
 	{
 		for (const auto& s : m_createInfo.rayGenTable)
 		{

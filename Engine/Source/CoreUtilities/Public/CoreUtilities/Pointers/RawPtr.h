@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RefPtr.h"
+#include "IntRef.h"
 
 template<typename T>
 class RawPtr
@@ -12,12 +12,12 @@ public:
 		: m_object(ptr)
 	{}
 
-	constexpr RawPtr(const RefPtr<T>& refPtr) noexcept
+	constexpr RawPtr(const IntRef<T>& refPtr) noexcept
 		: m_object(refPtr.GetRaw())
 	{}
 
 	template<typename U>
-	constexpr RawPtr(const RefPtr<U>& refPtr) noexcept
+	constexpr RawPtr(const IntRef<U>& refPtr) noexcept
 		requires (std::is_convertible_v<U*, T*>)
 	: m_object(static_cast<T*>(refPtr.GetRaw()))
 	{}

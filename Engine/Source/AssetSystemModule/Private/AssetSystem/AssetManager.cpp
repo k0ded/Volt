@@ -94,7 +94,7 @@ namespace Volt
 		metadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloading, AssetLoadState::Queued, wasCreated);
+		IntRef<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloading, AssetLoadState::Queued, wasCreated);
 
 		if (wasCreated)
 		{
@@ -111,7 +111,7 @@ namespace Volt
 
 		if (metadata != nullptr)
 		{
-			RefPtr<Asset> asset = TryGetOrTryWaitForPublishedAsset(assetHandle);
+			IntRef<Asset> asset = TryGetOrTryWaitForPublishedAsset(assetHandle);
 			if (asset)
 			{
 				SaveAsset(AssetReference<Asset>(asset));
@@ -217,7 +217,7 @@ namespace Volt
 			return false;
 		}
 
-		RefPtr<Asset> tempAsset = TryGetOrTryWaitForPublishedAsset(assetHandle);
+		IntRef<Asset> tempAsset = TryGetOrTryWaitForPublishedAsset(assetHandle);
 		if (!tempAsset)
 		{
 			return false;
@@ -239,7 +239,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
+		IntRef<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
 
 		if (wasCreated)
 		{
@@ -263,7 +263,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
+		IntRef<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
 
 		if (wasCreated)
 		{
@@ -279,7 +279,7 @@ namespace Volt
 
 	AssetReference<Asset> AssetManager::CreateAssetTypeless(std::string_view assetName, AssetType assetType)
 	{
-		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetType);
+		IntRef<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetType);
 
 		AssetMetadata metadata{};
 		metadata.filepath = ""; // Assets that are not saved will not have a file path
@@ -490,7 +490,7 @@ namespace Volt
 		return m_assetRegistry.GetMetadataLoadingCounter();
 	}
 
-	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState)
+	void AssetManager::LoadAsset(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -512,7 +512,7 @@ namespace Volt
 		VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
 	}
 
-	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState)
+	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState)
 	{
 		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle, expectedLoadState]()
 		{
@@ -541,7 +541,7 @@ namespace Volt
 		VT_LOGC(Trace, LogAssetSystem, "Queued asset '{}' (Handle: '{}') for loading!", asset->GetAssetName(), asset->GetAssetHandle());
 	}
 
-	RefPtr<Asset> AssetManager::TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated)
+	IntRef<Asset> AssetManager::TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated)
 	{
 		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
@@ -556,7 +556,7 @@ namespace Volt
 
 		// The asset should now be created and loaded.
 
-		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
+		IntRef<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
 		newAsset->m_generation = currentGeneration;
@@ -571,7 +571,7 @@ namespace Volt
 		return newAsset;
 	}
 
-	void AssetManager::AddAssetToCache(RefPtr<Asset> asset)
+	void AssetManager::AddAssetToCache(IntRef<Asset> asset)
 	{
 		if (!m_assetCache.TryPublish(asset->GetAssetHandle(), asset, asset->m_generation))
 		{
@@ -584,12 +584,12 @@ namespace Volt
 		metadata->m_publishedGeneration.notify_all();
 	}
 
-	RefPtr<Asset> AssetManager::TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle)
+	IntRef<Asset> AssetManager::TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle)
 	{
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		uint64_t currentGeneration = assetMetadata->GetGeneration(std::memory_order::acquire);
 
-		RefPtr<Asset> resultAsset;
+		IntRef<Asset> resultAsset;
 		if (m_assetCache.TryGet(assetHandle, currentGeneration, resultAsset))
 		{
 			return resultAsset;

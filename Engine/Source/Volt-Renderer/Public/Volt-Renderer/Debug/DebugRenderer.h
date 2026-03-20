@@ -33,7 +33,7 @@ namespace Volt
 		VTR_API void DrawLineSphere(const glm::vec3& center, float radius, const glm::vec4& color);
 
 		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, const glm::vec4& userData = {}, bool isViewSpacePosition = false);
-		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, const glm::vec4& userData = {}, bool isViewSpacePosition = false);
+		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, IntRef<RHI::Image> texture, const glm::vec4& userData = {}, bool isViewSpacePosition = false);
 
 		VTR_API void DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, const glm::vec4& userData = {});
 
@@ -51,7 +51,7 @@ namespace Volt
 		/*
 			Custom rendering
 		*/
-		VTR_API void RenderBillboards(RenderGraph& renderGraph, RefPtr<RHI::Shader> pixelShader, const RenderView& view, const ShaderParameterRenderTargetBindings& renderTargets, bool shouldClear);
+		VTR_API void RenderBillboards(RenderGraph& renderGraph, IntRef<RHI::Shader> pixelShader, const RenderView& view, const ShaderParameterRenderTargetBindings& renderTargets, bool shouldClear);
 		VTR_API void PrepareMeshesForRendering(RenderGraph& renderGraph);
 
 	private:
@@ -190,7 +190,7 @@ namespace Volt
 			glm::vec4 userData;
 			uint32_t isViewSpacePosition;
 
-			RefPtr<RHI::Image> texture;
+			IntRef<RHI::Image> texture;
 		};
 
 		struct BillboardInstancingRange
@@ -198,7 +198,7 @@ namespace Volt
 			uint32_t begin;
 			uint32_t count;
 
-			RefPtr<RHI::Image> texture;
+			IntRef<RHI::Image> texture;
 		};
 
 		struct MeshDrawCommand

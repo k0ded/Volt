@@ -15,7 +15,7 @@ namespace Volt
 	}
 
 	template<typename ShaderType>
-	void RenderContext::SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters)
+	void RenderContext::SetParameters(IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* parameters)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
@@ -38,9 +38,9 @@ namespace Volt
 				case ShaderParameterType::TextureSRV: SetTextureSRVParameter(parameterDesc.GetAs<RGTextureSRVRef>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(parameterDesc.GetAs<RGTextureUAVRef>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(parameterDesc.GetAs<RGUniformBufferRef>(), parameterDesc, shaderParameterMap); break;
-				case ShaderParameterType::Sampler: SetSamplerParameter(parameterDesc.GetAs<RefPtr<RHI::SamplerState>>(), parameterDesc, shaderParameterMap); break;
-				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(parameterDesc.GetAs<RefPtr<RHI::AccelerationStructure>>(), parameterDesc, shaderParameterMap); break;
-				case ShaderParameterType::ResourceTable: SetResourceTableParameter(parameterDesc.GetAs<RefPtr<RHI::ResourceTable>>(), parameterDesc, shaderParameterMap); break;
+				case ShaderParameterType::Sampler: SetSamplerParameter(parameterDesc.GetAs<IntRef<RHI::SamplerState>>(), parameterDesc, shaderParameterMap); break;
+				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(parameterDesc.GetAs<IntRef<RHI::AccelerationStructure>>(), parameterDesc, shaderParameterMap); break;
+				case ShaderParameterType::ResourceTable: SetResourceTableParameter(parameterDesc.GetAs<IntRef<RHI::ResourceTable>>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDesc.GetData(), parameterDesc, shaderParameterMap); break;
 			}
 		});
@@ -62,7 +62,7 @@ namespace Volt
 				case ShaderParameterType::BufferUAV: CollectBufferUAVParameter(parameterDesc.GetAs<RGBufferUAVRef>(), parameterDesc, batchedShaderParameters); break;
 				case ShaderParameterType::TextureSRV: CollectTextureSRVParameter(parameterDesc.GetAs<RGTextureSRVRef>(), parameterDesc, batchedShaderParameters); break;
 				case ShaderParameterType::TextureUAV: CollectTextureUAVParameter(parameterDesc.GetAs<RGTextureUAVRef>(), parameterDesc, batchedShaderParameters); break;
-				case ShaderParameterType::Sampler: CollectSamplerParameter(parameterDesc.GetAs<RefPtr<RHI::SamplerState>>(), parameterDesc, batchedShaderParameters); break;
+				case ShaderParameterType::Sampler: CollectSamplerParameter(parameterDesc.GetAs<IntRef<RHI::SamplerState>>(), parameterDesc, batchedShaderParameters); break;
 				case ShaderParameterType::UniformBuffer: CollectUniformBufferParameter(parameterDesc.GetAs<RGUniformBufferRef>(), parameterDesc, batchedShaderParameters); break;
 				case ShaderParameterType::Parameter: CollectShaderParameter(parameterDesc.GetData(), parameterDesc, batchedShaderParameters); break;
 			}
@@ -70,7 +70,7 @@ namespace Volt
 	}
 
 	template<typename ParameterStruct>
-	void RenderContext::VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters)
+	void RenderContext::VerifyShaderParameters(IntRef<RHI::Shader> shader, const ParameterStruct* parameters)
 	{
 		VT_PROFILE_FUNCTION();
 

@@ -34,28 +34,28 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	RefPtr<RHI::SamplerState> SamplerStateCache::GetPointSampler()
+	IntRef<RHI::SamplerState> SamplerStateCache::GetPointSampler()
 	{
 		return GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>();
 	}
 
-	RefPtr<RHI::SamplerState> SamplerStateCache::GetBilinearSampler()
+	IntRef<RHI::SamplerState> SamplerStateCache::GetBilinearSampler()
 	{
 		return GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Nearest>();
 	}
 
-	RefPtr<RHI::SamplerState> SamplerStateCache::GetTrilinearSampler()
+	IntRef<RHI::SamplerState> SamplerStateCache::GetTrilinearSampler()
 	{
 		return GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>();
 	}
 
-	RefPtr<RHI::SamplerState> SamplerStateCache::GetAnisotropicSampler()
+	IntRef<RHI::SamplerState> SamplerStateCache::GetAnisotropicSampler()
 	{
 		return GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, 
 						RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>();
 	}
 
-	RefPtr<RHI::SamplerState> SamplerStateCache::GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc)
+	IntRef<RHI::SamplerState> SamplerStateCache::GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc)
 	{
 		const size_t samplerHash = Utility::GetHashFromSamplerDesc(samplerDesc);
 
@@ -67,7 +67,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::SamplerState> samplerState = RHI::SamplerState::Create(samplerDesc);
+		IntRef<RHI::SamplerState> samplerState = RHI::SamplerState::Create(samplerDesc);
 		{
 			std::scoped_lock lock{ m_cacheMutex };
 			m_cache[samplerHash] = samplerState;

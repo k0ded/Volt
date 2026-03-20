@@ -5,17 +5,17 @@
 
 namespace Volt::RHI
 {
-	RefPtr<CommandBuffer> CommandBuffer::Create(QueueType queueType)
+	IntRef<CommandBuffer> CommandBuffer::Create(QueueType queueType)
 	{
 		return RHIModule::GetInstance().CreateCommandBuffer(queueType);
 	}
 
-	RefPtr<CommandBuffer> CommandBuffer::Create()
+	IntRef<CommandBuffer> CommandBuffer::Create()
 	{
 		return RHIModule::GetInstance().CreateCommandBuffer(QueueType::Graphics);
 	}
 
-	RefPtr<CommandBuffer> CommandBuffer::CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration)
+	IntRef<CommandBuffer> CommandBuffer::CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration)
 	{
 		return RHIModule::GetInstance().CreateSecondaryCommandBuffer(renderingAttachmentDeclaration);
 	}

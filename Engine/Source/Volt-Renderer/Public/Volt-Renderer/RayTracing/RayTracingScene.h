@@ -36,7 +36,7 @@ namespace Volt
 			return m_accelerationStructure != nullptr;
 		}
 
-		VT_NODISCARD VT_INLINE RefPtr<RHI::AccelerationStructure> GetAccelerationStructure() const 
+		VT_NODISCARD VT_INLINE IntRef<RHI::AccelerationStructure> GetAccelerationStructure() const 
 		{ 
 			return m_accelerationStructure; 
 		}
@@ -56,11 +56,11 @@ namespace Volt
 			size_t index;
 		};
 
-		RefPtr<RHI::AccelerationStructure> m_accelerationStructure;
+		IntRef<RHI::AccelerationStructure> m_accelerationStructure;
 		Ref<GrowingGPUBuffer> m_instancesBuffer;
 
-		RefPtr<RHI::Fence> m_updateFence;
-		RefPtr<RHI::Fence> m_buildFence;
+		IntRef<RHI::Fence> m_updateFence;
+		IntRef<RHI::Fence> m_buildFence;
 
 		Vector<RayTracingInstance> m_instances;
 		Vector<Operation> m_frameOperations;

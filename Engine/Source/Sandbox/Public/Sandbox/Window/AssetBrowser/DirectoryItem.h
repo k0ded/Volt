@@ -22,7 +22,7 @@ namespace AssetBrowser
 
 	protected:
 		void PushID() override;
-		RefPtr<Volt::RHI::Image> GetIcon() const override;
+		IntRef<Volt::RHI::Image> GetIcon() const override;
 		ImVec4 GetBackgroundColor() const override;
 		std::string GetTypeName() const override;
 		void SetDragDropPayload() override;

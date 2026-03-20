@@ -43,7 +43,7 @@ namespace Volt
 		m_isDirty = false;
 	}
 
-	void RenderMaterial::BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, RefPtr<RHI::RenderPipeline> renderPipeline) const
+	void RenderMaterial::BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, IntRef<RHI::RenderPipeline> renderPipeline) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -61,7 +61,7 @@ namespace Volt
 				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(textureInfo.bindingName);
 				if (resourceBinding)
 				{
-					RefPtr<RHI::Image> texture = textureInfo.texture.GetResource();
+					IntRef<RHI::Image> texture = textureInfo.texture.GetResource();
 					if (!texture)
 					{
 						texture = Renderer::GetDefaultResources().white1x1;

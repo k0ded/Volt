@@ -10,7 +10,7 @@
 
 #include <RHIModule/Graphics/Swapchain.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
@@ -147,7 +147,7 @@ namespace Volt
 
 		} m_data;
 
-		RefPtr<RHI::Swapchain> m_swapchain;
+		IntRef<RHI::Swapchain> m_swapchain;
 
 		glm::uvec2 m_startPosition = 0;
 		glm::uvec2 m_startSize = 0;

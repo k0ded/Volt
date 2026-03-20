@@ -29,7 +29,7 @@ namespace Volt
 
 		void Render(ImDrawData* drawData, Window* window, bool shouldUseLoadRTAction);
 		void RenderPreviousFrame(Window* window);
-		uint64_t AddTexture(RefPtr<RHI::Image> image);
+		uint64_t AddTexture(IntRef<RHI::Image> image);
 
 		void RenderImGuiViewport(ImDrawData* drawData, Window* window, bool shouldUseLoadRTAction);
 		void AddViewportRenderContext(Window* window);
@@ -48,25 +48,25 @@ namespace Volt
 
 			RHI::CommandBufferSet commandBufferSet;
 
-			Vector<RefPtr<RHI::Buffer>> vertexBuffers;
-			Vector<RefPtr<RHI::Buffer>> indexBuffers;
-			RefPtr<RHI::UniformBuffer>  globalsUniformBuffer;
+			Vector<IntRef<RHI::Buffer>> vertexBuffers;
+			Vector<IntRef<RHI::Buffer>> indexBuffers;
+			IntRef<RHI::UniformBuffer>  globalsUniformBuffer;
 		};
 
 		void CreatePipeline();
 		void UpdateTexture(ImTextureData* textureData);
-		RefPtr<RHI::RenderPipeline> GetRenderPipeline(RHI::Image& renderTarget);
+		IntRef<RHI::RenderPipeline> GetRenderPipeline(RHI::Image& renderTarget);
 
 		void InitalizeMultiViewportSupport();
 
-		RefPtr<RHI::SamplerState> m_textureSampler;
-		RefPtr<RHI::Shader> m_vertexShader;
-		RefPtr<RHI::Shader> m_pixelShader;
+		IntRef<RHI::SamplerState> m_textureSampler;
+		IntRef<RHI::Shader> m_vertexShader;
+		IntRef<RHI::Shader> m_pixelShader;
 
-		std::unordered_set<RefPtr<RHI::Image>> m_images;
+		std::unordered_set<IntRef<RHI::Image>> m_images;
 
-		Vector<Vector<RefPtr<RHI::Image>>> m_usedImages;
-		Vector<Vector<RefPtr<RHI::ImageView>>> m_activeImageViews;
+		Vector<Vector<IntRef<RHI::Image>>> m_usedImages;
+		Vector<Vector<IntRef<RHI::ImageView>>> m_activeImageViews;
 
 		Map<Window*, RenderContext> m_renderContexts;
 		uint32_t m_frameIndex = 0;

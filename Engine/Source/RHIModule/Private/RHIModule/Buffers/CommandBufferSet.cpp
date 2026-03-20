@@ -52,12 +52,12 @@ namespace Volt::RHI
 		return *this;
 	}
 
-	RefPtr<CommandBuffer> CommandBufferSet::GetCurrentCommandBuffer() const
+	IntRef<CommandBuffer> CommandBufferSet::GetCurrentCommandBuffer() const
 	{
 		return m_commandBuffers.at(m_currentIndex);
 	}
 	
-	RefPtr<CommandBuffer> CommandBufferSet::IncrementAndGetCommandBuffer()
+	IntRef<CommandBuffer> CommandBufferSet::IncrementAndGetCommandBuffer()
 	{
 		m_currentIndex = (m_currentIndex + 1) % m_count;
 		return m_commandBuffers.at(m_currentIndex);
@@ -68,7 +68,7 @@ namespace Volt::RHI
 		m_currentIndex = (m_currentIndex + 1) % m_count;
 	}
 
-	RefPtr<Fence> CommandBufferSet::GetCurrentFence() const
+	IntRef<Fence> CommandBufferSet::GetCurrentFence() const
 	{
 		return m_fences.at(m_currentIndex);
 	}

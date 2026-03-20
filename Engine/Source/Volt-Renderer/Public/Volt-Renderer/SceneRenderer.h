@@ -105,7 +105,7 @@ namespace Volt
 
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
-		RefPtr<RHI::Image> GetFinalImage();
+		IntRef<RHI::Image> GetFinalImage();
 
 		void Enable();
 
@@ -145,9 +145,9 @@ namespace Volt
 
 		bool m_enabled = false;
 
-		RefPtr<RHI::Image> m_outputImage;
-		RefPtr<RHI::Image> m_previousColorImage;
-		RefPtr<RHI::Image> m_averageLuminanceImage;
+		IntRef<RHI::Image> m_outputImage;
+		IntRef<RHI::Image> m_previousColorImage;
+		IntRef<RHI::Image> m_averageLuminanceImage;
 
 		Ref<Mesh> m_skyboxMesh;
 

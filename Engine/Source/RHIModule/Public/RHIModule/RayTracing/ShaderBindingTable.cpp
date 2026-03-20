@@ -6,7 +6,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<ShaderBindingTable> ShaderBindingTable::Create(RefPtr<RayTracingPipeline> pipeline)
+	IntRef<ShaderBindingTable> ShaderBindingTable::Create(IntRef<RayTracingPipeline> pipeline)
 	{
 		return RHIModule::GetInstance().CreateShaderBindingTable(pipeline);
 	}

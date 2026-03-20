@@ -261,7 +261,7 @@ namespace Volt
 		billboardDrawCommand->isViewSpacePosition = isViewSpacePosition;
 	}
 
-	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, const glm::vec4& userData, bool isViewSpacePosition)
+	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, IntRef<RHI::Image> texture, const glm::vec4& userData, bool isViewSpacePosition)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -372,7 +372,7 @@ namespace Volt
 		return billboardInstancesBuffer;
 	}
 
-	void DebugRenderer::RenderBillboards(RenderGraph& renderGraph, RefPtr<RHI::Shader> pixelShader, const RenderView& view, const ShaderParameterRenderTargetBindings& renderTargets, bool shouldClear)
+	void DebugRenderer::RenderBillboards(RenderGraph& renderGraph, IntRef<RHI::Shader> pixelShader, const RenderView& view, const ShaderParameterRenderTargetBindings& renderTargets, bool shouldClear)
 	{
 		RGBufferRef billboardInstances = PrepareBillboardInstancesForRendering(renderGraph);
 
@@ -418,9 +418,9 @@ namespace Volt
 
 			context.BeginRendering(renderingInfo);
 			
-			RefPtr<RHI::RenderPipeline> pipeline = context.CreateRenderPipeline(pipelineState);
+			IntRef<RHI::RenderPipeline> pipeline = context.CreateRenderPipeline(pipelineState);
 
-			RefPtr<RHI::CommandBuffer> commandBuffer = context.GetRHICommandBuffer();
+			IntRef<RHI::CommandBuffer> commandBuffer = context.GetRHICommandBuffer();
 			commandBuffer->BindPipeline(pipeline);
 
 			ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = pipeline->GetShaderParameterMaps();

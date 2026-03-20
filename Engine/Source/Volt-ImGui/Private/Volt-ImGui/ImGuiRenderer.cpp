@@ -160,7 +160,7 @@ namespace Volt
 		commandBuffer->Begin(false);
 		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 
-		RefPtr<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window, renderWidth, renderHeight);
+		IntRef<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window, renderWidth, renderHeight);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -200,7 +200,7 @@ namespace Volt
 		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers[frameIndex], 0ull}}, 0);
 		commandBuffer->BindIndexBuffer(renderContext.indexBuffers[frameIndex], sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 
-		RefPtr<RHI::RenderPipeline> renderPipeline = GetRenderPipeline(*renderTarget);
+		IntRef<RHI::RenderPipeline> renderPipeline = GetRenderPipeline(*renderTarget);
 		commandBuffer->BindPipeline(renderPipeline);
 
 		STRING_HASH_CONSTEXPR StringHash TextureStringHash = StringHash::Construct("Tex");
@@ -250,7 +250,7 @@ namespace Volt
 
 				RHI::Image* image = (RHI::Image*)cmd->GetTexID();
 
-				RefPtr<RHI::ImageView> imageView = image->GetView();
+				IntRef<RHI::ImageView> imageView = image->GetView();
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
 				RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(renderPipeline);
@@ -313,7 +313,7 @@ namespace Volt
 			imageDesc.layers = 1;
 			imageDesc.initializeImage = false;
 
-			RefPtr<RHI::Image> image = RHI::Image::Create(imageDesc);
+			IntRef<RHI::Image> image = RHI::Image::Create(imageDesc);
 			m_images.insert(image);
 
 			textureData->SetTexID((ImTextureID)image.GetRaw());
@@ -340,7 +340,7 @@ namespace Volt
 			stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			stagingDesc.usage = RHI::BufferUsage::TransferSrc;
 
-			RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
+			IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
 			// Upload to buffer
 			{
@@ -352,8 +352,8 @@ namespace Volt
 				stagingBuffer->Unmap();
 			}
 
-			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-			RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+			IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+			IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 			commandBuffer->Begin();
 
@@ -391,7 +391,7 @@ namespace Volt
 		if (textureData->Status == ImTextureStatus_WantDestroy)
 		{
 			RHI::Image* image = (RHI::Image*)textureData->GetTexID();
-			RefPtr<RHI::Image> refImage = RefPtr<RHI::Image>::Attach(image);
+			IntRef<RHI::Image> refImage = IntRef<RHI::Image>::Attach(image);
 			m_images.erase(refImage);
 
 			textureData->SetTexID(ImTextureID_Invalid);
@@ -399,7 +399,7 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::RenderPipeline> ImGuiRenderer::GetRenderPipeline(RHI::Image& renderTarget)
+	IntRef<RHI::RenderPipeline> ImGuiRenderer::GetRenderPipeline(RHI::Image& renderTarget)
 	{
 		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
 		pipelineCreateInfo.shaders = { m_vertexShader, m_pixelShader };
@@ -416,7 +416,7 @@ namespace Volt
 		return PipelineStateCache::GetRenderPipeline(pipelineCreateInfo);
 	}
 
-	uint64_t ImGuiRenderer::AddTexture(RefPtr<RHI::Image> image)
+	uint64_t ImGuiRenderer::AddTexture(IntRef<RHI::Image> image)
 	{
 		VT_ENSURE(image);
 

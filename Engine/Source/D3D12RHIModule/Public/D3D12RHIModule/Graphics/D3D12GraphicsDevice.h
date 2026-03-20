@@ -28,7 +28,7 @@ namespace Volt::RHI
 		D3D12GraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer);
 		~D3D12GraphicsDevice() override;
 
-		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
+		IntRef<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
 
 		uint64_t GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const override;
 		uint64_t GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const override;
@@ -46,7 +46,7 @@ namespace Volt::RHI
 		Properties m_properties;
 		Capabilities m_capabilities;
 
-		Map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
+		Map<QueueType, IntRef<DeviceQueue>> m_deviceQueues;
 
 		ComPtr<ID3D12Device10> m_device;
 		

@@ -8,7 +8,7 @@
 
 namespace Volt::RHI
 {
-	void ShaderBindingMap::SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
+	void ShaderBindingMap::SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::CBV, bindingIndex))
 		{
@@ -24,7 +24,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::SamplerState> samplerState)
+	void ShaderBindingMap::SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::SamplerState> samplerState)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::Sampler, bindingIndex))
 		{
@@ -40,7 +40,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
+	void ShaderBindingMap::SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::UAV, bindingIndex))
 		{
@@ -56,7 +56,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
+	void ShaderBindingMap::SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::SRV, bindingIndex))
 		{
@@ -72,7 +72,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
+	void ShaderBindingMap::SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::UAV, bindingIndex))
 		{
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
+	void ShaderBindingMap::SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::SRV, bindingIndex))
 		{
@@ -104,7 +104,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
+	void ShaderBindingMap::SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::ImageView> imageView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::SRV, bindingIndex))
 		{
@@ -120,7 +120,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
+	void ShaderBindingMap::SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::ImageView> imageView)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::UAV, bindingIndex))
 		{
@@ -136,7 +136,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure)
+	void ShaderBindingMap::SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::AccelerationStructure> accelerationStructure)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::SRV, bindingIndex))
 		{
@@ -152,7 +152,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void ShaderBindingMap::SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset)
+	void ShaderBindingMap::SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView, uint64_t size, uint64_t offset)
 	{
 		if (!IsResourceSet(shaderStage, ShaderRegisterType::CBV, bindingIndex))
 		{
@@ -175,7 +175,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		InlineVector<ShaderStage, GetNumBindableShaderStages()> shaderStages;
-		for (const RefPtr<Shader>& shader : renderPipeline->GetShaders())
+		for (const IntRef<Shader>& shader : renderPipeline->GetShaders())
 		{
 			shaderStages.emplace_back(shader->GetShaderStage());
 		}
@@ -222,7 +222,7 @@ namespace Volt::RHI
 		return m_resourceBindings[bindingsIndex].resourceBindings;
 	}
 
-	void ShaderBindingMap::SetResourceTable(RefPtr<ResourceTable> resourceTable)
+	void ShaderBindingMap::SetResourceTable(IntRef<ResourceTable> resourceTable)
 	{
 		m_resourceTable = resourceTable;
 	}

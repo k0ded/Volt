@@ -68,7 +68,7 @@ namespace Volt
 		RHI::RenderPipelineCreateInfo renderPipelineInfo;
 
 		RHI::VertexBufferVector vertexBuffers;
-		RefPtr<RHI::Buffer> indexBuffer;
+		IntRef<RHI::Buffer> indexBuffer;
 
 		const RenderPrimitiveData* renderPrimitive = nullptr;
 		MeshDrawCommandSortKey sortKey;
@@ -100,7 +100,7 @@ namespace Volt
 		virtual bool ShouldIncludePrimitive(const RenderPrimitiveData* renderPrimitive) const = 0;
 
 	protected:
-		void BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader);
 		void RemoveMeshDrawCommand(const RenderPrimitiveData* renderPrimitive);
 
 	private:
@@ -123,7 +123,7 @@ namespace Volt
 		void MarkBucketDirty(MeshDrawCommandHashKey hashKey);
 
 		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
-		MeshDrawCommandSortKey GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		MeshDrawCommandSortKey GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader);
 		uint64_t GetMaterialPermutationHash(Weak<RenderMaterial> renderMaterial);
 		MaterialShader::InlineParameterBlock GetMaterialInlineParameterBlock(const RenderPrimitiveData* renderPrimitive) const;
 

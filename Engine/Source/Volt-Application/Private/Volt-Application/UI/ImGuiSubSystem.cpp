@@ -164,7 +164,7 @@ namespace Volt
 		m_isBlockingActive = false;
 	}
 
-	ImTextureID ImGuiSubSystem::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex /*= -1*/)
+	ImTextureID ImGuiSubSystem::GetTextureID(IntRef<RHI::Image> image, int32_t mipIndex /*= -1*/)
 	{
 		return m_imguiImplementation->GetTextureID(image, mipIndex);
 	}

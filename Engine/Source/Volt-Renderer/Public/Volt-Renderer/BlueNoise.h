@@ -6,7 +6,7 @@
 
 #include <AssetSystem/AssetReference.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt
 {

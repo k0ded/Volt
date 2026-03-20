@@ -9,7 +9,7 @@ namespace Volt::RHI
 	class D3D12Image final : public Image
 	{
 	public:
-		D3D12Image(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator);
+		D3D12Image(const ImageDesc& specification, const void* data, IntRef<GPUAllocator> allocator);
 		D3D12Image(const SwapchainImageDesc& specification);
 		~D3D12Image() override;
 
@@ -17,7 +17,7 @@ namespace Volt::RHI
 		void Release() override;
 		void GenerateMips() override;
 
-		RefPtr<ImageView> GetView(const ImageViewDesc& desc) override;
+		IntRef<ImageView> GetView(const ImageViewDesc& desc) override;
 
 		VT_INLINE const uint32_t GetWidth() const override { return m_desc.width; }
 		VT_INLINE const uint32_t GetHeight() const override { return m_desc.height; }

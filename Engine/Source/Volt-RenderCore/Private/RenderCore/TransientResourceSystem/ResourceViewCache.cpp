@@ -33,7 +33,7 @@ namespace Volt
 		: m_buffer(buffer)
 	{}
 
-	RefPtr<Volt::RHI::BufferView> TransientBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
+	IntRef<Volt::RHI::BufferView> TransientBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -47,7 +47,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::BufferView> bufferView = m_buffer->GetRHIBuffer()->GetView(desc);
+		IntRef<RHI::BufferView> bufferView = m_buffer->GetRHIBuffer()->GetView(desc);
 		m_views.emplace_back(hash, bufferView);
 
 		return bufferView;
@@ -57,7 +57,7 @@ namespace Volt
 		: m_texture(texture)
 	{}
 
-	RefPtr<RHI::ImageView> TransientImageViewCache::GetOrCreateView(const RHI::ImageViewDesc& desc)
+	IntRef<RHI::ImageView> TransientImageViewCache::GetOrCreateView(const RHI::ImageViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 		
@@ -71,7 +71,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::ImageView> imageView = m_texture->GetRHITexture()->GetView(desc);
+		IntRef<RHI::ImageView> imageView = m_texture->GetRHITexture()->GetView(desc);
 		m_views.emplace_back(hash, imageView);
 
 		return imageView;
@@ -82,7 +82,7 @@ namespace Volt
 	{
 	}
 
-	RefPtr<Volt::RHI::BufferView> TransientUniformBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
+	IntRef<Volt::RHI::BufferView> TransientUniformBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -96,7 +96,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::BufferView> bufferView = m_buffer->GetRHIUniformBuffer()->GetView(desc);
+		IntRef<RHI::BufferView> bufferView = m_buffer->GetRHIUniformBuffer()->GetView(desc);
 		m_views.emplace_back(hash, bufferView);
 
 		return bufferView;

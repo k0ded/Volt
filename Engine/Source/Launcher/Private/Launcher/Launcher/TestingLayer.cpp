@@ -66,7 +66,7 @@ bool TestingLayer::OnUpdateEvent(Volt::AppUpdateEvent& e)
 bool TestingLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 #if 0
-	RefPtr<RHI::Image> currentSwapchainImage = WindowManager::Get().GetMainWindow().GetSwapchain().GetCurrentImage();
+	IntRef<RHI::Image> currentSwapchainImage = WindowManager::Get().GetMainWindow().GetSwapchain().GetCurrentImage();
 
 	const uint32_t width = currentSwapchainImage->GetWidth();
 	const uint32_t height = currentSwapchainImage->GetHeight();

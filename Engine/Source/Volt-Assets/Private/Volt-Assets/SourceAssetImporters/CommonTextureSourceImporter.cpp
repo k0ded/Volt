@@ -104,7 +104,7 @@ namespace Volt
 		specification.mips = numMipMaps;
 		specification.debugName = importConfig.destinationFilename;
 
-		RefPtr<RHI::Image> image = nullptr;
+		IntRef<RHI::Image> image = nullptr;
 
 		if (shouldCompressTexture)
 		{

@@ -4,7 +4,7 @@
 #include "RHIModule/Memory/Allocation.h"
 
 #include <CoreUtilities/Core.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Profiling/Profiling.h>

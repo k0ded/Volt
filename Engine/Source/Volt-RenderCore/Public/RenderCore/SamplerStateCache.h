@@ -12,15 +12,15 @@ namespace Volt
 		SamplerStateCache();
 		~SamplerStateCache();
 
-		static RefPtr<RHI::SamplerState> GetPointSampler();
-		static RefPtr<RHI::SamplerState> GetBilinearSampler();
-		static RefPtr<RHI::SamplerState> GetTrilinearSampler();
-		static RefPtr<RHI::SamplerState> GetAnisotropicSampler();
+		static IntRef<RHI::SamplerState> GetPointSampler();
+		static IntRef<RHI::SamplerState> GetBilinearSampler();
+		static IntRef<RHI::SamplerState> GetTrilinearSampler();
+		static IntRef<RHI::SamplerState> GetAnisotropicSampler();
 
 		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, 
 				RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, 
 				RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
-		static RefPtr<RHI::SamplerState> GetSampler()
+		static IntRef<RHI::SamplerState> GetSampler()
 		{
 			RHI::SamplerStateDesc desc{};
 			desc.minFilter = min;
@@ -36,9 +36,9 @@ namespace Volt
 	private:
 		inline static SamplerStateCache* s_instance = nullptr;
 	
-		RefPtr<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc);
+		IntRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc);
 
 		std::mutex m_cacheMutex;
-		Map<size_t, RefPtr<RHI::SamplerState>> m_cache;
+		Map<size_t, IntRef<RHI::SamplerState>> m_cache;
 	};
 }

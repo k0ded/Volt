@@ -15,7 +15,7 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Synchronization/Fence.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Allocators/LinearAllocator.h>
@@ -83,15 +83,15 @@ namespace Volt
 		RGTextureSRVRef CreateSRV(RGTextureRef texture);
 		RGTextureUAVRef CreateUAV(RGTextureRef texture);
 
-		RGBufferRef RegisterExternalBuffer(RefPtr<RHI::Buffer> buffer);
-		RGUniformBufferRef RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer);
-		RGTextureRef RegisterExternalTexture(RefPtr<RHI::Image> texture);
+		RGBufferRef RegisterExternalBuffer(IntRef<RHI::Buffer> buffer);
+		RGUniformBufferRef RegisterExternalUniformBuffer(IntRef<RHI::UniformBuffer> uniformBuffer);
+		RGTextureRef RegisterExternalTexture(IntRef<RHI::Image> texture);
 
 		Ref<GPUReadbackBuffer> EnqueueBufferReadback(RGBufferRef srcBuffer);
 		Ref<GPUReadbackTexture> EnqueueTextureReadback(RGTextureRef srcTexture);
 
-		void EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage);
-		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::Buffer>* outBuffer);
+		void EnqueueTextureExtraction(RGTextureRef texture, IntRef<RHI::Image>* outImage);
+		void EnqueueBufferExtraction(RGBufferRef buffer, IntRef<RHI::Buffer>* outBuffer);
 
 		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
 		void EndMarker();
@@ -125,13 +125,13 @@ namespace Volt
 		struct TextureExtractionInfo
 		{
 			RGTextureRef texture;
-			RefPtr<RHI::Image>* outImagePtr = nullptr;
+			IntRef<RHI::Image>* outImagePtr = nullptr;
 		};
 
 		struct BufferExtractionInfo
 		{
 			RGBufferRef buffer;
-			RefPtr<RHI::Buffer>* outBufferPtr = nullptr;
+			IntRef<RHI::Buffer>* outBufferPtr = nullptr;
 		};
 
 	protected:
@@ -220,13 +220,13 @@ namespace Volt
 		void TransitionExternalResource(RGTextureRef texture);
 		void TransitionExternalResource(RGUniformBufferRef buffer);
 
-		void InsertBarriersIntoCommandBuffer(const RGCompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
-		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
+		void InsertBarriersIntoCommandBuffer(const RGCompiledPass::PassBarriers& passBarriers, const IntRef<RHI::CommandBuffer>& commandBuffer);
+		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const IntRef<RHI::CommandBuffer>& commandBuffer);
 
 		RGResourceRef TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
 		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle);
 
-		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
+		IntRef<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
 
 		RGSubResourceState* AllocateSubResourceState();
 		void AddPassDependency(RGPassRef pass, RGResourceType resourceType, uint32_t subResourceIndex, RGSubResourceState& subResourceState, const RGResourceAccessState& lastAccess);
@@ -269,7 +269,7 @@ namespace Volt
 
 		RGVector<ResourceLifetime> m_resourceLifetimes;
 
-		RefPtr<RHI::Fence> m_executionFence;
+		IntRef<RHI::Fence> m_executionFence;
 	
 		uint32_t m_nextResourceId = 0;
 		bool m_isCompiled : 1;

@@ -25,22 +25,22 @@ namespace Volt::RHI
 		Release();
 	}
 
-	void VulkanResourceTable::AddBuffer(RefPtr<Buffer> buffer)
+	void VulkanResourceTable::AddBuffer(IntRef<Buffer> buffer)
 	{
 		m_bufferTable.Add(buffer);
 	}
 
-	void VulkanResourceTable::AddTexture(RefPtr<Image> texture)
+	void VulkanResourceTable::AddTexture(IntRef<Image> texture)
 	{
 		m_textureTable.Add(texture);
 	}
 
-	void VulkanResourceTable::RemoveBuffer(RefPtr<Buffer> buffer)
+	void VulkanResourceTable::RemoveBuffer(IntRef<Buffer> buffer)
 	{
 		m_bufferTable.Remove(buffer);
 	}
 
-	void VulkanResourceTable::RemoveTexture(RefPtr<Image> texture)
+	void VulkanResourceTable::RemoveTexture(IntRef<Image> texture)
 	{
 		m_textureTable.Remove(texture);
 	}
@@ -75,7 +75,7 @@ namespace Volt::RHI
 		{
 			const uint32_t slotIndex = dirtyBufferSlots[i];
 
-			RefPtr<BufferView> bufferView = m_bufferTable.GetViewAtSlot(slotIndex);
+			IntRef<BufferView> bufferView = m_bufferTable.GetViewAtSlot(slotIndex);
 
 			VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 			const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		{
 			const uint32_t slotIndex = dirtyTextureSlots[i];
 
-			RefPtr<ImageView> imageView = m_textureTable.GetViewAtSlot(slotIndex);
+			IntRef<ImageView> imageView = m_textureTable.GetViewAtSlot(slotIndex);
 
 			VulkanImageView& vkImageView = imageView->AsRef<VulkanImageView>();
 			const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
@@ -98,12 +98,12 @@ namespace Volt::RHI
 		}
 	}
 
-	uint32_t VulkanResourceTable::GetBufferSlotIndex(RefPtr<Buffer> buffer)
+	uint32_t VulkanResourceTable::GetBufferSlotIndex(IntRef<Buffer> buffer)
 	{
 		return m_bufferTable.GetSlotForResource(buffer);
 	}
 
-	uint32_t VulkanResourceTable::GetTextureSlotIndex(RefPtr<Image> texture)
+	uint32_t VulkanResourceTable::GetTextureSlotIndex(IntRef<Image> texture)
 	{
 		return m_textureTable.GetSlotForResource(texture);
 	}
@@ -149,12 +149,12 @@ namespace Volt::RHI
 		return m_descriptorHeapAllocation->GetDeviceAddress();
 	}
 
-	uint32_t VulkanResourceTable::GetOrAddBufferSlotIndex(RefPtr<Buffer> buffer)
+	uint32_t VulkanResourceTable::GetOrAddBufferSlotIndex(IntRef<Buffer> buffer)
 	{
 		return m_bufferTable.GetOrAddSlotForResource(buffer);
 	}
 
-	uint32_t VulkanResourceTable::GetOrAddTextureSlotIndex(RefPtr<Image> texture)
+	uint32_t VulkanResourceTable::GetOrAddTextureSlotIndex(IntRef<Image> texture)
 	{
 		return m_textureTable.GetOrAddSlotForResource(texture);
 	}

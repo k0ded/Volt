@@ -51,7 +51,7 @@ namespace Volt::RHI
 		bool OnPostFrameUpdate(AppPostFrameUpdateEvent& event);
 
 		RHIModule* m_rhiModule = nullptr;
-		RefPtr<RHI::GraphicsContext> m_graphicsContext;
+		IntRef<RHI::GraphicsContext> m_graphicsContext;
 
 		RHIModuleHandle m_rhiModuleHandle = nullptr;
 	};

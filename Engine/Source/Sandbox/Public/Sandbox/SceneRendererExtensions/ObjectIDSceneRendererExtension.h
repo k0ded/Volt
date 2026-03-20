@@ -7,7 +7,7 @@
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/Shader/GlobalShader.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt::RHI
 {
@@ -48,10 +48,10 @@ public:
 	Volt::RGTextureRef OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage) override;
 	void OnRegistered(Volt::MeshPassProcessorRegistry& meshPassProcessorRegistry) override;
 
-	VT_INLINE VT_NODISCARD RefPtr<Volt::RHI::Image> GetIDImage() const { return m_objectIdImage; }
+	VT_INLINE VT_NODISCARD IntRef<Volt::RHI::Image> GetIDImage() const { return m_objectIdImage; }
 
 private:
-	RefPtr<Volt::RHI::Image> m_objectIdImage;
+	IntRef<Volt::RHI::Image> m_objectIdImage;
 
 	class ObjectIDPassMeshProcessor* m_meshPassProcessor = nullptr;
 };

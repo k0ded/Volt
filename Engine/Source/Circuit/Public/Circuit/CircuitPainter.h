@@ -17,7 +17,7 @@ namespace Circuit
 	class CIRCUIT_API CircuitPainter
 	{
 	public:
-		CircuitPainter(const Volt::Rect& allotedScreenArea, RefPtr<Volt::RHI::ResourceTable> resourceTable)
+		CircuitPainter(const Volt::Rect& allotedScreenArea, IntRef<Volt::RHI::ResourceTable> resourceTable)
 			: m_allottedScreenArea(allotedScreenArea), 
 			m_basePainter(this),
 			m_resourceTable(resourceTable)
@@ -36,12 +36,12 @@ namespace Circuit
 		void AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale = 1);
 		void AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color);
 		void AddText(float x, float y, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
-		void AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float scale = 1.f);
-		void AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
+		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float scale = 1.f);
+		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
 
 		std::vector<CircuitDrawCommand> GetCommands();
 	private:
-		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedScreenArea, RefPtr<Volt::RHI::ResourceTable> resourceTable) 
+		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedScreenArea, IntRef<Volt::RHI::ResourceTable> resourceTable) 
 			: m_allottedScreenArea(allotedScreenArea),
 			m_basePainter(basePainter),
 			m_resourceTable(resourceTable)
@@ -57,7 +57,7 @@ namespace Circuit
 		Volt::Rect m_allottedScreenArea;
 
 		CircuitPainter* m_basePainter = nullptr;
-		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
+		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
 
 		bool m_calculateBounds = false;
 

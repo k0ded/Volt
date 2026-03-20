@@ -9,7 +9,7 @@
 
 namespace Volt::RHI
 {
-	VulkanShaderBindingTable::VulkanShaderBindingTable(RefPtr<RayTracingPipeline> pipeline)
+	VulkanShaderBindingTable::VulkanShaderBindingTable(IntRef<RayTracingPipeline> pipeline)
 		: m_pipeline(pipeline)
 	{
 		Invalidate();
@@ -20,7 +20,7 @@ namespace Volt::RHI
 		Release();
 	}
 
-	bool VulkanShaderBindingTable::IsShaderInTable(RefPtr<Shader> shader) const
+	bool VulkanShaderBindingTable::IsShaderInTable(IntRef<Shader> shader) const
 	{
 		return m_pipeline->IsShaderInPipeline(shader);
 	}
@@ -44,7 +44,7 @@ namespace Volt::RHI
 
 		VulkanRayTracingPipeline& vulkanPipeline = m_pipeline->AsRef<VulkanRayTracingPipeline>();
 
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
 		BarrierVector barriers{};

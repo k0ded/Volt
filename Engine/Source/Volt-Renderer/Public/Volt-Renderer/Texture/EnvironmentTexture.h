@@ -14,10 +14,10 @@ namespace Volt
 	{
 	public:
 		EnvironmentTexture() = default;
-		EnvironmentTexture(RefPtr<RHI::Image> diffuseImage, RefPtr<RHI::Image> specularImage);
+		EnvironmentTexture(IntRef<RHI::Image> diffuseImage, IntRef<RHI::Image> specularImage);
 
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetDiffuseImage() const { return m_diffuseImage; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetSpecularImage() const { return m_specularImage; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetDiffuseImage() const { return m_diffuseImage; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetSpecularImage() const { return m_specularImage; }
 
 		static AssetType GetStaticType() { return AssetTypes::EnvironmentTexture; }
 		AssetType GetType() const override { return GetStaticType(); }
@@ -25,7 +25,7 @@ namespace Volt
 		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
-		RefPtr<RHI::Image> m_diffuseImage;
-		RefPtr<RHI::Image> m_specularImage;
+		IntRef<RHI::Image> m_diffuseImage;
+		IntRef<RHI::Image> m_specularImage;
 	};
 }

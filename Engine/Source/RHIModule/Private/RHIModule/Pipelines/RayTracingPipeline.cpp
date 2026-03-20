@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<RayTracingPipeline> RayTracingPipeline::Create(const RayTracingPipelineCreateInfo& createInfo)
+	IntRef<RayTracingPipeline> RayTracingPipeline::Create(const RayTracingPipelineCreateInfo& createInfo)
 	{
 		return RHIModule::GetInstance().CreateRayTracingPipeline(createInfo);
 	}

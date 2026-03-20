@@ -500,7 +500,7 @@ namespace Volt::RHI
 
 		const auto& rayTracingPipelineProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetDeviceProperties().rayTracingPipelineProperties;
 
-		auto GetStridedDeviceAddressRegion = [&rayTracingPipelineProperties](const VulkanRayTracingPipeline::RayTracingShaderData& data, RefPtr<Buffer> bindingTable)
+		auto GetStridedDeviceAddressRegion = [&rayTracingPipelineProperties](const VulkanRayTracingPipeline::RayTracingShaderData& data, IntRef<Buffer> bindingTable)
 		{
 			VkStridedDeviceAddressRegionKHR result
 			{
@@ -826,7 +826,7 @@ namespace Volt::RHI
 		Vector<VkAccelerationStructureGeometryKHR> geometries;
 		Vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometries;
 
-		Vector<RefPtr<Buffer>> scratchBuffers;
+		Vector<IntRef<Buffer>> scratchBuffers;
 
 		auto device = GraphicsContext::GetDevice();
 
@@ -923,7 +923,7 @@ namespace Volt::RHI
 			scratchBufferDesc.usage = BufferUsage::StorageBuffer | BufferUsage::DeviceAddress;
 			scratchBufferDesc.debugName = "AS Scratch Buffer";
 
-			RefPtr<Buffer> scratchBuffer = Buffer::Create(scratchBufferDesc);
+			IntRef<Buffer> scratchBuffer = Buffer::Create(scratchBufferDesc);
 			scratchBuffers.push_back(scratchBuffer);
 
 			vulkanBuildInfo.scratchData.deviceAddress = ::Utility::Align(scratchBuffer->GetDeviceAddress(), accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment);
@@ -1304,14 +1304,14 @@ namespace Volt::RHI
 		return m_commandBufferLevel;
 	}
 
-	RefPtr<CommandBuffer> VulkanCommandBuffer::CreateSecondaryCommandBuffer() const
+	IntRef<CommandBuffer> VulkanCommandBuffer::CreateSecondaryCommandBuffer() const
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
-		return RefPtr<VulkanCommandBuffer>::Create(this);
+		return IntRef<VulkanCommandBuffer>::Create(this);
 	}
 
-	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const
+	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(IntRef<CommandBuffer> commandBuffer) const
 	{
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
 		VT_ENSURE(commandBuffer->GetCommandBufferLevel() == CommandBufferLevel::Secondary);
@@ -1320,7 +1320,7 @@ namespace Volt::RHI
 		vkCmdExecuteCommands(m_commandBufferData.commandBuffer, 1, &cmdBuffer);
 	}
 
-	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const
+	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffers(Vector<IntRef<CommandBuffer>> commandBuffers) const
 	{
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
 
@@ -1551,7 +1551,7 @@ namespace Volt::RHI
 		{
 			case ShaderRegisterType::CBV:
 			{
-				VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+				VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
 				const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
 
 				// If dynamic offsets were provided it's a special case, because the descriptor is
@@ -1578,7 +1578,7 @@ namespace Volt::RHI
 			}
 			case ShaderRegisterType::Sampler:
 			{
-				VulkanSamplerState& vkSampler = binding.resource.Get<RefPtr<RHI::SamplerState>>()->AsRef<VulkanSamplerState>();
+				VulkanSamplerState& vkSampler = binding.resource.Get<IntRef<RHI::SamplerState>>()->AsRef<VulkanSamplerState>();
 				const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
 				vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
 
@@ -1591,7 +1591,7 @@ namespace Volt::RHI
 					case ShaderResourceType::TexelBuffer:
 					case ShaderResourceType::StructuredBuffer:
 					{
-						VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+						VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
@@ -1599,7 +1599,7 @@ namespace Volt::RHI
 					};
 					case ShaderResourceType::Texture:
 					{
-						VulkanImageView& vkImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<VulkanImageView>();
+						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
 						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
@@ -1611,7 +1611,7 @@ namespace Volt::RHI
 						descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
 						descriptorInfo.pNext = nullptr;
 						descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-						descriptorInfo.data.accelerationStructure = binding.resource.Get<RefPtr<RHI::AccelerationStructure>>()->GetDeviceAddress();
+						descriptorInfo.data.accelerationStructure = binding.resource.Get<IntRef<RHI::AccelerationStructure>>()->GetDeviceAddress();
 
 						const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
 
@@ -1629,7 +1629,7 @@ namespace Volt::RHI
 					case ShaderResourceType::TexelBuffer:
 					case ShaderResourceType::StructuredBuffer:
 					{
-						VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+						VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& uavDescriptor = vkBufferView.GetUAVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &uavDescriptor.vkDescriptorInfo, uavDescriptor.descriptorSize, outDescriptorPtr);
@@ -1638,7 +1638,7 @@ namespace Volt::RHI
 
 					case ShaderResourceType::Texture:
 					{
-						VulkanImageView& vkImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<VulkanImageView>();
+						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
 						const VulkanImageView::DescriptorDescription& uavDescriptor = vkImageView.GetUAVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &uavDescriptor.vkDescriptorInfo, uavDescriptor.descriptorSize, outDescriptorPtr);
@@ -1720,7 +1720,7 @@ namespace Volt::RHI
 
 		if (activePipelineDescriptorSets.accessesResourceTable)
 		{
-			RefPtr<ResourceTable> rayTracingResourceTable = shaderBindingsMap.GetResourceTable();
+			IntRef<ResourceTable> rayTracingResourceTable = shaderBindingsMap.GetResourceTable();
 			if (rayTracingResourceTable != nullptr)
 			{
 				VulkanResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanResourceTable>();
@@ -1771,7 +1771,7 @@ namespace Volt::RHI
 		return true;
 	}
 
-	void VulkanCommandBuffer::BindDescriptorBuffer(RefPtr<ResourceTable> rayTracingResourceTable)
+	void VulkanCommandBuffer::BindDescriptorBuffer(IntRef<ResourceTable> rayTracingResourceTable)
 	{
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();

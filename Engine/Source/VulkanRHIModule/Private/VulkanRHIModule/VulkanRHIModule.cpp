@@ -42,137 +42,137 @@ namespace Volt::RHI
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
-	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const
+	IntRef<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const
 	{
-		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
+		IntRef<BufferView> bufferView = IntRef<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
 
 		return bufferView;
 	}
 
-	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
+	IntRef<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
 	{
-		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
+		IntRef<BufferView> bufferView = IntRef<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
 
 		return bufferView;
 	}
 
-	RefPtr<CommandBuffer> VulkanRHIModule::CreateCommandBuffer(QueueType queueType) const
+	IntRef<CommandBuffer> VulkanRHIModule::CreateCommandBuffer(QueueType queueType) const
 	{
-		RefPtr<VulkanCommandBuffer> commandBuffer = RefPtr<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(queueType));
+		IntRef<VulkanCommandBuffer> commandBuffer = IntRef<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(queueType));
 		commandBuffer->SetArena(&m_commandBufferArena);
 
 		return commandBuffer;
 	}
 
-	RefPtr<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc) const
+	IntRef<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc) const
 	{
-		RefPtr<Buffer> storageBuffer = RefPtr<VulkanBuffer>::AttachNoRef(m_bufferArena.Allocate(desc));
+		IntRef<Buffer> storageBuffer = IntRef<VulkanBuffer>::AttachNoRef(m_bufferArena.Allocate(desc));
 		storageBuffer->SetArena(&m_bufferArena);
 		return storageBuffer;
 	}
 
-	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const
+	IntRef<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const
 	{
-		RefPtr<UniformBuffer> uniformBuffer = RefPtr<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
+		IntRef<UniformBuffer> uniformBuffer = IntRef<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
 		uniformBuffer->SetArena(&m_uniformBufferArena);
 		return uniformBuffer;
 	}
 
-	RefPtr<GraphicsContext> VulkanRHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
+	IntRef<GraphicsContext> VulkanRHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanGraphicsContext>::Create(createInfo);
+		return IntRef<VulkanGraphicsContext>::Create(createInfo);
 	}
 
-	RefPtr<GraphicsDevice> VulkanRHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const
+	IntRef<GraphicsDevice> VulkanRHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const
 	{
-		return RefPtr<VulkanGraphicsDevice>::Create(createInfo, physicalGraphicsDevice, enableDebugLayer);
+		return IntRef<VulkanGraphicsDevice>::Create(createInfo, physicalGraphicsDevice, enableDebugLayer);
 	}
 
-	RefPtr<PhysicalGraphicsDevice> VulkanRHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const
+	IntRef<PhysicalGraphicsDevice> VulkanRHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const
 	{
-		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo, enableDebugLayer);
+		return IntRef<VulkanPhysicalGraphicsDevice>::Create(createInfo, enableDebugLayer);
 	}
 
-	RefPtr<Swapchain> VulkanRHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
+	IntRef<Swapchain> VulkanRHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanSwapchain>::Create(createInfo);
+		return IntRef<VulkanSwapchain>::Create(createInfo);
 	}
 
-	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data) const
+	IntRef<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data) const
 	{
-		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification, data));
+		IntRef<VulkanImage> image = IntRef<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification, data));
 		image->SetArena(&m_imageArena);
 
 		return image;
 	}
 
-	RefPtr<Image> VulkanRHIModule::CreateImage(const SwapchainImageDesc& specification) const
+	IntRef<Image> VulkanRHIModule::CreateImage(const SwapchainImageDesc& specification) const
 	{
-		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification));
+		IntRef<VulkanImage> image = IntRef<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification));
 		image->SetArena(&m_imageArena);
 
 		return image;
 	}
 
-	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
+	IntRef<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
 	{
-		RefPtr<ImageView> imageView = RefPtr<VulkanImageView>::AttachNoRef(m_imageViewArena.Allocate(specification, image));
+		IntRef<ImageView> imageView = IntRef<VulkanImageView>::AttachNoRef(m_imageViewArena.Allocate(specification, image));
 		imageView->SetArena(&m_imageViewArena);
 
 		return imageView;
 	}
 
-	RefPtr<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
+	IntRef<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
-		RefPtr<SamplerState> samplerState = RefPtr<VulkanSamplerState>::AttachNoRef(m_samplerStateArena.Allocate(createInfo));
+		IntRef<SamplerState> samplerState = IntRef<VulkanSamplerState>::AttachNoRef(m_samplerStateArena.Allocate(createInfo));
 		samplerState->SetArena(&m_samplerStateArena);
 
 		return samplerState;
 	}
 
-	RefPtr<DefaultGPUAllocator> VulkanRHIModule::CreateDefaultAllocator() const
+	IntRef<DefaultGPUAllocator> VulkanRHIModule::CreateDefaultAllocator() const
 	{
-		return RefPtr<VulkanDefaultGPUAllocator>::Create();
+		return IntRef<VulkanDefaultGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientHeap> VulkanRHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
+	IntRef<TransientHeap> VulkanRHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanTransientHeap>::Create(createInfo);
+		return IntRef<VulkanTransientHeap>::Create(createInfo);
 	}
 
-	RefPtr<Volt::RHI::ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader> shader) const
+	IntRef<Volt::RHI::ComputePipeline> VulkanRHIModule::CreateComputePipeline(IntRef<Shader> shader) const
 	{
-		return RefPtr<VulkanComputePipeline>::Create(shader);
+		return IntRef<VulkanComputePipeline>::Create(shader);
 	}
 
-	RefPtr<RayTracingPipeline> VulkanRHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	IntRef<RayTracingPipeline> VulkanRHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanRayTracingPipeline>::Create(createInfo);
+		return IntRef<VulkanRayTracingPipeline>::Create(createInfo);
 	}
 
-	RefPtr<ShaderCompiler> VulkanRHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
+	IntRef<ShaderCompiler> VulkanRHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanShaderCompiler>::Create(createInfo);
+		return IntRef<VulkanShaderCompiler>::Create(createInfo);
 	}
 
-	RefPtr<Fence> VulkanRHIModule::CreateFence() const
+	IntRef<Fence> VulkanRHIModule::CreateFence() const
 	{
-		RefPtr<VulkanFence> fence = RefPtr<VulkanFence>::AttachNoRef(m_fenceArena.Allocate());
+		IntRef<VulkanFence> fence = IntRef<VulkanFence>::AttachNoRef(m_fenceArena.Allocate());
 		fence->SetArena(&m_fenceArena);
 
 		return fence;
 	}
 
-	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	IntRef<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanAccelerationStructure>::Create(createInfo);
+		return IntRef<VulkanAccelerationStructure>::Create(createInfo);
 	}
 
-	RefPtr<ShaderBindingTable> VulkanRHIModule::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	IntRef<ShaderBindingTable> VulkanRHIModule::CreateShaderBindingTable(IntRef<RayTracingPipeline> pipeline) const
 	{
-		return RefPtr<VulkanShaderBindingTable>::Create(pipeline);
+		return IntRef<VulkanShaderBindingTable>::Create(pipeline);
 	}
 
 	void VulkanRHIModule::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)
@@ -213,24 +213,24 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.FlushAll();
 	}
 
-	RefPtr<Shader> VulkanRHIModule::CreateShader(const ShaderCreateInfo& specification) const
+	IntRef<Shader> VulkanRHIModule::CreateShader(const ShaderCreateInfo& specification) const
 	{
-		return RefPtr<VulkanShader>::Create(specification);
+		return IntRef<VulkanShader>::Create(specification);
 	}
 
-	RefPtr<Shader> VulkanRHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
+	IntRef<Shader> VulkanRHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
 	{
-		return RefPtr<VulkanShader>::Create(specification, source);
+		return IntRef<VulkanShader>::Create(specification, source);
 	}
 
-	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
+	IntRef<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
+		return IntRef<VulkanRenderPipeline>::Create(createInfo);
 	}
 
-	RefPtr<ResourceTable> VulkanRHIModule::CreateResourceTable() const
+	IntRef<ResourceTable> VulkanRHIModule::CreateResourceTable() const
 	{
-		return RefPtr<VulkanResourceTable>::Create();
+		return IntRef<VulkanResourceTable>::Create();
 	}
 
 	void VulkanRHIModule::EndFrame()
@@ -239,24 +239,24 @@ namespace Volt::RHI
 		vkGraphicsContext.GetDescriptorHeap().Flush();
 	}
 
-	RefPtr<CommandBuffer> VulkanRHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
+	IntRef<CommandBuffer> VulkanRHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
 	{
-		RefPtr<VulkanCommandBuffer> commandBuffer = RefPtr<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(renderingAttachmentDeclaration));
+		IntRef<VulkanCommandBuffer> commandBuffer = IntRef<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(renderingAttachmentDeclaration));
 		commandBuffer->SetArena(&m_commandBufferArena);
 
 		return commandBuffer;
 	}
 
-	RefPtr<TransientBuffer> VulkanRHIModule::CreateTransientBuffer(const BufferDesc& desc) const
+	IntRef<TransientBuffer> VulkanRHIModule::CreateTransientBuffer(const BufferDesc& desc) const
 	{
-		RefPtr<TransientBuffer> buffer = RefPtr<VulkanTransientBuffer>::AttachNoRef(m_transientBufferArena.Allocate(desc));
+		IntRef<TransientBuffer> buffer = IntRef<VulkanTransientBuffer>::AttachNoRef(m_transientBufferArena.Allocate(desc));
 		buffer->SetArena(&m_transientBufferArena);
 		return buffer;
 	}
 
-	RefPtr<TransientImage> VulkanRHIModule::CreateTransientImage(const ImageDesc& desc) const
+	IntRef<TransientImage> VulkanRHIModule::CreateTransientImage(const ImageDesc& desc) const
 	{
-		RefPtr<VulkanTransientImage> image = RefPtr<VulkanTransientImage>::AttachNoRef(m_transientImageArena.Allocate(desc));
+		IntRef<VulkanTransientImage> image = IntRef<VulkanTransientImage>::AttachNoRef(m_transientImageArena.Allocate(desc));
 		image->SetArena(&m_transientImageArena);
 		return image;
 	}

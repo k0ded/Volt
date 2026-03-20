@@ -35,13 +35,13 @@ namespace Volt
 			RHI::BufferDesc bufferDesc = m_buffer->GetDesc();
 			bufferDesc.numElements = std::max(static_cast<uint32_t>(bufferDesc.numElements * GrowMultiplier), requestedElementCount);
 
-			RefPtr<RHI::Buffer> tempBuffer = RHI::Buffer::Create(bufferDesc);
+			IntRef<RHI::Buffer> tempBuffer = RHI::Buffer::Create(bufferDesc);
 
 			// #TODO_Ivar: Make this optional
 			// Copy previous contents into new buffer.
 			{
-				RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-				RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+				IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+				IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 				commandBuffer->Begin();
 
@@ -88,7 +88,7 @@ namespace Volt
 		return bufferDesc.numElements * bufferDesc.elementSize;
 	}
 
-	RefPtr<RHI::Buffer> GrowingGPUBuffer::GetResource() const
+	IntRef<RHI::Buffer> GrowingGPUBuffer::GetResource() const
 	{
 		return m_buffer;
 	}

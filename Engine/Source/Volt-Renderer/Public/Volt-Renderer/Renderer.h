@@ -39,15 +39,15 @@ namespace Volt
 		Ref<RenderMaterial> defaultTranslucentMaterial;
 		Ref<Mesh> defaultMesh;
 
-		RefPtr<RHI::Image> DFGLuT;
-		RefPtr<RHI::Image> blackCubeTexture;
-		RefPtr<RHI::Image> black1x1x1;
-		RefPtr<RHI::Image> white1x1;
-		RefPtr<RHI::Image> black1x1;
+		IntRef<RHI::Image> DFGLuT;
+		IntRef<RHI::Image> blackCubeTexture;
+		IntRef<RHI::Image> black1x1x1;
+		IntRef<RHI::Image> white1x1;
+		IntRef<RHI::Image> black1x1;
 
-		RefPtr<RHI::Buffer> cubeIndexBuffer;
+		IntRef<RHI::Buffer> cubeIndexBuffer;
 
-		RefPtr<RHI::Shader> generateMipMapsShader;
+		IntRef<RHI::Shader> generateMipMapsShader;
 
 		VT_INLINE void Clear()
 		{
@@ -76,8 +76,8 @@ namespace Volt
 	public:
 		struct EnvironmentTextures
 		{
-			RefPtr<RHI::Image> diffuse;
-			RefPtr<RHI::Image> specular;
+			IntRef<RHI::Image> diffuse;
+			IntRef<RHI::Image> specular;
 		};
 
 		Renderer();

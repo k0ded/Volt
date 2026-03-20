@@ -504,7 +504,7 @@ float Sandbox::DrawTitlebar()
 		ImGui::SameLine();
 
 		const bool isMaximized = Volt::WindowManager::Get().GetMainWindow().IsMaximized();
-		RefPtr<Volt::RHI::Image> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
+		IntRef<Volt::RHI::Image> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
 
 		if (UI::ImageButton("##maximize", UI::GetTextureID(maximizeTexture), { buttonSize, buttonSize }))
 		{

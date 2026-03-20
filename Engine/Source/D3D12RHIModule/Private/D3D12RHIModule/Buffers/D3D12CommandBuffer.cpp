@@ -932,21 +932,21 @@ namespace Volt::RHI
 		return m_commandBufferLevel;
 	}
 
-	RefPtr<CommandBuffer> D3D12CommandBuffer::CreateSecondaryCommandBuffer() const
+	IntRef<CommandBuffer> D3D12CommandBuffer::CreateSecondaryCommandBuffer() const
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
-		return RefPtr<D3D12CommandBuffer>::Create(this);
+		return IntRef<D3D12CommandBuffer>::Create(this);
 	}
 
-	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const
+	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffer(IntRef<CommandBuffer> commandBuffer) const
 	{
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
 		VT_ENSURE(commandBuffer->GetCommandBufferLevel() == CommandBufferLevel::Secondary);
 		VT_ENSURE(false);
 	}
 
-	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const
+	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffers(Vector<IntRef<CommandBuffer>> commandBuffers) const
 	{
 		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
 		VT_ENSURE(false);
@@ -1011,7 +1011,7 @@ namespace Volt::RHI
 				// Special case for offset uniform buffers
 				if ((binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0) && binding.registerType == ShaderRegisterType::CBV)
 				{
-					D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
+					D3D12BufferView& d3d12BufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 					perShaderStageOffsetCBVDescriptors[shaderStageDescriptorSetIndex].deviceAddress = d3d12BufferView.GetDeviceAddress() + binding.uniformBufferOffset;
 					continue;
 				}
@@ -1035,7 +1035,7 @@ namespace Volt::RHI
 				{
 					case ShaderRegisterType::CBV:
 					{
-						D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
+						D3D12BufferView& d3d12BufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 						srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetCBVDescriptor().GetCPUPointer());
 						break;
 					}
@@ -1047,14 +1047,14 @@ namespace Volt::RHI
 							case ShaderResourceType::StructuredBuffer:
 							case ShaderResourceType::TexelBuffer:
 							{
-								D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
+								D3D12BufferView& d3d12BufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetSRVDescriptor().GetCPUPointer());
 								break;
 							}
 
 							case ShaderResourceType::Texture:
 							{
-								D3D12ImageView& d3d12ImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<D3D12ImageView>();
+								D3D12ImageView& d3d12ImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<D3D12ImageView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12ImageView.GetSRVDescriptor().GetCPUPointer());
 								break;
 							}
@@ -1075,14 +1075,14 @@ namespace Volt::RHI
 							case ShaderResourceType::StructuredBuffer:
 							case ShaderResourceType::TexelBuffer:
 							{
-								D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
+								D3D12BufferView& d3d12BufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetUAVDescriptor().GetCPUPointer());
 								break;
 							}
 
 							case ShaderResourceType::Texture:
 							{
-								D3D12ImageView& d3d12ImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<D3D12ImageView>();
+								D3D12ImageView& d3d12ImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<D3D12ImageView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12ImageView.GetUAVDescriptor().GetCPUPointer());
 								break;
 							}
@@ -1093,7 +1093,7 @@ namespace Volt::RHI
 
 					case ShaderRegisterType::Sampler:
 					{
-						D3D12SamplerState& d3d12SamplerState = binding.resource.Get<RefPtr<RHI::SamplerState>>()->AsRef<D3D12SamplerState>();
+						D3D12SamplerState& d3d12SamplerState = binding.resource.Get<IntRef<RHI::SamplerState>>()->AsRef<D3D12SamplerState>();
 						srcSamplerDescriptors[samplerDescriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12SamplerState.GetDescriptor().GetCPUPointer());
 						break;
 					}

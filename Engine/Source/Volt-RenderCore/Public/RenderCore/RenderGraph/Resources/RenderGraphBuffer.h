@@ -198,12 +198,12 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 		const RGBufferSRVDesc& GetDesc() const { return m_desc; }
 
-		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
-		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE void AssignRHIView(IntRef<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE IntRef<RHI::BufferView> GetRHIView() { return m_rhiView; }
 		VT_INLINE bool IsTexelBufferSRV() const { return m_desc.format != RHI::PixelFormat::UNDEFINED; }
 
 	private:
-		RefPtr<RHI::BufferView> m_rhiView;
+		IntRef<RHI::BufferView> m_rhiView;
 		RGBufferSRVDesc m_desc;
 	};
 
@@ -258,12 +258,12 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 		const RGBufferUAVDesc& GetDesc() const { return m_desc; }
 	
-		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
-		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE void AssignRHIView(IntRef<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE IntRef<RHI::BufferView> GetRHIView() { return m_rhiView; }
 		VT_INLINE bool IsTexelBufferUAV() const { return m_desc.format != RHI::PixelFormat::UNDEFINED; }
 
 	private:
-		RefPtr<RHI::BufferView> m_rhiView;
+		IntRef<RHI::BufferView> m_rhiView;
 		RGBufferUAVDesc m_desc;
 	};
 }

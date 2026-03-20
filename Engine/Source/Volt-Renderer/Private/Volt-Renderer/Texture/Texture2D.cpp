@@ -51,7 +51,7 @@ namespace Volt
 		m_image = RHI::Image::Create(imageSpec, data);
 	}
 
-	Texture2D::Texture2D(RefPtr<RHI::Image> image)
+	Texture2D::Texture2D(IntRef<RHI::Image> image)
 		: m_image(image)
 	{
 	}
@@ -71,7 +71,7 @@ namespace Volt
 		return m_image->GetHeight();
 	}
 
-	void Texture2D::SetImage(RefPtr<RHI::Image> image)
+	void Texture2D::SetImage(IntRef<RHI::Image> image)
 	{
 		m_image = image;
 	}
@@ -112,7 +112,7 @@ namespace Volt
 		return CreateRef<Texture2D>(format, width, height, data);
 	}
 
-	Ref<Texture2D> Texture2D::Create(RefPtr<RHI::Image> image)
+	Ref<Texture2D> Texture2D::Create(IntRef<RHI::Image> image)
 	{
 		return CreateRef<Texture2D>(image);
 	}

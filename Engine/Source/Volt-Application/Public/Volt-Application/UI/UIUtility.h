@@ -24,7 +24,7 @@
 
 #include <Volt-Imgui/ImGuiNotifications.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 #include <filesystem>
 
@@ -50,7 +50,7 @@ namespace UI
 	};
 
 
-	 VTAPP_API ImTextureID GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex = -1);
+	 VTAPP_API ImTextureID GetTextureID(IntRef<Volt::RHI::Image> texture, int32_t mipIndex = -1);
 	 VTAPP_API ImTextureID GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex = -1);
 	
 	 VTAPP_API void Header(const std::string& text);
@@ -76,7 +76,7 @@ namespace UI
 	 VTAPP_API bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
 	 VTAPP_API bool ImageButtonState(const std::string& id, bool state, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
 	
-	 VTAPP_API bool TreeNodeImage(RefPtr<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen = false);
+	 VTAPP_API bool TreeNodeImage(IntRef<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen = false);
 	 VTAPP_API bool TreeNodeFramed(const std::string& text, bool alwaysOpen = false, float rounding = 0.f);
 	 VTAPP_API void TreeNodePop();
 	

@@ -18,21 +18,21 @@ namespace Volt::RHI
 
 		virtual ~ResourceTable() = default;
 
-		virtual void AddBuffer(RefPtr<Buffer> buffer) = 0;
-		virtual void AddTexture(RefPtr<Image> texture) = 0;
+		virtual void AddBuffer(IntRef<Buffer> buffer) = 0;
+		virtual void AddTexture(IntRef<Image> texture) = 0;
 
-		virtual void RemoveBuffer(RefPtr<Buffer> buffer) = 0;
-		virtual void RemoveTexture(RefPtr<Image> texture) = 0;
+		virtual void RemoveBuffer(IntRef<Buffer> buffer) = 0;
+		virtual void RemoveTexture(IntRef<Image> texture) = 0;
 
-		virtual uint32_t GetBufferSlotIndex(RefPtr<Buffer> buffer) = 0;
-		virtual uint32_t GetTextureSlotIndex(RefPtr<Image> texture) = 0;
+		virtual uint32_t GetBufferSlotIndex(IntRef<Buffer> buffer) = 0;
+		virtual uint32_t GetTextureSlotIndex(IntRef<Image> texture) = 0;
 
-		virtual uint32_t GetOrAddBufferSlotIndex(RefPtr<Buffer> buffer) = 0;
-		virtual uint32_t GetOrAddTextureSlotIndex(RefPtr<Image> texture) = 0;
+		virtual uint32_t GetOrAddBufferSlotIndex(IntRef<Buffer> buffer) = 0;
+		virtual uint32_t GetOrAddTextureSlotIndex(IntRef<Image> texture) = 0;
 
 		virtual void Update(uint32_t index) = 0;
 
-		static RefPtr<ResourceTable> Create();
+		static IntRef<ResourceTable> Create();
 
 	protected:
 		class VTRHI_API ResourceIndices
@@ -54,14 +54,14 @@ namespace Volt::RHI
 		public:
 			Table();
 
-			void Add(RefPtr<ResourceType> resource);
-			void Remove(RefPtr<ResourceType> resource);
+			void Add(IntRef<ResourceType> resource);
+			void Remove(IntRef<ResourceType> resource);
 
-			uint32_t GetOrAddSlotForResource(RefPtr<ResourceType> resource);
-			uint32_t GetSlotForResource(RefPtr<ResourceType> resource);
+			uint32_t GetOrAddSlotForResource(IntRef<ResourceType> resource);
+			uint32_t GetSlotForResource(IntRef<ResourceType> resource);
 
-			RefPtr<ResourceType> GetAtSlot(uint32_t slot);
-			RefPtr<ViewType> GetViewAtSlot(uint32_t slot);
+			IntRef<ResourceType> GetAtSlot(uint32_t slot);
+			IntRef<ViewType> GetViewAtSlot(uint32_t slot);
 
 			Vector<uint32_t> GetAndClearDirtySlots(uint32_t index);
 
@@ -72,9 +72,9 @@ namespace Volt::RHI
 				uint32_t refCount = 0;
 			};
 
-			Vector<RefPtr<ResourceType>> m_table;
-			Vector<RefPtr<ViewType>> m_viewTable;
-			Map<RefPtr<ResourceType>, Slot> m_resourceToIndex;
+			Vector<IntRef<ResourceType>> m_table;
+			Vector<IntRef<ViewType>> m_viewTable;
+			Map<IntRef<ResourceType>, Slot> m_resourceToIndex;
 			Vector<Vector<uint32_t>> m_dirtySlots;
 
 			ResourceIndices m_resourceIndices;
@@ -91,7 +91,7 @@ namespace Volt::RHI
 	}
 
 	template<typename ResourceType, typename ViewType>
-	void ResourceTable::Table<ResourceType, ViewType>::Add(RefPtr<ResourceType> resource)
+	void ResourceTable::Table<ResourceType, ViewType>::Add(IntRef<ResourceType> resource)
 	{
 		auto it = m_resourceToIndex.find(resource);
 		if (it != m_resourceToIndex.end())
@@ -112,7 +112,7 @@ namespace Volt::RHI
 	}
 
 	template<typename ResourceType, typename ViewType>
-	void ResourceTable::Table<ResourceType, ViewType>::Remove(RefPtr<ResourceType> resource)
+	void ResourceTable::Table<ResourceType, ViewType>::Remove(IntRef<ResourceType> resource)
 	{
 		auto it = m_resourceToIndex.find(resource);
 		if (it != m_resourceToIndex.end())
@@ -135,7 +135,7 @@ namespace Volt::RHI
 
 
 	template<typename ResourceType, typename ViewType>
-	uint32_t ResourceTable::Table<ResourceType, ViewType>::GetOrAddSlotForResource(RefPtr<ResourceType> resource)
+	uint32_t ResourceTable::Table<ResourceType, ViewType>::GetOrAddSlotForResource(IntRef<ResourceType> resource)
 	{
 		auto it = m_resourceToIndex.find(resource);
 		if (it == m_resourceToIndex.end())
@@ -147,7 +147,7 @@ namespace Volt::RHI
 	}
 
 	template<typename ResourceType, typename ViewType>
-	uint32_t ResourceTable::Table<ResourceType, ViewType>::GetSlotForResource(RefPtr<ResourceType> resource)
+	uint32_t ResourceTable::Table<ResourceType, ViewType>::GetSlotForResource(IntRef<ResourceType> resource)
 	{
 		return m_resourceToIndex.at(resource).index;
 	}
@@ -162,13 +162,13 @@ namespace Volt::RHI
 	}
 
 	template<typename ResourceType, typename ViewType>
-	RefPtr<ResourceType> ResourceTable::Table<ResourceType, ViewType>::GetAtSlot(uint32_t slot)
+	IntRef<ResourceType> ResourceTable::Table<ResourceType, ViewType>::GetAtSlot(uint32_t slot)
 	{
 		return m_table.at(slot);
 	}
 
 	template<typename ResourceType, typename ViewType>
-	RefPtr<ViewType> ResourceTable::Table<ResourceType, ViewType>::GetViewAtSlot(uint32_t slot)
+	IntRef<ViewType> ResourceTable::Table<ResourceType, ViewType>::GetViewAtSlot(uint32_t slot)
 	{
 		if (m_viewTable[slot] != nullptr)
 		{

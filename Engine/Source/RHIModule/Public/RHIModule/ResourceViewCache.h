@@ -13,13 +13,13 @@ namespace Volt::RHI
 	public:
 		VTRHI_API ImageViewCache(RawPtr<Image> image);
 		VTRHI_API ~ImageViewCache();
-		VTRHI_API RefPtr<ImageView> GetOrCreateView(const ImageViewDesc& desc);
+		VTRHI_API IntRef<ImageView> GetOrCreateView(const ImageViewDesc& desc);
 
 	private:
 		struct ViewContainer
 		{
 			size_t hash;
-			RefPtr<RHI::ImageView> view;
+			IntRef<RHI::ImageView> view;
 			std::atomic<ViewContainer*> next = nullptr;
 		};
 

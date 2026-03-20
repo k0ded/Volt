@@ -34,8 +34,8 @@ namespace Volt
 	{
 		AssetReference<EnvironmentTexture> environmentTexture = asset.ConvertTo<EnvironmentTexture>();
 
-		RefPtr<RHI::Image> diffuseImage = environmentTexture->m_diffuseImage;
-		RefPtr<RHI::Image> specularImage = environmentTexture->m_specularImage;
+		IntRef<RHI::Image> diffuseImage = environmentTexture->m_diffuseImage;
+		IntRef<RHI::Image> specularImage = environmentTexture->m_specularImage;
 
 		const RHI::ImageDesc& diffuseDesc = diffuseImage->GetDesc();
 		const RHI::ImageDesc& specularDesc = specularImage->GetDesc();
@@ -98,7 +98,7 @@ namespace Volt
 		streamReader.Read(diffuseImageBuffer);
 		streamReader.Read(specularImageBuffer);
 
-		RefPtr<RHI::Image> diffuseImage, specularImage;
+		IntRef<RHI::Image> diffuseImage, specularImage;
 
 		RHI::ImageDesc specification{};
 		specification.format = diffuseHeader.format;

@@ -4,7 +4,7 @@
 #include "AssetSystem/AssetManagerCommon.h"
 #include "AssetSystem/AssetAllocatorCommon.h"
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt
 {
@@ -13,8 +13,8 @@ namespace Volt
 	public:
 		AssetAllocator();
 
-		template<VoltAssetType T, typename... Args> RefPtr<T> AllocateAsset(Args&&... args);
-		RefPtr<Asset> AllocateAssetWithType(AssetType type);
+		template<VoltAssetType T, typename... Args> IntRef<T> AllocateAsset(Args&&... args);
+		IntRef<Asset> AllocateAssetWithType(AssetType type);
 		void FreeAsset(AssetType assetType, Asset* asset);
 
 	private:
@@ -24,7 +24,7 @@ namespace Volt
 	};
 
 	template<VoltAssetType T, typename... Args>
-	RefPtr<T> AssetAllocator::AllocateAsset(Args&&... args)
+	IntRef<T> AssetAllocator::AllocateAsset(Args&&... args)
 	{
 		static const AssetType assetType = T::GetStaticType();
 		VT_ENSURE(m_assetAllocator.contains(assetType->GetGUID()));
@@ -35,6 +35,6 @@ namespace Volt
 		T* assetPtr = allocator.Allocate(std::forward<Args>(args)...);
 		assetPtr->AssignAssetHandle(AssetHandle{});
 
-		return RefPtr<T>::AttachNoRef(assetPtr);
+		return IntRef<T>::AttachNoRef(assetPtr);
 	}
 }

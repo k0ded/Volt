@@ -26,10 +26,10 @@ namespace Volt::RHI
 		struct ResourceBinding
 		{
 			Variant<
-				RefPtr<RHI::BufferView>,
-				RefPtr<RHI::ImageView>,
-				RefPtr<RHI::SamplerState>,
-				RefPtr<RHI::AccelerationStructure>
+				IntRef<RHI::BufferView>,
+				IntRef<RHI::ImageView>,
+				IntRef<RHI::SamplerState>,
+				IntRef<RHI::AccelerationStructure>
 			> resource;
 
 			uint64_t uniformBufferSize = 0;
@@ -49,20 +49,20 @@ namespace Volt::RHI
 
 		ShaderBindingMap() = default;
 
-		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
-		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);
-		void SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::SamplerState> samplerState);
-		void SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
-		void SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
-		void SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
-		void SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
-		void SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView);
-		void SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView);
-		void SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure);
-		void SetResourceTable(RefPtr<ResourceTable> resourceTable);
+		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView);
+		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);
+		void SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::SamplerState> samplerState);
+		void SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView);
+		void SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView);
+		void SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView);
+		void SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::BufferView> bufferView);
+		void SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::ImageView> imageView);
+		void SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::ImageView> imageView);
+		void SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, IntRef<RHI::AccelerationStructure> accelerationStructure);
+		void SetResourceTable(IntRef<ResourceTable> resourceTable);
 
 		VT_NODISCARD VT_INLINE const ArrayView<PerShaderStageResourceBindings> GetBindings() const { return m_resourceBindings; }
-		VT_NODISCARD VT_INLINE RefPtr<ResourceTable> GetResourceTable() const { return m_resourceTable; }
+		VT_NODISCARD VT_INLINE IntRef<ResourceTable> GetResourceTable() const { return m_resourceTable; }
 		VT_NODISCARD VT_INLINE bool HasResourceTable() const { return m_resourceTable != nullptr; }
 
 		static ShaderBindingMap InitializeFromPipeline(RawPtr<RenderPipeline> renderPipeline);
@@ -79,6 +79,6 @@ namespace Volt::RHI
 		BitArray<GetNumBindableShaderStages(), uint32_t> m_activeShaderStagesBitArray;
 		GlobalMemoryStackVector<PerShaderStageResourceBindings> m_resourceBindings;
 
-		RefPtr<ResourceTable> m_resourceTable;
+		IntRef<ResourceTable> m_resourceTable;
 	};
 }

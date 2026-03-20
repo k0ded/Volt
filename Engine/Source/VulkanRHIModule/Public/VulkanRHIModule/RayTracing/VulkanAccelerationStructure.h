@@ -21,7 +21,7 @@ namespace Volt::RHI
 	private:
 		void InitializeFromInfo(const AccelerationStructureCreateInfo& createInfo);
 	
-		RefPtr<Buffer> m_backingBuffer;
+		IntRef<Buffer> m_backingBuffer;
 		VkAccelerationStructureKHR_T* m_handle = nullptr;
 		uint64_t m_deviceAddress = 0;
 	};

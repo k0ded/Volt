@@ -14,8 +14,8 @@ namespace Volt
 	public:
 		virtual ~RGRHIBufferResource() = default;
 
-		virtual RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
-		virtual RefPtr<RHI::Buffer> GetRHIBuffer() const = 0;
+		virtual IntRef<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
+		virtual IntRef<RHI::Buffer> GetRHIBuffer() const = 0;
 		virtual bool IsTransientlyAllocated() const = 0;
 	};
 
@@ -24,8 +24,8 @@ namespace Volt
 	public:
 		virtual ~RGRHITextureResource() = default;
 
-		virtual RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) = 0;
-		virtual RefPtr<RHI::Image> GetRHITexture() const = 0;
+		virtual IntRef<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) = 0;
+		virtual IntRef<RHI::Image> GetRHITexture() const = 0;
 		virtual bool IsTransientlyAllocated() const = 0;
 	};
 
@@ -34,7 +34,7 @@ namespace Volt
 	public:
 		virtual ~RGRHIUniformBufferResource() = default;
 
-		virtual RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
-		virtual RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer() const = 0;
+		virtual IntRef<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
+		virtual IntRef<RHI::UniformBuffer> GetRHIUniformBuffer() const = 0;
 	};
 }

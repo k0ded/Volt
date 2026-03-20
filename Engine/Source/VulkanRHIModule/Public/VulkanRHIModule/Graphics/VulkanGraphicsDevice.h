@@ -24,7 +24,7 @@ namespace Volt::RHI
 
 		void WaitForIdle();
 
-		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
+		IntRef<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
 		RawPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
 
 		uint64_t GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const override;
@@ -45,7 +45,7 @@ namespace Volt::RHI
 		VkDevice_T* m_device = nullptr;
 		bool m_hasCalibratedTimeDomains = false;
 
-		Array<RefPtr<DeviceQueue>, std::to_underlying(QueueType::Num)> m_deviceQueues;
+		Array<IntRef<DeviceQueue>, std::to_underlying(QueueType::Num)> m_deviceQueues;
 
 		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};

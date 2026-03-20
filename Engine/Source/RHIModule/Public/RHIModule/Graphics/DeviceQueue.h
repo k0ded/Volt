@@ -14,10 +14,10 @@ namespace Volt::RHI
 
 	struct DeviceQueueExecuteInfo
 	{
-		InlineVector<RefPtr<CommandBuffer>, 1> commandBuffers;
-		InlineVector<RefPtr<Fence>, 1> signalFences;
+		InlineVector<IntRef<CommandBuffer>, 1> commandBuffers;
+		InlineVector<IntRef<Fence>, 1> signalFences;
 	
-		RefPtr<Fence> executionFence;
+		IntRef<Fence> executionFence;
 	};
 
 	class VTRHI_API DeviceQueue : public RHIInterface

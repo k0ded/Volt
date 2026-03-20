@@ -1,19 +1,19 @@
 #pragma once
 
 #include "CoreUtilities/Core.h"
-#include "CoreUtilities/Pointers/RefPtr.h"
+#include "CoreUtilities/Pointers/IntRef.h"
 #include "CoreUtilities/Malloc.h"
 
 #include <atomic>
 
 template<typename Type>
-class RefCounted
+class IntRefCounted
 {
 public:
-	RefCounted(const RefCounted&) noexcept = delete;
-	RefCounted& operator=(const RefCounted&) noexcept = delete;
-	RefCounted(RefCounted&&) noexcept = delete;
-	RefCounted& operator=(RefCounted&&) noexcept = delete;
+	IntRefCounted(const IntRefCounted&) noexcept = delete;
+	IntRefCounted& operator=(const IntRefCounted&) noexcept = delete;
+	IntRefCounted(IntRefCounted&&) noexcept = delete;
+	IntRefCounted& operator=(IntRefCounted&&) noexcept = delete;
 
 	VT_INLINE void IncRef() const noexcept
 	{
@@ -43,16 +43,16 @@ public:
 	}
 
 protected:
-	RefCounted() noexcept = default;
-	virtual ~RefCounted() noexcept
+	IntRefCounted() noexcept = default;
+	virtual ~IntRefCounted() noexcept
 	{
 		[[maybe_unused]] auto validCount = [](auto val) { return val == 0 || val == 1; };
 		VT_ASSERT(validCount(m_count.load(std::memory_order::relaxed)));
 	}
 
-	RefPtr<Type> CreateRefPtrFromThis() const
+	IntRef<Type> CreateIntRefFromThis() const
 	{
-		return RefPtr<Type>::Attach(const_cast<Type*>(reinterpret_cast<const Type*>(this)));
+		return IntRef<Type>::Attach(const_cast<Type*>(reinterpret_cast<const Type*>(this)));
 	}
 
 private:

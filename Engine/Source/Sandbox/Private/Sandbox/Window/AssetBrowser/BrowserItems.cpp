@@ -30,7 +30,7 @@ namespace AssetBrowser
 
 		PushID();
 		const float thumbnailSize = GetThumbnailSize();
-		const RefPtr<Volt::RHI::Image> icon = GetIcon();
+		const IntRef<Volt::RHI::Image> icon = GetIcon();
 		const bool isSelected = m_selectionManager->IsSelected(this);
 
 		const ImVec2 itemSize = AssetBrowserUtilities::GetBrowserItemSize(thumbnailSize);

@@ -50,7 +50,7 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> D3D12UniformBuffer::GetView(const BufferViewDesc& desc)
+	IntRef<BufferView> D3D12UniformBuffer::GetView(const BufferViewDesc& desc)
 	{
 		return BufferView::Create(desc, this);
 	}

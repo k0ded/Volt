@@ -21,7 +21,7 @@ namespace Volt
 		RenderGraphResourceManager& operator=(RenderGraphResourceManager&& other) noexcept;
 
 		void Release();
-		void AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource);
+		void AddExternalResource(RGResourceRef resource, IntRef<RHI::RHIResource> rhiResource);
 
 		void AllocateResource(RGTextureRef resource);
 		void AllocateResource(RGBufferRef resource);

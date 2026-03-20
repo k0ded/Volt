@@ -47,8 +47,8 @@ namespace Volt::RHI
 		virtual const ShaderIncludeDependencies& GetShaderIncludeDependencies() const = 0;
 		virtual bool IsValid() const = 0;
 
-		static RefPtr<Shader> Create(const ShaderCreateInfo& createInfo);
-		static RefPtr<Shader> CreateWithSource(const ShaderCreateInfo& createInfo, const std::string& source);
+		static IntRef<Shader> Create(const ShaderCreateInfo& createInfo);
+		static IntRef<Shader> CreateWithSource(const ShaderCreateInfo& createInfo, const std::string& source);
 
 	protected:
 		Shader() = default;

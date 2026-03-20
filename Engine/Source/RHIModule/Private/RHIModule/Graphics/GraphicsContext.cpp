@@ -15,7 +15,7 @@ namespace Volt::RHI
 		s_context = nullptr;
 	}
 
-	RefPtr<GraphicsContext> GraphicsContext::Create(const GraphicsContextCreateInfo& createInfo)
+	IntRef<GraphicsContext> GraphicsContext::Create(const GraphicsContextCreateInfo& createInfo)
 	{
 		s_graphicsAPI = createInfo.graphicsApi;
 		return RHIModule::GetInstance().CreateGraphicsContext(createInfo);

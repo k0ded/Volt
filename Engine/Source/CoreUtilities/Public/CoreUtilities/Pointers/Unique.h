@@ -45,6 +45,7 @@ public:
 	constexpr T& operator*() const noexcept;
 
 	constexpr bool operator==(const Unique& other) const;
+	constexpr bool operator==(std::nullptr_t) const;
 	constexpr operator bool() const;
 
 	void Reset();

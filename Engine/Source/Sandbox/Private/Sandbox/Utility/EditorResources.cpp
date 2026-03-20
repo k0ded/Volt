@@ -107,7 +107,7 @@ void EditorResources::Shutdown()
 	m_editorMeshes.clear();
 }
 
-RefPtr<Volt::RHI::Image> EditorResources::GetAssetIcon(AssetType type)
+IntRef<Volt::RHI::Image> EditorResources::GetAssetIcon(AssetType type)
 {
 	if (!m_assetIcons.contains(type))
 	{
@@ -117,7 +117,7 @@ RefPtr<Volt::RHI::Image> EditorResources::GetAssetIcon(AssetType type)
 	return m_assetIcons.at(type);
 }
 
-RefPtr<Volt::RHI::Image> EditorResources::GetEditorIcon(EditorIcon icon)
+IntRef<Volt::RHI::Image> EditorResources::GetEditorIcon(EditorIcon icon)
 {
 	if (!m_editorIcons.contains(icon))
 	{
@@ -137,7 +137,7 @@ Ref<Volt::Mesh> EditorResources::GetEditorMesh(EditorMesh mesh)
 	return m_editorMeshes.at(mesh);
 }
 
-void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt::RHI::Image>* outTexture)
+void EditorResources::TryLoadIcon(const std::filesystem::path& path, IntRef<Volt::RHI::Image>* outTexture)
 {
 	AssetReference<Volt::Texture2D> texture;
 

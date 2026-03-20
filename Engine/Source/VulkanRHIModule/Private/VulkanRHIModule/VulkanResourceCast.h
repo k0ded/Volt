@@ -191,20 +191,20 @@ namespace Volt::RHI
 	}
 
 	template<typename RHIType>
-	VT_INLINE static RefPtr<typename VulkanTypeTraits<RHIType>::ConcreteType> ResourceCast(const RefPtr<RHIType>& resource)
+	VT_INLINE static IntRef<typename VulkanTypeTraits<RHIType>::ConcreteType> ResourceCast(const IntRef<RHIType>& resource)
 	{
 		using ConcreteType = typename VulkanTypeTraits<RHIType>::ConcreteType;
-		return  RefPtr<ConcreteType>::Attach(static_cast<ConcreteType*>(resource.GetRaw()));
+		return  IntRef<ConcreteType>::Attach(static_cast<ConcreteType*>(resource.GetRaw()));
 	}
 
 	template<typename RHIType>
-	VT_INLINE static const typename VulkanTypeTraits<RHIType>::ConcreteType* ResourceCastGetRaw(const RefPtr<RHIType>& resource)
+	VT_INLINE static const typename VulkanTypeTraits<RHIType>::ConcreteType* ResourceCastGetRaw(const IntRef<RHIType>& resource)
 	{
 		return static_cast<const typename VulkanTypeTraits<RHIType>::ConcreteType*>(resource.GetRaw());
 	}
 
 	template<typename RHIType, typename ImplType>
-	VT_INLINE static const ImplType* ResourceCastGetRawUnsafe(const RefPtr<RHIType>& resource)
+	VT_INLINE static const ImplType* ResourceCastGetRawUnsafe(const IntRef<RHIType>& resource)
 	{
 		return static_cast<const typename VulkanTypeTraits<RHIType>::ConcreteType*>(resource.GetRaw());
 	}

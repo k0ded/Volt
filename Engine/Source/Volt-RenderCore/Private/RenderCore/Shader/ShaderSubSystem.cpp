@@ -57,7 +57,7 @@ namespace Volt
 			RHI::ShaderCacheCreateInfo info{};
 			info.cacheDirectory = "Engine/Shaders/Cache";
 
-			m_shaderCache = RefPtr<RHI::ShaderCache>::Create(info);
+			m_shaderCache = IntRef<RHI::ShaderCache>::Create(info);
 		}
 
 		{
@@ -125,7 +125,7 @@ namespace Volt
 			createInfo.stage = registrationInfo.stageInfos.shaderStage;
 			createInfo.forceCompile = false;
 
-			RefPtr<RHI::Shader> shader;
+			IntRef<RHI::Shader> shader;
 			{
 				VT_PROFILE_SCOPE("Create Shader");
 				shader = RHI::Shader::Create(createInfo);

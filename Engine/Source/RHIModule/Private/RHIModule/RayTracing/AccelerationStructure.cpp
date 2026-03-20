@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<AccelerationStructure> AccelerationStructure::Create(const AccelerationStructureCreateInfo& createInfo)
+	IntRef<AccelerationStructure> AccelerationStructure::Create(const AccelerationStructureCreateInfo& createInfo)
 	{
 		return RHIModule::GetInstance().CreateAccelerationStructure(createInfo);
 	}

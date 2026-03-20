@@ -94,9 +94,9 @@ namespace Volt::RHI
 		const QueueType GetQueueType() const override;
 		const CommandBufferLevel GetCommandBufferLevel() const override;
 
-		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer() const override;
-		void ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const override;
-		void ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const override;
+		IntRef<CommandBuffer> CreateSecondaryCommandBuffer() const override;
+		void ExecuteSecondaryCommandBuffer(IntRef<CommandBuffer> commandBuffer) const override;
+		void ExecuteSecondaryCommandBuffers(Vector<IntRef<CommandBuffer>> commandBuffers) const override;
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -115,7 +115,7 @@ namespace Volt::RHI
 		void BeginPrimaryInternal(bool oneTimeSubmit);
 		void BeginSecondaryInternal(bool oneTimeSubmit);
 
-		void BindDescriptorBuffer(RefPtr<ResourceTable> rayTracingResourceTable);
+		void BindDescriptorBuffer(IntRef<ResourceTable> rayTracingResourceTable);
 
 		void ClearActivePipeline();
 		void ValidateInlineParameters();
@@ -149,7 +149,7 @@ namespace Volt::RHI
 		RawPtr<RenderPipeline> m_activeRenderPipeline;
 		RawPtr<ComputePipeline> m_activeComputePipeline;
 		RawPtr<RayTracingPipeline> m_activeRayTracingPipeline;
-		RefPtr<Fence> m_submissionFence;
+		IntRef<Fence> m_submissionFence;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;

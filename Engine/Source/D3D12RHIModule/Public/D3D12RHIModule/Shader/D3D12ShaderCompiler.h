@@ -59,6 +59,6 @@ namespace Volt::RHI
 		ShaderCompilerFlags m_flags = ShaderCompilerFlags::None;
 		std::filesystem::path m_cacheDirectory;
 
-		RefPtr<ShaderCache> m_shaderCache;
+		IntRef<ShaderCache> m_shaderCache;
 	};
 }

@@ -15,7 +15,7 @@ namespace Volt::RHI
 
 		} clearColor;
 
-		RefPtr<ImageView> view;
+		IntRef<ImageView> view;
 		ClearMode clearMode;
 
 		inline void SetClearColor(float r, float g, float b, float a)

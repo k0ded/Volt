@@ -159,7 +159,7 @@ namespace Volt
 				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<MosaicNodes::SampleTextureNode>(node.nodeData);
 				const auto textureInfo = sampleTextureNode->GetTextureInfo();
 
-				RefPtr<RHI::Image> image;
+				IntRef<RHI::Image> image;
 
 				if (textureInfo.textureHandle != Asset::Null())
 				{

@@ -30,13 +30,13 @@ namespace Volt::RHI
 		virtual void Resize(const uint32_t width, const uint32_t height, bool enableVSync) = 0;
 
 		VT_NODISCARD virtual const uint32_t GetCurrentFrame() const = 0;
-		VT_NODISCARD virtual RefPtr<Image> GetCurrentImage() const = 0;
+		VT_NODISCARD virtual IntRef<Image> GetCurrentImage() const = 0;
 		VT_NODISCARD virtual const uint32_t GetWidth() const = 0;
 		VT_NODISCARD virtual const uint32_t GetHeight() const = 0;
 		VT_NODISCARD virtual const PixelFormat GetFormat() const = 0;
 		VT_NODISCARD virtual bool IsHDREnabled() const = 0;
 
-		static RefPtr<Swapchain> Create(const SwapchainCreateInfo& createInfo);
+		static IntRef<Swapchain> Create(const SwapchainCreateInfo& createInfo);
 
 	protected:
 		Swapchain() = default;

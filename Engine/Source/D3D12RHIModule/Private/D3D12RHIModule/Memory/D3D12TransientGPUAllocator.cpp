@@ -190,7 +190,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<TransientHeap> parentHeap;
+		IntRef<TransientHeap> parentHeap;
 
 		for (const auto& heap : m_bufferHeaps)
 		{
@@ -216,7 +216,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<TransientHeap> parentHeap;
+		IntRef<TransientHeap> parentHeap;
 
 		for (const auto& heap : m_imageHeaps)
 		{
@@ -249,25 +249,25 @@ namespace Volt::RHI
 		allocation->GetResourceHandle<ID3D12Resource*>()->Release();
 	}
 
-	RefPtr<TransientHeap> D3D12TransientGPUAllocator::CreateNewImageHeap()
+	IntRef<TransientHeap> D3D12TransientGPUAllocator::CreateNewImageHeap()
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;
 		info.flags = TransientHeapFlags::AllowTextures | TransientHeapFlags::AllowRenderTargets;
 
-		RefPtr<TransientHeap>& heap = m_imageHeaps.emplace_back();
+		IntRef<TransientHeap>& heap = m_imageHeaps.emplace_back();
 		heap = TransientHeap::Create(info);
 
 		return heap;
 	}
 
-	RefPtr<TransientHeap> D3D12TransientGPUAllocator::CreateNewBufferHeap()
+	IntRef<TransientHeap> D3D12TransientGPUAllocator::CreateNewBufferHeap()
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;
 		info.flags = TransientHeapFlags::AllowBuffers;
 
-		RefPtr<TransientHeap>& heap = m_bufferHeaps.emplace_back();
+		IntRef<TransientHeap>& heap = m_bufferHeaps.emplace_back();
 		heap = TransientHeap::Create(info);
 
 		return heap;

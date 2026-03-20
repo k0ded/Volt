@@ -123,10 +123,10 @@ namespace Volt
 
 		inline const BoundingSphere& GetSubMeshBoundingSphere(const uint32_t index) const { return m_subMeshBoundingSpheres.at(index);  }
 
-		inline RefPtr<RHI::Buffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
-		inline RefPtr<RHI::Buffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
-		inline RefPtr<RHI::Buffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
-		inline RefPtr<RHI::Buffer> GetIndexBuffer() const { return m_indexBuffer; }
+		inline IntRef<RHI::Buffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
+		inline IntRef<RHI::Buffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
+		inline IntRef<RHI::Buffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
+		inline IntRef<RHI::Buffer> GetIndexBuffer() const { return m_indexBuffer; }
 
 		VT_NODISCARD VT_INLINE const VertexContainer& GetVertexContainer() const { return m_vertexContainer; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingSceneGeometry> GetRayTracingSceneGeometry() const { return m_rayTracingSceneGeometry; }
@@ -151,10 +151,10 @@ namespace Volt
 
 		MaterialTable m_materialTable;
 
-		RefPtr<RHI::Buffer> m_indexBuffer;
-		RefPtr<RHI::Buffer> m_vertexPositionsBuffer;
-		RefPtr<RHI::Buffer> m_vertexMaterialBuffer;
-		RefPtr<RHI::Buffer> m_vertexAnimationDataBuffer;
+		IntRef<RHI::Buffer> m_indexBuffer;
+		IntRef<RHI::Buffer> m_vertexPositionsBuffer;
+		IntRef<RHI::Buffer> m_vertexMaterialBuffer;
+		IntRef<RHI::Buffer> m_vertexAnimationDataBuffer;
 
 		Ref<RayTracingSceneGeometry> m_rayTracingSceneGeometry;
 

@@ -8,16 +8,16 @@ namespace Volt::RHI
 	class VulkanShaderBindingTable final : public ShaderBindingTable
 	{
 	public:
-		VulkanShaderBindingTable(RefPtr<RayTracingPipeline> pipeline);
+		VulkanShaderBindingTable(IntRef<RayTracingPipeline> pipeline);
 		~VulkanShaderBindingTable() override;
 
 		void Invalidate() override;
-		bool IsShaderInTable(RefPtr<Shader> shader) const override;
+		bool IsShaderInTable(IntRef<Shader> shader) const override;
 
-		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetRayGenTable() const { return m_rayGenBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetMissTable() const { return m_missBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetHitGroupTable() const { return m_hitGroupBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetCallableTable() const { return m_callableBindingTable; }
+		VT_NODISCARD VT_INLINE IntRef<Buffer> GetRayGenTable() const { return m_rayGenBindingTable; }
+		VT_NODISCARD VT_INLINE IntRef<Buffer> GetMissTable() const { return m_missBindingTable; }
+		VT_NODISCARD VT_INLINE IntRef<Buffer> GetHitGroupTable() const { return m_hitGroupBindingTable; }
+		VT_NODISCARD VT_INLINE IntRef<Buffer> GetCallableTable() const { return m_callableBindingTable; }
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -25,11 +25,11 @@ namespace Volt::RHI
 	private:
 		void Release();
 
-		RefPtr<RayTracingPipeline> m_pipeline;
+		IntRef<RayTracingPipeline> m_pipeline;
 		
-		RefPtr<Buffer> m_rayGenBindingTable;
-		RefPtr<Buffer> m_missBindingTable;
-		RefPtr<Buffer> m_hitGroupBindingTable;
-		RefPtr<Buffer> m_callableBindingTable;
+		IntRef<Buffer> m_rayGenBindingTable;
+		IntRef<Buffer> m_missBindingTable;
+		IntRef<Buffer> m_hitGroupBindingTable;
+		IntRef<Buffer> m_callableBindingTable;
 	};
 }

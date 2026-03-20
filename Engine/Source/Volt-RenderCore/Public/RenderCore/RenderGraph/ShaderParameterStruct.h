@@ -192,8 +192,8 @@ public: \
 #define SHADER_PARAMETER_SAMPLER(paramName) \
 	MemberID##paramName; \
 public: \
-	RefPtr<Volt::RHI::SamplerState> paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::SamplerState>, paramName, Volt::ShaderParameterType::Sampler, Volt::RGResourceAccess::None)
+	IntRef<Volt::RHI::SamplerState> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(IntRef<Volt::RHI::SamplerState>, paramName, Volt::ShaderParameterType::Sampler, Volt::RGResourceAccess::None)
 
 /*
 	Adds an acceleration structure to the struct.
@@ -201,8 +201,8 @@ public: \
 #define SHADER_PARAMETER_ACCELERATION_STRUCTURE(paramName) \
 	MemberID##paramName; \
 public: \
-	RefPtr<Volt::RHI::AccelerationStructure> paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::AccelerationStructure>, paramName, Volt::ShaderParameterType::AccelerationStructure, Volt::RGResourceAccess::None)
+	IntRef<Volt::RHI::AccelerationStructure> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(IntRef<Volt::RHI::AccelerationStructure>, paramName, Volt::ShaderParameterType::AccelerationStructure, Volt::RGResourceAccess::None)
 
 /*
 	Adds a ray tracing resource table to the struct.
@@ -210,8 +210,8 @@ public: \
 #define SHADER_PARAMETER_RESOURCE_TABLE(paramName) \
 	MemberID##paramName; \
 public: \
-	RefPtr<Volt::RHI::ResourceTable> paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::ResourceTable>, paramName, Volt::ShaderParameterType::ResourceTable, Volt::RGResourceAccess::None)
+	IntRef<Volt::RHI::ResourceTable> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(IntRef<Volt::RHI::ResourceTable>, paramName, Volt::ShaderParameterType::ResourceTable, Volt::RGResourceAccess::None)
 
 /*
 	Adds a buffer read parameter to the struct

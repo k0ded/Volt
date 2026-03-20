@@ -79,16 +79,16 @@ public:
 	static void Initialize();
 	static void Shutdown();
 
-	static RefPtr<Volt::RHI::Image> GetAssetIcon(AssetType type);
-	static RefPtr<Volt::RHI::Image> GetEditorIcon(EditorIcon icon);
+	static IntRef<Volt::RHI::Image> GetAssetIcon(AssetType type);
+	static IntRef<Volt::RHI::Image> GetEditorIcon(EditorIcon icon);
 	static Ref<Volt::Mesh> GetEditorMesh(EditorMesh mesh);
 
 private:
-	static void TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt::RHI::Image>* outTexture);
+	static void TryLoadIcon(const std::filesystem::path& path, IntRef<Volt::RHI::Image>* outTexture);
 	static Ref<Volt::Mesh> TryLoadMesh(const std::filesystem::path& path);
 
-	inline static std::unordered_map<AssetType, RefPtr<Volt::RHI::Image>> m_assetIcons;
-	inline static std::unordered_map<EditorIcon, RefPtr<Volt::RHI::Image>> m_editorIcons;
+	inline static std::unordered_map<AssetType, IntRef<Volt::RHI::Image>> m_assetIcons;
+	inline static std::unordered_map<EditorIcon, IntRef<Volt::RHI::Image>> m_editorIcons;
 	inline static std::unordered_map<EditorMesh, Ref<Volt::Mesh>> m_editorMeshes;
 
 	EditorResources() = delete;

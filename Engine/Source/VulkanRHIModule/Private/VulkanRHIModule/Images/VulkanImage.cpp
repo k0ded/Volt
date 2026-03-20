@@ -132,7 +132,7 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<ImageView> VulkanImage::GetView(const ImageViewDesc& desc)
+	IntRef<ImageView> VulkanImage::GetView(const ImageViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -249,7 +249,7 @@ namespace Volt::RHI
 
 	void VulkanImage::TransitionToLayout(ImageLayout targetLayout)
 	{
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
 		RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -283,7 +283,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		IntRef<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 	}
 
@@ -299,13 +299,13 @@ namespace Volt::RHI
 		stagingDesc.memoryUsage = MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		RefPtr<Buffer> stagingBuffer = Buffer::Create(stagingDesc);
+		IntRef<Buffer> stagingBuffer = Buffer::Create(stagingDesc);
 
 		auto* stagingData = stagingBuffer->Map<void>();
 		memcpy_s(stagingData, bufferSize, data, bufferSize);
 		stagingBuffer->Unmap();
 
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 
 		commandBuffer->Begin();
 
@@ -337,7 +337,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		IntRef<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 	}
 

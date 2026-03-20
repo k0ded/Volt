@@ -146,8 +146,8 @@ namespace Volt
 			return;
 		}
 
-		RefPtr<RHI::CommandBuffer> mainCommandBuffer = renderContext.GetRHICommandBuffer();
-		RefPtr<RHI::Buffer> primitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer->GetRHIResource()->GetRHIBuffer();
+		IntRef<RHI::CommandBuffer> mainCommandBuffer = renderContext.GetRHICommandBuffer();
+		IntRef<RHI::Buffer> primitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer->GetRHIResource()->GetRHIBuffer();
 
 		RHI::RenderingAttachmentDeclaration renderingAttachmentDeclaration;
 		renderContext.FillRenderingAttachmentDeclaration(renderingAttachmentDeclaration);
@@ -157,7 +157,7 @@ namespace Volt
 
 		const RenderingInfo& activeRenderingInfo = renderContext.GetActiveRenderingInfo();
 
-		auto recordBucketRange = [&]<bool IsSecondary>(uint32_t startIndex, uint32_t num, uint32_t primitiveOffset, RefPtr<RHI::CommandBuffer> commandBuffer, std::bool_constant<IsSecondary>)
+		auto recordBucketRange = [&]<bool IsSecondary>(uint32_t startIndex, uint32_t num, uint32_t primitiveOffset, IntRef<RHI::CommandBuffer> commandBuffer, std::bool_constant<IsSecondary>)
 		{
 			VT_PROFILE_SCOPE("Record DrawCommandBucket Range");
 
@@ -188,7 +188,7 @@ namespace Volt
 					 firstDrawCommand.renderPipelineInfo.colorAttachmentFormats = renderingAttachmentDeclaration.colorAttachmentFormats;
 					 firstDrawCommand.renderPipelineInfo.depthAttachmentFormat = renderingAttachmentDeclaration.depthAttachmentFormat;
 
-					 RefPtr<RHI::RenderPipeline> drawCommandPipeline = PipelineStateCache::GetRenderPipeline(firstDrawCommand.renderPipelineInfo);
+					 IntRef<RHI::RenderPipeline> drawCommandPipeline = PipelineStateCache::GetRenderPipeline(firstDrawCommand.renderPipelineInfo);
 
 					 VT_ENSURE_MSG(drawCommandPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
 					 const uint32_t perInstanceBindingIndex = drawCommandPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
@@ -269,7 +269,7 @@ namespace Volt
 
 			const uint32_t numCommandBuffers = Math::DivideRoundUp(numDrawBuckets, NumMaxBucketsPerCommandBuffer);
 
-			Vector<RefPtr<RHI::CommandBuffer>> commandBuffers;
+			Vector<IntRef<RHI::CommandBuffer>> commandBuffers;
 			Vector<RecordingRange> commandBufferRanges;
 
 			commandBuffers.resize(numCommandBuffers);
@@ -324,7 +324,7 @@ namespace Volt
 		return parameters;
 	}
 
-	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
+	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader)
 	{
 		VT_ENSURE_MSG(vertexShader && pixelShader, "Valid shaders must be supplied!");
 
@@ -486,7 +486,7 @@ namespace Volt
 		return hashKey;
 	}
 
-	MeshDrawCommandSortKey MeshPassProcessor::GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
+	MeshDrawCommandSortKey MeshPassProcessor::GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader)
 	{
 		MeshDrawCommandSortKey sortKey;
 		sortKey.sortKeyContents.vertexShaderHash = vertexShader->GetHash();

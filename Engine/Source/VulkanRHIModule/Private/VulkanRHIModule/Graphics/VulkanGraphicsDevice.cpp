@@ -414,9 +414,9 @@ namespace Volt::RHI
 
 		InitializeProfilingContext();
 
-		m_deviceQueues[std::to_underlying(QueueType::Graphics)] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
-		m_deviceQueues[std::to_underlying(QueueType::TransferCopy)] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
-		m_deviceQueues[std::to_underlying(QueueType::Compute)] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Compute });
+		m_deviceQueues[std::to_underlying(QueueType::Graphics)] = IntRef<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
+		m_deviceQueues[std::to_underlying(QueueType::TransferCopy)] = IntRef<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
+		m_deviceQueues[std::to_underlying(QueueType::Compute)] = IntRef<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Compute });
 	}
 
 	VulkanGraphicsDevice::~VulkanGraphicsDevice()
@@ -436,9 +436,9 @@ namespace Volt::RHI
 
 	void VulkanGraphicsDevice::WaitForIdle()
 	{
-		RefPtr<VulkanDeviceQueue> graphicsQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::Graphics)]);
-		RefPtr<VulkanDeviceQueue> transferQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::TransferCopy)]);
-		RefPtr<VulkanDeviceQueue> computeQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::Compute)]);
+		IntRef<VulkanDeviceQueue> graphicsQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::Graphics)]);
+		IntRef<VulkanDeviceQueue> transferQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::TransferCopy)]);
+		IntRef<VulkanDeviceQueue> computeQueue = ResourceCast(m_deviceQueues[std::to_underlying(QueueType::Compute)]);
 
 		graphicsQueue->AquireLock();
 		transferQueue->AquireLock();
@@ -451,7 +451,7 @@ namespace Volt::RHI
 		graphicsQueue->ReleaseLock();
 	}
 
-	RefPtr<DeviceQueue> VulkanGraphicsDevice::GetDeviceQueue(QueueType queueType) const
+	IntRef<DeviceQueue> VulkanGraphicsDevice::GetDeviceQueue(QueueType queueType) const
 	{
 		return m_deviceQueues[std::to_underlying(queueType)];
 	}

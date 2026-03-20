@@ -26,7 +26,7 @@ namespace Volt
 
 	void DebugMeshRenderer::ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
 
 		RHI::VertexBufferVector primitiveIndexVertexBufferVector;
 		primitiveIndexVertexBufferVector.resize(1);
@@ -46,7 +46,7 @@ namespace Volt
 				firstDrawCommandInfo.drawCommand.renderPipelineInfo.colorAttachmentFormats = renderingAttachmentDeclaration.colorAttachmentFormats;
 				firstDrawCommandInfo.drawCommand.renderPipelineInfo.depthAttachmentFormat = renderingAttachmentDeclaration.depthAttachmentFormat;
 
-				RefPtr<RHI::RenderPipeline> drawCommandPipeline = PipelineStateCache::GetRenderPipeline(firstDrawCommandInfo.drawCommand.renderPipelineInfo);
+				IntRef<RHI::RenderPipeline> drawCommandPipeline = PipelineStateCache::GetRenderPipeline(firstDrawCommandInfo.drawCommand.renderPipelineInfo);
 
 				const MeshDrawCommandBucket::MeshDrawCommandInfo& drawCommandInfo = currentBucket.drawCommands.at(instancingRange.offset);
 				const MeshDrawCommand& firstDrawCommand = drawCommandInfo.drawCommand;
@@ -240,8 +240,8 @@ namespace Volt
 		const TQS& transform, 
 		const glm::vec4& userData,
 		RHI::RenderPipelineCreateInfo pipelineInfo, 
-		RefPtr<RHI::Shader> vertexShader, 
-		RefPtr<RHI::Shader> pixelShader)
+		IntRef<RHI::Shader> vertexShader, 
+		IntRef<RHI::Shader> pixelShader)
 	{
 		VT_ENSURE_MSG(vertexShader && pixelShader, "Valid shaders must be supplied!");
 		pipelineInfo.shaders = { vertexShader, pixelShader };
@@ -292,7 +292,7 @@ namespace Volt
 		return newBucket;
 	}
 
-	MeshDrawCommandSortKey DebugMeshRenderer::GetSortKeyFromMaterial(RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, RenderMaterial& renderMaterial)
+	MeshDrawCommandSortKey DebugMeshRenderer::GetSortKeyFromMaterial(IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader, RenderMaterial& renderMaterial)
 	{
 		MeshDrawCommandSortKey sortKey;
 		sortKey.sortKeyContents.vertexShaderHash = vertexShader->GetHash();

@@ -56,7 +56,7 @@ namespace Volt::RHI
 			SubmissionData submissionData;
 			while (m_submissionQueue.Pop(submissionData))
 			{
-				RefPtr<RHI::DeviceQueue> deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(submissionData.queueType);
+				IntRef<RHI::DeviceQueue> deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(submissionData.queueType);
 
 				if (submissionData.submissionType == SubmissionType::Normal)
 				{
@@ -66,7 +66,7 @@ namespace Volt::RHI
 				{
 					const SubmissionData::SwapchainSubmit& swapchainSubmit = submissionData.data.Get<SubmissionData::SwapchainSubmit>();
 
-					RefPtr<RHI::VulkanDeviceQueue> vkDeviceQueue = ResourceCast(deviceQueue);
+					IntRef<RHI::VulkanDeviceQueue> vkDeviceQueue = ResourceCast(deviceQueue);
 
 					vkDeviceQueue->SwapchainExecute(
 						swapchainSubmit.presentSemaphore,
@@ -79,7 +79,7 @@ namespace Volt::RHI
 				{
 					const SubmissionData::SwapchainPresent& swapchainPresent = submissionData.data.Get<SubmissionData::SwapchainPresent>();
 
-					RefPtr<RHI::VulkanDeviceQueue> vkDeviceQueue = ResourceCast(deviceQueue);
+					IntRef<RHI::VulkanDeviceQueue> vkDeviceQueue = ResourceCast(deviceQueue);
 
 					vkDeviceQueue->SwapchainPresent(
 						swapchainPresent.swapchain,

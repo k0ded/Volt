@@ -100,7 +100,7 @@ namespace Volt
 
 				for (const MaterialCustomMetadata::TextureInfo& textureInfo : materialCustomMetadata.textureReferences)
 				{
-					RefPtr<RHI::Image> image;
+					IntRef<RHI::Image> image;
 
 					if (textureInfo.handle != Asset::Null())
 					{
@@ -128,7 +128,7 @@ namespace Volt
 			if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
 			{
 				// #TODO_AssetSystem: Add asset reference from this function
-				RefPtr<MaterialAsset> thisAsset = RefPtr<MaterialAsset>::Attach(this);
+				IntRef<MaterialAsset> thisAsset = IntRef<MaterialAsset>::Attach(this);
 				compilerSubSystem->RequestMaterialCompilation(AssetReference<MaterialAsset>(thisAsset));
 			}
 		}

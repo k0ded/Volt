@@ -117,7 +117,7 @@ namespace Volt
 		const uint32_t width = imageData->m_width;
 		const uint32_t height = imageData->m_height;
 
-		RefPtr<RHI::Image> image;
+		IntRef<RHI::Image> image;
 
 		const bool hasMips = ddsFile.GetMipCount() > 1;
 		const uint32_t mipLevelCount = importConfig.importMipMaps ? ddsFile.GetMipCount() : 1u;
@@ -167,10 +167,10 @@ namespace Volt
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
+		IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });

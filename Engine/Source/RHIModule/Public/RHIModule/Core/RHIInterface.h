@@ -2,13 +2,13 @@
 
 #include "RHIModule/Core/Core.h"
 
-#include <CoreUtilities/Pointers/RefCounted.h>
-#include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/ArenaRefCounted.h>
+#include <CoreUtilities/Pointers/IntRefCounted.h>
+#include <CoreUtilities/Pointers/IntRef.h>
+#include <CoreUtilities/Pointers/ArenaIntRefCounted.h>
 
 namespace Volt::RHI
 {
-	template<template<typename> class RefCounter = RefCounted>
+	template<template<typename> class RefCounter = IntRefCounted>
 	class TRHIInterface : public RefCounter<TRHIInterface<RefCounter>>
 	{
 	public:
@@ -39,6 +39,6 @@ namespace Volt::RHI
 		virtual void* GetHandleImpl() const = 0;
 	};
 
-	using RHIInterface = TRHIInterface<RefCounted>;
-	using ArenaRHIInterface = TRHIInterface<ArenaRefCounted>;
+	using RHIInterface = TRHIInterface<IntRefCounted>;
+	using ArenaRHIInterface = TRHIInterface<ArenaIntRefCounted>;
 }

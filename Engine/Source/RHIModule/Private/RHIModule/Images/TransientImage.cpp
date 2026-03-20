@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<TransientImage> TransientImage::Create(const ImageDesc& desc)
+	IntRef<TransientImage> TransientImage::Create(const ImageDesc& desc)
 	{
 		return RHIModule::GetInstance().CreateTransientImage(desc);
 	}

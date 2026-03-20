@@ -69,7 +69,7 @@ namespace Volt
 	{
 		AssetReference<Texture2D> texture = asset.ConvertTo<Texture2D>();
 
-		RefPtr<RHI::Image> image = texture->GetImage();
+		IntRef<RHI::Image> image = texture->GetImage();
 
 		TextureHeader header{};
 		header.format = image->GetDesc().format;
@@ -129,7 +129,7 @@ namespace Volt
 
 
 
-		RefPtr<RHI::Image> image;
+		IntRef<RHI::Image> image;
 
 		// Create image
 		{
@@ -153,7 +153,7 @@ namespace Volt
 		return true;
 	}
 
-	DataBuffer TextureSerializer::GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips)
+	DataBuffer TextureSerializer::GetImageDataBuffer(IntRef<RHI::Image> image, Vector<TextureMip>& outMips)
 	{
 		const RHI::ImageDesc& imageDesc = image->GetDesc();
 
@@ -161,7 +161,7 @@ namespace Volt
 		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(imageDesc.format);
 
 		// Create per mip staging buffer
-		Vector<RefPtr<RHI::Buffer>> stagingBuffers;
+		Vector<IntRef<RHI::Buffer>> stagingBuffers;
 		stagingBuffers.resize(imageDesc.mips);
 
 		size_t totalImageSize = 0;
@@ -184,8 +184,8 @@ namespace Volt
 			totalImageSize += mipSize;
 		}
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 
@@ -251,7 +251,7 @@ namespace Volt
 		return dataBuffer;
 	}
 
-	void TextureSerializer::UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<TextureMip>& mips, const DataBuffer& dataBuffer)
+	void TextureSerializer::UploadImageData(IntRef<RHI::Image> image, RHI::PixelFormat format, const Vector<TextureMip>& mips, const DataBuffer& dataBuffer)
 	{
 		TextureData texData{};
 		texData.SetupMips(mips, dataBuffer);
@@ -284,10 +284,10 @@ namespace Volt
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
+		IntRef<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 

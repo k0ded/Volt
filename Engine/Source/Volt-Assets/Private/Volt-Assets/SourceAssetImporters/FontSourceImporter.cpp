@@ -131,7 +131,7 @@ namespace Volt
 	};
 
 	template<typename T, typename S, int32_t N, msdf_atlas::GeneratorFunction<S, N> GEN_FN>
-	static RefPtr<RHI::Image> CreateAtlas(const std::vector<msdf_atlas::GlyphGeometry>& glyphs, const Configuration& config, RHI::PixelFormat format)
+	static IntRef<RHI::Image> CreateAtlas(const std::vector<msdf_atlas::GlyphGeometry>& glyphs, const Configuration& config, RHI::PixelFormat format)
 	{
 		msdf_atlas::ImmediateAtlasGenerator<S, N, GEN_FN, msdf_atlas::BitmapAtlasStorage<T, N>> generator(config.width, config.height);
 		generator.setAttributes(config.generatorAttribs);
@@ -146,7 +146,7 @@ namespace Volt
 		imageDesc.usage = RHI::ImageUsage::Texture;
 		imageDesc.format = format;
 
-		RefPtr<RHI::Image> image = RHI::Image::Create(imageDesc, bitmap.pixels);
+		IntRef<RHI::Image> image = RHI::Image::Create(imageDesc, bitmap.pixels);
 		return image;
 	}
 
@@ -292,7 +292,7 @@ namespace Volt
 
 		constexpr bool floatingPointFormat = true;
 
-		RefPtr<RHI::Image> atlas;
+		IntRef<RHI::Image> atlas;
 
 		switch (msdfConfig.imageType)
 		{

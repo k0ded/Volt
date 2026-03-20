@@ -290,7 +290,7 @@ namespace Volt::RHI
 		return m_swapchainFormat;
 	}
 
-	RefPtr<Image> VulkanSwapchain::GetCurrentImage() const
+	IntRef<Image> VulkanSwapchain::GetCurrentImage() const
 	{
 		const auto& data = m_perImageData.at(m_currentImageIndex);
 		return data.imageReference;

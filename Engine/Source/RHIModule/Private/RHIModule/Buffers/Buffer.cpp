@@ -6,7 +6,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Buffer> Buffer::Create(const BufferDesc& desc)
+	IntRef<Buffer> Buffer::Create(const BufferDesc& desc)
 	{
 		return RHIModule::GetInstance().CreateBuffer(desc);
 	}

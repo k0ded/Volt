@@ -22,7 +22,7 @@ namespace Volt::RHI
 		const uint32_t GetWidth() const override;
 		const uint32_t GetHeight() const override;
 		const PixelFormat GetFormat() const override;
-		RefPtr<Image> GetCurrentImage() const override;
+		IntRef<Image> GetCurrentImage() const override;
 		bool IsHDREnabled() const override;
 
 		VT_NODISCARD ComPtr<ID3D12Resource> GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).resource; }
@@ -34,7 +34,7 @@ namespace Volt::RHI
 		struct PerImageData
 		{
 			ComPtr<ID3D12Resource> resource = nullptr;
-			RefPtr<Image> imageReference;
+			IntRef<Image> imageReference;
 		};
 
 		void Invalidate(const uint32_t width, const uint32_t height);
@@ -56,10 +56,10 @@ namespace Volt::RHI
 
 		SwapchainCreateInfo m_createInfo;
 
-		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
+		Vector<IntRef<CommandBuffer>> m_commandBuffers;
 		Vector<PerImageData> m_perImageData;
 
-		Vector<RefPtr<Fence>> m_renderFences;
+		Vector<IntRef<Fence>> m_renderFences;
 
 		HWND m_windowHandle;
 		ComPtr<IDXGISwapChain4> m_swapchain;

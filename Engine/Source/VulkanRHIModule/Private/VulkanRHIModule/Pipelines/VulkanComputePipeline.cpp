@@ -19,7 +19,7 @@
 
 namespace Volt::RHI
 {
-	VulkanComputePipeline::VulkanComputePipeline(RefPtr<Shader> shader)
+	VulkanComputePipeline::VulkanComputePipeline(IntRef<Shader> shader)
 		: m_shader(shader)
 	{
 		Invalidate();
@@ -183,7 +183,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	RefPtr<Shader> VulkanComputePipeline::GetShader() const
+	IntRef<Shader> VulkanComputePipeline::GetShader() const
 	{
 		return m_shader;
 	}

@@ -56,7 +56,7 @@ namespace UI
 		//return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage(), mipIndex);
 	}
 
-	ImTextureID GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex)
+	ImTextureID GetTextureID(IntRef<Volt::RHI::Image> texture, int32_t mipIndex)
 	{
 		Volt::ImGuiSubSystem* subSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
 		return subSystem->GetTextureID(texture, mipIndex);
@@ -444,7 +444,7 @@ namespace UI
 		}
 	}
 
-	bool TreeNodeImage(RefPtr<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen)
+	bool TreeNodeImage(IntRef<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen)
 	{
 		ScopedStyleFloat2 frame{ ImGuiStyleVar_FramePadding, { 0.f, 0.f } };
 		ScopedStyleFloat2 spacing{ ImGuiStyleVar_ItemSpacing, { 0.f, 0.f } };

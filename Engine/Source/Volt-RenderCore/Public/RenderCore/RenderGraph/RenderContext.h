@@ -61,9 +61,9 @@ namespace Volt
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
+		RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
-		void Flush(RefPtr<RHI::Fence> fence);
+		void Flush(IntRef<RHI::Fence> fence);
 
 		void BeginRendering(const RenderingInfo& renderingInfo);
 		void EndRendering();
@@ -89,10 +89,10 @@ namespace Volt
 		void ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue);
 
 		void SetPipelineState(const GraphicsPipelineState& pipelineState);
-		void SetPipelineState(RefPtr<RHI::Shader> computeShader);
+		void SetPipelineState(IntRef<RHI::Shader> computeShader);
 
-		RefPtr<RHI::RenderPipeline> CreateRenderPipeline(const GraphicsPipelineState& pipelineState);
-		RefPtr<RHI::ComputePipeline> CreateComputePipeline(RefPtr<RHI::Shader> computeShader);
+		IntRef<RHI::RenderPipeline> CreateRenderPipeline(const GraphicsPipelineState& pipelineState);
+		IntRef<RHI::ComputePipeline> CreateComputePipeline(IntRef<RHI::Shader> computeShader);
 
 		void BindIndexBuffer(RGBufferRef indexBuffer);
 		void BindVertexBuffers(const InlineVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
@@ -106,10 +106,10 @@ namespace Volt
 		void UnmapBuffer(RGBufferRef buffer);
 		void UnmapBuffer(RGUniformBufferRef buffer);
 
-		template<typename ShaderType> void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
+		template<typename ShaderType> void SetParameters(IntRef<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
 		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
-		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
+		IntRef<RHI::CommandBuffer> GetRHICommandBuffer();
 
 		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline);
 		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline);
@@ -121,23 +121,23 @@ namespace Volt
 		void SetupPipelineData();
 
 		template<typename ParameterStruct>
-		void VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters);
+		void VerifyShaderParameters(IntRef<RHI::Shader> shader, const ParameterStruct* parameters);
 
 		void SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetResourceTableParameter(RefPtr<RHI::ResourceTable> resourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetSamplerParameter(IntRef<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetAccelerationStructureParameter(IntRef<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetResourceTableParameter(IntRef<RHI::ResourceTable> resourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
-		void CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectSamplerParameter(IntRef<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 
@@ -147,9 +147,9 @@ namespace Volt
 		RHI::RenderPipelineCreateInfo TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState);
 		void VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const;
 
-		RefPtr<RHI::RenderPipeline> m_currentRenderPipeline;
-		RefPtr<RHI::ComputePipeline> m_currentComputePipeline;
-		RefPtr<RHI::CommandBuffer> m_commandBuffer;
+		IntRef<RHI::RenderPipeline> m_currentRenderPipeline;
+		IntRef<RHI::ComputePipeline> m_currentComputePipeline;
+		IntRef<RHI::CommandBuffer> m_commandBuffer;
 
 		RHI::ShaderBindingMap m_shaderBindingMap;
 

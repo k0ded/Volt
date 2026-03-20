@@ -62,16 +62,16 @@ namespace Volt
 		IrradianceVolumeParameters GetIrradianceVolumeParameters(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		SpatialHashTableParameters GetSpatialHashTableParameters(RenderGraph& renderGraph);
 
-		RefPtr<RHI::Buffer> m_spatialHashTableChecksumBuffer;
-		RefPtr<RHI::Buffer> m_worldRadianceCacheCellCache;
-		RefPtr<RHI::Buffer> m_worldRadianceCacheCellInfo;
+		IntRef<RHI::Buffer> m_spatialHashTableChecksumBuffer;
+		IntRef<RHI::Buffer> m_worldRadianceCacheCellCache;
+		IntRef<RHI::Buffer> m_worldRadianceCacheCellInfo;
 
-		RefPtr<RHI::Image> m_irradianceVolumeProbeRadianceAtlas;
-		RefPtr<RHI::Image> m_irradianceVolumeProbeVisibilityAtlas;
-		RefPtr<RHI::Buffer> m_irradianceVolumeProbeOffsets;
-		RefPtr<RHI::Buffer> m_irradianceVolumeProbeStatus;
+		IntRef<RHI::Image> m_irradianceVolumeProbeRadianceAtlas;
+		IntRef<RHI::Image> m_irradianceVolumeProbeVisibilityAtlas;
+		IntRef<RHI::Buffer> m_irradianceVolumeProbeOffsets;
+		IntRef<RHI::Buffer> m_irradianceVolumeProbeStatus;
 
-		RefPtr<RHI::Image> m_prevIndirectLight;
+		IntRef<RHI::Image> m_prevIndirectLight;
 	
 		glm::vec3 m_prevCameraPosition = 0.f;
 

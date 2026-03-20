@@ -20,17 +20,17 @@ namespace Volt::RHI
 		VulkanResourceTable();
 		~VulkanResourceTable() override;
 
-		void AddBuffer(RefPtr<Buffer> buffer) override;
-		void AddTexture(RefPtr<Image> texture) override;
+		void AddBuffer(IntRef<Buffer> buffer) override;
+		void AddTexture(IntRef<Image> texture) override;
 
-		void RemoveBuffer(RefPtr<Buffer> buffer) override;
-		void RemoveTexture(RefPtr<Image> texture) override;
+		void RemoveBuffer(IntRef<Buffer> buffer) override;
+		void RemoveTexture(IntRef<Image> texture) override;
 
-		uint32_t GetBufferSlotIndex(RefPtr<Buffer> buffer) override;
-		uint32_t GetTextureSlotIndex(RefPtr<Image> texture) override;
+		uint32_t GetBufferSlotIndex(IntRef<Buffer> buffer) override;
+		uint32_t GetTextureSlotIndex(IntRef<Image> texture) override;
 
-		uint32_t GetOrAddBufferSlotIndex(RefPtr<Buffer> buffer) override;
-		uint32_t GetOrAddTextureSlotIndex(RefPtr<Image> texture) override;
+		uint32_t GetOrAddBufferSlotIndex(IntRef<Buffer> buffer) override;
+		uint32_t GetOrAddTextureSlotIndex(IntRef<Image> texture) override;
 
 		void Update(uint32_t index) override;
 

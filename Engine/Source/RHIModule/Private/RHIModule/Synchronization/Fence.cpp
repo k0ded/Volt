@@ -6,7 +6,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Fence> Fence::Create()
+	IntRef<Fence> Fence::Create()
 	{
 		return RHIModule::GetInstance().CreateFence();
 	}

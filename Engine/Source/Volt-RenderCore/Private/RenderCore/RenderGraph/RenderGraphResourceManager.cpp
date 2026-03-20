@@ -68,7 +68,7 @@ namespace Volt
 		m_allocatedUniformBuffers.clear();
 	}
 
-	void RenderGraphResourceManager::AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource)
+	void RenderGraphResourceManager::AddExternalResource(RGResourceRef resource, IntRef<RHI::RHIResource> rhiResource)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -131,7 +131,7 @@ namespace Volt
 				specification = desc;
 				specification.initializeImage = false;
 
-				RefPtr<RHI::Image> image = RHI::Image::Create(specification);
+				IntRef<RHI::Image> image = RHI::Image::Create(specification);
 				rhiResource = m_persistantTextureResources.Allocate(image);
 			}
 
@@ -167,7 +167,7 @@ namespace Volt
 			}
 			else
 			{
-				RefPtr<RHI::Buffer> buffer = RHI::Buffer::Create(desc);
+				IntRef<RHI::Buffer> buffer = RHI::Buffer::Create(desc);
 				rhiResource = m_persistantBufferResources.Allocate(buffer);
 			}
 

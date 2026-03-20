@@ -7,7 +7,7 @@
 
 #include <unordered_set>
 
-void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer, bool excludeFromGrid)
+void EditorDrawInterface::DrawIcon(IntRef<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer, bool excludeFromGrid)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.texture = texture;
@@ -56,7 +56,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 	if (m_drawCommands.empty())
 	{
 		const glm::vec4 userData = { std::bit_cast<float>(entityId), 0.f, 0.f, 0.f };
-		RefPtr<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
+		IntRef<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
 		debugRenderer.DrawBillboard(entityTransform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, userData);
 	
 		return;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt
 {
@@ -16,13 +16,13 @@ namespace Volt
 	public:
 		GPUReadbackTexture(const RGTextureDesc& desc);
 
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetImage() const { return m_image; }
+		VT_NODISCARD VT_INLINE IntRef<RHI::Image> GetImage() const { return m_image; }
 		VT_NODISCARD VT_INLINE bool IsReady() const { return m_isReady.load(); }
 
 	private:
 		friend class RenderGraph;
 
 		std::atomic_bool m_isReady = false;
-		RefPtr<RHI::Image> m_image;
+		IntRef<RHI::Image> m_image;
 	};
 }

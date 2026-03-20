@@ -17,9 +17,9 @@ namespace Volt::RHI
 	public:
 		~TransientBuffer() override = default;
 
-		virtual void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
+		virtual void BindMemory(IntRef<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
 
-		VTRHI_API static RefPtr<TransientBuffer> Create(const BufferDesc& desc);
+		VTRHI_API static IntRef<TransientBuffer> Create(const BufferDesc& desc);
 
 	protected:
 		TransientBuffer() = default;

@@ -23,7 +23,7 @@ namespace Volt::RHI
 		const BufferDesc& GetDesc() const override;
 		uint64_t GetElementSize() const override;
 		uint64_t GetNumElements() const override;
-		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
+		IntRef<BufferView> GetView(const BufferViewDesc& desc) override;
 		void Unmap() override;
 
 		/* 

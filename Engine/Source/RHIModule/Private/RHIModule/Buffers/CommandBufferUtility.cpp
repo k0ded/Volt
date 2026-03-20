@@ -8,9 +8,9 @@
 
 namespace Volt::RHI::CommandBufferUtils
 {
-	RefPtr<Fence> ExecuteCommandBufferWithNewFence(RefPtr<CommandBuffer> commandBuffer, QueueType queueType)
+	IntRef<Fence> ExecuteCommandBufferWithNewFence(IntRef<CommandBuffer> commandBuffer, QueueType queueType)
 	{
-		RefPtr<Fence> fence = Fence::Create();
+		IntRef<Fence> fence = Fence::Create();
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
@@ -21,7 +21,7 @@ namespace Volt::RHI::CommandBufferUtils
 		return fence;
 	}
 
-	void ExecuteCommandBufferWithFence(RefPtr<CommandBuffer> commandBuffer, RefPtr<Fence> fence, QueueType queueType)
+	void ExecuteCommandBufferWithFence(IntRef<CommandBuffer> commandBuffer, IntRef<Fence> fence, QueueType queueType)
 	{
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
@@ -30,9 +30,9 @@ namespace Volt::RHI::CommandBufferUtils
 		RHIModule::GetSubmissionThread().QueueSubmit(std::move(executeInfo), queueType);
 	}
 
-	RefPtr<Fence> ExecuteCommandBufferWithNewFenceAndWait(RefPtr<CommandBuffer> commandBuffer, QueueType queueType /*= QueueType::Graphics*/)
+	IntRef<Fence> ExecuteCommandBufferWithNewFenceAndWait(IntRef<CommandBuffer> commandBuffer, QueueType queueType /*= QueueType::Graphics*/)
 	{
-		RefPtr<Fence> fence = Fence::Create();
+		IntRef<Fence> fence = Fence::Create();
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };

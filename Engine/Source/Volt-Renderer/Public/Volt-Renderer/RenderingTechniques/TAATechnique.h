@@ -19,7 +19,7 @@ namespace Volt
 		};
 
 		TAATechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		Output Execute(const RenderView& view, RefPtr<RHI::Image> prevAccumulation);
+		Output Execute(const RenderView& view, IntRef<RHI::Image> prevAccumulation);
 
 	private:
 		RenderGraph& m_renderGraph;

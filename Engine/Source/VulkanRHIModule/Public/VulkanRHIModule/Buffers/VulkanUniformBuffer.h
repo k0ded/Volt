@@ -18,7 +18,7 @@ namespace Volt::RHI
 		/*
 			Uniform Buffer Interface
 		*/
-		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
+		IntRef<BufferView> GetView(const BufferViewDesc& desc) override;
 		uint64_t GetSize() const override;
 		void Unmap() override;
 

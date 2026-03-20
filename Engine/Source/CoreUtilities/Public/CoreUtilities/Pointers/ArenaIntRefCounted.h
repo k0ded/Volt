@@ -5,13 +5,13 @@
 #include <atomic>
 
 template<typename Type>
-class ArenaRefCounted
+class ArenaIntRefCounted
 {
 public:
-	ArenaRefCounted(const ArenaRefCounted&) noexcept = delete;
-	ArenaRefCounted& operator=(const ArenaRefCounted&) noexcept = delete;
-	ArenaRefCounted(ArenaRefCounted&&) noexcept = delete;
-	ArenaRefCounted& operator=(ArenaRefCounted&&) noexcept = delete;
+	ArenaIntRefCounted(const ArenaIntRefCounted&) noexcept = delete;
+	ArenaIntRefCounted& operator=(const ArenaIntRefCounted&) noexcept = delete;
+	ArenaIntRefCounted(ArenaIntRefCounted&&) noexcept = delete;
+	ArenaIntRefCounted& operator=(ArenaIntRefCounted&&) noexcept = delete;
 
 	VT_INLINE void IncRef() const noexcept
 	{
@@ -57,21 +57,21 @@ public:
 	}
 
 protected:
-	ArenaRefCounted() noexcept
+	ArenaIntRefCounted() noexcept
 		: m_arenaPtr(nullptr),
 		m_arenaFreeFunc(nullptr),
 		m_count(1)
 	{ }
 
-	virtual ~ArenaRefCounted() noexcept
+	virtual ~ArenaIntRefCounted() noexcept
 	{
 		[[maybe_unused]] auto validCount = [](auto val) { return val == 0 || val == 1; };
 		VT_ASSERT(validCount(m_count.load(std::memory_order_relaxed)));
 	}
 
-	RefPtr<Type> CreateRefPtrFromThis() const
+	IntRef<Type> CreateIntRefFromThis() const
 	{
-		return RefPtr<Type>::Attach(const_cast<Type*>(reinterpret_cast<const Type*>(this)));
+		return IntRef<Type>::Attach(const_cast<Type*>(reinterpret_cast<const Type*>(this)));
 	}
 
 private:

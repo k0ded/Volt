@@ -263,7 +263,7 @@ void ViewportPanel::UpdateContent()
 
 	auto& settings = UserSettingsManager::GetSettings();
 
-	RefPtr<Volt::RHI::Image> playIcon = EditorResources::GetEditorIcon(EditorIcon::Play);
+	IntRef<Volt::RHI::Image> playIcon = EditorResources::GetEditorIcon(EditorIcon::Play);
 	if (m_sceneState == SceneState::Play)
 	{
 		playIcon = EditorResources::GetEditorIcon(EditorIcon::Stop);
@@ -324,7 +324,7 @@ void ViewportPanel::UpdateContent()
 
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - (rightButtonCount * buttonSize));
 
-	RefPtr<Volt::RHI::Image> localWorldIcon;
+	IntRef<Volt::RHI::Image> localWorldIcon;
 	if (settings.sceneSettings.worldSpace)
 	{
 		localWorldIcon = EditorResources::GetEditorIcon(EditorIcon::WorldSpace);

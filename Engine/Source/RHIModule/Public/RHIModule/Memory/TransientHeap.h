@@ -36,6 +36,6 @@ namespace Volt::RHI
 	public:
 		virtual void ReservePages(uint32_t numPages) = 0;
 
-		static RefPtr<TransientHeap> Create(const TransientHeapCreateInfo& createInfo);
+		static IntRef<TransientHeap> Create(const TransientHeapCreateInfo& createInfo);
 	};
 }

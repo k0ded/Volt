@@ -13,7 +13,7 @@
 
 namespace Volt::RHI
 {
-	D3D12Image::D3D12Image(const ImageDesc& desc, const void* data, RefPtr<GPUAllocator> allocator)
+	D3D12Image::D3D12Image(const ImageDesc& desc, const void* data, IntRef<GPUAllocator> allocator)
 		: m_desc(desc), m_allocator(allocator)
 	{
 		if (!allocator)
@@ -141,7 +141,7 @@ namespace Volt::RHI
 		VT_ENSURE(false);
 	}
 
-	RefPtr<ImageView> D3D12Image::GetView(const ImageViewDesc& desc)
+	IntRef<ImageView> D3D12Image::GetView(const ImageViewDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -271,7 +271,7 @@ namespace Volt::RHI
 
 		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
 		RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -303,7 +303,7 @@ namespace Volt::RHI
 		commandBuffer->ResourceBarrier({ barrier });
 		commandBuffer->End();
 
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		IntRef<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 
 		uint8_t* mappedMemory = stagingAlloc->Map<uint8_t>();
@@ -335,7 +335,7 @@ namespace Volt::RHI
 
 	void D3D12Image::TransitionToLayout(ImageLayout targetLayout)
 	{
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
 		RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -369,7 +369,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		IntRef<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 	}
 
@@ -391,7 +391,7 @@ namespace Volt::RHI
 		memcpy_s(stagingData, bufferSize, data, bufferSize);
 		stagingAlloc->Unmap();
 
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		IntRef<CommandBuffer> commandBuffer = CommandBuffer::Create();
 
 		commandBuffer->Begin();
 
@@ -423,7 +423,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		IntRef<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);

@@ -38,7 +38,7 @@ using namespace Volt;
 
 namespace Circuit
 {
-	Circuit::CircuitRenderer::CircuitRenderer(CircuitWindow& targetCircuitWindow, RefPtr<Volt::RHI::ResourceTable> resourceTable)
+	Circuit::CircuitRenderer::CircuitRenderer(CircuitWindow& targetCircuitWindow, IntRef<Volt::RHI::ResourceTable> resourceTable)
 		: m_targetCircuitWindow(targetCircuitWindow), 
 		m_targetWindow(Volt::WindowManager::Get().GetWindow(targetCircuitWindow.GetWindowHandle())),
 		m_resourceTable(resourceTable)

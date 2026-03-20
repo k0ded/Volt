@@ -23,7 +23,7 @@ namespace Volt::ImageUtility
 		uint32_t padding[3];
 	};
 
-	void GenerateMipMaps(RefPtr<RHI::Image> image)
+	void GenerateMipMaps(IntRef<RHI::Image> image)
 	{
 		const RHI::ImageDesc& imageDesc = image->GetDesc();
 
@@ -36,8 +36,8 @@ namespace Volt::ImageUtility
 
 		GlobalMemoryStackMark memMark;
 
-		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
-		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+		IntRef<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 
@@ -59,7 +59,7 @@ namespace Volt::ImageUtility
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		RefPtr<RHI::ComputePipeline> pipeline = PipelineStateCache::GetComputePipeline(Renderer::GetDefaultResources().generateMipMapsShader);
+		IntRef<RHI::ComputePipeline> pipeline = PipelineStateCache::GetComputePipeline(Renderer::GetDefaultResources().generateMipMapsShader);
 
 		STRING_HASH_CONSTEXPR StringHash SourceMipStringHash = StringHash::Construct("SourceMip");
 		STRING_HASH_CONSTEXPR StringHash DestinationMipStringHash = StringHash::Construct("RWDstMip");
@@ -74,7 +74,7 @@ namespace Volt::ImageUtility
 		desc.size = sizeof(GenerateMipMapsGlobals) * (numMips - 1);
 		desc.debugName = "GlobalsBuffer";
 
-		RefPtr<RHI::UniformBuffer> uniformBuffer = RHI::UniformBuffer::Create(desc);
+		IntRef<RHI::UniformBuffer> uniformBuffer = RHI::UniformBuffer::Create(desc);
 
 		GenerateMipMapsGlobals* globals = uniformBuffer->Map<GenerateMipMapsGlobals>();
 

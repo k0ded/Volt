@@ -5,23 +5,23 @@
 #include <RHIModule/Buffers/CommandBuffer.h>
 
 #include <CoreUtilities/Containers/AtomicStack.h>
-#include <CoreUtilities/Pointers/RefCounted.h>
+#include <CoreUtilities/Pointers/IntRefCounted.h>
 
 namespace Volt
 {
-	class VTRC_API PooledCommandBuffer : public RefCounted<PooledCommandBuffer>
+	class VTRC_API PooledCommandBuffer : public IntRefCounted<PooledCommandBuffer>
 	{
 	public:
 		~PooledCommandBuffer() override;
 
-		VT_INLINE RefPtr<RHI::CommandBuffer> Get() const { return m_commandBuffer; }
+		VT_INLINE IntRef<RHI::CommandBuffer> Get() const { return m_commandBuffer; }
 
 	private:
-		friend class RefPtr<PooledCommandBuffer>;
+		friend class IntRef<PooledCommandBuffer>;
 
-		PooledCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer);
+		PooledCommandBuffer(IntRef<RHI::CommandBuffer> commandBuffer);
 
-		RefPtr<RHI::CommandBuffer> m_commandBuffer;
+		IntRef<RHI::CommandBuffer> m_commandBuffer;
 	};
 
 	class VTRC_API CommandBufferPool
@@ -34,9 +34,9 @@ namespace Volt
 
 		// Returns a pooled command buffer, once the PooledCommandBuffer object
 		// is no longer referenced, it's command buffer will be freed.
-		static RefPtr<PooledCommandBuffer> GetCommandBuffer();
+		static IntRef<PooledCommandBuffer> GetCommandBuffer();
 
-		static void FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer);
+		static void FreeCommandBuffer(IntRef<RHI::CommandBuffer> commandBuffer);
 
 	private:
 		inline static CommandBufferPool* s_instance = nullptr;
@@ -46,8 +46,8 @@ namespace Volt
 		inline static constexpr size_t CommandBufferPoolSize = 4096;
 		inline static constexpr size_t WaitCommandBufferPoolSize = 1024;
 
-		AtomicStack<RefPtr<RHI::CommandBuffer>> m_commandBufferPool;
-		Vector<AtomicStack<RefPtr<RHI::CommandBuffer>>> m_waitingCommandBufferPool;
+		AtomicStack<IntRef<RHI::CommandBuffer>> m_commandBufferPool;
+		Vector<AtomicStack<IntRef<RHI::CommandBuffer>>> m_waitingCommandBufferPool;
 
 		uint32_t m_frameIndex = 0;
 	};

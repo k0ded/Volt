@@ -6,5 +6,5 @@
 
 namespace Volt::ImageUtility
 {
-	VTR_API void GenerateMipMaps(RefPtr<RHI::Image> image);
+	VTR_API void GenerateMipMaps(IntRef<RHI::Image> image);
 }

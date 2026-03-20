@@ -28,13 +28,13 @@ namespace AssetBrowser
 		Volt::AssetHandle handle = 0;
 		AssetType type = AssetTypes::None;
 
-		RefPtr<Volt::RHI::Image> previewImage;
+		IntRef<Volt::RHI::Image> previewImage;
 
 		AssetData& meshToImportData;
 
 	protected:
 		void PushID() override;
-		RefPtr<Volt::RHI::Image> GetIcon() const override;
+		IntRef<Volt::RHI::Image> GetIcon() const override;
 		ImVec4 GetBackgroundColor() const override;
 		std::string GetTypeName() const override;
 		

@@ -41,7 +41,7 @@ namespace Volt::RHI
 
 	struct VertexBufferBinding
 	{
-		RefPtr<RHI::Buffer> buffer;
+		IntRef<RHI::Buffer> buffer;
 		uint64_t offset = 0;
 	};
 
@@ -119,13 +119,13 @@ namespace Volt::RHI
 		virtual const QueueType GetQueueType() const = 0;
 		virtual const CommandBufferLevel GetCommandBufferLevel() const = 0;
 
-		virtual RefPtr<CommandBuffer> CreateSecondaryCommandBuffer() const = 0;
-		virtual void ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const = 0;
-		virtual void ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const = 0;
+		virtual IntRef<CommandBuffer> CreateSecondaryCommandBuffer() const = 0;
+		virtual void ExecuteSecondaryCommandBuffer(IntRef<CommandBuffer> commandBuffer) const = 0;
+		virtual void ExecuteSecondaryCommandBuffers(Vector<IntRef<CommandBuffer>> commandBuffers) const = 0;
 
-		static RefPtr<CommandBuffer> Create(QueueType queueType);
-		static RefPtr<CommandBuffer> Create();
-		static RefPtr<CommandBuffer> CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration);
+		static IntRef<CommandBuffer> Create(QueueType queueType);
+		static IntRef<CommandBuffer> Create();
+		static IntRef<CommandBuffer> CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration);
 
 	protected:
 		CommandBuffer() = default;

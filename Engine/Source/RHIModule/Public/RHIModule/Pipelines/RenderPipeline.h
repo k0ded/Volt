@@ -10,7 +10,7 @@
 
 namespace Volt::RHI
 {
-	using PipelineShadersVector = InlineVector<RefPtr<RHI::Shader>, GetNumMaxBoundShaderStages()>;
+	using PipelineShadersVector = InlineVector<IntRef<RHI::Shader>, GetNumMaxBoundShaderStages()>;
 
 	struct AttachmentBlendState
 	{
@@ -76,7 +76,7 @@ namespace Volt::RHI
 		virtual const PipelineShadersVector& GetShaders() const = 0;
 		virtual const VertexBufferLayout& GetVertexBufferLayout() const = 0;
 
-		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
+		static IntRef<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
 
 	protected:
 		RenderPipeline() = default;

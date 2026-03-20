@@ -12,17 +12,17 @@ public:
 
 	void Clear();
 
-	void AddAsset(RefPtr<Volt::Asset> asset);
+	void AddAsset(IntRef<Volt::Asset> asset);
 	void RemoveAsset(Volt::AssetHandle assetHandle);
 
-	RefPtr<Volt::Asset> GetAsset(Volt::AssetHandle assetHandle);
-	bool TryGetAsset(Volt::AssetHandle assetHandle, RefPtr<Volt::Asset>& outAsset);
+	IntRef<Volt::Asset> GetAsset(Volt::AssetHandle assetHandle);
+	bool TryGetAsset(Volt::AssetHandle assetHandle, IntRef<Volt::Asset>& outAsset);
 
 private:
 	void Initialize();
 
 	AtomicHashTable<> m_hashTable;
-	Vector<RefPtr<Volt::Asset>> m_cache;
+	Vector<IntRef<Volt::Asset>> m_cache;
 };
 
 class EditorAssetManager
@@ -58,7 +58,7 @@ private:
 template<Volt::VoltAssetType T>
 inline AssetReference<T> EditorAssetManager::GetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle)
 {
-	RefPtr<Volt::Asset> asset;
+	IntRef<Volt::Asset> asset;
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
 		return { asset.As<T>() };
@@ -95,7 +95,7 @@ bool EditorAssetManager::TryGetAssetImmediatelyAndCache(const std::filesystem::p
 template<Volt::VoltAssetType T>
 inline bool EditorAssetManager::TryGetAssetAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset)
 {
-	RefPtr<Volt::Asset> asset;
+	IntRef<Volt::Asset> asset;
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
 		outAsset = { asset.As<T>() };

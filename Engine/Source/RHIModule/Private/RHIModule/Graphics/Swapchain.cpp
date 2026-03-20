@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Swapchain> Swapchain::Create(const SwapchainCreateInfo& createInfo)
+	IntRef<Swapchain> Swapchain::Create(const SwapchainCreateInfo& createInfo)
 	{
 		return RHIModule::GetInstance().CreateSwapchain(createInfo);
 	}

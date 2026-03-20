@@ -23,7 +23,7 @@ namespace Volt::RHI
 	class VTRHI_API SamplerState : public ArenaRHIInterface
 	{
 	public:
-		static RefPtr<SamplerState> Create(const SamplerStateDesc& createInfo);
+		static IntRef<SamplerState> Create(const SamplerStateDesc& createInfo);
 
 	protected:
 		SamplerState() = default;

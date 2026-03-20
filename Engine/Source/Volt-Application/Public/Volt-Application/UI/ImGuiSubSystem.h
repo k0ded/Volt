@@ -39,7 +39,7 @@ namespace Volt
 		void EnterBlockingContext(std::function<void()> onEnterCallback = {});
 		void ExitBlockingContext();
 
-		ImTextureID GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex = -1);
+		ImTextureID GetTextureID(IntRef<RHI::Image> image, int32_t mipIndex = -1);
 
 		VT_NODISCARD VT_INLINE bool IsInitialized() const { return m_imguiImplementation != nullptr; }
 		VT_NODISCARD VT_INLINE bool IsWithinImGuiUpdate() const { return m_isWithinImGuiUpdate; }

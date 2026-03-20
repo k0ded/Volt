@@ -17,9 +17,9 @@ namespace Volt
 
 		uint64_t GetByteSize();
 
-		RefPtr<RHI::Buffer> GetResource() const;
+		IntRef<RHI::Buffer> GetResource() const;
 
 	private:
-		RefPtr<RHI::Buffer> m_buffer;
+		IntRef<RHI::Buffer> m_buffer;
 	};
 }

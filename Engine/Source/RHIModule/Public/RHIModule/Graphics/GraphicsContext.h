@@ -20,18 +20,18 @@ namespace Volt::RHI
 		virtual ~GraphicsContext();
 
 		VT_NODISCARD VT_INLINE static GraphicsContext& Get() { return *s_context; }
-		VT_NODISCARD VT_INLINE static RefPtr<GraphicsDevice> GetDevice() { return s_context->GetGraphicsDevice(); };
-		VT_NODISCARD VT_INLINE static RefPtr<PhysicalGraphicsDevice> GetPhysicalDevice() { return s_context->GetPhysicalGraphicsDevice(); };
-		VT_NODISCARD VT_INLINE static RefPtr<GPUAllocator> GetDefaultAllocator() { return s_context->GetDefaultAllocatorImpl(); };
+		VT_NODISCARD VT_INLINE static IntRef<GraphicsDevice> GetDevice() { return s_context->GetGraphicsDevice(); };
+		VT_NODISCARD VT_INLINE static IntRef<PhysicalGraphicsDevice> GetPhysicalDevice() { return s_context->GetPhysicalGraphicsDevice(); };
+		VT_NODISCARD VT_INLINE static IntRef<GPUAllocator> GetDefaultAllocator() { return s_context->GetDefaultAllocatorImpl(); };
 		VT_NODISCARD VT_INLINE static GraphicsAPI GetAPI() { return s_graphicsAPI; }
 
-		static RefPtr<GraphicsContext> Create(const GraphicsContextCreateInfo& createInfo);
+		static IntRef<GraphicsContext> Create(const GraphicsContextCreateInfo& createInfo);
 
 	protected:
-		virtual RefPtr<GPUAllocator> GetDefaultAllocatorImpl() = 0;
+		virtual IntRef<GPUAllocator> GetDefaultAllocatorImpl() = 0;
 
-		virtual RefPtr<GraphicsDevice> GetGraphicsDevice() const = 0;
-		virtual RefPtr<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const = 0;
+		virtual IntRef<GraphicsDevice> GetGraphicsDevice() const = 0;
+		virtual IntRef<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const = 0;
 
 	private:
 		inline static GraphicsContext* s_context;

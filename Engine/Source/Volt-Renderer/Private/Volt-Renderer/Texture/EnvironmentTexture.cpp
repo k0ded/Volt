@@ -32,7 +32,7 @@ namespace Volt
 		}
 	};
 
-	EnvironmentTexture::EnvironmentTexture(RefPtr<RHI::Image> diffuseImage, RefPtr<RHI::Image> specularImage)
+	EnvironmentTexture::EnvironmentTexture(IntRef<RHI::Image> diffuseImage, IntRef<RHI::Image> specularImage)
 		: m_diffuseImage(diffuseImage), m_specularImage(specularImage)
 	{
 

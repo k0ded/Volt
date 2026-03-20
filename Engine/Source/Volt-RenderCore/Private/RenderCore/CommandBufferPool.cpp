@@ -37,7 +37,7 @@ namespace Volt
 		m_frameIndex = ++m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
 		uint32_t nextFrameIndex = (m_frameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
 
-		RefPtr<RHI::CommandBuffer> commandBuffer;
+		IntRef<RHI::CommandBuffer> commandBuffer;
 		while (m_waitingCommandBufferPool.at(m_frameIndex).Pop(commandBuffer))
 		{
 			if (commandBuffer->HasFinishedExecution())
@@ -51,22 +51,22 @@ namespace Volt
 		}
 	}
 
-	RefPtr<PooledCommandBuffer> CommandBufferPool::GetCommandBuffer()
+	IntRef<PooledCommandBuffer> CommandBufferPool::GetCommandBuffer()
 	{
 		VT_PROFILE_FUNCTION();
 		// We try to pop a command buffer from the stack.
-		RefPtr<RHI::CommandBuffer> result;
+		IntRef<RHI::CommandBuffer> result;
 		if (s_instance->m_commandBufferPool.Pop(result))
 		{
-			return RefPtr<PooledCommandBuffer>::Create(result);
+			return IntRef<PooledCommandBuffer>::Create(result);
 		}
 
 		// If no command buffers were available, we fallback to creating a new one.
 		result = RHI::CommandBuffer::Create();
-		return RefPtr<PooledCommandBuffer>::Create(result);
+		return IntRef<PooledCommandBuffer>::Create(result);
 	}
 
-	void CommandBufferPool::FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
+	void CommandBufferPool::FreeCommandBuffer(IntRef<RHI::CommandBuffer> commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_MAYBE_UNUSED bool succeded = s_instance->m_waitingCommandBufferPool.at(s_instance->m_frameIndex).Push(commandBuffer);
@@ -88,7 +88,7 @@ namespace Volt
 		CommandBufferPool::FreeCommandBuffer(m_commandBuffer);
 	}
 
-	PooledCommandBuffer::PooledCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
+	PooledCommandBuffer::PooledCommandBuffer(IntRef<RHI::CommandBuffer> commandBuffer)
 	{
 		m_commandBuffer = commandBuffer;
 	}

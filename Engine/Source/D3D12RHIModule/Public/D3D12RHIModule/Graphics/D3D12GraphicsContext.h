@@ -18,12 +18,12 @@ namespace Volt::RHI
 		~D3D12GraphicsContext() override;
 
 	protected:
-		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
-		RefPtr<GPUAllocator> GetTransientAllocatorImpl() override;
-		RefPtr<ResourceStateTracker> GetResourceStateTrackerImpl() override;
+		IntRef<GPUAllocator> GetDefaultAllocatorImpl() override;
+		IntRef<GPUAllocator> GetTransientAllocatorImpl() override;
+		IntRef<ResourceStateTracker> GetResourceStateTrackerImpl() override;
 
-		RefPtr<GraphicsDevice> GetGraphicsDevice() const override;
-		RefPtr<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const override;
+		IntRef<GraphicsDevice> GetGraphicsDevice() const override;
+		IntRef<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const override;
 
 		void* GetHandleImpl() const override;
 
@@ -31,12 +31,12 @@ namespace Volt::RHI
 		void Initialize();
 		void Shutdown();
 
-		RefPtr<GraphicsDevice> m_graphicsDevice;
-		RefPtr<PhysicalGraphicsDevice> m_physicalDevice;
-		RefPtr<ResourceStateTracker> m_resourceStateTracker;
+		IntRef<GraphicsDevice> m_graphicsDevice;
+		IntRef<PhysicalGraphicsDevice> m_physicalDevice;
+		IntRef<ResourceStateTracker> m_resourceStateTracker;
 
-		RefPtr<GPUAllocator> m_defaultAllocator;
-		RefPtr<GPUAllocator> m_transientAllocator;
+		IntRef<GPUAllocator> m_defaultAllocator;
+		IntRef<GPUAllocator> m_transientAllocator;
 
 		Ref<D3D12DebugLayer> m_debugLayer;
 

@@ -6,7 +6,7 @@
 
 namespace Volt
 {
-	RefPtr<RHI::Image> ImGuiRenderTargetManager::GetRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
+	IntRef<RHI::Image> ImGuiRenderTargetManager::GetRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
 	{
 		if (m_renderTargets.contains(window))
 		{
@@ -35,7 +35,7 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::Image> ImGuiRenderTargetManager::CreateRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
+	IntRef<RHI::Image> ImGuiRenderTargetManager::CreateRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
 	{
 		RHI::ImageDesc desc{};
 		desc.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;

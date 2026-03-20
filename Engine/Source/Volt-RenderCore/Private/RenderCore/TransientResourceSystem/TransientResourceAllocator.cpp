@@ -109,7 +109,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
+		IntRef<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
 
 		// Create the buffer and make sure we acquire it.
 		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, 1, true);
@@ -147,7 +147,7 @@ namespace Volt
 		RHI::ImageDesc specification = desc;
 		specification.initializeImage = false;
 
-		RefPtr<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
+		IntRef<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
 
 		// Create the texture and make sure we acquire it.
 		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, 1, true);
@@ -180,7 +180,7 @@ namespace Volt
 		}
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
-		RefPtr<RHI::Buffer> rhiBbuffer = RHI::Buffer::Create(desc);
+		IntRef<RHI::Buffer> rhiBbuffer = RHI::Buffer::Create(desc);
 
 		// Create the buffer and make sure we acquire it.
 		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1, false);
@@ -219,7 +219,7 @@ namespace Volt
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 
-		RefPtr<RHI::Image> rhiTexture = RHI::Image::Create(specification);
+		IntRef<RHI::Image> rhiTexture = RHI::Image::Create(specification);
 
 		// Create the texture and make sure we acquire it.
 		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1, false);
@@ -253,7 +253,7 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::UniformBuffer> rhiBbuffer = RHI::UniformBuffer::Create(desc);
+		IntRef<RHI::UniformBuffer> rhiBbuffer = RHI::UniformBuffer::Create(desc);
 		
 		// Create the buffer and make sure we acquire it.
 		TransientUniformBufferResourceRef transientBuffer = m_transientUniformBufferAllocator.Allocate(rhiBbuffer, hash, RHI::RHICapabilities::NumFramesInFlight);

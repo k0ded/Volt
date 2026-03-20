@@ -62,12 +62,12 @@ namespace Volt
 
 		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 
-		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
-		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE void AssignRHIView(IntRef<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE IntRef<RHI::BufferView> GetRHIView() { return m_rhiView; }
 		VT_INLINE const RGUniformBufferSRVDesc& GetDesc() { return m_desc; }
 
 	private:
-		RefPtr<RHI::BufferView> m_rhiView;
+		IntRef<RHI::BufferView> m_rhiView;
 		RGUniformBufferSRVDesc m_desc;
 	};
 

@@ -281,12 +281,12 @@ namespace Circuit
 		}
 	}
 
-	void CircuitPainter::AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float scale /*= 1.f*/)
+	void CircuitPainter::AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float scale /*= 1.f*/)
 	{
 		AddImage(x, y, width, height, image, 0.f, 0.f, 1.f, 1.f, scale);
 	}
 
-	void CircuitPainter::AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale /*= 1.f*/)
+	void CircuitPainter::AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale /*= 1.f*/)
 	{
 		const glm::vec2 pixelPos = ToPixelPos({ x, y });
 

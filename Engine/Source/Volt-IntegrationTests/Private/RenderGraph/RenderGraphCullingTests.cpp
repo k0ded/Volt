@@ -71,7 +71,7 @@ namespace IntegrationTests
 
 		AddComputePass(renderGraph, RenderGraphPassFlags::NeverCull, passParameters);
 
-		RefPtr<RHI::Buffer> outBuffer;
+		IntRef<RHI::Buffer> outBuffer;
 		renderGraph.EnqueueBufferExtraction(buffer, &outBuffer);
 		renderGraph.Compile();
 
@@ -111,7 +111,7 @@ namespace IntegrationTests
 #if 0
 	TEST_F(RenderGraphFixture, WriteAfterWriteIsCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		IntRef<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
 
 		RGBufferRef writeBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
@@ -263,7 +263,7 @@ namespace IntegrationTests
 			AddRasterPass(renderGraph, RenderGraphPassFlags::None, passParameters);
 		}
 
-		RefPtr<RHI::Image> outImage;
+		IntRef<RHI::Image> outImage;
 		renderGraph.EnqueueTextureExtraction(colorTexture2, &outImage);
 		renderGraph.Compile();
 
