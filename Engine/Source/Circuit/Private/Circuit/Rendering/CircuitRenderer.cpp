@@ -78,9 +78,10 @@ namespace Circuit
 		AddCircuitPrimitivesPass(renderGraph, rgBlackboard);
 
 		renderGraph.Compile();
-		renderGraph.Execute();
-	}
 
+		// Need to make sure everything is submitted before we continue, to ensure that present happens after.
+		renderGraph.ExecuteImmediate();
+	}
 
 	struct CircuitPrimitivesPS : public GlobalShader
 	{

@@ -261,8 +261,6 @@ namespace Volt
 
 			AppRenderEvent renderEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(renderEvent);
-
-			m_windowManager->Render(m_currentDeltaTime);
 		}
 
 		{
@@ -297,6 +295,8 @@ namespace Volt
 		{
 			m_imguiSubSystem->End();
 		}
+
+		m_windowManager->Render(m_currentDeltaTime);
 
 		AppPresentFrameEvent appPresentEvent{};
 		EventSystem::DispatchEvent(appPresentEvent);

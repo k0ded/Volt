@@ -177,8 +177,6 @@ namespace Volt::RHI
 		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence, VK_TRUE, UINT64_MAX);
 		vkResetFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence);
 
-		m_commandBuffers.at(m_currentFrameIndex)->Begin();
-
 		m_swapchainMutex.lock();
 		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImageIndex);
 		m_swapchainMutex.unlock();
@@ -197,6 +195,8 @@ namespace Volt::RHI
 	void VulkanSwapchain::Present()
 	{
 		VT_PROFILE_FUNCTION();
+
+		m_commandBuffers.at(m_currentFrameIndex)->Begin();
 
 		{
 			ResourceBarrierInfo barrier = ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -241,6 +241,12 @@ namespace Volt::RHI
 			);
 
 			GetNextFrameIndex();
+		}
+
+		// Move image to undefined layout, since that's the state we get it in.
+		{
+			ResourceStateTracker& stateTracker = m_perImageData[m_currentImageIndex].imageReference->GetResourceStateTrackerMutable();
+			stateTracker.Transition(0, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 		}
 	}
 
