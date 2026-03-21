@@ -14,7 +14,7 @@ namespace Volt
 
 			myNavMeshQuery = CreateRef<dtNavMeshQuery>();
 
-			status = myNavMeshQuery->init(myNavMesh.get(), 2048);
+			status = myNavMeshQuery->init(myNavMesh.GetRaw(), 2048);
 			if (dtStatusFailed(status))
 			{
 				VT_LOG(Error, "Could not init Detour NavMesh Query");

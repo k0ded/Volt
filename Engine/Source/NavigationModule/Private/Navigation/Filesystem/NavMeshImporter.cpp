@@ -108,7 +108,7 @@ namespace Volt
 			}
 
 			asset = CreateRef<dtNavMesh>();
-			asset.reset(mesh);
+			asset.Reset(mesh);
 			return true;
 		}
 	}

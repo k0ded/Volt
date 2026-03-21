@@ -39,7 +39,7 @@ struct ObjectIDTexture
 class ObjectIDSceneRendererExtension : public Volt::SceneRendererExtension
 {
 public:
-	ObjectIDSceneRendererExtension(Ref<Volt::RenderScene> renderScene)
+	ObjectIDSceneRendererExtension(Volt::RenderScene* renderScene)
 		: Volt::SceneRendererExtension(renderScene)
 	{}
 

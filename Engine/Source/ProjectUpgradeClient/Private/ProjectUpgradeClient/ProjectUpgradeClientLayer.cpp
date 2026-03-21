@@ -164,7 +164,7 @@ namespace Volt
 
 		if (doneProcessing)
 		{
-			m_currentUpgrade.reset();
+			m_currentUpgrade.Reset();
 			if (m_availableUpgradeVersions.empty())
 			{
 				m_upgradeStage = UpgradeStage::Finished;

@@ -5,7 +5,7 @@
 class GridSceneRendererExtension : public Volt::SceneRendererExtension
 {
 public:
-	GridSceneRendererExtension(Ref<Volt::RenderScene> renderScene)
+	GridSceneRendererExtension(Volt::RenderScene* renderScene)
 		: Volt::SceneRendererExtension(renderScene)
 	{ }
 

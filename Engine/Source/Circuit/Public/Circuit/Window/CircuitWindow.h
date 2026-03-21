@@ -5,9 +5,11 @@
 #include <RHIModule/Descriptors/ResourceTable.h>
 
 #include <WindowModule/WindowHandle.h>
-#include <CoreUtilities/Core.h>
 #include <EventSystem/EventListener.h>
 #include <vector>
+
+#include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 namespace Volt
 {

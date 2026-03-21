@@ -33,7 +33,7 @@ namespace Volt
 		void NavigationSystem::SetVTNavMesh(Ref<NavMesh> navmesh)
 		{
 			myNavMesh = navmesh;
-			NavMeshDebugDrawer::CompileDebugMesh(myNavMesh.get());
+			NavMeshDebugDrawer::CompileDebugMesh(myNavMesh.GetRaw());
 		}
 
 		bool NavigationSystem::OnAppUpdateEvent(Volt::AppUpdateEvent& e)

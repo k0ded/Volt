@@ -7,6 +7,7 @@
 #include <Volt-Core/Plugin/Plugin.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 VT_DECLARE_LOG_CATEGORY(LogRenderDoc, LogVerbosity::Trace);
 

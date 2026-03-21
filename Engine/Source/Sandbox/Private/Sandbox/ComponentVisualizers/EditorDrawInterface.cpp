@@ -168,7 +168,7 @@ namespace std
 	{
 		size_t operator()(const MeshAndMaterial& value) const
 		{
-			return Math::HashCombine(hash<void*>()(value.mesh.get()), hash<void*>()(value.material.get()));
+			return Math::HashCombine(hash<Ref<Volt::Mesh>>()(value.mesh), hash<Ref<Volt::RenderMaterial>>()(value.material));
 		}
 	};
 }

@@ -3,6 +3,7 @@
 #include "CoreUtilities/Core.h"
 #include "CoreUtilities/Pointers/IntRef.h"
 #include "CoreUtilities/Malloc.h"
+#include "CoreUtilities/VoltAssert.h"
 
 #include <atomic>
 

@@ -51,7 +51,7 @@ inline Ref<T> EditorLibrary::RegisterWithType(const std::string& category, Asset
 	VT_PROFILE_FUNCTION();
 
 	s_editors.emplace_back(assetType, typeid(T), category, CreateRef<T>(std::forward<Args>(args)...));
-	return std::reinterpret_pointer_cast<T>(s_editors.back().editorWindow);
+	return ReinterpretRefCast<T>(s_editors.back().editorWindow);
 }
 
 template<typename T, typename ...Args>
@@ -60,7 +60,7 @@ inline Ref<T> EditorLibrary::Register(const std::string& category, Args && ...ar
 	VT_PROFILE_FUNCTION();
 
 	s_editors.emplace_back(AssetTypes::None, typeid(T), category, CreateRef<T>(std::forward<Args>(args)...));
-	return std::reinterpret_pointer_cast<T>(s_editors.back().editorWindow);
+	return ReinterpretRefCast<T>(s_editors.back().editorWindow);
 }
 
 template<typename T>
@@ -73,5 +73,5 @@ inline Ref<T> EditorLibrary::Get()
 		return nullptr;
 	}
 
-	return std::reinterpret_pointer_cast<T>(it->editorWindow);
+	return ReinterpretRefCast<T>(it->editorWindow);
 }

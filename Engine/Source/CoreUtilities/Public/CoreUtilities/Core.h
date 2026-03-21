@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Weak.h"
 #include "Config.h"
 #include "CompilerTraits.h"
 
@@ -20,12 +19,3 @@
 #define VT_DELETE_COPY_MOVE(X) X(const X&) = delete; X& operator=(const X&) = delete; X(X&&) = delete; X& operator=(X&&) = delete
 #define VT_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 //////////////////////////
-
-template<typename T>
-using Ref = std::shared_ptr<T>;
-
-template<typename T, typename ... Args>
-constexpr Ref<T> CreateRef(Args&& ... args)
-{
-	return std::make_shared<T>(std::forward<Args>(args)...);
-}

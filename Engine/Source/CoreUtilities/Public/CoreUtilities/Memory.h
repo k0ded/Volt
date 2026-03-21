@@ -223,3 +223,21 @@ inline void Destruct(ForwardIterator begin, ForwardIterator end)
 	typedef typename std::iterator_traits<ForwardIterator>::value_type valueType;
 	Internal::DestructImpl(begin, end, std::is_trivially_destructible<valueType>());
 }
+
+template<typename T>
+struct DefaultDestroyer
+{
+	constexpr void operator()(T* object) const
+	{
+		delete object;
+	}
+};
+
+template<typename T>
+struct DefaultDestroyer<T[]>
+{
+	constexpr void operator()(T* object) const
+	{
+		delete[] object;
+	}
+};

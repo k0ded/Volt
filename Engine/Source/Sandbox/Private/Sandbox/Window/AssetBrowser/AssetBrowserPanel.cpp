@@ -1118,7 +1118,7 @@ void AssetBrowserPanel::RecursiveRemoveFolderContents(DirectoryData* aDir)
 	{
 		if (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / dir->path))
 		{
-			RecursiveRemoveFolderContents(dir.get());
+			RecursiveRemoveFolderContents(dir.GetRaw());
 			FileSystem::Remove(Volt::ProjectManager::GetRootDirectory() / dir->path);
 		}
 	}
@@ -1138,7 +1138,7 @@ void AssetBrowserPanel::RecursiceRenameFolderContents(DirectoryData* aDir, const
 
 	for (const auto& dir : aDir->subDirectories)
 	{
-		RecursiceRenameFolderContents(dir.get(), aDir->path);
+		RecursiceRenameFolderContents(dir.GetRaw(), aDir->path);
 	}
 }
 

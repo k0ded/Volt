@@ -26,7 +26,7 @@ namespace Volt
 
 			myCrowd = CreateRef<dtCrowd>();
 
-			status = myCrowd->init(myMaxAgents, myMaxAgentRadius, myNavMesh->GetNavMesh().get());
+			status = myCrowd->init(myMaxAgents, myMaxAgentRadius, myNavMesh->GetNavMesh().GetRaw());
 			if (dtStatusFailed(status))
 			{
 				VT_LOG(Error, "Could not init DtCrowd");

@@ -34,8 +34,8 @@ namespace Volt
 	class ContactListener
 	{
 	public:
-		virtual void OnWake(const Vector<Ref<PhysicsActor>>& actors) = 0;
-		virtual void OnSleep(const Vector<Ref<PhysicsActor>>& actors) = 0;
+		virtual void OnWake(const Vector<PhysicsActor*>& actors) = 0;
+		virtual void OnSleep(const Vector<PhysicsActor*>& actors) = 0;
 		virtual void OnContact(const ContactHeader& contactHeader) = 0;
 		virtual void OnTrigger(const TriggerHeader& triggerHeader) = 0;
 	};

@@ -187,7 +187,8 @@ void LogPanel::RenderBottomBar()
 			{
 				if (Volt::ConsoleVariableRegistry::VariableExists(strings[0]))
 				{
-					auto variable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
+					Weak<Volt::RegisteredConsoleVariableBase> weakVariable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
+					Ref<Volt::RegisteredConsoleVariableBase> variable = weakVariable.Lock();
 
 					std::string message = std::string(variable->GetName()) + " = ";
 

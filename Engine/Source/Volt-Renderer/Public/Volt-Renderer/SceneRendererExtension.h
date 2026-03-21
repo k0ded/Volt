@@ -3,6 +3,7 @@
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 namespace Volt
 {
@@ -24,7 +25,7 @@ namespace Volt
 	public:
 		DECLARE_DELEGATE_RetVal(bool, ShouldRenderDelegate);
 
-		SceneRendererExtension(Ref<RenderScene> renderScene)
+		SceneRendererExtension(RenderScene* renderScene)
 			: m_renderScene(renderScene)
 		{ }
 
@@ -45,7 +46,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE ShouldRenderDelegate& GetIsEnabledDelegate() { return m_shouldRenderDelegate; }
 
 	protected:
-		Weak<RenderScene> m_renderScene;
+		RenderScene* m_renderScene;
 
 		ShouldRenderDelegate m_shouldRenderDelegate;
 	};

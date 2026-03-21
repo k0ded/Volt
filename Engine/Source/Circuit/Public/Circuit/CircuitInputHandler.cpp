@@ -46,7 +46,7 @@ namespace Circuit
 			return Vector<Ref<Widget>>();
 		}
 
-		Ref<WindowWidget> windowWidget = window->GetWidget().GetSharedPtr();
+		Ref<WindowWidget> windowWidget = window->GetWidget().Lock();
 		if (!windowWidget)
 		{
 			return Vector<Ref<Widget>>();
@@ -91,12 +91,14 @@ namespace Circuit
 
 	Ref<CircuitWindow> CircuitInputHandler::GetHoveredWindow()
 	{
-		for (Ref<CircuitWindow> window : CircuitManager::Get().GetWindows())
+		for (Weak<CircuitWindow> weakWindow : CircuitManager::Get().GetWindows())
 		{
-			if (!window)
+			if (weakWindow.IsExpired())
 			{
 				continue;
 			}
+
+			Ref<CircuitWindow> window = weakWindow.Lock();
 
 			Volt::Rect windowRect(window->GetPosition(), window->GetSize());
 
@@ -134,8 +136,10 @@ namespace Circuit
 
 		Ref<Widget> hoveredWidget = GetHoveredWidget();
 
-		if (m_draggingWidget)
+		if (!m_draggingWidget.IsExpired())
 		{
+			Ref<Widget> draggingWidget = m_draggingWidget.Lock();
+
 			const glm::vec2 dragDelta = m_startDragMousePos - m_mousePos;
 			if (!m_isDraggingWidget &&
 				glm::length(dragDelta) >= MIN_DRAG_DELTA_THRESHOLD)
@@ -144,7 +148,7 @@ namespace Circuit
 				startDragInteractionData.mouseButton = m_dragMouseButton;
 				startDragInteractionData.mousePos = m_startDragMousePos;
 
-				m_draggingWidget->OnBeginDrag(startDragInteractionData);
+				draggingWidget->OnBeginDrag(startDragInteractionData);
 
 				m_isDraggingWidget = true;
 			}
@@ -156,26 +160,32 @@ namespace Circuit
 				interactionData.mousePos = m_mousePos;
 				interactionData.mouseDragDelta = dragDelta;
 
-				m_draggingWidget->OnDrag(interactionData);
+				draggingWidget->OnDrag(interactionData);
 			}
 		}
 
-		if (hoveredWidget != m_prevHoveredWidget)
+
+		if (!m_prevHoveredWidget.IsExpired())
 		{
-			WidgetInteractionData interactionData;
-			interactionData.mouseButton = Volt::InputCode::Unknown;
-			interactionData.mousePos = m_mousePos;
+			Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
 
-			if (m_prevHoveredWidget)
+			if (hoveredWidget != prevHoveredWidget)
 			{
-				m_prevHoveredWidget->OnEndHover(interactionData);
-			}
+				WidgetInteractionData interactionData;
+				interactionData.mouseButton = Volt::InputCode::Unknown;
+				interactionData.mousePos = m_mousePos;
 
-			m_prevHoveredWidget = hoveredWidget;
+				if (prevHoveredWidget)
+				{
+					prevHoveredWidget->OnEndHover(interactionData);
+				}
 
-			if (m_prevHoveredWidget)
-			{
-				m_prevHoveredWidget->OnBeginHover(interactionData);
+				m_prevHoveredWidget = hoveredWidget;
+
+				if (prevHoveredWidget)
+				{
+					prevHoveredWidget->OnBeginHover(interactionData);
+				}
 			}
 		}
 	}
@@ -194,32 +204,39 @@ namespace Circuit
 
 	bool Circuit::CircuitInputHandler::OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e)
 	{
-		if (m_prevHoveredWidget)
+		if (!m_prevHoveredWidget.IsExpired())
 		{
-			WidgetInteractionData interactionData;
-			interactionData.mouseButton = e.GetMouseButton();
-			interactionData.mousePos = m_mousePos;
+			Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
 
-			m_prevHoveredWidget->OnPressed(interactionData);
+			if (prevHoveredWidget)
+			{
+				WidgetInteractionData interactionData;
+				interactionData.mouseButton = e.GetMouseButton();
+				interactionData.mousePos = m_mousePos;
 
-			m_draggingWidget = m_prevHoveredWidget;
-			m_dragMouseButton = e.GetMouseButton();
-			m_startDragMousePos = m_mousePos;
+				prevHoveredWidget->OnPressed(interactionData);
+
+				m_draggingWidget = m_prevHoveredWidget;
+				m_dragMouseButton = e.GetMouseButton();
+				m_startDragMousePos = m_mousePos;
+			}
 		}
 		return false;
 	}
 
 	bool Circuit::CircuitInputHandler::OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e)
 	{
-		if (e.GetMouseButton() == m_dragMouseButton && m_draggingWidget)
+		if (e.GetMouseButton() == m_dragMouseButton && !m_draggingWidget.IsExpired())
 		{
+			Ref<Widget> draggingWidget = m_draggingWidget.Lock();
+
 			if (m_isDraggingWidget)
 			{
 				WidgetInteractionData startDragInteractionData;
 				startDragInteractionData.mouseButton = m_dragMouseButton;
 				startDragInteractionData.mousePos = m_mousePos;
 
-				m_draggingWidget->OnEndDrag(startDragInteractionData);
+				draggingWidget->OnEndDrag(startDragInteractionData);
 
 				m_isDraggingWidget = false;
 			}
@@ -227,13 +244,16 @@ namespace Circuit
 			m_draggingWidget.Reset();
 		}
 
-		if (m_prevHoveredWidget)
+
+		if (!m_prevHoveredWidget.IsExpired())
 		{
+			Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
+
 			WidgetInteractionData interactionData;
 			interactionData.mouseButton = e.GetMouseButton();
 			interactionData.mousePos = m_mousePos;
 
-			m_prevHoveredWidget->OnReleased(interactionData);
+			prevHoveredWidget->OnReleased(interactionData);
 		}
 		return false;
 	}

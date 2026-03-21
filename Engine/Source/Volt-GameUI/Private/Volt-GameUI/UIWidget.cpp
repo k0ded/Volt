@@ -8,11 +8,12 @@
 namespace Volt
 {
 	UIWidget::UIWidget()
-		: m_handle(entt::null)
+		: m_handle(entt::null),
+		m_scene(nullptr)
 	{
 	}
 
-	UIWidget::UIWidget(entt::entity handle, Weak<UIScene> scene)
+	UIWidget::UIWidget(entt::entity handle, UIScene* scene)
 		: m_scene(scene), m_handle(handle)
 	{
 	}

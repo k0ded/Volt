@@ -1,10 +1,11 @@
 #pragma once
 
+#include <Volt-Core/Version.h>
+
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Pointers/Ref.h>
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltAssert.h>
-
-#include <Volt-Core/Version.h>
 
 namespace Volt
 {

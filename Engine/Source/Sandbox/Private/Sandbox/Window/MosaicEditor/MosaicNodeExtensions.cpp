@@ -25,7 +25,7 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 {
 	std::string assetFileName = "Null";
 
-	Ref<Volt::MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<Volt::MosaicNodes::SampleTextureNode>(node);
+	Ref<Volt::MosaicNodes::SampleTextureNode> sampleTextureNode = ReinterpretRefCast<Volt::MosaicNodes::SampleTextureNode>(node);
 
 	Volt::AssetHandle textureHandle = sampleTextureNode->GetTextureHandle();
 

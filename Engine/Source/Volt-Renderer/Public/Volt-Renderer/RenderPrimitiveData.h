@@ -5,6 +5,8 @@
 #include <CoreUtilities/UUID.h>
 #include <EntitySystem/EntityID.h>
 
+#include <CoreUtilities/Pointers/Weak.h>
+
 namespace Volt
 {
 	class Mesh;
@@ -18,9 +20,10 @@ namespace Volt
 		RenderPrimitiveID id;
 		EntityID entityId;
 	
-		Weak<Mesh> mesh;
 		Ref<TempAnimator> animator;
-		Weak<RenderMaterial> material;
+
+		RenderMaterial* material;
+		Mesh* mesh;
 
 		uint32_t subMeshIndex = 0;
 		uint32_t vertexBufferIndex = 0;

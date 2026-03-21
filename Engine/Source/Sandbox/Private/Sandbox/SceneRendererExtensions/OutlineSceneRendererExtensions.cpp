@@ -16,7 +16,7 @@
 
 using namespace Volt;
 
-OutlineSceneRendererExtension::OutlineSceneRendererExtension(Ref<Volt::RenderScene> renderScene)
+OutlineSceneRendererExtension::OutlineSceneRendererExtension(Volt::RenderScene* renderScene)
 	: Volt::SceneRendererExtension(renderScene)
 {
 }

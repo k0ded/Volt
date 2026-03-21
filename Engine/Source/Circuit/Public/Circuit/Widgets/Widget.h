@@ -3,6 +3,7 @@
 #include "Circuit/Config.h"
 
 #include <CoreUtilities/Math/2DShapes/Rect.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 #include <glm/fwd.hpp>
 

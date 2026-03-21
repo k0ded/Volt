@@ -2,31 +2,31 @@
 
 #include "CoreUtilities/VoltAssert.h"
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::Unique()
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::Unique()
 	: m_ptr(nullptr)
 {}
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::Unique(T* initalValue)
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::Unique(T* initalValue)
 	: m_ptr(initalValue)
 {}
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::~Unique()
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::~Unique()
 {
 	Reset();
 }
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::Unique(Unique&& other) noexcept
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::Unique(Unique&& other) noexcept
 	: m_ptr(other.m_ptr)
 {
 	other.m_ptr = nullptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>& Unique<T, DestructorType>::operator=(Unique&& other) noexcept
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>& Unique<T, DestroyerType>::operator=(Unique&& other) noexcept
 {
 	if (&other != this)
 	{
@@ -37,32 +37,32 @@ constexpr Unique<T, DestructorType>& Unique<T, DestructorType>::operator=(Unique
 	return *this;
 }
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::Unique(std::nullptr_t) noexcept
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::Unique(std::nullptr_t) noexcept
 	: m_ptr(nullptr)
 {
 }
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>& Unique<T, DestructorType>::operator=(std::nullptr_t) noexcept
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>& Unique<T, DestroyerType>::operator=(std::nullptr_t) noexcept
 {
 	Reset();
 	return *this;
 }
 
-template<typename T, typename DestructorType>
-template<typename U, typename UDestructorType>
+template<typename T, typename DestroyerType>
+template<typename U, typename UDestroyerType>
 	requires(std::is_convertible_v<U*, T*>)
-constexpr Unique<T, DestructorType>::Unique(Unique<U, UDestructorType>&& other) noexcept
+constexpr Unique<T, DestroyerType>::Unique(Unique<U, UDestroyerType>&& other) noexcept
 	: m_ptr(other.m_ptr)
 {
 	other.m_ptr = nullptr;
 }
 
-template<typename T, typename DestructorType>
-template<typename U, typename UDestructorType>
+template<typename T, typename DestroyerType>
+template<typename U, typename UDestroyerType>
 	requires(std::is_convertible_v<U*, T*>)
-constexpr Unique<T, DestructorType>& Unique<T, DestructorType>::operator=(Unique<U, UDestructorType>&& other) noexcept
+constexpr Unique<T, DestroyerType>& Unique<T, DestroyerType>::operator=(Unique<U, UDestroyerType>&& other) noexcept
 {
 	m_ptr = other.m_ptr;
 	other.m_ptr = nullptr;
@@ -70,54 +70,54 @@ constexpr Unique<T, DestructorType>& Unique<T, DestructorType>::operator=(Unique
 	return *this;
 }
 
-template<typename T, typename DestructorType>
-constexpr T* Unique<T, DestructorType>::operator->() noexcept
+template<typename T, typename DestroyerType>
+constexpr T* Unique<T, DestroyerType>::operator->() noexcept
 {
 	VT_ASSERT(m_ptr != nullptr);
 	return m_ptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr T& Unique<T, DestructorType>::operator*() noexcept
+template<typename T, typename DestroyerType>
+constexpr T& Unique<T, DestroyerType>::operator*() noexcept
 {
 	VT_ASSERT(m_ptr != nullptr);
 	return *m_ptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr T* Unique<T, DestructorType>::operator->() const noexcept
+template<typename T, typename DestroyerType>
+constexpr T* Unique<T, DestroyerType>::operator->() const noexcept
 {
 	VT_ASSERT(m_ptr != nullptr);
 	return m_ptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr T& Unique<T, DestructorType>::operator*() const noexcept
+template<typename T, typename DestroyerType>
+constexpr T& Unique<T, DestroyerType>::operator*() const noexcept
 {
 	VT_ASSERT(m_ptr != nullptr);
 	return *m_ptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr bool Unique<T, DestructorType>::operator==(const Unique& other) const
+template<typename T, typename DestroyerType>
+constexpr bool Unique<T, DestroyerType>::operator==(const Unique& other) const
 {
 	return m_ptr == other.m_ptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr bool Unique<T, DestructorType>::operator==(std::nullptr_t) const
+template<typename T, typename DestroyerType>
+constexpr bool Unique<T, DestroyerType>::operator==(std::nullptr_t) const
 {
 	return m_ptr == nullptr;
 }
 
-template<typename T, typename DestructorType>
-constexpr Unique<T, DestructorType>::operator bool() const
+template<typename T, typename DestroyerType>
+constexpr Unique<T, DestroyerType>::operator bool() const
 {
 	return m_ptr != nullptr;
 }
 
-template<typename T, typename DestructorType>
-inline void Unique<T, DestructorType>::Reset()
+template<typename T, typename DestroyerType>
+inline void Unique<T, DestroyerType>::Reset()
 {
 	if (m_ptr)
 	{
@@ -128,21 +128,21 @@ inline void Unique<T, DestructorType>::Reset()
 }
 
 
-template<typename T, typename DestructorType>
-void Unique<T, DestructorType>::Reset(T* initialValue)
+template<typename T, typename DestroyerType>
+void Unique<T, DestroyerType>::Reset(T* initialValue)
 {
 	Reset();
 	m_ptr = initialValue;
 }
 
-template<typename T, typename DestructorType>
-inline T* Unique<T, DestructorType>::GetRaw()
+template<typename T, typename DestroyerType>
+inline T* Unique<T, DestroyerType>::GetRaw()
 {
 	return m_ptr;
 }
 
-template<typename T, typename DestructorType>
-T* Unique<T, DestructorType>::GetRaw() const
+template<typename T, typename DestroyerType>
+T* Unique<T, DestroyerType>::GetRaw() const
 {
 	return m_ptr;
 }

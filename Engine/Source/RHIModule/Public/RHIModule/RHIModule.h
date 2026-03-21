@@ -8,7 +8,7 @@
 #include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <span>
-#include <CoreUtilities/Weak.h>
+#include <CoreUtilities/Pointers/Weak.h>
 #include <CoreUtilities/Core.h>
 
 struct GLFWwindow;

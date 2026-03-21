@@ -124,7 +124,7 @@ namespace Volt
 
 		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
 		MeshDrawCommandSortKey GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, IntRef<RHI::Shader> vertexShader, IntRef<RHI::Shader> pixelShader);
-		uint64_t GetMaterialPermutationHash(Weak<RenderMaterial> renderMaterial);
+		uint64_t GetMaterialPermutationHash(RenderMaterial* renderMaterial);
 		MaterialShader::InlineParameterBlock GetMaterialInlineParameterBlock(const RenderPrimitiveData* renderPrimitive) const;
 
 		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;

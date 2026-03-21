@@ -5,6 +5,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Pointers/Ref.h>
 #include <CoreUtilities/VoltGUID.h>
 
 class SubSystem;
@@ -31,7 +32,7 @@ public:
 			return nullptr;
 		}
 
-		return reinterpret_cast<T*>(s_instance->m_subSystemsMap.at(guid).get());
+		return reinterpret_cast<T*>(s_instance->m_subSystemsMap.at(guid).GetRaw());
 	}
 
 private:

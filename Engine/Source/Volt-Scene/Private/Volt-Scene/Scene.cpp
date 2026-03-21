@@ -582,7 +582,7 @@ namespace Volt
 		if (m_sceneInitializer.shouldHaveRenderScene)
 		{
 			m_renderScene = CreateRef<RenderScene>(&m_entityScene);
-			m_entityScene.SetRenderScene(m_renderScene.get());
+			m_entityScene.SetRenderScene(m_renderScene.GetRaw());
 		}
 
 		m_worldEngine.Reset(this, 16, 4);

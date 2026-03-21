@@ -409,7 +409,7 @@ namespace Volt
 			componentMember.identifier = identifier;
 			componentMember.label = label;
 			componentMember.description = description;
-			componentMember.assetTypeGuid = AssetTypeType::element_type::guid;
+			componentMember.assetTypeGuid = AssetTypeType::ElementType::guid;
 			componentMember.flags = flags;
 			componentMember.typeDesc = nullptr;
 			componentMember.ownerTypeDesc = this;

@@ -12,7 +12,7 @@ namespace Volt
 {
 	class UIWidget;
 
-	class VTGUI_API UIScene : public std::enable_shared_from_this<UIScene>
+	class VTGUI_API UIScene
 	{
 	public:
 		UIScene() = default;

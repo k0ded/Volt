@@ -45,7 +45,7 @@ BEGIN_SHADER_PARAMETER_STRUCT(TranslucencyDebugMeshParameters)
 	RG_RENDER_TARGETS()
 END_SHADER_PARAMETER_STRUCT()
 
-DebugSceneRendererExtension::DebugSceneRendererExtension(Ref<RenderScene> renderScene, DebugRenderer& debugRenderer)
+DebugSceneRendererExtension::DebugSceneRendererExtension(RenderScene* renderScene, DebugRenderer& debugRenderer)
 	: SceneRendererExtension(renderScene),
 	m_debugRenderer(debugRenderer)
 {

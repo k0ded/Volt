@@ -345,10 +345,14 @@ namespace Volt
 
 	void Application::SetupFrameCapture()
 	{
-		if (RHI::RHIModule::GetInstance().GetFrameCapture())
+		Weak<RHI::FrameCapture> weakFrameCapture = RHI::RHIModule::GetInstance().GetFrameCapture();
+
+		if (!weakFrameCapture.IsExpired())
 		{
-			RHI::RHIModule::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
-			RHI::RHIModule::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+			Ref<RHI::FrameCapture> frameCapture = weakFrameCapture.Lock();
+
+			frameCapture->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			frameCapture->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
 		}
 	}
 

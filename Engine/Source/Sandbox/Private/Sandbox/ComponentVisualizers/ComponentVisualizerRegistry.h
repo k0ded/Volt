@@ -37,7 +37,7 @@ public:
 		{
 			registrationInfo.drawVisualizationFunc = [](Ref<BaseComponentVisualizer> visualizer, EditorDrawInterface& edi, Volt::Entity entity) 
 			{
-				Ref<ComponentVisualizerType> typedVisualizer = std::reinterpret_pointer_cast<ComponentVisualizerType>(visualizer);
+				Ref<ComponentVisualizerType> typedVisualizer = ReinterpretRefCast<ComponentVisualizerType>(visualizer);
 				typedVisualizer->DrawVisualization(edi, entity.GetComponent<ComponentType>(), entity);
 			};
 		}

@@ -3,7 +3,7 @@
 #include "Volt-Core/Config.h"
 
 #include <CoreUtilities/StringUtility.h>
-#include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 #include <unordered_map>
 
@@ -32,15 +32,15 @@ namespace Volt
 	public:
 		RegisteredConsoleVariable(const std::string& variableName, const T& defaultValue, std::string_view description);
 
-		[[nodiscard]] const void* Get() const override;
+		VT_NODISCARD const void* Get() const override;
 		void Set(const void* value) override;
 
-		[[nodiscard]] inline std::string_view GetName() const override { return m_variableName; }
-		[[nodiscard]] inline std::string_view GetDescription() const override { return m_description; }
+		VT_NODISCARD inline std::string_view GetName() const override { return m_variableName; }
+		VT_NODISCARD inline std::string_view GetDescription() const override { return m_description; }
 
-		[[nodiscard]] inline constexpr bool IsInteger() const override { return std::is_integral_v<T>; }
-		[[nodiscard]] inline constexpr bool IsFloat() const override { return std::is_floating_point_v<T>; }
-		[[nodiscard]] inline constexpr bool IsString() const override { return std::is_same_v<T, std::string>; }
+		VT_NODISCARD inline constexpr bool IsInteger() const override { return std::is_integral_v<T>; }
+		VT_NODISCARD inline constexpr bool IsFloat() const override { return std::is_floating_point_v<T>; }
+		VT_NODISCARD inline constexpr bool IsString() const override { return std::is_same_v<T, std::string>; }
 
 	private:
 		T m_value;
@@ -54,8 +54,8 @@ namespace Volt
 	public:
 		ConsoleVariable(std::string_view variableName, const T& defaultValue, std::string_view description);
 
-		const T& GetValue() const { return *reinterpret_cast<const T*>(m_variableReference->Get()); }
-		void SetValue(const T& value) { m_variableReference->Set(&value); }
+		const T& GetValue() const { return *reinterpret_cast<const T*>(m_variableReference.Lock()->Get()); }
+		void SetValue(const T& value) { m_variableReference.Lock()->Set(&value); }
 
 		T& operator=(const T& other)
 		{
@@ -78,8 +78,8 @@ namespace Volt
 	public:
 		ConsoleVariableRef(std::string_view variableName);
 
-		const T& GetValue() const { return *reinterpret_cast<T*>(m_variableReference->Get()); }
-		void SetValue(const T& value) { m_variableReference->Set(&value); }
+		const T& GetValue() const { return *reinterpret_cast<T*>(m_variableReference.Lock()->Get()); }
+		void SetValue(const T& value) { m_variableReference.Lock()->Set(&value); }
 
 		T& operator=(const T& other)
 		{

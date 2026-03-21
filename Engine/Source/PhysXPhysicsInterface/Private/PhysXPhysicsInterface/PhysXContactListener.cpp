@@ -22,11 +22,11 @@ namespace Volt
 	
 	void PhysXContactListener::onWake(physx::PxActor** actors, physx::PxU32 count)
 	{
-		Vector<Ref<PhysicsActor>> result(count);
+		Vector<PhysicsActor*> result(count);
 
 		for (uint32_t i = 0; i < count; i++)
 		{
-			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData)->shared_from_this();
+			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData);
 		}
 
 		if (m_contactListener)
@@ -37,11 +37,11 @@ namespace Volt
 	
 	void PhysXContactListener::onSleep(physx::PxActor** actors, physx::PxU32 count)
 	{
-		Vector<Ref<PhysicsActor>> result(count);
+		Vector<PhysicsActor*> result(count);
 
 		for (uint32_t i = 0; i < count; i++)
 		{
-			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData)->shared_from_this();
+			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData);
 		}
 
 		if (m_contactListener)
@@ -60,8 +60,8 @@ namespace Volt
 			return;
 		}
 
-		Ref<PhysicsActor> actorA = reinterpret_cast<PhysicsActor*>(pairHeader.actors[0]->userData)->shared_from_this();
-		Ref<PhysicsActor> actorB = reinterpret_cast<PhysicsActor*>(pairHeader.actors[1]->userData)->shared_from_this();
+		Ref<PhysicsActor> actorA = reinterpret_cast<PhysicsActor*>(pairHeader.actors[0]->userData);
+		Ref<PhysicsActor> actorB = reinterpret_cast<PhysicsActor*>(pairHeader.actors[1]->userData);
 
 		ContactHeader header{};
 		header.actors[0] = actorA;
@@ -91,8 +91,8 @@ namespace Volt
 				continue;
 			}
 
-			Ref<PhysicsActor> triggerActor = reinterpret_cast<PhysicsActor*>(pairs[i].triggerActor)->shared_from_this();
-			Ref<PhysicsActor> otherActor = reinterpret_cast<PhysicsActor*>(pairs[i].otherActor)->shared_from_this();
+			Ref<PhysicsActor> triggerActor = reinterpret_cast<PhysicsActor*>(pairs[i].triggerActor);
+			Ref<PhysicsActor> otherActor = reinterpret_cast<PhysicsActor*>(pairs[i].otherActor);
 		
 			if (!triggerActor || !otherActor)
 			{

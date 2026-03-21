@@ -4,6 +4,8 @@
 
 #include <EntitySystem/EntityID.h>
 
+#include <CoreUtilities/Pointers/Weak.h>
+
 #include <entt.hpp>
 
 namespace Volt
@@ -14,7 +16,7 @@ namespace Volt
 	{
 	public:
 		UIWidget();
-		UIWidget(entt::entity handle, Weak<UIScene> scene);
+		UIWidget(entt::entity handle, UIScene* scene);
 
 		template<typename T> VT_NODISCARD VT_INLINE T& GetComponent();
 		template<typename T> VT_NODISCARD VT_INLINE const T& GetComponent() const;
@@ -32,7 +34,7 @@ namespace Volt
 
 	private:
 		entt::entity m_handle;
-		Weak<UIScene> m_scene;
+		UIScene* m_scene;
 	};
 
 	template<typename T>
@@ -58,7 +60,7 @@ namespace Volt
 
 	inline const bool UIWidget::IsValid() const
 	{
-		return m_handle != entt::null && !m_scene.IsExpired();
+		return m_handle != entt::null && m_scene != nullptr;
 	}
 
 	template<typename T, typename ...Args>

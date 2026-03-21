@@ -3,6 +3,7 @@
 #include "Volt-Renderer/Config.h"
 
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 namespace Volt
 {
@@ -16,7 +17,7 @@ namespace Volt
 		uint32_t frameIndex;
 
 		Ref<Camera> camera;
-		Weak<RenderScene> renderScene;
+		Ref<RenderScene> renderScene;
 
 		RGUniformBufferRef viewUniformBuffer;
 	};

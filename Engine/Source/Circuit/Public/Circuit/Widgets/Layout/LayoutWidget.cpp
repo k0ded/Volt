@@ -22,9 +22,9 @@ namespace Circuit
 
 			// widget size x/y can be -1 here, it means give the widget as much space as possible
 			glm::vec2 widgetSize = { -1,-1 };
-			if (slice.widget)
+			if (!slice.widget.IsExpired())
 			{
-				widgetSize = slice.widget->GetDesiredSize();
+				widgetSize = slice.widget.Lock()->GetDesiredSize();
 			}
 			else if (!slice.isFlexible)
 			{
@@ -88,17 +88,19 @@ namespace Circuit
 		float currentSliceOffset = 0;
 		for (size_t i = 0; i < m_slices.size(); i++)
 		{
-			if (m_slices[i].widget)
+			if (!m_slices[i].widget.IsExpired())
 			{
+				Ref<Widget> widget = m_slices[i].widget.Lock();
+
 				const float margin = m_slices[i].margin;
 
 				switch (m_orientation)
 				{
 					case Circuit::LayoutOrientation::Horizontal:
-						painter.AddWidget(m_slices[i].widget, currentSliceOffset + margin, margin, widgetAllotedSizes[i] - margin * 2, painter.GetAllotedSize().y - margin * 2);
+						painter.AddWidget(widget, currentSliceOffset + margin, margin, widgetAllotedSizes[i] - margin * 2, painter.GetAllotedSize().y - margin * 2);
 						break;
 					case Circuit::LayoutOrientation::Vertical:
-						painter.AddWidget(m_slices[i].widget, margin, currentSliceOffset + margin, painter.GetAllotedSize().x - margin * 2, widgetAllotedSizes[i] - margin * 2);
+						painter.AddWidget(widget, margin, currentSliceOffset + margin, painter.GetAllotedSize().x - margin * 2, widgetAllotedSizes[i] - margin * 2);
 						break;
 				}
 			}

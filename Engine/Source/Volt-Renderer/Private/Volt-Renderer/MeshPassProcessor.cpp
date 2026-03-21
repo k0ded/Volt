@@ -496,7 +496,7 @@ namespace Volt
 		return sortKey;
 	}
 
-	uint64_t MeshPassProcessor::GetMaterialPermutationHash(Weak<RenderMaterial> renderMaterial)
+	uint64_t MeshPassProcessor::GetMaterialPermutationHash(RenderMaterial* renderMaterial)
 	{
 		uint64_t result = 0;
 		result = Math::HashCombine(std::hash<std::underlying_type_t<MaterialBlendMode>>()(std::to_underlying(renderMaterial->GetMaterialBlendMode())), std::hash<bool>()(renderMaterial->GetIsDoubleSided()));

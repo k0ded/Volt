@@ -10,7 +10,7 @@
 class OutlineSceneRendererExtension : public Volt::SceneRendererExtension
 {
 public:
-	OutlineSceneRendererExtension(Ref<Volt::RenderScene> renderScene);
+	OutlineSceneRendererExtension(Volt::RenderScene* renderScene);
 	~OutlineSceneRendererExtension() override = default;
 
 	Volt::RGTextureRef OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage) override;

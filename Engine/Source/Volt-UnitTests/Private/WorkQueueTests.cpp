@@ -1,5 +1,6 @@
 #include <CoreUtilities/WorkQueue.h>
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 #include <gtest/gtest.h>
 

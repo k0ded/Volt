@@ -642,7 +642,7 @@ namespace Volt
 			imguiMonitor.WorkPos = { monitorWorkPos.x, monitorWorkPos.y };
 			imguiMonitor.WorkSize = { monitorWorkSize.x, monitorWorkSize.y };
 			imguiMonitor.DpiScale = contentScale.x;
-			imguiMonitor.PlatformHandle = monitor.get();
+			imguiMonitor.PlatformHandle = monitor.GetRaw();
 
 			platformIO.Monitors.push_back(imguiMonitor);
 		}

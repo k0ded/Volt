@@ -53,7 +53,7 @@ namespace Volt
 
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
 		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo),
-		m_meshPassProcessorRegistry(createInfo.renderScene.get())
+		m_meshPassProcessorRegistry(createInfo.renderScene.GetRaw())
 	{
 		CreateMainRenderTarget(createInfo.initialResolution.x, createInfo.initialResolution.y);
 

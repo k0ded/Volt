@@ -8,7 +8,7 @@ namespace Circuit
 	{
 		glm::vec2 size = 0;
 
-		for (std::shared_ptr<Widget> child : m_childWidgets)
+		for (Ref<Widget> child : m_childWidgets)
 		{
 			glm::vec2 childDesiredSize = child->GetDesiredSize();
 			size.x = glm::max(childDesiredSize.x, size.x);
@@ -19,7 +19,7 @@ namespace Circuit
 
 	void Circuit::CompoundWidget::OnPaint(CircuitPainter& painter)
 	{
-		for (std::shared_ptr<Widget> childWidget : m_childWidgets)
+		for (Ref<Widget> childWidget : m_childWidgets)
 		{
 			painter.AddWidget(childWidget, { 0,0 }, painter.GetAllotedSize());
 		}

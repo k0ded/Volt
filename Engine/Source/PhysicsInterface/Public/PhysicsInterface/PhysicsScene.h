@@ -13,7 +13,7 @@
 
 namespace Volt
 {
-	using PhysicsSceneAdvancedCallback = std::function<void(const Vector<Ref<PhysicsActor>>, float timestep)>;
+	using PhysicsSceneAdvancedCallback = std::function<void(const Vector<PhysicsActor*>, float timestep)>;
 
 	struct PhysicsSceneCreateInfo
 	{

@@ -122,12 +122,12 @@ namespace Volt
 			uint32_t activeActorCount = 0;
 			physx::PxActor** activeActors = m_physXScene->getActiveActors(activeActorCount);
 
-			Vector<Ref<PhysicsActor>> updatedActors(activeActorCount);
+			Vector<PhysicsActor*> updatedActors(activeActorCount);
 
 			for (uint32_t i = 0; i < activeActorCount; i++)
 			{
 				PhysicsActor* actor = reinterpret_cast<PhysicsActor*>(activeActors[i]->userData);
-				updatedActors[i] = actor->shared_from_this();
+				updatedActors[i] = actor;
 			}
 
 			m_createInfo.physicsSceneAdvancedCallback(updatedActors, m_createInfo.fixedTimestep);

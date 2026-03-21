@@ -55,7 +55,7 @@ namespace Volt
 		});
 
 		PhysicsSceneCreateInfo sceneCreateInfo{};
-		sceneCreateInfo.physicsSceneAdvancedCallback = [&](const Vector<Ref<PhysicsActor>> actors, float timestep)
+		sceneCreateInfo.physicsSceneAdvancedCallback = [&](const Vector<PhysicsActor*> actors, float timestep)
 		{
 			m_isHandlingPhysicsUpdate = true;
 
@@ -460,7 +460,7 @@ namespace Volt
 			colliderCreateInfo.isTrigger = boxComp.isTrigger;
 			colliderCreateInfo.offset = boxComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
-			colliderCreateInfo.targetActor = physicsActor.get();
+			colliderCreateInfo.targetActor = physicsActor.GetRaw();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
 
 			boxComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);
@@ -475,7 +475,7 @@ namespace Volt
 			colliderCreateInfo.isTrigger = sphereComp.isTrigger;
 			colliderCreateInfo.offset = sphereComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
-			colliderCreateInfo.targetActor = physicsActor.get();
+			colliderCreateInfo.targetActor = physicsActor.GetRaw();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
 
 			sphereComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);
@@ -491,7 +491,7 @@ namespace Volt
 			colliderCreateInfo.isTrigger = capsuleComp.isTrigger;
 			colliderCreateInfo.offset = capsuleComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
-			colliderCreateInfo.targetActor = physicsActor.get();
+			colliderCreateInfo.targetActor = physicsActor.GetRaw();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
 
 			capsuleComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);

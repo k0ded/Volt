@@ -65,7 +65,7 @@ void VisProxyContextManager::AddVisProxy(const VisProxyContextType& visProxyCont
 	newVisProxyInfo.componentGuid = Volt::GetTypeGUID<ComponentType>();
 	newVisProxyInfo.handleHitProxyInteractionFunc = [](Ref<BaseComponentVisualizer> visualizer, Volt::Entity entity, const Any& context) 
 	{
-		Ref<ComponentVisualizerType> typedVisualizer = std::reinterpret_pointer_cast<ComponentVisualizerType>(visualizer);
+		Ref<ComponentVisualizerType> typedVisualizer = ReinterpretRefCast<ComponentVisualizerType>(visualizer);
 		typedVisualizer->HandleVisProxyInteraction(entity.GetComponent<ComponentType>(), entity, context.Cast<VisProxyContextType>());
 	};
 }

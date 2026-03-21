@@ -26,9 +26,9 @@ namespace Circuit
 		m_NeedsRebuild = true;
 	}
 
-	Vector<std::shared_ptr<Widget>> Widget::GetChildren()
+	Vector<Ref<Widget>> Widget::GetChildren()
 	{
-		return Vector<std::shared_ptr<Widget>>();
+		return Vector<Ref<Widget>>();
 	}
 
 	bool Widget::IsRenderPrimitive() const

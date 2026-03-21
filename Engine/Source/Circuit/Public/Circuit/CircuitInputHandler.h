@@ -1,12 +1,13 @@
 #pragma once
 #include "Circuit/Config.h"
 
-#include <CoreUtilities/Containers/Vector.h>
-
-#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 #include <EventSystem/EventListener.h>
 
 #include <InputModule/InputCodes.h>
+
+#include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 namespace Volt
 {

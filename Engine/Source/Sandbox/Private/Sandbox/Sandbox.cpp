@@ -237,7 +237,7 @@ void Sandbox::RegisterPanels()
 
 	EditorLibrary::Register<PropertiesPanel>("Level Editor", m_runtimeScene, m_sceneRenderer, m_sceneState, "");
 	EditorLibrary::Register<SceneViewPanel>("Level Editor", m_runtimeScene, "");
-	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
+	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.GetRaw(), m_sceneState);
 	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
 
 	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());

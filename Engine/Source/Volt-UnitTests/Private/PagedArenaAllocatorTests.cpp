@@ -1,6 +1,6 @@
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
-#include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 #include <gtest/gtest.h>
 

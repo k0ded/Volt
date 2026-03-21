@@ -85,7 +85,7 @@ namespace Volt
 
 		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 
-		VT_NODISCARD uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
+		VT_NODISCARD uint32_t GetMaterialIndex(RenderMaterial* material) const;
 		VT_NODISCARD uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
 		VT_NODISCARD VT_INLINE uint32_t GetMaxPrimitiveIndex() const { return static_cast<uint32_t>(m_primitiveIndicesContainer.GetMaxIndex()); }
 
@@ -106,8 +106,8 @@ namespace Volt
 		VT_NODISCARD VT_INLINE RenderPrimitiveRemovedDelegate& GetRenderPrimitiveRemovedDelegate() { return m_renderPrimitiveRemovedDelegate; }
 
 	private:
-		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
-		void BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh);
+		void BuildGPUMaterial(const Ref<RenderMaterial>& material, GPUMaterial& gpuMaterial);
+		void BuildGPUMesh(const Ref<Mesh>& mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight);
@@ -138,13 +138,13 @@ namespace Volt
 
 		struct InvalidMaterial
 		{
-			Weak<RenderMaterial> material;
+			Ref<RenderMaterial> material;
 			size_t index;
 		};
 
 		struct InvalidMesh
 		{
-			Weak<Mesh> mesh;
+			Ref<Mesh> mesh;
 			uint32_t subMeshIndex;
 			size_t index;
 		};

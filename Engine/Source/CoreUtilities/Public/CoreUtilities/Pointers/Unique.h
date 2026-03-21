@@ -1,19 +1,11 @@
 #pragma once
 
-#include <CoreUtilities/CompilerTraits.h>
+#include "CoreUtilities/CompilerTraits.h"
+#include "CoreUtilities/Memory.h"
 
 #include <type_traits>
 
-template<typename T>
-struct DefaultDestructor
-{
-	void operator()(T* object) const
-	{
-		delete object;
-	}
-};
-
-template<typename T, typename DestructorType = DefaultDestructor<T>>
+template<typename T, typename DestroyerType = DefaultDestroyer<T>>
 class Unique
 {
 public:
@@ -26,13 +18,13 @@ public:
 	constexpr Unique(Unique&& other) noexcept;
 	constexpr Unique& operator=(Unique&& other) noexcept;
 
-	template<typename U, typename UDestructorType>
+	template<typename U, typename UDestroyerType>
 		requires(std::is_convertible_v<U*, T*>)
-	constexpr Unique(Unique<U, UDestructorType>&& other) noexcept;
+	constexpr Unique(Unique<U, UDestroyerType>&& other) noexcept;
 
-	template<typename U, typename UDestructorType>
+	template<typename U, typename UDestroyerType>
 		requires(std::is_convertible_v<U*, T*>)
-	constexpr Unique& operator=(Unique<U, UDestructorType>&& other) noexcept;
+	constexpr Unique& operator=(Unique<U, UDestroyerType>&& other) noexcept;
 
 	constexpr Unique(T* initalValue);
 
@@ -55,11 +47,11 @@ public:
 	T* GetRaw() const;
 
 private:
-	template<typename U, typename DestructorType>
+	template<typename U, typename DestroyerType>
 	friend class Unique;
 
 	T* m_ptr;
-	DestructorType m_destructor;
+	DestroyerType m_destructor;
 };
 
 template<typename T, typename... Args>

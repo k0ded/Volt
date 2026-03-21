@@ -49,9 +49,6 @@ private:
 	bool myActivateScriptSearch = false;
 
 	bool myMidEvent = false;
-	std::shared_ptr<PropertyEvent> myLastValue;
 	glm::vec3 myLastValue2;
-	Vector<std::shared_ptr<PropertyEvent>> myUndoList;
-	Vector<std::shared_ptr<PropertyEvent>> myRedoList;
 	int myMaxEventListSize;
 };

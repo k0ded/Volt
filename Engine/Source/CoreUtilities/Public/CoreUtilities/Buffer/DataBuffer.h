@@ -1,12 +1,13 @@
 #pragma once
 
-#include "CoreUtilities/Core.h"
 #include "CoreUtilities/Containers/Vector.h"
+#include "CoreUtilities/Pointers/Ref.h"
 
 #include <fstream>
 #include <cassert>
 #include <filesystem>
 
+#include <memory>
 class VTCOREUTIL_API DataBuffer
 {
 public:
@@ -45,7 +46,7 @@ inline DataBuffer::~DataBuffer()
 
 inline void DataBuffer::Release()
 {
-	m_data.reset();
+	m_data.Reset();
 	m_size = 0;
 }
 
@@ -67,7 +68,7 @@ inline void DataBuffer::Allocate(size_t aSize)
 
 inline void DataBuffer::Clear()
 {
-	memset(m_data.get(), 0, m_size);
+	memset(m_data.GetRaw(), 0, m_size);
 }
 
 inline void DataBuffer::Resize(size_t aSize)
@@ -81,7 +82,7 @@ inline void DataBuffer::Resize(size_t aSize)
 
 		if (m_data)
 		{
-			memcpy_s(newBuffer.get(), aSize, m_data.get(), m_size);
+			memcpy_s(newBuffer.GetRaw(), aSize, m_data.GetRaw(), m_size);
 		}
 
 		m_size = aSize;
@@ -97,7 +98,7 @@ inline void DataBuffer::Copy(const void* aSrcData, size_t aSize, size_t aOffset)
 	}
 
 	assert(aOffset + aSize <= m_size && "Cannot copy into buffer of lesser size!");
-	memcpy_s(m_data.get() + aOffset, m_size, aSrcData, aSize);
+	memcpy_s(m_data.GetRaw() + aOffset, m_size, aSrcData, aSize);
 }
 
 inline const bool DataBuffer::IsValid() const
@@ -118,7 +119,7 @@ inline bool DataBuffer::WriteToFile(DataBuffer buffer, const std::filesystem::pa
 		return false;
 	}
 
-	file.write(reinterpret_cast<char*>(buffer.m_data.get()), buffer.m_size);
+	file.write(reinterpret_cast<char*>(buffer.m_data.GetRaw()), buffer.m_size);
 	file.close();
 
 	return true;
@@ -153,5 +154,5 @@ inline DataBuffer DataBuffer::ReadFromFile(const std::filesystem::path& targetPa
 template<typename T>
 inline T* DataBuffer::As(size_t offset) const
 {
-	return reinterpret_cast<T*>(m_data.get() + offset);
+	return reinterpret_cast<T*>(m_data.GetRaw() + offset);
 }

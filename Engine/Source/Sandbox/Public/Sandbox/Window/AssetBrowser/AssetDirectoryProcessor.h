@@ -3,6 +3,7 @@
 #include "Sandbox/Window/AssetBrowser/AssetBrowserConstants.h"
 
 #include <AssetSystem/AssetType.h>
+#include <CoreUtilities/Pointers/Weak.h>
 
 namespace AssetBrowser
 {

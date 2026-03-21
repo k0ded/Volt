@@ -33,7 +33,7 @@ namespace Volt
 		std::string debugName;
 	};
 
-	class PhysicsActor : public PhysicsHandleType, public PhysicsIDType, public std::enable_shared_from_this<PhysicsActor>
+	class PhysicsActor : public PhysicsHandleType, public PhysicsIDType
 	{
 	public:
 		virtual ~PhysicsActor() {}

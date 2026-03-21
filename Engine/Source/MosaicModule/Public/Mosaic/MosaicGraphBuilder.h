@@ -24,7 +24,7 @@ namespace Mosaic
 		NodeType& GetNodeAsType(UUID64 nodeId)
 		{
 			auto& underlyingGraph = m_graph.GetUnderlyingGraph();
-			return *std::static_pointer_cast<NodeType>(underlyingGraph.GetNodeFromID(nodeId).nodeData);
+			return *StaticRefCast<NodeType>(underlyingGraph.GetNodeFromID(nodeId).nodeData);
 		}
 
 		template<typename ParamDataType>

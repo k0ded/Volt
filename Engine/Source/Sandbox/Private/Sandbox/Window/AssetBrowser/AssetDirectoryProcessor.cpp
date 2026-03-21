@@ -83,7 +83,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 
 
 	auto relStartPath = g_assetManager->GetRelativeAssetFilepath(path);
-	RawPtr<AssetBrowser::DirectoryItem> resultItem = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Get(), relStartPath);
+	RawPtr<AssetBrowser::DirectoryItem> resultItem = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), relStartPath);
 	std::unordered_map<std::filesystem::path, RawPtr<AssetBrowser::DirectoryItem>> directoryItems;
 	directoryItems[relStartPath] = resultItem;
 
@@ -96,7 +96,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 			{
 				VT_PROFILE_SCOPE("Create Directory Item");
 				auto relPath = g_assetManager->GetRelativeAssetFilepath(entry.path);
-				RawPtr<AssetBrowser::DirectoryItem> dirData = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Get(), relPath);
+				RawPtr<AssetBrowser::DirectoryItem> dirData = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), relPath);
 				directoryItems[relPath] = dirData;
 				const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
 				directoryItems[parentPath]->subDirectories.emplace_back(dirData);
@@ -117,7 +117,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 				{
 					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
 					{
-						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Get(), entry.path, meshToImportData, entry.handle);
+						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), entry.path, meshToImportData, entry.handle);
 						const auto parentPath = entry.path.parent_path();
 						if (directoryItems.contains(parentPath))
 						{

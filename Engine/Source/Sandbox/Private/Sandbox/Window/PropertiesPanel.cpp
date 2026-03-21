@@ -26,7 +26,6 @@ PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<
 {
 	Open();
 	myMaxEventListSize = 20;
-	myLastValue = std::make_shared<PropertyEvent>();
 }
 
 void PropertiesPanel::UpdateMainContent()

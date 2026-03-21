@@ -12,7 +12,7 @@ namespace Volt
 	{
 		entt::entity handle = m_registry.create();
 		
-		UIWidget newWidget = UIWidget(handle, shared_from_this());
+		UIWidget newWidget = UIWidget(handle, this);
 		newWidget.AddComponent<UITransformComponent>();
 		
 		auto& idComp = newWidget.AddComponent<UIIDComponent>();
@@ -43,7 +43,6 @@ namespace Volt
 			return UIWidget::Null();
 		}
 
-		Ref<const UIScene> scenePtr = shared_from_this();
-		return UIWidget(m_uuidToEntityMap.at(uuid), std::const_pointer_cast<UIScene>(scenePtr));
+		return UIWidget(m_uuidToEntityMap.at(uuid), const_cast<UIScene*>(this));
 	}
 }

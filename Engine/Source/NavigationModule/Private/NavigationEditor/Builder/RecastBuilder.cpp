@@ -228,7 +228,7 @@ int RecastBuilder::rasterizeTileLayers(
 		VT_LOG(Error, "buildNavigation: Out of memory 'solid'.");
 		return 0;
 	}
-	if (!rcCreateHeightfield(m_ctx.get(), *rc.solid, tcfg.width, tcfg.height, tcfg.bmin, tcfg.bmax, tcfg.cs, tcfg.ch))
+	if (!rcCreateHeightfield(m_ctx.GetRaw(), *rc.solid, tcfg.width, tcfg.height, tcfg.bmin, tcfg.bmax, tcfg.cs, tcfg.ch))
 	{
 		VT_LOG(Error, "buildNavigation: Could not create solid heightfield.");
 		return 0;
@@ -263,10 +263,10 @@ int RecastBuilder::rasterizeTileLayers(
 		const int ntris = node.n;
 
 		memset(rc.triareas, 0, ntris * sizeof(unsigned char));
-		rcMarkWalkableTriangles(m_ctx.get(), tcfg.walkableSlopeAngle,
+		rcMarkWalkableTriangles(m_ctx.GetRaw(), tcfg.walkableSlopeAngle,
 								verts, nverts, tris, ntris, rc.triareas);
 
-		if (!rcRasterizeTriangles(m_ctx.get(), verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
+		if (!rcRasterizeTriangles(m_ctx.GetRaw(), verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
 			return 0;
 	}
 
@@ -274,11 +274,11 @@ int RecastBuilder::rasterizeTileLayers(
 	// remove unwanted overhangs caused by the conservative rasterization
 	// as well as filter spans where the character cannot possibly stand.
 	if (m_filterLowHangingObstacles)
-		rcFilterLowHangingWalkableObstacles(m_ctx.get(), tcfg.walkableClimb, *rc.solid);
+		rcFilterLowHangingWalkableObstacles(m_ctx.GetRaw(), tcfg.walkableClimb, *rc.solid);
 	if (m_filterLedgeSpans)
-		rcFilterLedgeSpans(m_ctx.get(), tcfg.walkableHeight, tcfg.walkableClimb, *rc.solid);
+		rcFilterLedgeSpans(m_ctx.GetRaw(), tcfg.walkableHeight, tcfg.walkableClimb, *rc.solid);
 	if (m_filterWalkableLowHeightSpans)
-		rcFilterWalkableLowHeightSpans(m_ctx.get(), tcfg.walkableHeight, *rc.solid);
+		rcFilterWalkableLowHeightSpans(m_ctx.GetRaw(), tcfg.walkableHeight, *rc.solid);
 
 
 	rc.chf = rcAllocCompactHeightfield();
@@ -287,14 +287,14 @@ int RecastBuilder::rasterizeTileLayers(
 		VT_LOG(Error, "buildNavigation: Out of memory 'chf'.");
 		return 0;
 	}
-	if (!rcBuildCompactHeightfield(m_ctx.get(), tcfg.walkableHeight, tcfg.walkableClimb, *rc.solid, *rc.chf))
+	if (!rcBuildCompactHeightfield(m_ctx.GetRaw(), tcfg.walkableHeight, tcfg.walkableClimb, *rc.solid, *rc.chf))
 	{
 		VT_LOG(Error, "buildNavigation: Could not build compact data.");
 		return 0;
 	}
 
 	// Erode the walkable area by agent radius.
-	if (!rcErodeWalkableArea(m_ctx.get(), tcfg.walkableRadius, *rc.chf))
+	if (!rcErodeWalkableArea(m_ctx.GetRaw(), tcfg.walkableRadius, *rc.chf))
 	{
 		VT_LOG(Error, "buildNavigation: Could not erode.");
 		return 0;
@@ -304,7 +304,7 @@ int RecastBuilder::rasterizeTileLayers(
 	const ConvexVolume* vols = m_geom->getConvexVolumes();
 	for (int i = 0; i < m_geom->getConvexVolumeCount(); ++i)
 	{
-		rcMarkConvexPolyArea(m_ctx.get(), vols[i].verts, vols[i].nverts,
+		rcMarkConvexPolyArea(m_ctx.GetRaw(), vols[i].verts, vols[i].nverts,
 							 vols[i].hmin, vols[i].hmax,
 							 (unsigned char)vols[i].area, *rc.chf);
 	}
@@ -315,7 +315,7 @@ int RecastBuilder::rasterizeTileLayers(
 		VT_LOG(Error, "buildNavigation: Out of memory 'lset'.");
 		return 0;
 	}
-	if (!rcBuildHeightfieldLayers(m_ctx.get(), *rc.chf, tcfg.borderSize, tcfg.walkableHeight, *rc.lset))
+	if (!rcBuildHeightfieldLayers(m_ctx.GetRaw(), *rc.chf, tcfg.borderSize, tcfg.walkableHeight, *rc.lset))
 	{
 		VT_LOG(Error, "buildNavigation: Could not build heighfield layers.");
 		return 0;
@@ -459,7 +459,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 		VT_LOG(Error, "buildNavigation: Out of memory 'solid'.");
 		return nullptr;
 	}
-	if (!rcCreateHeightfield(m_ctx.get(), *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
+	if (!rcCreateHeightfield(m_ctx.GetRaw(), *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
 	{
 		VT_LOG(Error, "buildNavigation: Could not create solid heightfield.");
 		return nullptr;
@@ -479,8 +479,8 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
 	memset(m_triareas, 0, ntris * sizeof(unsigned char));
-	rcMarkWalkableTriangles(m_ctx.get(), m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
-	if (!rcRasterizeTriangles(m_ctx.get(), verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
+	rcMarkWalkableTriangles(m_ctx.GetRaw(), m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
+	if (!rcRasterizeTriangles(m_ctx.GetRaw(), verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
 	{
 		VT_LOG(Error, "buildNavigation: Could not rasterize triangles.");
 		return nullptr;
@@ -500,11 +500,11 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	// remove unwanted overhangs caused by the conservative rasterization
 	// as well as filter spans where the character cannot possibly stand.
 	if (m_filterLowHangingObstacles)
-		rcFilterLowHangingWalkableObstacles(m_ctx.get(), m_cfg.walkableClimb, *m_solid);
+		rcFilterLowHangingWalkableObstacles(m_ctx.GetRaw(), m_cfg.walkableClimb, *m_solid);
 	if (m_filterLedgeSpans)
-		rcFilterLedgeSpans(m_ctx.get(), m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid);
+		rcFilterLedgeSpans(m_ctx.GetRaw(), m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid);
 	if (m_filterWalkableLowHeightSpans)
-		rcFilterWalkableLowHeightSpans(m_ctx.get(), m_cfg.walkableHeight, *m_solid);
+		rcFilterWalkableLowHeightSpans(m_ctx.GetRaw(), m_cfg.walkableHeight, *m_solid);
 
 
 	//
@@ -520,7 +520,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 		VT_LOG(Error, "buildNavigation: Out of memory 'chf'.");
 		return nullptr;
 	}
-	if (!rcBuildCompactHeightfield(m_ctx.get(), m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
+	if (!rcBuildCompactHeightfield(m_ctx.GetRaw(), m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
 	{
 		VT_LOG(Error, "buildNavigation: Could not build compact data.");
 		return nullptr;
@@ -533,7 +533,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	}
 
 	// Erode the walkable area by agent radius.
-	if (!rcErodeWalkableArea(m_ctx.get(), m_cfg.walkableRadius, *m_chf))
+	if (!rcErodeWalkableArea(m_ctx.GetRaw(), m_cfg.walkableRadius, *m_chf))
 	{
 		VT_LOG(Error, "buildNavigation: Could not erode.");
 		return nullptr;
@@ -542,7 +542,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	//// (Optional) Mark areas.
 	//const ConvexVolume* vols = m_geom->getConvexVolumes();
 	//for (int i = 0; i < m_geom->getConvexVolumeCount(); ++i)
-	//	rcMarkConvexPolyArea(m_ctx.get(), vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
+	//	rcMarkConvexPolyArea(m_ctx.GetRaw(), vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
 
 	// Partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
 	// There are 3 martitioning methods, each with some pros and cons:
@@ -573,14 +573,14 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	if (m_buildSettings->partitionType == PARTITION_WATERSHED)
 	{
 		// Prepare for region partitioning, by calculating distance field along the walkable surface.
-		if (!rcBuildDistanceField(m_ctx.get(), *m_chf))
+		if (!rcBuildDistanceField(m_ctx.GetRaw(), *m_chf))
 		{
 			VT_LOG(Error, "buildNavigation: Could not build distance field.");
 			return nullptr;
 		}
 
 		// Partition the walkable surface into simple regions without holes.
-		if (!rcBuildRegions(m_ctx.get(), *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
+		if (!rcBuildRegions(m_ctx.GetRaw(), *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
 			VT_LOG(Error, "buildNavigation: Could not build watershed regions.");
 			return nullptr;
@@ -590,7 +590,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	{
 		// Partition the walkable surface into simple regions without holes.
 		// Monotone partitioning does not need distancefield.
-		if (!rcBuildRegionsMonotone(m_ctx.get(), *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
+		if (!rcBuildRegionsMonotone(m_ctx.GetRaw(), *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
 			VT_LOG(Error, "buildNavigation: Could not build monotone regions.");
 			return nullptr;
@@ -599,7 +599,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 	else if (m_buildSettings->partitionType == PARTITION_LAYERS)
 	{
 		// Partition the walkable surface into simple regions without holes.
-		if (!rcBuildLayerRegions(m_ctx.get(), *m_chf, 0, m_cfg.minRegionArea))
+		if (!rcBuildLayerRegions(m_ctx.GetRaw(), *m_chf, 0, m_cfg.minRegionArea))
 		{
 			VT_LOG(Error, "buildNavigation: Could not build layer regions.");
 			return nullptr;
@@ -617,7 +617,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 		VT_LOG(Error, "buildNavigation: Out of memory 'cset'.");
 		return nullptr;
 	}
-	if (!rcBuildContours(m_ctx.get(), *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
+	if (!rcBuildContours(m_ctx.GetRaw(), *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
 	{
 		VT_LOG(Error, "buildNavigation: Could not create contours.");
 		return nullptr;
@@ -634,7 +634,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 		VT_LOG(Error, "buildNavigation: Out of memory 'pmesh'.");
 		return nullptr;
 	}
-	if (!rcBuildPolyMesh(m_ctx.get(), *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
+	if (!rcBuildPolyMesh(m_ctx.GetRaw(), *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
 	{
 		VT_LOG(Error, "buildNavigation: Could not triangulate contours.");
 		return nullptr;
@@ -651,7 +651,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildSingleNavMesh()
 		return nullptr;
 	}
 
-	if (!rcBuildPolyMeshDetail(m_ctx.get(), *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
+	if (!rcBuildPolyMeshDetail(m_ctx.GetRaw(), *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
 	{
 		VT_LOG(Error, "buildNavigation: Could not build detail mesh.");
 		return nullptr;
@@ -790,7 +790,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildTiledNavMesh()
 
 	CleanUp();
 
-	m_tmproc->init(m_geom.get());
+	m_tmproc->init(m_geom.GetRaw());
 
 	dtStatus status;
 	Ref<Volt::AI::NavMesh> result;
@@ -855,7 +855,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildTiledNavMesh()
 		return nullptr;
 	}
 
-	status = tileCache->init(&tcparams, m_talloc.get(), m_tcomp.get(), m_tmproc.get());
+	status = tileCache->init(&tcparams, m_talloc.GetRaw(), m_tcomp.GetRaw(), m_tmproc.GetRaw());
 	if (dtStatusFailed(status))
 	{
 		VT_LOG(Error, "buildTiledNavigation: Could not init tile cache.");
@@ -928,7 +928,7 @@ Ref<Volt::AI::NavMesh> RecastBuilder::BuildTiledNavMesh()
 	m_ctx->startTimer(RC_TIMER_TOTAL);
 	for (int y = 0; y < th; ++y)
 		for (int x = 0; x < tw; ++x)
-			tileCache->buildNavMeshTilesAt(x, y, navMesh.get());
+			tileCache->buildNavMeshTilesAt(x, y, navMesh.GetRaw());
 	m_ctx->stopTimer(RC_TIMER_TOTAL);
 
 	m_cacheBuildTimeMs = m_ctx->getAccumulatedTime(RC_TIMER_TOTAL) / 1000.0f;

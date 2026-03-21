@@ -69,39 +69,40 @@ namespace Volt
 			}
 
 			Weak<RegisteredConsoleVariableBase> consoleVar = ConsoleVariableRegistry::Get().GetVariable(varName);
-		
-			if (consoleVar->IsFloat())
+			Ref<RegisteredConsoleVariableBase> refConsoleVar = consoleVar.Lock();
+
+			if (refConsoleVar->IsFloat())
 			{
 				if (value.Is<float>())
 				{
 					const float tempVal = value.Get<float>();
-					consoleVar->Set(&tempVal);
+					refConsoleVar->Set(&tempVal);
 				}
 				else if (value.Is<int32_t>())
 				{
 					const float tempVal = static_cast<float>(value.Get<int32_t>());
-					consoleVar->Set(&tempVal);
+					refConsoleVar->Set(&tempVal);
 				}
 			}
-			else if (consoleVar->IsInteger())
+			else if (refConsoleVar->IsInteger())
 			{
 				if (value.Is<float>())
 				{
 					const int32_t tempVal = static_cast<int32_t>(value.Get<float>());
-					consoleVar->Set(&tempVal);
+					refConsoleVar->Set(&tempVal);
 				}
 				else if (value.Is<int32_t>())
 				{
 					const int32_t tempVal = value.Get<int32_t>();
-					consoleVar->Set(&tempVal);
+					refConsoleVar->Set(&tempVal);
 				}
 			}
-			else if (consoleVar->IsString())
+			else if (refConsoleVar->IsString())
 			{
 				if (value.Is<std::string>())
 				{
 					const std::string tempVal = value.Get<std::string>();
-					consoleVar->Set(&tempVal);
+					refConsoleVar->Set(&tempVal);
 				}
 			}
 		}

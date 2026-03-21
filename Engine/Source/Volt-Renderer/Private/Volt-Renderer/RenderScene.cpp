@@ -227,11 +227,11 @@ namespace Volt
 		return m_renderPrimitiveDataContainer.GetRenderPrimitives();
 	}
 
-	uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
+	uint32_t RenderScene::GetMaterialIndex(RenderMaterial* material) const
 	{
-		auto it = std::find_if(m_individualMaterials.begin(), m_individualMaterials.end(), [&](Weak<RenderMaterial> lhs)
+		auto it = std::find_if(m_individualMaterials.begin(), m_individualMaterials.end(), [&](const Ref<RenderMaterial>& lhs)
 		{
-			return lhs.Get() == material.Get();
+			return lhs.GetRaw() == material;
 		});
 
 		if (it != m_individualMaterials.end())
@@ -368,8 +368,8 @@ namespace Volt
 		}
 
 		newRenderPrimitive->entityId = queuedUpdate.primitiveInfo.entityId;
-		newRenderPrimitive->mesh = queuedUpdate.primitiveInfo.mesh;
-		newRenderPrimitive->material = queuedUpdate.primitiveInfo.material;
+		newRenderPrimitive->mesh = queuedUpdate.primitiveInfo.mesh.GetRaw();
+		newRenderPrimitive->material = queuedUpdate.primitiveInfo.material.GetRaw();
 		newRenderPrimitive->subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
 		newRenderPrimitive->animator = queuedUpdate.primitiveInfo.animator;
 
@@ -497,7 +497,7 @@ namespace Volt
 		}
 	}
 
-	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
+	void RenderScene::BuildGPUMaterial(const Ref<RenderMaterial>& material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
 		
@@ -512,7 +512,7 @@ namespace Volt
 #endif
 	}
 
-	void RenderScene::BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh)
+	void RenderScene::BuildGPUMesh(const Ref<Mesh>& mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh)
 	{
 		outGPUMesh = mesh->GetGPUMeshes().at(subMeshIndex);
 

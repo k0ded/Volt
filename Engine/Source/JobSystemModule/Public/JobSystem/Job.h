@@ -7,6 +7,8 @@
 #include <CoreUtilities/Core.h>
 
 #include <string_view>
+#include <new>
+#include <atomic>
 
 namespace Volt
 {

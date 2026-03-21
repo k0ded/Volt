@@ -81,7 +81,7 @@ void NavMeshDebugDrawer::CompileDebugMesh(Volt::AI::NavMesh* navmesh)
 	if (navmesh)
 	{
 		debugDrawCompiler.Clear();
-		duDebugDrawNavMeshWithClosedList(&debugDrawCompiler, *navmesh->GetNavMesh()->GetNavMesh().get(), *navmesh->GetNavMesh()->GetNavMeshQuery().get(), 0);
+		duDebugDrawNavMeshWithClosedList(&debugDrawCompiler, *navmesh->GetNavMesh()->GetNavMesh().GetRaw(), *navmesh->GetNavMesh()->GetNavMeshQuery().GetRaw(), 0);
 	}
 }
 

@@ -193,7 +193,7 @@ namespace UnitTests
 	TEST(Unique, EqualityOperatorNullptr)
 	{
 		Unique<TestValue> a;
-		ASSERT_FALSE(a == nullptr);
+		ASSERT_TRUE(a == nullptr);
 	}
 
 	// Reset

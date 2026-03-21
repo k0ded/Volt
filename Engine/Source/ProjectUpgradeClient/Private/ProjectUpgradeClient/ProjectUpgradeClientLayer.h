@@ -8,6 +8,7 @@
 #include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 
 namespace Volt

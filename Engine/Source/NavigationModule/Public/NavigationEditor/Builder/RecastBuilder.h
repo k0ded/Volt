@@ -32,7 +32,7 @@ public:
 	Ref<Volt::AI::NavMesh> BuildSingleNavMesh();
 	Ref<Volt::AI::NavMesh> BuildTiledNavMesh();
 
-	RecastBuildContext* GetContext() { return m_ctx.get(); }
+	RecastBuildContext* GetContext() { return m_ctx.GetRaw(); }
 
 	void AddNavLinkConnection(Volt::AI::NavLinkConnection link);
 	void RemoveNavLinkConnection(uint32_t index);

@@ -144,7 +144,7 @@ namespace Volt
 		{
 			if (node.nodeData->GetGUID() == MosaicNodes::SampleTextureNode::GetStaticGUID())
 			{
-				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<MosaicNodes::SampleTextureNode>(node.nodeData);
+				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = ReinterpretRefCast<MosaicNodes::SampleTextureNode>(node.nodeData);
 				const auto textureInfo = sampleTextureNode->GetTextureInfo();
 				materialCustomMetadata.textureReferences.emplace_back(textureInfo.textureHandle, textureInfo.textureIndex);
 			}

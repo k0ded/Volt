@@ -281,7 +281,7 @@ void ViewportPanel::UpdateContent()
 			{
 				for (const auto& window : EditorLibrary::GetPanels())
 				{
-					if (window.editorWindow->IsOpen() && window.editorWindow.get() != this && window.editorWindow.get()->GetTitle() != GameViewPanel::GAMEVIEWPANEL_TITLE && window.editorWindow->IsDocked())
+					if (window.editorWindow->IsOpen() && window.editorWindow.GetRaw() != this && window.editorWindow->GetTitle() != GameViewPanel::GAMEVIEWPANEL_TITLE && window.editorWindow->IsDocked())
 					{
 						const_cast<bool&>(window.editorWindow->IsOpen()) = false;
 						fullscreenDeactivatedWindows.emplace_back(window.editorWindow);

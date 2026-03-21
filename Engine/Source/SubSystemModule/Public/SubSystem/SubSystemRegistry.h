@@ -8,6 +8,7 @@
 #include <CoreUtilities/VoltGUID.h>
 
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 class SubSystem;
 
