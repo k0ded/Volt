@@ -2,6 +2,9 @@
 #include "CircuitSandbox.h"
 
 #include "CircuitSandbox/Widgets/ViewportWidget.h"
+#include "CircuitSandbox/Widgets/SceneViewWidget.h"
+#include "CircuitSandbox/Widgets/AssetBrowserWidget.h"
+#include "CircuitSandbox/Widgets/InspectorWidget.h"
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -54,12 +57,26 @@ void CircuitSandbox::OnAttach()
 	m_editorScene = Volt::Scene::CreateDefaultScene("New Scene", true);
 	SetupNewSceneData();
 
-	Ref<Circuit::LayoutWidget> layout = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
-		layout->AddFlexibleSlice(
-		CreateWidget(ViewportWidget)
-		.SceneRenderer(m_sceneRenderer)
-		);
-	Circuit::CircuitManager::Initialize(layout);
+	Ref<Circuit::LayoutWidget> topRow = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
+	topRow->AddFlexibleSlice(
+	CreateWidget(SceneViewWidget)
+	);
+	topRow->AddFlexibleSlice(
+	CreateWidget(ViewportWidget)
+	.SceneRenderer(m_sceneRenderer)
+	);
+	topRow->AddFlexibleSlice(
+	CreateWidget(InspectorWidget)
+	);
+
+	Ref<Circuit::LayoutWidget> rootLayout = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Vertical);
+	rootLayout->AddFlexibleSlice(topRow);
+	rootLayout->AddFixedSlice(
+	CreateWidget(AssetBrowserWidget),
+	300.f
+	);
+
+	Circuit::CircuitManager::Initialize(rootLayout);
 
 	constexpr float fov = glm::radians(60.f);
 	constexpr float nearPlane = 1.f;
@@ -68,7 +85,7 @@ void CircuitSandbox::OnAttach()
 	m_camera->SetRotation(glm::radians(glm::vec3(45.f, 135.f, 0.f)));
 
 	const glm::vec3 startPosition = { 500.f, 500.f, 500.f };
-	const float focalDistance = glm::distance(startPosition, {0,0,0});
+	const float focalDistance = glm::distance(startPosition, { 0,0,0 });
 	const glm::vec3 pos = -1.f * m_camera->GetForward() * focalDistance;
 	m_camera->SetPosition(pos);
 

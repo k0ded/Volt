@@ -62,7 +62,7 @@ glm::vec2 Circuit::ButtonWidget::GetDesiredSize()
 
 void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 {
-	const CircuitColor baseColor(255, 255, 255);
+	const CircuitColor baseColor(100, 100, 100);
 	const CircuitColor hoveredColor(200, 200, 200);
 	const CircuitColor pressedColor(150, 150, 150);
 
@@ -83,7 +83,7 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	}
 	else if (m_fontAsset.IsValid())
 	{
-		painter.AddText(0, 0, m_text.Get(), m_fontAsset, painter.GetAllotedSize().x, 0x000000ff);
+		painter.AddText(0, 0, m_text.Get(), m_fontAsset, painter.GetAllotedSize().x, 0xff0000ff, 50.f);
 	}
 }
 
