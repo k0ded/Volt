@@ -26,9 +26,9 @@ private:
 
 	void SwapOpportunity();
 
-	static bool PassesFilter(Volt::ReadOnlyAssetMetadata& metadata, std::string_view search);
+	static bool PassesFilter(Volt::ReadOnlyAssetMetadata& metadata, StringView search);
 
-	std::string m_searchString;
+	String m_searchString;
 	Vector<Volt::AssetHandle>* m_assetHandles;
 	Vector<Volt::AssetHandle> m_intermediateAssetHandles_1;
 	Vector<Volt::AssetHandle> m_intermediateAssetHandles_2;

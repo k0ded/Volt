@@ -26,7 +26,7 @@ namespace Mosaic
 
 		//const auto& n = mosaicGraph->m_graph.GetNodeFromID(outputNode);
 
-		//std::string output;
+		//String output;
 		//n.nodeData->GetShaderCode(n, 0, output);
 	}
 }

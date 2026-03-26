@@ -108,7 +108,7 @@ namespace Volt::RHI
 		m_macros.push_back(macroName);
 	}
 
-	void D3D12ShaderCompiler::RemoveMacroImpl(std::string_view macroName)
+	void D3D12ShaderCompiler::RemoveMacroImpl(StringView macroName)
 	{
 		if (auto it = std::find(m_macros.begin(), m_macros.end(), macroName); it != m_macros.end())
 		{
@@ -261,7 +261,7 @@ namespace Volt::RHI
 		Vector<const wchar_t*> wcIncludeDirs;
 
 		// Add platform include
-		constexpr std::string_view platformInclude = "#include \"Platforms/D3D12/D3D12Interop.hlsli\"\n";
+		constexpr StringView platformInclude = "#include \"Platforms/D3D12/D3D12Interop.hlsli\"\n";
 		outProcessedSource.insert(outProcessedSource.begin(), platformInclude.begin(), platformInclude.end());
 
 		for (const auto& includeDir : m_includeDirectories)
@@ -442,7 +442,7 @@ namespace Volt::RHI
 
 				// If it's the globals uniform buffer we will extract the members
 				// as they are the shaders parameters.
-				if (std::string_view(shaderInputBindingDesc.Name) == "$Globals")
+				if (StringView(shaderInputBindingDesc.Name) == "$Globals")
 				{
 					ID3D12ShaderReflectionConstantBuffer* reflectedCB = reflectionData->GetConstantBufferByIndex(i);
 					D3D12_SHADER_BUFFER_DESC cbDesc{};
@@ -511,7 +511,7 @@ namespace Volt::RHI
 		}
 	}
 
-	D3D12ShaderCompiler::DxcCompilationResult D3D12ShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
+	D3D12ShaderCompiler::DxcCompilationResult D3D12ShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
 	{
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.
@@ -573,7 +573,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	D3D12ShaderCompiler::RewriteResult D3D12ShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source)
+	D3D12ShaderCompiler::RewriteResult D3D12ShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const std::string& source)
 	{
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.

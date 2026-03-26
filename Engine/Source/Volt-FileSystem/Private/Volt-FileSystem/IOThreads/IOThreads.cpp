@@ -48,7 +48,7 @@ namespace Volt
 			IOThread* ioThread = m_ioThreads.emplace_back(m_ioThreadAllocator.Allocate());
 			ioThread->thread = std::thread(std::bind(&IOThreads::SpawnIOThread, this, i));
 
-			std::string threadName = std::format("Volt::IOThread {}", i);
+			String threadName = FormatString("Volt::IOThread {}", i);
 			PlatformThread::SetThreadName(ioThread->thread.native_handle(), threadName);
 		}
 	}
@@ -89,5 +89,6 @@ namespace Volt
 
 	void IOThreads::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
+		outDependencies.AddDependency<JobSystem>();
 	}
 }

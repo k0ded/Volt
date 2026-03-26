@@ -19,12 +19,12 @@ namespace Volt
 	/*class InputMapper
 	{
 	public:
-		static int GetKey(const std::string& name) { if (mykeyMap.contains(name)) { return mykeyMap.at(name); } else { return -1; } };
-		static void SetKey(const std::string& name, int keyCode) { mykeyMap[name] = keyCode; };
-		static void ResetKey(const std::string& name) { mykeyMap.erase(name); };
+		static int GetKey(const String& name) { if (mykeyMap.contains(name)) { return mykeyMap.at(name); } else { return -1; } };
+		static void SetKey(const String& name, int keyCode) { mykeyMap[name] = keyCode; };
+		static void ResetKey(const String& name) { mykeyMap.erase(name); };
 
 	private:
-		inline static std::unordered_map<std::string, int> mykeyMap;
+		inline static std::unordered_map<String, int> mykeyMap;
 	};*/
 
 	class INPUTMODULE_API Input : public SubSystem, public EventListener

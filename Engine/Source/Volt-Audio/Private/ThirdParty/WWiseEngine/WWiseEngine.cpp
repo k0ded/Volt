@@ -47,7 +47,7 @@ namespace Amp
 		delete myLowLevelIO;
 	}
 
-	bool WWiseEngine::InitWWise(std::filesystem::path aDefaultPath)
+	bool WWiseEngine::InitWWise(Filesystem::Path aDefaultPath)
 	{
 		if (AK::MemoryMgr::Init(&myMemSettings) != AK_Success)
 		{
@@ -68,7 +68,7 @@ namespace Amp
 			assert(!"Could not create the streaming device and Low-Level I/O system");
 			return false;
 		}
-		myLowLevelIO->SetBasePath(aDefaultPath.c_str());
+		myLowLevelIO->SetBasePath(aDefaultPath.CStr());
 
 
 		if (AK::SoundEngine::Init(&myInitSettings, &myPlatformSettings) != AK_Success)

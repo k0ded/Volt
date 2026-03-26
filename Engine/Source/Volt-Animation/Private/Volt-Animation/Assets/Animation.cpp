@@ -394,12 +394,12 @@ namespace Volt
 		//return 0.0f;
 	}
 
-	void Animation::AddEvent(const std::string& eventName, uint32_t frame)
+	void Animation::AddEvent(const String& eventName, uint32_t frame)
 	{
 		m_events.emplace_back(frame, eventName);
 	}
 
-	void Animation::RemoveEvent(const std::string& eventName, uint32_t frame)
+	void Animation::RemoveEvent(const String& eventName, uint32_t frame)
 	{
 		auto it = std::find_if(m_events.begin(), m_events.end(), [eventName](const auto& event)
 		{

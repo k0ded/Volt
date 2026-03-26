@@ -87,7 +87,7 @@ namespace Volt
 
 	struct TextRendererComponent
 	{
-		std::string text = "Text";
+		String text = "Text";
 		AssetHandle font = Asset::Null();
 		float maxWidth = 100.f;
 		glm::vec4 color = { 1.f };
@@ -96,7 +96,7 @@ namespace Volt
 		{
 			reflect.SetGUID("{8AAA0646-40D2-47E6-B83F-72EA26BD8C01}"_guid);
 			reflect.SetLabel("Text Renderer Component");
-			reflect.AddMember(&TextRendererComponent::text, 'text', "Text", "", std::string("Text"));
+			reflect.AddMember(&TextRendererComponent::text, 'text', "Text", "", String("Text"));
 			reflect.AddMember(&TextRendererComponent::font, 'font', "Font", "", Asset::Null(), AssetTypes::Font);
 			reflect.AddMember(&TextRendererComponent::maxWidth, 'mxwd', "Max Width", "", 100.f);
 			reflect.AddMember(&TextRendererComponent::color, 'col', "Color", "", glm::vec4{1.f}, ComponentMemberFlag::Color4);

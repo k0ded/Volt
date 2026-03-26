@@ -33,7 +33,7 @@ public:
 
 	glm::vec2 GetViewportLocalPosition(const glm::vec2& mousePos);
 
-	inline static const std::string GAMEVIEWPANEL_TITLE = "Game Viewport";
+	inline static const String GAMEVIEWPANEL_TITLE = "Game Viewport";
 
 private:
 	bool OnMouseMoved(Volt::MouseMovedEvent& e);

@@ -23,7 +23,7 @@ namespace Volt
 {
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".png", ".jpeg", ".jpg", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
 
-	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);
@@ -35,23 +35,25 @@ namespace Volt
 		// #TODO_Ivar: Add failure checking
 		stbi_set_flip_vertically_on_load(0);
 		
-		const bool isHDR = stbi_is_hdr(filepath.string().c_str());
-		const bool is16Bit = stbi_is_16_bit(filepath.string().c_str());
+		String strFilepath = filepath.ToString();
+
+		const bool isHDR = stbi_is_hdr(strFilepath.c_str());
+		const bool is16Bit = stbi_is_16_bit(strFilepath.c_str());
 
 		void* data = nullptr;
 
 		if (isHDR)
 		{
-			data = stbi_loadf(filepath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
+			data = stbi_loadf(strFilepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 		}
 		else
 		{
-			data = stbi_load(filepath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
+			data = stbi_load(strFilepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 		}
 
 		if (!data)
 		{
-			const std::string error = std::format("Failed to import file {}. Reason: {}", filepath, stbi_failure_reason());
+			const String error = FormatString("Failed to import file {}. Reason: {}", filepath, stbi_failure_reason());
 			VT_LOGC(Error, LogCommonTextureSourceImporter, error);
 			userData.OnError(error);
 			return {};
@@ -147,7 +149,7 @@ namespace Volt
 		return { voltTexture };
 	}
 
-	SourceAssetFileInformation CommonTextureSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation CommonTextureSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		VT_ENSURE(false);
 		return SourceAssetFileInformation();

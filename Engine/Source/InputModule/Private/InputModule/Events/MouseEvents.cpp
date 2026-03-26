@@ -4,24 +4,18 @@
 
 namespace Volt
 {
-	std::string MouseMovedEvent::ToString() const
+	String MouseMovedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "MouseMovedEvent: " << m_mouseX << ", " << m_mouseY;
-		return ss.str();
+		return FormatString("MouseMovedEvent: {}, {}", m_mouseX, m_mouseY);
 	}
 
-	std::string MouseButtonPressedEvent::ToString() const
+	String MouseButtonPressedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "MouseButtonPressedEvent: " << Volt::ToString(GetMouseButton());
-		return ss.str();
+		return FormatString("MouseButtonPressedEvent: {}", Volt::ToString(GetMouseButton()));
 	}
 
-	std::string MouseButtonReleasedEvent::ToString() const
+	String MouseButtonReleasedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "MouseButtonReleasedEvent: " << Volt::ToString(GetMouseButton());
-		return ss.str();
+		return FormatString("MouseButtonReleasedEvent: {}", Volt::ToString(GetMouseButton()));
 	}
 }

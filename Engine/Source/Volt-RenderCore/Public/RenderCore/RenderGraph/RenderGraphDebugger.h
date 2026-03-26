@@ -32,7 +32,7 @@ namespace Volt
 
 		struct RenderGraphPass
 		{
-			std::string passName;
+			String passName;
 			Vector<uint32_t> resourceReads;
 			Vector<uint32_t> resourceWrites;
 			Vector<uint32_t> renderTargets;
@@ -43,7 +43,7 @@ namespace Volt
 
 		struct RenderGraphResource
 		{
-			std::string name;
+			String name;
 			RGResourceType resourceType;
 
 			uint32_t firstUsagePass;

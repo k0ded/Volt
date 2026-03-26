@@ -50,7 +50,7 @@ namespace Volt
 		uint32_t vertexStartOffset = 0;
 		uint32_t indexStartOffset = 0;
 
-		std::string name;
+		String name;
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, SubMesh& value)
 		{

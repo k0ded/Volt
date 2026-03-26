@@ -5,6 +5,8 @@
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/ComparisonHelpers.h>
@@ -19,32 +21,32 @@ namespace Volt
 			size_t hash = 0;
 			for (const auto& shader : pipelineInfo.rayGenTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			for (const auto& shader : pipelineInfo.missTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			for (const auto& shader : pipelineInfo.closestHitTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			for (const auto& shader : pipelineInfo.anyHitTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			for (const auto& shader : pipelineInfo.intersectionTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			for (const auto& shader : pipelineInfo.callableTable)
 			{
-				hash = Math::HashCombine(hash, std::hash<std::string_view>()(shader->GetName()));
+				hash = Math::HashCombine(hash, std::hash<StringView>()(shader->GetName()));
 			}
 
 			return hash;
@@ -75,9 +77,9 @@ namespace Volt
 
 	}
 
-	bool ShaderMap::ReloadAllWithReferenceToFile(const std::filesystem::path& filepath)
+	bool ShaderMap::ReloadAllWithReferenceToFile(const Filesystem::Path& filepath)
 	{
-		const bool isSourceFile = filepath.extension() == L".hlsl";
+		const bool isSourceFile = filepath.Extension() == L".hlsl";
 
 		Vector<IntRef<RHI::Shader>> touchedShaders;
 
@@ -90,7 +92,7 @@ namespace Volt
 				{
 					for (const auto& [permutationHash, shader] : shaderBucket.permutationMap)
 					{
-						std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
+						Filesystem::Path absoluteSourcePath = Filesystem::Absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
 						if (absoluteSourcePath == filepath)
 						{
 							touchedShaders.emplace_back(shader);
@@ -99,7 +101,7 @@ namespace Volt
 				}
 				else
 				{
-					std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shaderBucket.baseShader->GetShaderSourceInfo().sourceEntry.filepath);
+					Filesystem::Path absoluteSourcePath = Filesystem::Absolute(shaderBucket.baseShader->GetShaderSourceInfo().sourceEntry.filepath);
 					if (absoluteSourcePath == filepath)
 					{
 						touchedShaders.emplace_back(shaderBucket.baseShader);
@@ -117,7 +119,7 @@ namespace Volt
 					{
 						for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
 						{
-							std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+							Filesystem::Path absoluteDependencyPath = Filesystem::Absolute(includeDependency);
 
 							if (absoluteDependencyPath == filepath)
 							{
@@ -131,7 +133,7 @@ namespace Volt
 				{
 					for (const auto& includeDependency : shaderBucket.baseShader->GetShaderIncludeDependencies())
 					{
-						std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+						Filesystem::Path absoluteDependencyPath = Filesystem::Absolute(includeDependency);
 
 						if (absoluteDependencyPath == filepath)
 						{

@@ -40,7 +40,7 @@ namespace Volt
 		void SortScene();
 		void ClearScene();
 
-		Entity CreateEntity(const std::string& tag = "");
+		Entity CreateEntity(const String& tag = "");
 		Entity CreateEntityWithID(EntityID id);
 		//this will create an entity WITHOUR components, but still adding an entry in the EntityRegistry
 		//intended for when the caller wants to add all components at a later stage, e.g serialization

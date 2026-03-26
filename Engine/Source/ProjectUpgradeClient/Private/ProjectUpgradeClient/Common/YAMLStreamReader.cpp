@@ -5,7 +5,7 @@ YAMLStreamReader::YAMLStreamReader()
 	m_nodeStack.reserve(100);
 }
 
-const bool YAMLStreamReader::HasKey(const std::string& key)
+const bool YAMLStreamReader::HasKey(const String& key)
 {
 	if (m_currentNode[key])
 	{
@@ -15,12 +15,12 @@ const bool YAMLStreamReader::HasKey(const std::string& key)
 	return false;
 }
 
-const bool YAMLStreamReader::IsSequenceEmpty(const std::string& key)
+const bool YAMLStreamReader::IsSequenceEmpty(const String& key)
 {
 	return m_currentNode[key].IsSequence() && m_currentNode[key].size() == 0;
 }
 
-void YAMLStreamReader::EnterScope(const std::string& key)
+void YAMLStreamReader::EnterScope(const String& key)
 {
 	m_nodeStack.emplace_back(m_currentNode);
 	m_currentNode.reset(m_nodeStack.back()[key]);
@@ -37,7 +37,7 @@ void YAMLStreamReader::ExitScope()
 	m_nodeStack.pop_back();
 }
 
-void YAMLStreamReader::ForEach(const std::string& key, std::function<void()> function)
+void YAMLStreamReader::ForEach(const String& key, std::function<void()> function)
 {
 	if (!m_currentNode[key])
 	{

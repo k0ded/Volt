@@ -14,6 +14,8 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-FileSystem/FileArchive.h>
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
 
 #include <AssetSystem/AssetMetadata.h>
 #include <AssetSystem/AssetFactory.h>
@@ -22,12 +24,11 @@
 
 #include <JobSystem/TaskGraph.h>
 
-#include <CoreUtilities/FileSystem.h>
 namespace Volt
 {
 	REGISTER_UPGRADE(Version::Create(0, 1, 7), Upgrade_0_1_7);
 	
-	static void DeserializeAssetMetadata(AssetMetadata_0_1_7& outMetadata, const std::filesystem::path& assetFilepath)
+	static void DeserializeAssetMetadata(AssetMetadata_0_1_7& outMetadata, const Filesystem::Path& assetFilepath)
 	{
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
@@ -66,7 +67,7 @@ namespace Volt
 		m_numTotalActions = 0;
 
 		// Serializers rely on the global asset manager existing.
-		g_assetManager = CreateUnique<AssetManager>(std::filesystem::current_path(), inProject.rootDirectory, inProject.assetsDirectoryName);
+		g_assetManager = CreateUnique<AssetManager>(Filesystem::GetWorkingDirectory(), inProject.rootDirectory, inProject.assetsDirectoryName);
 	}
 
 	Upgrade_0_1_7::~Upgrade_0_1_7()
@@ -127,7 +128,7 @@ namespace Volt
 		return m_numActionsCompleted;
 	}
 
-	std::string Upgrade_0_1_7::GetCurrentActionText()
+	String Upgrade_0_1_7::GetCurrentActionText()
 	{
 		switch (m_currentStage)
 		{
@@ -224,36 +225,36 @@ namespace Volt
 
 	void Upgrade_0_1_7::LoadAssetMetadatas()
 	{
-		constexpr std::string_view AssetExtension = ".vtasset";
+		constexpr StringView AssetExtension = ".vtasset";
 		constexpr uint32_t NumEngineFilepaths = 2;
 
-		const Array<std::filesystem::path, NumEngineFilepaths> engineFilepathsToScan =
+		const Array<Filesystem::Path, NumEngineFilepaths> engineFilepathsToScan =
 		{
-			std::filesystem::current_path() / "Engine",
+			Filesystem::GetWorkingDirectory() / "Engine",
 			GetTargetProject().rootDirectory / "Editor",
 		};
 
-		const std::filesystem::path projectFilepathToScan = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectoryName;
+		const Filesystem::Path projectFilepathToScan = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectoryName;
 
 		TaskGraph scanGraph{ ExecutionPriority::Immediate };
 
-		Array<Vector<std::filesystem::path>, NumEngineFilepaths> engineIntermediateFilepaths;
+		Array<Vector<Filesystem::Path>, NumEngineFilepaths> engineIntermediateFilepaths;
 
-		for (uint32_t index = 0; const std::filesystem::path& filepathToScan : engineFilepathsToScan)
+		for (uint32_t index = 0; const Filesystem::Path& filepathToScan : engineFilepathsToScan)
 		{
 			// If the directory does not exist, we skip.
-			if (!FileSystem::Exists(filepathToScan))
+			if (!Filesystem::Exists(filepathToScan))
 			{
 				continue;
 			}
 
 			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]()
 			{
-				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(filepathToScan))
+				for (const auto& pathIt : Filesystem::RecursiveDirectoryIterator(filepathToScan))
 				{
-					if (pathIt.path().extension() == AssetExtension)
+					if (pathIt.path.Extension() == AssetExtension)
 					{
-						engineIntermediateFilepaths[index].emplace_back(pathIt.path());
+						engineIntermediateFilepaths[index].emplace_back(pathIt.path);
 					}
 				}
 			});
@@ -261,18 +262,18 @@ namespace Volt
 			index++;
 		}
 
-		Vector<std::filesystem::path> assets;
+		Vector<Filesystem::Path> assets;
 
 		// Make sure the project assets directory exists.
-		if (FileSystem::Exists(projectFilepathToScan))
+		if (Filesystem::Exists(projectFilepathToScan))
 		{
 			scanGraph.AddTask("Scan Project Assets", [&assets, &projectFilepathToScan]()
 			{
-				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(projectFilepathToScan))
+				for (const auto& pathIt : Filesystem::RecursiveDirectoryIterator(projectFilepathToScan))
 				{
-					if (pathIt.path().extension() == AssetExtension)
+					if (pathIt.path.Extension() == AssetExtension)
 					{
-						assets.emplace_back(pathIt.path());
+						assets.emplace_back(pathIt.path);
 					}
 				}
 			});
@@ -280,12 +281,12 @@ namespace Volt
 
 		scanGraph.ExecuteAndWait();
 
-		for (const Vector<std::filesystem::path>& intermediate : engineIntermediateFilepaths)
+		for (const Vector<Filesystem::Path>& intermediate : engineIntermediateFilepaths)
 		{
 			assets.append(intermediate);
 		}
 
-		for (const std::filesystem::path& assetFilepath : assets)
+		for (const Filesystem::Path& assetFilepath : assets)
 		{
 			AssetMetadata_0_1_7 metadata;
 			DeserializeAssetMetadata(metadata, assetFilepath);

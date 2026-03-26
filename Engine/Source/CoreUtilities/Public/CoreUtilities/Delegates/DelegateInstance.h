@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreUtilities/Delegates/DelegateHandle.h"
+#include "CoreUtilities/VoltAssert.h"
 
 #include <tuple>
 

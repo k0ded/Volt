@@ -15,12 +15,12 @@ namespace AssetBrowser
 	class Item
 	{
 	public:
-		Item(SelectionManager* selectionManager, const std::filesystem::path& path);
+		Item(SelectionManager* selectionManager, const Filesystem::Path& path);
 		virtual ~Item() = default;
 		virtual bool Render();
 		void StartRename();
 
-		std::filesystem::path path;
+		Filesystem::Path path;
 
 		bool isDirectory = false;
 
@@ -30,21 +30,21 @@ namespace AssetBrowser
 		virtual void PushID() = 0;
 		virtual IntRef<Volt::RHI::Image> GetIcon() const = 0;
 		virtual ImVec4 GetBackgroundColor() const = 0;
-		virtual std::string GetTypeName() const = 0;
+		virtual String GetTypeName() const = 0;
 
 		virtual void Open() {};
 		virtual void SetDragDropPayload() {};
 		virtual bool RenderRightClickPopup() { return false; };
-		virtual bool Rename(const std::string& aNewName) { return false; };
+		virtual bool Rename(const String& aNewName) { return false; };
 		virtual void DrawAdditionalHoverInfo() {};
 
-		void DrawHoverInfo(std::string_view aInfoTitle, std::string_view aInfo);
+		void DrawHoverInfo(StringView aInfoTitle, StringView aInfo);
 
 		SelectionManager* m_selectionManager;
 		bool m_isRenaming;
 		bool m_lastRenaming;
-		std::string m_currentRenamingName;
-		std::string m_typeName;
+		String m_currentRenamingName;
+		String m_typeName;
 
 	private:
 		glm::vec4 GetTypeNameColor(bool aHoverFlag,bool aSelectedFlag) const;

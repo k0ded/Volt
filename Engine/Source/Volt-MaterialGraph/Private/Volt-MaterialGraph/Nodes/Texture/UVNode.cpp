@@ -56,9 +56,9 @@ namespace Volt::MosaicNodes
 			return resultInfo;
 		}
 
-		const std::string varName = m_graph->GetNextVariableName();
+		const String varName = m_graph->GetNextVariableName();
 
-		std::string result = std::format(nodeStr, varName);
+		String result = FormatString(nodeStr, varName);
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

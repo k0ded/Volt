@@ -60,7 +60,7 @@ namespace Volt
 		friend class RenderGraphDebugger;
 		friend class RenderGraphPassAllocator;
 
-		std::string m_name;
+		String m_name;
 		void* m_passAllocationStartPtr;
 		uint32_t passIndex = 0;
 		uint32_t m_refCount = 0;

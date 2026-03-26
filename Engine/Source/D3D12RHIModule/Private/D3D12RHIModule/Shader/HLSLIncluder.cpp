@@ -22,7 +22,7 @@ namespace Volt::RHI
 
 	HRESULT HLSLIncluder::LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource)
 	{
-		const std::filesystem::path filepath = pFilename;
+		const Filesystem::Path filepath = pFilename;
 		if (m_includedFiles.contains(filepath))
 		{
 			static const char nullStr[] = " ";

@@ -18,7 +18,7 @@ namespace Volt
 			uint64_t maxReadSize = 0;
 		};
 
-		VTFS_API IORequestReadFile_FileReader(std::string_view name, const std::filesystem::path& filepath, const Config& config = {});
+		VTFS_API IORequestReadFile_FileReader(StringView name, const Filesystem::Path& filepath, const Config& config = {});
 		~IORequestReadFile_FileReader() override = default;
 
 		void Execute() override;
@@ -29,26 +29,26 @@ namespace Volt
 	private:
 		FileReader m_fileReader;
 		Config m_config;
-		std::filesystem::path m_filepath;
+		Filesystem::Path m_filepath;
 		IORequestResultCode m_resultCode;
 	};
 
 	class IORequestReadFile_String : public IORequest
 	{
 	public:
-		using ResultType = std::string;
+		using ResultType = String;
 
-		VTFS_API IORequestReadFile_String(std::string_view name, const std::filesystem::path& filepath);
+		VTFS_API IORequestReadFile_String(StringView name, const Filesystem::Path& filepath);
 		~IORequestReadFile_String() override = default;
 
 		void Execute() override;
 		IORequestResultCode GetResultCode() const override;
 
-		std::string& GetResult() { return m_result; }
+		String& GetResult() { return m_result; }
 
 	private:
-		std::string m_result;
-		std::filesystem::path m_filepath;
+		String m_result;
+		Filesystem::Path m_filepath;
 		IORequestResultCode m_resultCode;
 	};
 
@@ -57,7 +57,7 @@ namespace Volt
 	public:
 		using ResultType = bool;
 
-		VTFS_API IORequestWriteFile_FileWriter(std::string_view name, FileWriter&& fileWriter);
+		VTFS_API IORequestWriteFile_FileWriter(StringView name, FileWriter&& fileWriter);
 		~IORequestWriteFile_FileWriter() override = default;
 
 		void Execute() override;
@@ -76,7 +76,7 @@ namespace Volt
 	public:
 		using ResultType = bool;
 
-		VTFS_API IORequestWriteFile_String(std::string_view name, const std::filesystem::path& filepath, std::string&& string);
+		VTFS_API IORequestWriteFile_String(StringView name, const Filesystem::Path& filepath, String&& string);
 		~IORequestWriteFile_String() override = default;
 
 		void Execute() override;
@@ -85,8 +85,8 @@ namespace Volt
 		bool& GetResult() { return m_result; }
 
 	private:
-		std::filesystem::path m_filepath;
-		std::string m_string;
+		Filesystem::Path m_filepath;
+		String m_string;
 		IORequestResultCode m_resultCode;
 		bool m_result;
 	};

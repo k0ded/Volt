@@ -38,6 +38,7 @@ namespace VoltSharpmake
 
 			//private
 			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<nfd_extended>(target);
 		}
     }
 }

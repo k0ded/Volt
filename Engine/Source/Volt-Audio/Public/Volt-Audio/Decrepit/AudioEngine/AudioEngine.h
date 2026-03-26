@@ -16,9 +16,9 @@ namespace Amp
 {
 	struct InitInsturct
 	{
-		std::filesystem::path aFileDirectory;
-		std::filesystem::path aMasterbank;
-		std::filesystem::path aMasterStringsBank;
+		Filesystem::Path aFileDirectory;
+		Filesystem::Path aMasterbank;
+		Filesystem::Path aMasterStringsBank;
 		FMOD_STUDIO_LOAD_BANK_FLAGS aLoadBankFlags;
 	};
 

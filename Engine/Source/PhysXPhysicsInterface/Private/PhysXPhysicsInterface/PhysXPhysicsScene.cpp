@@ -7,6 +7,8 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsControllerActor.h"
 #include "PhysXPhysicsInterface/PhysXDebugger.h"
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <PhysX/PxPhysicsAPI.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -65,7 +67,7 @@ namespace Volt
 			m_physXScene->getScenePvdClient()->setScenePvdFlags(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS | physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES | physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS);
 			m_debugger = CreateUnique<PhysXDebugger>(PhysXPhysicsCore::GetInstance()->GetFoundation());
 
-			m_debugger->StartDebugging(std::filesystem::current_path(), createInfo.debugType == DebugType::LiveDebug);
+			m_debugger->StartDebugging(Filesystem::GetWorkingDirectory(), createInfo.debugType == DebugType::LiveDebug);
 		}
 
 		if (createInfo.broadphaseType != BroadphaseType::AutomaticBoxPrune)

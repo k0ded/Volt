@@ -43,7 +43,7 @@ namespace Volt
 		struct Event
 		{
 			uint32_t frame;
-			std::string name;
+			String name;
 
 			VT_INLINE friend Archive& operator<<(Archive& archive, Event& value)
 			{
@@ -72,8 +72,8 @@ namespace Volt
 		inline const size_t GetFrameCount() const { return m_frames.size(); }
 		inline const uint32_t GetFramesPerSecond() const { return m_framesPerSecond; }
 
-		void AddEvent(const std::string& eventName, uint32_t frame);
-		void RemoveEvent(const std::string& eventName, uint32_t frame);
+		void AddEvent(const String& eventName, uint32_t frame);
+		void RemoveEvent(const String& eventName, uint32_t frame);
 		inline const bool HasEvents() const { return !m_events.empty(); }
 		inline const Vector<Event>& GetEvents() const { return m_events; }
 

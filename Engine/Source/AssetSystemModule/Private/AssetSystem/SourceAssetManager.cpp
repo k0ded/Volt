@@ -4,6 +4,7 @@
 
 #include "SourceAssetManager.h"
 
+#include <Volt-FileSystem/Filesystem.h>
 #include <Volt-Platforms/Platform.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -12,16 +13,16 @@ VT_DEFINE_LOG_CATEGORY(LogSourceAssetManager);
 
 namespace Volt
 {
-	inline std::filesystem::path GetNonExistingFilePath(const std::filesystem::path& directory, std::string_view filename)
+	inline Filesystem::Path GetNonExistingFilePath(const Filesystem::Path& directory, StringView filename)
 	{
-		std::string filenameStr = std::string(filename);
+		String filenameStr = String(filename);
 
-		std::filesystem::path filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + ".vtasset"));
+		Filesystem::Path filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + ".vtasset"));
 		uint32_t counter = 0;
 
-		while (std::filesystem::exists(filePath))
+		while (Filesystem::Exists(filePath))
 		{
-			filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + "_" + std::to_string(counter) + ".vtasset"));
+			filePath = g_assetManager->GetAssetFilesystemPath(directory / (FormatString("{}_{}.vtasset", filenameStr, counter)));
 			counter++;
 		}
 
@@ -50,9 +51,9 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	JobFuture<Vector<AssetReference<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
+	JobFuture<Vector<AssetReference<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const Filesystem::Path& filepath)
 	{
-		const std::string extension = filepath.extension().string();
+		const String extension = filepath.Extension().ToString();
 
 		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
@@ -79,7 +80,7 @@ namespace Volt
 			{
 				for (const auto& asset : result)
 				{
-					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					Filesystem::Path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, String(asset->GetAssetName()));
 					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->GetAssetName(), filepath);
@@ -94,7 +95,7 @@ namespace Volt
 		ImportJob importJob;
 		importJob.resultPromise = resultPromise;
 		importJob.job = importJobRef;
-		importJob.debugString = filepath.string();
+		importJob.debugString = filepath.ToString();
 
 		m_importQueue.Emplace(importJob);
 		m_wakeCondition.notify_all();
@@ -102,9 +103,9 @@ namespace Volt
 		return resultPromise->GetFuture();
 	}
 
-	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
+	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const Filesystem::Path& filepath)
 	{
-		const std::string extension = filepath.extension().string();
+		const String extension = filepath.Extension().ToString();
 
 		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
@@ -127,7 +128,7 @@ namespace Volt
 			{
 				for (const auto asset : result)
 				{
-					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					Filesystem::Path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, String(asset->GetAssetName()));
 					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported and saved to {}", asset->GetAssetName(), asset->GetAssetHandle(), filepath);
@@ -143,17 +144,17 @@ namespace Volt
 
 		ImportJob importJob;
 		importJob.job = importJobRef;
-		importJob.debugString = filepath.string();
+		importJob.debugString = filepath.ToString();
 
 		m_importQueue.Emplace(importJob);
 		m_wakeCondition.notify_all();
 	}
 
-	SourceAssetFileInformation SourceAssetManager::GetSourceAssetFileInformation(const std::filesystem::path& filepath)
+	SourceAssetFileInformation SourceAssetManager::GetSourceAssetFileInformation(const Filesystem::Path& filepath)
 	{
 		VT_ENSURE(s_instance);
 
-		const std::string extension = filepath.extension().string();
+		const String extension = filepath.Extension().ToString();
 
 		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{

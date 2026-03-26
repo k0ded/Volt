@@ -1,6 +1,12 @@
 #include "vtapppch.h"
 #include "Volt-Application/Application.h"
 #include "Volt-Application/UI/ImGuiSubSystem.h"
+#include "Volt-Application/UI/FileDialogueHelpers.h"
+
+#include <Volt-Core/Project/ProjectManager.h>
+#include <Volt-FileSystem/Filesystem.h>
+
+#include <Volt-Renderer/Renderer.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -13,17 +19,12 @@
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
-
-#include <Volt-Renderer/Renderer.h>
-
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 
 #include <RHIModule/FrameCapture.h>
 #include <RHIModule/RHIModuleLoader.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
@@ -60,15 +61,23 @@ namespace Volt
 	Application::Application(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		FileSystem::Initialize();
-		FileSystem::InitializeWorkingDirectory(IsRuntime(), commandLineBuilder);
+		{
+			Filesystem::Path workingDir;
+			if (commandLineBuilder.IsArgDefined("workingdir"))
+			{
+				workingDir = commandLineBuilder.GetArgValue("workingdir");
+			}
+
+			Filesystem::InitializeWorkingDirectory(IsRuntime(), workingDir, commandLineBuilder.GetExecutableFilepath());
+		}
+
+		FileDialogueHelpers::Initialize();
 
 		m_subSystemManager = CreateUnique<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
-		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
-		m_logSubSystem->EnableLogging(IsLoggingEnabled());
+		Log::Get().EnableLogging(IsLoggingEnabled());
 
 		CreateGraphicsContext(commandLineBuilder);
 
@@ -94,7 +103,7 @@ namespace Volt
 
 		//Init AudioEngine
 		{
-			//std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
+			//Filesystem::Path defaultPath = ProjectManager::GetAudioBanksDirectory();
 			//Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
 			//if (FileSystem::Exists(defaultPath))
 			//{
@@ -148,7 +157,7 @@ namespace Volt
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 
-		FileSystem::Shutdown();
+		FileDialogueHelpers::Shutdown();
 
 		m_subSystemManager = nullptr;
 	}

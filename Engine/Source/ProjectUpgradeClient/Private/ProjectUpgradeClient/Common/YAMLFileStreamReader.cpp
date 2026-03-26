@@ -1,13 +1,17 @@
 #include "ProjectUpgradeClient/Common/YAMLFileStreamReader.h"
 
-const bool YAMLFileStreamReader::OpenFile(const std::filesystem::path& filePath)
+#include <fstream>
+
+const bool YAMLFileStreamReader::OpenFile(const Filesystem::Path& filePath)
 {
-	if (!std::filesystem::exists(filePath))
+	std::filesystem::path tempPath(filePath.ToWString().begin(), filePath.ToWString().end());
+
+	if (!std::filesystem::exists(tempPath))
 	{
 		return false;
 	}
 
-	std::ifstream file(filePath);
+	std::ifstream file(tempPath);
 	if (!file.is_open())
 	{
 		return false;

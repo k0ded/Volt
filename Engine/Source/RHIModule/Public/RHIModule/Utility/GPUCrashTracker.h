@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RHIModule/Core/Core.h"
 #include "RHIModule/Core/RHICommon.h"
 
 namespace Volt::RHI

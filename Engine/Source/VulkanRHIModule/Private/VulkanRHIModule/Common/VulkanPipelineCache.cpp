@@ -12,7 +12,7 @@
 
 namespace Volt::RHI
 {
-	void VulkanPipelineCache::Initialize(const std::filesystem::path& pipelineCacheFilepath)
+	void VulkanPipelineCache::Initialize(const Filesystem::Path& pipelineCacheFilepath)
 	{
 		m_cachePath = pipelineCacheFilepath;
 

@@ -89,7 +89,7 @@ namespace Volt::RHI
 		return m_viewCache.GetOrCreateView(tempDesc);
 	}
 
-	void VulkanTransientImage::SetName(const std::string& name)
+	void VulkanTransientImage::SetName(const String& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -106,7 +106,7 @@ namespace Volt::RHI
 		m_desc.debugName = name;
 	}
 
-	std::string_view VulkanTransientImage::GetName() const
+	StringView VulkanTransientImage::GetName() const
 	{
 		return m_desc.debugName;
 	}

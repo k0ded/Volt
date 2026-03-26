@@ -19,12 +19,12 @@ void DiscordManager::SetApplicationID(int64_t appId)
 	}
 }
 
-void DiscordManager::SetDetails(std::string_view text)
+void DiscordManager::SetDetails(StringView text)
 {
 	m_state.currentActivity.SetDetails(text.data());
 }
 
-void DiscordManager::SetState(std::string_view text)
+void DiscordManager::SetState(StringView text)
 {
 	m_state.currentActivity.SetState(text.data());
 }
@@ -34,12 +34,12 @@ void DiscordManager::SetStartTime(time_t time)
 	m_state.currentActivity.GetTimestamps().SetStart(time);
 }
 
-void DiscordManager::SetLargeImage(std::string_view imageName)
+void DiscordManager::SetLargeImage(StringView imageName)
 {
 	m_state.currentActivity.GetAssets().SetLargeImage(imageName.data());
 }
 
-void DiscordManager::SetLargeText(std::string_view text)
+void DiscordManager::SetLargeText(StringView text)
 {
 	m_state.currentActivity.GetAssets().SetLargeText(text.data());
 }

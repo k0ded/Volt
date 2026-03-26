@@ -63,7 +63,7 @@ void WorldEnginePanel::UpdateMainContent()
 
 			UI::ScopedColor buttonColor{ ImGuiCol_Button, color };
 
-			std::string id = "Cell " + std::to_string(cellId) + "##" + std::to_string(x + y);
+			String id = FormatString("Cell {}##{}", cellId, x + y);
 			if (ImGui::Button(id.c_str(), { buttonSize, buttonSize }))
 			{
 				worldEngine.BeginStreamingCell(cellId);

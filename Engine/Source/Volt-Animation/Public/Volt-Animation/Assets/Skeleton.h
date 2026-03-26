@@ -16,7 +16,7 @@ namespace Volt
 	public:
 		struct Joint
 		{
-			std::string name;
+			String name;
 			int32_t parentIndex = -1;
 
 			VT_INLINE friend Archive& operator<<(Archive& archive, Joint& value)
@@ -30,7 +30,7 @@ namespace Volt
 
 		struct JointAttachment
 		{
-			std::string name;
+			String name;
 			int32_t jointIndex = -1;
 			UUID64 id = 0;
 
@@ -60,14 +60,14 @@ namespace Volt
 		inline const Vector<Joint>& GetJoints() const { return m_joints; }
 		inline const Vector<JointAttachment>& GetJointAttachments() const { return m_jointAttachments; }
 
-		const JointAttachment& GetJointAttachmentFromName(std::string_view name) const;
+		const JointAttachment& GetJointAttachmentFromName(StringView name) const;
 		const JointAttachment& GetJointAttachmentFromID(const UUID64& id) const;
-		bool HasJointAttachment(std::string_view name) const;
+		bool HasJointAttachment(StringView name) const;
 
 		const bool JointIsDecendantOf(int32_t jointIndex, int32_t parentIndex) const;
 
-		const int32_t GetJointIndexFromName(const std::string& str);
-		const std::string GetNameFromJointIndex(int32_t index);
+		const int32_t GetJointIndexFromName(const String& str);
+		const String GetNameFromJointIndex(int32_t index);
 
 		static AssetType GetStaticType() { return AssetTypes::Skeleton; }
 		AssetType GetType() const override { return GetStaticType(); };
@@ -83,8 +83,8 @@ namespace Volt
 		Vector<Animation::TRS> m_restPose;
 		Vector<glm::mat4> m_inverseBindPose;
 
-		Map<std::string, size_t> m_jointNameToIndex;
+		Map<String, size_t> m_jointNameToIndex;
 
-		std::string m_name = "Skeleton";
+		String m_name = "Skeleton";
 	};
 }

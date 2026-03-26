@@ -13,10 +13,10 @@ public:
 	void BeginMap();
 	void EndMap();
 
-	void BeginSequence(const std::string& sequenceName);
+	void BeginSequence(const String& sequenceName);
 	void EndSequence();
 
-	void BeginMapNamned(const std::string& mapName);
+	void BeginMapNamned(const String& mapName);
 
 	template<typename K, typename T>
 	void SetKey(const K& key, const T& value);

@@ -16,9 +16,9 @@ public:
 	VT_DECLARE_PLUGIN_GUID("{D45ED8C0-50EF-4BB5-BD83-E081D4641AE6}"_guid);
 
 	inline uint32_t GetVersion() const override { return 1; }
-	inline std::string_view GetName() const override { return "DiscordPlugin"; }
-	inline std::string_view GetDescription() const override { return ""; }
-	inline std::string_view GetCategory() const override { return "None"; }
+	inline StringView GetName() const override { return "DiscordPlugin"; }
+	inline StringView GetDescription() const override { return ""; }
+	inline StringView GetCategory() const override { return "None"; }
 
 	void Initialize() override;
 	void Shutdown() override;

@@ -12,11 +12,11 @@
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
-#include <CoreUtilities/StringUtility.h>
-
 #include <AssetSystem/SourceAssetManager.h>
 
-TextureImportModal::TextureImportModal(const std::string& strId)
+#include <CoreUtilities/String/StringUtility.h>
+
+TextureImportModal::TextureImportModal(const String& strId)
 	: Modal(strId)
 {
 }
@@ -33,7 +33,7 @@ void TextureImportModal::DrawModalContent()
 	{
 		if (UI::BeginProperties("textureOptions"))
 		{
-			const Vector<std::string> importTypes =
+			const Vector<String> importTypes =
 			{
 				"Texture",
 				"Environment Texture"
@@ -95,19 +95,19 @@ void TextureImportModal::OnClose()
 	Clear();
 }
 
-std::string TextureImportModal::GetImportTypeStringFromFilepath(const std::filesystem::path& filepath)
+String TextureImportModal::GetImportTypeStringFromFilepath(const Filesystem::Path& filepath)
 {
-	std::string extension = filepath.extension().string();
+	String extension = filepath.Extension().ToString();
 	extension.erase(std::remove(extension.begin(), extension.end(), '.'));
 
 	return Utility::ToUpper(extension);
 }
 
-void TextureImportModal::Import(const std::filesystem::path& filepath, const std::filesystem::path& destinationDirectory)
+void TextureImportModal::Import(const Filesystem::Path& filepath, const Filesystem::Path& destinationDirectory)
 {
-	VT_ENSURE(!destinationDirectory.empty());
+	VT_ENSURE(!destinationDirectory.IsEmpty());
 
-	const std::string destinationFileName = filepath.stem().string();
+	const String destinationFileName = filepath.Stem().ToString();
 
 	Volt::TextureSourceImportConfig importConfig;
 	importConfig.destinationDirectory = destinationDirectory;

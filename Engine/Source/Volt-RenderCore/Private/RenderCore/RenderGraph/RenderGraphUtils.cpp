@@ -75,7 +75,7 @@ namespace Volt
 		parameters->CopySrc = src;
 		parameters->CopyDst = dst;
 
-		const std::string passName = std::format("Copy Buffer (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
+		const String passName = FormatString("Copy Buffer (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
 
 		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Copy,
@@ -94,7 +94,7 @@ namespace Volt
 		parameters->CopySrc = src;
 		parameters->CopyDst = dst;
 
-		const std::string passName = std::format("Copy Texture (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
+		const String passName = FormatString("Copy Texture (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
 
 		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Copy,
@@ -111,7 +111,7 @@ namespace Volt
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
-		const std::string passName = std::format("Mapped Upload (Target: {})", dstBuffer->GetDesc().debugName);
+		const String passName = FormatString("Mapped Upload (Target: {})", dstBuffer->GetDesc().debugName);
 
 		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
 		stagingParameters->Buffer = dstBuffer;
@@ -132,7 +132,7 @@ namespace Volt
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
-		const std::string passName = std::format("Staged Upload (Target: {})", dstBuffer->GetDesc().debugName);
+		const String passName = FormatString("Staged Upload (Target: {})", dstBuffer->GetDesc().debugName);
 
 		RGBufferRef stagingBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateStagingDesc(dataSize, "StagingBuffer"));
 
@@ -155,7 +155,7 @@ namespace Volt
 
 	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags /*= RenderGraphPassFlags::None*/)
 	{
-		const std::string passName = std::format("Mapped Upload (Target: {})", dstBuffer->GetDesc().debugName);
+		const String passName = FormatString("Mapped Upload (Target: {})", dstBuffer->GetDesc().debugName);
 
 		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
 		stagingParameters->Buffer = dstBuffer;
@@ -176,7 +176,7 @@ namespace Volt
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
-		const std::string passName = std::format("Mapped Upload (Target: {})", dstUniformBuffer->GetDesc().debugName);
+		const String passName = FormatString("Mapped Upload (Target: {})", dstUniformBuffer->GetDesc().debugName);
 
 		MappedUniformBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedUniformBufferUploadParameters>();
 		stagingParameters->Buffer = dstUniformBuffer;
@@ -195,7 +195,7 @@ namespace Volt
 	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
 		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(bufferUAV->GetResource());
-		const std::string passName = std::format("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
+		const String passName = FormatString("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
 
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
@@ -212,7 +212,7 @@ namespace Volt
 	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue)
 	{
 		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(bufferUAV->GetResource());
-		const std::string passName = std::format("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
+		const String passName = FormatString("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
 
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
@@ -229,7 +229,7 @@ namespace Volt
 	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::uvec4& clearValue)
 	{
 		RGTextureRef targetTexture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
-		const std::string passName = std::format("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
+		const String passName = FormatString("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
 
 		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
 		parameters->RWTexture = textureUAV;
@@ -246,7 +246,7 @@ namespace Volt
 	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::vec4& clearValue)
 	{
 		RGTextureRef targetTexture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
-		const std::string passName = std::format("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
+		const String passName = FormatString("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
 
 		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
 		parameters->RWTexture = textureUAV;

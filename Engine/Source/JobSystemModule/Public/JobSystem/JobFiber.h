@@ -4,6 +4,8 @@
 #include "JobSystem/FiberCommon.h"
 #include "JobSystem/FiberContext.h"
 
+#include <CoreUtilities/String/VoltString.h>
+
 namespace Volt
 {
 	class Job;
@@ -11,7 +13,7 @@ namespace Volt
 	class JobFiber
 	{
 	public:
-		VTJS_API JobFiber(const std::string& fiberName);
+		VTJS_API JobFiber(const String& fiberName);
 
 		VTJS_API bool ExecuteJob(Job* job);
 		VTJS_API void ContinueExecution();
@@ -25,6 +27,6 @@ namespace Volt
 
 		FiberStack m_stack;
 		Job* m_currentJob = nullptr;
-		std::string m_name;
+		String m_name;
 	};
 }

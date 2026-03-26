@@ -26,7 +26,8 @@ namespace Volt
 				continue;
 			}
 
-			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
+			const std::string_view tempName = storage.type().name();
+			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(StringView(tempName.data(), tempName.size())));
 			if (!componentDesc)
 			{
 				continue;

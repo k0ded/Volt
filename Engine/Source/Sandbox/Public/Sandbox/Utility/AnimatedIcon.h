@@ -16,7 +16,7 @@ namespace Volt
 class AnimatedIcon : public Volt::EventListener
 {
 public:
-	AnimatedIcon(const std::filesystem::path& firstFrame, uint32_t frameCount, float animTime = 1.f);
+	AnimatedIcon(const Filesystem::Path& firstFrame, uint32_t frameCount, float animTime = 1.f);
 
 	VT_NODISCARD VT_INLINE AssetReference<Volt::Texture2D> GetCurrentFrame() const { return m_currentTexture; }
 

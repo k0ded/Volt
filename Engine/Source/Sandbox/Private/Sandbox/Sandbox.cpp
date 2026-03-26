@@ -63,7 +63,10 @@
 #include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/FileDialogueHelpers.h>
 #include <Volt-Application/UI/ImGuiSubSystem.h>
+
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -85,7 +88,6 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 Sandbox::Sandbox()
@@ -150,7 +152,7 @@ void Sandbox::OnAttach()
 	InitializeModals();
 
 	DirtySaveCustomization entityDescSaveCustomization;
-	entityDescSaveCustomization.CanSaveAsset = [](const Volt::AssetHandle& handle, std::string& outCantReason) -> bool
+	entityDescSaveCustomization.CanSaveAsset = [](const Volt::AssetHandle& handle, String& outCantReason) -> bool
 	{
 		return true;
 	};
@@ -158,7 +160,7 @@ void Sandbox::OnAttach()
 	{
 		return false;
 	};
-	entityDescSaveCustomization.CanSaveAssetPostCreateStep = [](const Volt::AssetHandle& asset, std::filesystem::path& outAssetNewPath, std::string& outCantReason)
+	entityDescSaveCustomization.CanSaveAssetPostCreateStep = [](const Volt::AssetHandle& asset, Filesystem::Path& outAssetNewPath, String& outCantReason)
 	{
 		Volt::ReadOnlyAssetMetadata entityMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset);
 
@@ -464,19 +466,19 @@ void Sandbox::NewScene()
 
 void Sandbox::OpenScene()
 {
-	const std::filesystem::path loadPath = FileSystem::OpenFileDialogue({ { "Scene(*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
+	const Filesystem::Path loadPath = FileDialogueHelpers::OpenFileDialogue({ { "Scene(*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
 	OpenScene(g_assetManager->GetRelativeAssetFilepath(loadPath));
 }
 
-void Sandbox::OpenScene(const std::filesystem::path& path)
+void Sandbox::OpenScene(const Filesystem::Path& path)
 {
-	if (path.empty())
+	if (path.IsEmpty())
 	{
 		return;
 	}
-	if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
+	if (!Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
 	{
-		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nFile doesnt exist!", path.string()));
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", FormatString("Failed to open scene with path {}.\nFile doesnt exist!", path));
 		return;
 	}
 	const Volt::AssetHandle handle = g_assetManager->GetAssetHandleFromFilepath(path);
@@ -484,7 +486,7 @@ void Sandbox::OpenScene(const std::filesystem::path& path)
 
 	if (sceneMetadata->type != AssetTypes::Scene)
 	{
-		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nAsset is not a Scene!", path.string()));
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", FormatString("Failed to open scene with path {}.\nAsset is not a Scene!", path));
 		return;
 	}
 
@@ -507,7 +509,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
 		if (sceneMetadata->type != AssetTypes::Scene)
 		{
-			UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
+			UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", FormatString("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
 			return;
 		}
 	}
@@ -542,8 +544,8 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
 
 			UI::Notify(UI::NotificationType::Error,
-				std::format("Failed to open Scene '{0}'", assetMetadata->filepath.stem().string()),
-				std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
+				FormatString("Failed to open Scene '{0}'", assetMetadata->filepath.Stem()),
+				FormatString("Failed to open scene with handle '{0}'", sceneHandle));
 			return;
 		}
 
@@ -593,58 +595,6 @@ bool Sandbox::SaveScene(bool showDialog, bool allowDiscard)
 		return true;
 	};
 	return DirtyAssetsManager::Get().SaveAssets(showDialog, allowDiscard, filter);
-}
-
-void Sandbox::InstallMayaTools()
-{
-	const std::filesystem::path documentsPath = FileSystem::GetDocumentsPath();
-	const std::filesystem::path mayaPath = documentsPath / "maya";
-	if (!std::filesystem::exists(mayaPath))
-	{
-		UI::Notify(UI::NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
-		return;
-	}
-
-	for (const auto& it : std::filesystem::directory_iterator(mayaPath))
-	{
-		if (!it.is_directory())
-		{
-			continue;
-		}
-
-		const std::string folderName = it.path().stem().string();
-		if (!std::all_of(folderName.begin(), folderName.end(), ::isdigit))
-		{
-			continue;
-		}
-
-		const std::filesystem::path pluginsPath = it.path() / "plug-ins";
-		const std::filesystem::path scriptsPath = it.path() / "scripts";
-		const std::filesystem::path yamlPath = scriptsPath / "yaml";
-
-		if (!std::filesystem::exists(pluginsPath))
-		{
-			std::filesystem::create_directories(pluginsPath);
-		}
-
-		if (!std::filesystem::exists(scriptsPath))
-		{
-			std::filesystem::create_directories(scriptsPath);
-		}
-
-		if (!std::filesystem::exists(yamlPath))
-		{
-			std::filesystem::create_directory(yamlPath);
-		}
-
-		FileSystem::CopyFileToDirectory("../Tools/MayaExporter/voltTranslator.py", pluginsPath);
-		FileSystem::CopyFileToDirectory("../Tools/MayaExporter/voltExport.py", scriptsPath);
-		FileSystem::CopyFileToDirectory("../Tools/MayaExporter/voltTranslatorOpts.mel", scriptsPath);
-
-		FileSystem::Copy("../Tools/MayaExporter/yaml", scriptsPath / "yaml");
-	}
-
-	UI::Notify(UI::NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
 }
 
 void Sandbox::RegisterEventListeners()

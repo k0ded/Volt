@@ -49,7 +49,7 @@ namespace Volt
 		size_t GetNumTotalActions() override;
 		size_t GetNumActionsCompleted() override;
 
-		std::string GetCurrentActionText() override;
+		String GetCurrentActionText() override;
 
 	private:
 		enum class UpgradeStage
@@ -66,15 +66,15 @@ namespace Volt
 			uint32_t entityID;
 		};
 	private:
-		void ProcessFile(std::filesystem::path inPath);
-		void ProcessEntityFile(std::filesystem::path inPath);
-		void ProcessAssetFile(std::filesystem::path inPath);
-		void MoveSceneFileAndEntities(std::filesystem::path inPath);
+		void ProcessFile(Filesystem::Path inPath);
+		void ProcessEntityFile(Filesystem::Path inPath);
+		void ProcessAssetFile(Filesystem::Path inPath);
+		void MoveSceneFileAndEntities(Filesystem::Path inPath);
 
 		UpgradeStage m_currentStage;
 		//absolute paths
-		Vector<std::filesystem::path> m_filesToProcess;
-		Vector<std::filesystem::path> m_sceneFilesToProcess;
+		Vector<Filesystem::Path> m_filesToProcess;
+		Vector<Filesystem::Path> m_sceneFilesToProcess;
 
 		size_t m_numTotalActions;
 		size_t m_numActionsCompleted;

@@ -14,14 +14,14 @@ public:
 	YAMLStreamReader();
 	virtual ~YAMLStreamReader() = default;
 
-	const bool HasKey(const std::string& key);
-	const bool IsSequenceEmpty(const std::string& key);
+	const bool HasKey(const String& key);
+	const bool IsSequenceEmpty(const String& key);
 
-	void EnterScope(const std::string& key);
+	void EnterScope(const String& key);
 	void ExitScope();
 
 	template<typename T>
-	const T ReadAtKey(const std::string& key, const T& defaultValue);
+	const T ReadAtKey(const String& key, const T& defaultValue);
 
 	template<typename T>
 	const T ReadValue();
@@ -29,7 +29,7 @@ public:
 	template<typename T>
 	const T ReadKeyValue();
 
-	void ForEach(const std::string& key, std::function<void()> function);
+	void ForEach(const String& key, std::function<void()> function);
 
 	inline YAML::Node& GetRawNode() { return m_currentNode; }
 
@@ -42,7 +42,7 @@ protected:
 };
 
 template<typename T>
-inline const T YAMLStreamReader::ReadAtKey(const std::string& key, const T& defaultValue)
+inline const T YAMLStreamReader::ReadAtKey(const String& key, const T& defaultValue)
 {
 	return m_currentNode[key] ? m_currentNode[key].as<T>() : defaultValue;
 }

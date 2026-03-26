@@ -1,8 +1,7 @@
 #include "Volt-FileSystem/FileUtility.h"
 #include "Volt-FileSystem/FileIORequest.h"
 #include "Volt-FileSystem/IOThreads/IOThreads.h"
-
-#include <CoreUtilities/FileSystem.h>
+#include "Volt-FileSystem/Filesystem.h"
 
 #include <fstream>
 
@@ -10,18 +9,18 @@ using namespace Volt;
 
 namespace FileUtility
 {
-	bool WriteStringToFile(const std::filesystem::path& dstFilepath, std::string&& string, bool createDirectories /*= false*/)
+	bool WriteStringToFile(const Filesystem::Path& dstFilepath, String&& string, bool createDirectories /*= false*/)
 	{
-		if (FileSystem::Exists(dstFilepath) && !FileSystem::IsWriteable(dstFilepath))
+		if (Filesystem::Exists(dstFilepath) && !Filesystem::IsWriteable(dstFilepath))
 		{
 			return false;
 		}
 
 		if (createDirectories)
 		{
-			if (!FileSystem::Exists(dstFilepath.parent_path()))
+			if (!Filesystem::Exists(dstFilepath.ParentPath()))
 			{
-				FileSystem::CreateDirectories(dstFilepath.parent_path());
+				Filesystem::CreateDirectories(dstFilepath.ParentPath());
 			}
 		}
 
@@ -29,9 +28,9 @@ namespace FileUtility
 		return result.GetResultCode() == IORequestResultCode::Success;
 	}
 
-	bool ReadStringFromFile(const std::filesystem::path& srcFilepath, std::string& outString)
+	bool ReadStringFromFile(const Filesystem::Path& srcFilepath, String& outString)
 	{
-		if (!FileSystem::Exists(srcFilepath))
+		if (!Filesystem::Exists(srcFilepath))
 		{
 			return false;
 		}

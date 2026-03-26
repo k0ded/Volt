@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 #include <PhysX/PxPhysicsAPI.h>
 

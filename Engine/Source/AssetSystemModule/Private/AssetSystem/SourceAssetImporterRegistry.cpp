@@ -1,7 +1,7 @@
 #include "aspch.h"
 #include "AssetSystem/SourceAssetImporterRegistry.h"
 
-Ref<Volt::SourceAssetImporter> SourceAssetImporterRegistry::RegisterImporter(const Vector<std::string>& assignedExtensions, Ref<Volt::SourceAssetImporter> importer)
+Ref<Volt::SourceAssetImporter> SourceAssetImporterRegistry::RegisterImporter(const Vector<String>& assignedExtensions, Ref<Volt::SourceAssetImporter> importer)
 {
 	for (const auto& ext : assignedExtensions)
 	{
@@ -14,7 +14,7 @@ Ref<Volt::SourceAssetImporter> SourceAssetImporterRegistry::RegisterImporter(con
 
 void SourceAssetImporterRegistry::UnregisterImporter(Ref<Volt::SourceAssetImporter> importer)
 {
-	Vector<std::string> extsToRemove;
+	Vector<String> extsToRemove;
 	for (const auto& [ext, importerInstance] : m_importers)
 	{
 		extsToRemove.emplace_back(ext);
@@ -26,12 +26,12 @@ void SourceAssetImporterRegistry::UnregisterImporter(Ref<Volt::SourceAssetImport
 	}
 }
 
-bool SourceAssetImporterRegistry::ImporterForExtensionExists(const std::string& extension) const
+bool SourceAssetImporterRegistry::ImporterForExtensionExists(const String& extension) const
 {
 	return m_importers.contains(extension);
 }
 
-Volt::SourceAssetImporter& SourceAssetImporterRegistry::GetImporterForExtension(const std::string& extension) const
+Volt::SourceAssetImporter& SourceAssetImporterRegistry::GetImporterForExtension(const String& extension) const
 {
 	VT_ENSURE(m_importers.contains(extension));
 	return *m_importers.at(extension);

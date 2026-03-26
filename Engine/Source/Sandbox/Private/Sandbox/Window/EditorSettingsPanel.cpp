@@ -123,13 +123,13 @@ void EditorSettingsPanel::DrawVersionControl()
 
 	if (VersionControl::IsConnected())
 	{
-		Vector<std::string> streams = VersionControl::GetStreams();
+		Vector<String> streams = VersionControl::GetStreams();
 		if (streams.empty())
 		{
 			streams.emplace_back("Empty");
 		}
 
-		Vector<std::string> workspaces = VersionControl::GetWorkspaces();
+		Vector<String> workspaces = VersionControl::GetWorkspaces();
 		if (workspaces.empty())
 		{
 			workspaces.emplace_back("Empty");

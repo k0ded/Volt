@@ -3,8 +3,8 @@
 
 #include <EventSystem/Event.h>
 
-#include <filesystem>
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
@@ -65,7 +65,7 @@ namespace Volt
 		inline const uint32_t GetX() const { return m_x; }
 		inline const uint32_t GetY() const { return m_y; }
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(WindowResizeEvent, "{E045B613-AE06-41C9-8759-90B7E23AEED1}"_guid);
 
@@ -89,7 +89,7 @@ namespace Volt
 		inline const uint32_t GetX() const { return m_x; }
 		inline const uint32_t GetY() const { return m_y; }
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(ViewportResizeEvent, "{CF62FE90-790A-4733-B091-6E708E80EAD7}"_guid);
 
@@ -157,12 +157,12 @@ namespace Volt
 			}
 		}
 
-		inline const Vector <std::filesystem::path>& GetPaths() const { return m_paths; }
+		inline const Vector<Filesystem::Path>& GetPaths() const { return m_paths; }
 
 		EVENT_CLASS(WindowDragDropEvent, "{FE76F668-D2AB-4EFF-8209-A8EFDC9EBDCF}"_guid);
 
 	private:
-		Vector<std::filesystem::path> m_paths;
+		Vector<Filesystem::Path> m_paths;
 	};
 
 	class WINDOWMODULE_API WindowFocusChangedEvent : public WindowEvent

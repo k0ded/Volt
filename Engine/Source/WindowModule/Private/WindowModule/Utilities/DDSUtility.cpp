@@ -7,12 +7,12 @@
 
 namespace Volt
 {
-	const DDSUtility::TextureData DDSUtility::GetRawDataFromDDS(const std::filesystem::path& path)
+	const DDSUtility::TextureData DDSUtility::GetRawDataFromDDS(const Filesystem::Path& path)
 	{
 		DirectX::TexMetadata metadata{};
 		DirectX::ScratchImage scratchImage{};
 
-		DirectX::LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage);
+		DirectX::LoadFromDDSFile(path.CStr(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage);
 
 		const DirectX::Image* compressedImage = scratchImage.GetImage(0, 0, 0);
 		DirectX::ScratchImage decompressedImage;

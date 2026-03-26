@@ -82,7 +82,7 @@ namespace Volt
 		struct Binding
 		{
 			StringHash hash;
-			std::string_view name;
+			StringView name;
 			bool value;
 		};
 
@@ -148,7 +148,7 @@ namespace Volt
 			}
 		}
 
-		std::string errorMessage;
+		String errorMessage;
 		bool shouldError = false;
 
 		for (const auto& foundBinding : foundResourceBindings)
@@ -156,13 +156,13 @@ namespace Volt
 			if (!foundBinding.value)
 			{
 				shouldError = true;
-				errorMessage += std::format("{}\n", foundBinding.name);
+				errorMessage += FormatString("{}\n", foundBinding.name);
 			}
 		}
 
 		if (shouldError)
 		{
-			std::string error = std::format("Not all bindings were found in shader parameter struct!\n{}", errorMessage);
+			String error = FormatString("Not all bindings were found in shader parameter struct!\n{}", errorMessage);
 			VT_ENSURE_MSG(false, error);
 		}
 	}

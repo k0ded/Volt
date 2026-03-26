@@ -69,8 +69,8 @@ namespace Volt
 			const int32_t nodeCount = removedFromNodes.Size();
 			for (int i = 0; i < nodeCount; i++)
 			{
-				const std::string nodeName = GetFbxNodePath(removedFromNodes.GetAt(i));
-				userData.OnInfo(std::format("One or more meshes at node {} had degenerate polygons removed!", nodeName));
+				const String nodeName = GetFbxNodePath(removedFromNodes.GetAt(i));
+				userData.OnInfo(FormatString("One or more meshes at node {} had degenerate polygons removed!", nodeName));
 			}
 		}
 
@@ -104,7 +104,7 @@ namespace Volt
 			{
 				for (auto* fbxGeom : geomToTriangulate)
 				{
-					std::string geomName = fbxGeom->GetName();
+					String geomName = fbxGeom->GetName();
 					if (geomName.empty())
 					{
 						const FbxNode* node = fbxGeom->GetNode();
@@ -125,7 +125,7 @@ namespace Volt
 
 					if (!result)
 					{
-						userData.OnWarning(std::format("Failed to triangulate {}!", geomName));
+						userData.OnWarning(FormatString("Failed to triangulate {}!", geomName));
 					}
 				}
 			}
@@ -164,7 +164,7 @@ namespace Volt
 
 				for (auto* fbxMesh : geomToGenerate)
 				{
-					std::string meshName = fbxMesh->GetName();
+					String meshName = fbxMesh->GetName();
 					if (meshName.empty())
 					{
 						const FbxNode* node = fbxMesh->GetNode();
@@ -179,7 +179,7 @@ namespace Volt
 					const bool result = fbxMesh->GenerateNormals(true, smoothNormals, clockwise);
 					if (!result)
 					{
-						userData.OnWarning(std::format("Failed to generate {} normals for {}", (smoothNormals ? "smooth" : "hard"), meshName));
+						userData.OnWarning(FormatString("Failed to generate {} normals for {}", (smoothNormals ? "smooth" : "hard"), meshName));
 					}
 				}
 			}
@@ -208,7 +208,7 @@ namespace Volt
 
 			for (auto* fbxMesh : meshesToGenerate)
 			{
-				std::string meshName = fbxMesh->GetName();
+				String meshName = fbxMesh->GetName();
 				if (meshName.empty())
 				{
 					const FbxNode* node = fbxMesh->GetNode();
@@ -222,7 +222,7 @@ namespace Volt
 
 				if (!fbxMesh->GenerateTangentsData(0, true, false))
 				{
-					userData.OnWarning(std::format("Failed to generate tangents/binormals for {}", meshName));
+					userData.OnWarning(FormatString("Failed to generate tangents/binormals for {}", meshName));
 				}
 			}
 		}
@@ -416,7 +416,7 @@ namespace Volt
 						while (j < static_cast<int32_t>(materials.size()))
 						{
 							// Required because ':' is not allowed in asset names
-							std::string fbxMatName = fbxMaterial->GetName();
+							String fbxMatName = fbxMaterial->GetName();
 							fbxMatName.erase(std::remove_if(fbxMatName.begin(), fbxMatName.end(), [](char c) { return c == ':'; }), fbxMatName.end());
 
 							if (fbxMatName == materials[j]->GetAssetName())
@@ -683,7 +683,7 @@ namespace Volt
 		FbxTakeInfo* fbxTake = fbxScene->GetTakeInfo(animStackName);
 		if (!fbxTake)
 		{
-			userData.OnWarning(std::format("The FBX anim stack {} does not contain any takes", animStackName.Buffer()));
+			userData.OnWarning(FormatString("The FBX anim stack {} does not contain any takes", animStackName.Buffer()));
 			return {};
 		}
 		
@@ -695,7 +695,7 @@ namespace Volt
 
 		const FbxLongLong animationLength = endFrame - startFrame + 1;
 
-		AssetReference<Animation> voltAnimation = g_assetManager->CreateAsset<Animation>(importConfig.destinationFilename + "_" + std::string(animStackName.Buffer()));
+		AssetReference<Animation> voltAnimation = g_assetManager->CreateAsset<Animation>(importConfig.destinationFilename + "_" + String(animStackName.Buffer()));
 
 		voltAnimation->m_framesPerSecond = FbxUtility::GetFramesPerSecond(timeMode);
 		voltAnimation->m_duration = static_cast<float>(animationLength) / static_cast<float>(voltAnimation->m_framesPerSecond);
@@ -725,7 +725,7 @@ namespace Volt
 		return voltAnimation;
 	}
 
-	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
+	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const String& name) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -890,7 +890,7 @@ namespace Volt
 			for (int32_t clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++)
 			{
 				FbxCluster* fbxCluster = fbxSkin->GetCluster(clusterIndex);
-				const std::string jointName = GetJointName(fbxCluster->GetLink()->GetName());
+				const String jointName = GetJointName(fbxCluster->GetLink()->GetName());
 				const int32_t jointIndex = inOutSkeleton.GetJointIndexFromName(jointName);
 
 				// Could not find joint in skeleton
@@ -1146,7 +1146,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset>> FbxSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FbxSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
@@ -1183,19 +1183,20 @@ namespace Volt
 		}
 
 		// Setup progress..
+		const String filepathStr = filepath.ToString();
 
-		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
+		if (!fbxImporter->Initialize(filepathStr.c_str(), -1, fbxIOSettings.GetRaw()))
 		{
 			if (fbxImporter->GetStatus() == FbxStatus::ePasswordError && !fbxIOSettings->GetBoolProp(IMP_FBX_PASSWORD_ENABLE, false))
 			{
-				const std::string password = userData.OnPasswordRrquired();
+				const String password = userData.OnPasswordRrquired();
 
 				if (!password.empty())
 				{
 					fbxIOSettings->SetStringProp(IMP_FBX_PASSWORD, password.c_str());
 					fbxIOSettings->SetBoolProp(IMP_FBX_PASSWORD_ENABLE, true);
 
-					if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
+					if (!fbxImporter->Initialize(filepathStr.c_str(), -1, fbxIOSettings.GetRaw()))
 					{
 						VT_LOGC(Error, LogFbxSourceImporter, "Initializing imported for password protected file failed!");
 						userData.OnError("The import process failed!");
@@ -1212,13 +1213,13 @@ namespace Volt
 				}
 			}
 
-			const std::string message = "Cannot initialize FBX importer for " + filepath.string() + ": " + fbxImporter->GetStatus().GetErrorString();
+			const String message = "Cannot initialize FBX importer for " + filepathStr + ": " + fbxImporter->GetStatus().GetErrorString();
 			VT_LOGC(Error, LogFbxSourceImporter, message);
 			userData.OnError(message);
 			return {};
 		}
 
-		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepath.string().c_str()));
+		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepathStr.c_str()));
 		if (!fbxScene)
 		{
 			VT_LOGC(Error, LogFbxSourceImporter, "Creating FBX scene failed!");
@@ -1267,7 +1268,7 @@ namespace Volt
 		return result;
 	}
 
-	SourceAssetFileInformation FbxSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation FbxSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1293,13 +1294,14 @@ namespace Volt
 		}
 
 		// Setup progress..
+		const String filepathStr = filepath.ToString();
 
-		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
+		if (!fbxImporter->Initialize(filepathStr.c_str(), -1, fbxIOSettings.GetRaw()))
 		{
 			return {};
 		}
 
-		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepath.string().c_str()));
+		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepathStr.c_str()));
 		if (!fbxScene)
 		{
 			return {};
@@ -1318,7 +1320,7 @@ namespace Volt
 		result.fileUnits = GetStringFromSystemUnit(fbxScene->GetGlobalSettings().GetSystemUnit());
 		result.fileAxisDirection = GetStringFromAxisSystem(fbxScene->GetGlobalSettings().GetAxisSystem());
 
-		std::string versionString = std::to_string(headerInfo->mFileVersion);
+		String versionString = FormatString("{}", headerInfo->mFileVersion);
 		versionString.insert(versionString.begin() + 1, '.');
 		versionString.insert(versionString.begin() + 3, '.');
 		versionString.insert(versionString.begin() + 5, '.');

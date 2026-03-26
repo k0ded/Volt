@@ -15,12 +15,12 @@ namespace Volt::RHI
 		s_instance = nullptr;
 	}
 
-	void ShaderCompiler::AddMacro(const std::string& macroName)
+	void ShaderCompiler::AddMacro(const String& macroName)
 	{
 		s_instance->AddMacroImpl(macroName);
 	}
 
-	void ShaderCompiler::RemoveMacro(std::string_view macroName)
+	void ShaderCompiler::RemoveMacro(StringView macroName)
 	{
 		s_instance->RemoveMacroImpl(macroName);
 	}

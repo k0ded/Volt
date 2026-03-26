@@ -5,9 +5,9 @@
 #include "Volt-Core/Console/ConsoleVariableRegistry.h"
 
 #include <Volt-FileSystem/FileUtility.h>
+#include <Volt-FileSystem/Filesystem.h>
 
-#include <CoreUtilities/Configs/ConfigParser.h>
-#include <CoreUtilities/FileSystem.h>
+#include <CoreModule/Configs/ConfigParser.h>
 
 VT_DEFINE_LOG_CATEGORY(LogConfigManager);
 
@@ -23,11 +23,10 @@ namespace Volt
 
 	void ConfigManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
-		outDependencies.AddDependency<Log>();
 		outDependencies.AddDependency<ProjectManager>();
 	}
 
-	const ConfigValue* ConfigManager::TryGetConfigValue(const std::string& sectionName, const std::string& key) const
+	const ConfigValue* ConfigManager::TryGetConfigValue(const String& sectionName, const String& key) const
 	{
 		return m_combinedConfig.TryGetValue(sectionName, key);
 	}
@@ -35,7 +34,7 @@ namespace Volt
 	void ConfigManager::LoadConfigs()
 	{
 		// Engine base config
-		const std::filesystem::path engineConfigFilepath = std::filesystem::current_path() / "Config" / "Engine.ini";
+		const Filesystem::Path engineConfigFilepath = Filesystem::GetWorkingDirectory() / "Config" / "Engine.ini";
 
 		Config tempConfig;
 		if (LoadConfig(engineConfigFilepath, tempConfig))
@@ -44,7 +43,7 @@ namespace Volt
 		}
 
 		// Project engine config
-		const std::filesystem::path gameConfigFilepath = ProjectManager::GetProjectDirectory() / "Config" / "Engine.ini";
+		const Filesystem::Path gameConfigFilepath = ProjectManager::GetProjectDirectory() / "Config" / "Engine.ini";
 		if (LoadConfig(gameConfigFilepath, tempConfig))
 		{
 			m_combinedConfig.Append(tempConfig);
@@ -99,18 +98,18 @@ namespace Volt
 			}
 			else if (refConsoleVar->IsString())
 			{
-				if (value.Is<std::string>())
+				if (value.Is<String>())
 				{
-					const std::string tempVal = value.Get<std::string>();
+					const String tempVal = value.Get<String>();
 					refConsoleVar->Set(&tempVal);
 				}
 			}
 		}
 	}
 
-	bool ConfigManager::LoadConfig(const std::filesystem::path& configFilepath, Config& outConfig)
+	bool ConfigManager::LoadConfig(const Filesystem::Path& configFilepath, Config& outConfig)
 	{
-		std::string configStr;
+		String configStr;
 		if (!FileUtility::ReadStringFromFile(configFilepath, configStr))
 		{
 			VT_LOGC(Warning, LogConfigManager, "Failed to find config at filepath {}!", configFilepath);

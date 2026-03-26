@@ -7,7 +7,6 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/UIPropertiesExtension.h"
-#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/UserSettingsManager.h"
 
@@ -23,12 +22,12 @@
 #include <glm/glm.hpp>
 
 template<typename T>
-void RegisterPropertyType(std::unordered_map<TypeTraits::TypeIndex, std::function<bool(std::string_view, void*, const size_t)>>& outFunctionMap)
+void RegisterPropertyType(std::unordered_map<TypeTraits::TypeIndex, std::function<bool(StringView, void*, const size_t)>>& outFunctionMap)
 {
-	outFunctionMap[TypeTraits::TypeIndex::FromType<T>()] = [](std::string_view label, void* data, const size_t offset) -> bool
+	outFunctionMap[TypeTraits::TypeIndex::FromType<T>()] = [](StringView label, void* data, const size_t offset) -> bool
 	{
 		uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data); 
-		return UI::Property(std::string(label), *reinterpret_cast<T*>(&bytePtr[offset]));
+		return UI::Property(String(label), *reinterpret_cast<T*>(&bytePtr[offset]));
 	};
 }
 
@@ -58,8 +57,8 @@ void ComponentPropertyUtility::Initialize()
 	RegisterPropertyType<glm::ivec3>(s_propertyFunctions);
 	RegisterPropertyType<glm::ivec4>(s_propertyFunctions);
 
-	RegisterPropertyType<std::string>(s_propertyFunctions);
-	RegisterPropertyType<std::filesystem::path>(s_propertyFunctions);
+	RegisterPropertyType<String>(s_propertyFunctions);
+	RegisterPropertyType<Filesystem::Path>(s_propertyFunctions);
 }
 
 void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity entity)
@@ -76,7 +75,9 @@ void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity e
 	{
 		if (auto& storage = curr.second; storage.contains(entity))
 		{
-			std::string_view typeName = storage.type().name();
+			std::string_view tempTypeName = storage.type().name();
+			StringView typeName(tempTypeName.data(), tempTypeName.size());
+
 			const Volt::ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
@@ -101,7 +102,7 @@ void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity e
 
 					UI::SameLine(availRegion - buttonSize * 0.5f + 1.f);
 
-					std::string id = "-###Remove" + std::string(compTypeDesc->GetLabel());
+					String id = "-###Remove" + String(compTypeDesc->GetLabel());
 
 					{
 						UI::ScopedStyleFloat round{ ImGuiStyleVar_FrameRounding, 0.f };
@@ -149,7 +150,7 @@ bool ComponentPropertyUtility::DrawComponent(Volt::Scene& scene, Volt::Entity en
 
 	bool edited = false;
 
-	if (UI::BeginProperties(std::string(componentType->GetLabel())))
+	if (UI::BeginProperties(String(componentType->GetLabel())))
 	{
 		for (const auto& member : componentType->GetMembers())
 		{
@@ -211,7 +212,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 
 	if (member.GetAssetType() != AssetTypes::None)
 	{
-		if (EditorUtils::Property(std::string(member.label), *reinterpret_cast<Volt::AssetHandle*>(&bytePtr[offset + member.offset]), member.GetAssetType()))
+		if (EditorUtils::Property(String(member.label), *reinterpret_cast<Volt::AssetHandle*>(&bytePtr[offset + member.offset]), member.GetAssetType()))
 		{
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
@@ -222,7 +223,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 
 	if ((member.flags & Volt::ComponentMemberFlag::Color3) != Volt::ComponentMemberFlag::None)
 	{
-		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec3*>(&bytePtr[offset + member.offset])))
+		if (UI::PropertyColor(String(member.label), *reinterpret_cast<glm::vec3*>(&bytePtr[offset + member.offset])))
 		{
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
@@ -233,7 +234,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 
 	if ((member.flags & Volt::ComponentMemberFlag::Color4) != Volt::ComponentMemberFlag::None)
 	{
-		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec4*>(&bytePtr[offset + member.offset])))
+		if (UI::PropertyColor(String(member.label), *reinterpret_cast<glm::vec4*>(&bytePtr[offset + member.offset])))
 		{
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
@@ -245,7 +246,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 	// Special case for entities
 	if (member.typeIndex == TypeTraits::TypeIndex::FromType<Volt::EntityID>())
 	{
-		if (UI::PropertyEntity(std::string(member.label), scene, *reinterpret_cast<Volt::EntityID*>(&bytePtr[offset + member.offset])))
+		if (UI::PropertyEntity(String(member.label), scene, *reinterpret_cast<Volt::EntityID*>(&bytePtr[offset + member.offset])))
 		{
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
@@ -270,7 +271,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 
 bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scene, Volt::Entity entity, const Volt::ComponentMember& arrayMember, void* elementData, const size_t index, const TypeTraits::TypeIndex& typeIndex, AssetType arrayAssetType)
 {
-	const std::string label = std::format("Element {0}", index);
+	const String label = FormatString("Element {0}", index);
 
 	if (arrayMember.GetAssetType() != AssetTypes::None || arrayAssetType != AssetTypes::None)
 	{
@@ -376,11 +377,11 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 	int32_t currentIndex = 0;
 
 	Map<int32_t, uint64_t> indexToValueMap;
-	Vector<std::string> constantNames;
+	Vector<String> constantNames;
 
 	for (uint32_t index = 0; const auto & constant : constants)
 	{
-		const std::string name = std::string(constant.label);
+		const String name = String(constant.label);
 		constantNames.emplace_back(name);
 		indexToValueMap[index] = constant.value;
 
@@ -395,7 +396,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 	int32_t initialValue = currentValue;
 	bool changed = false;
 
-	if (UI::ComboProperty(std::string(member.label), currentValue, constantNames))
+	if (UI::ComboProperty(String(member.label), currentValue, constantNames))
 	{
 		currentValue = static_cast<int32_t>(indexToValueMap.at(currentValue));
 		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
@@ -466,7 +467,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Enti
 						ImGui::Text("Element %d", i);
 						ImGui::TableNextColumn();
 
-						bool open = UI::CollapsingHeader(std::string(compDesc->GetLabel()) + std::format("##{0}", i));
+						bool open = UI::CollapsingHeader(String(compDesc->GetLabel()) + FormatString("##{}", i));
 						edited |= DrawComponent(scene, entity, compDesc, elementData, 0, open, true);
 
 						break;
@@ -493,7 +494,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Enti
 			}
 		}
 
-		if (ImGui::Button((std::string("Add##add_") + std::string(member.label)).c_str()))
+		if (ImGui::Button((String("Add##add_") + String(member.label)).c_str()))
 		{
 			arrayDesc->EmplaceBack(arrayPtr, member.defaultValue->Get());
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);

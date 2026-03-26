@@ -1685,7 +1685,7 @@ namespace Volt
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
 	}
 
-	void RenderGraph::BeginMarker(const std::string& markerName, const glm::vec4& markerColor /*= 1.f*/)
+	void RenderGraph::BeginMarker(const String& markerName, const glm::vec4& markerColor /*= 1.f*/)
 	{
 		m_standaloneMarkers.BeginMarker(static_cast<uint32_t>(m_renderPasses.size()), markerName, markerColor);
 	}
@@ -2212,7 +2212,7 @@ namespace Volt
 		return m_nextResourceId++;
 	}
 
-	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color)
+	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const String& markerName, const glm::vec4& color)
 	{
 		auto& newMarker = m_markers[passIndex].emplace_back();
 		newMarker.markerName = markerName;

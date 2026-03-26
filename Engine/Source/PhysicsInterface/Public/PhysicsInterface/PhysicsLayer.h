@@ -11,7 +11,7 @@ namespace Volt
 		PhysicsLayerID id = 0;
 		uint32_t bit = 0;
 		uint32_t collidesWithBitMask = 0;
-		std::string name;
+		String name;
 
 		inline bool IsValid() const
 		{

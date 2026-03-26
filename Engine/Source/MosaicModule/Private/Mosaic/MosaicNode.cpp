@@ -8,7 +8,7 @@ namespace Mosaic
 	{
 	}
 
-	void MosaicNode::AddInputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute)
+	void MosaicNode::AddInputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute)
 	{
 		auto& param = m_inputParameters.emplace_back();
 		param.name = name;
@@ -19,7 +19,7 @@ namespace Mosaic
 		param.showAttribute = showAttribute;
 	}
 
-	void MosaicNode::AddOutputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute)
+	void MosaicNode::AddOutputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute)
 	{
 		auto& param = m_outputParameters.emplace_back();
 		param.name = name;

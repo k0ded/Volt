@@ -66,7 +66,7 @@ namespace Volt
 
 		RGCompiledPass(RenderGraphDataAllocator* dataAllocator);
 
-		VT_INLINE void SetName(const std::string& name) { m_name = name; }
+		VT_INLINE void SetName(const String& name) { m_name = name; }
 		VT_INLINE void SetPassIndex(uint32_t passIndex) { m_passIndex = passIndex; }
 		VT_INLINE uint32_t GetPassIndex() const { return m_passIndex; }
 
@@ -140,6 +140,6 @@ namespace Volt
 		RGVector<ResourceAllocationEvent> m_transientResourceAllocations;
 		RGVector<RGResource*> m_transientResourceFrees;
 
-		std::string_view m_name;
+		StringView m_name;
 	};
 }

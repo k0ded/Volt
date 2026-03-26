@@ -18,20 +18,20 @@ public:
 	{
 		AssetType assetType;
 		std::type_index editorType;
-		std::string category;
+		String category;
 
 		Ref<EditorWindow> editorWindow;
 	};
 
 	static void Clear();
 	static void Sort();
-	static Ref<EditorWindow> GetPanel(const std::string& panelName);
+	static Ref<EditorWindow> GetPanel(const String& panelName);
 
 	template<typename T, typename ...Args>
-	static Ref<T> RegisterWithType(const std::string& category, AssetType assetType, Args&& ...args);
+	static Ref<T> RegisterWithType(const String& category, AssetType assetType, Args&& ...args);
 
 	template<typename T, typename ...Args>
-	static Ref<T> Register(const std::string& category, Args&& ...args);
+	static Ref<T> Register(const String& category, Args&& ...args);
 	
 	static bool OpenAsset(Volt::AssetHandle handle);
 	static Ref<EditorWindow> Get(AssetType type);
@@ -46,7 +46,7 @@ private:
 };
 
 template<typename T, typename ...Args>
-inline Ref<T> EditorLibrary::RegisterWithType(const std::string& category, AssetType assetType, Args && ...args)
+inline Ref<T> EditorLibrary::RegisterWithType(const String& category, AssetType assetType, Args && ...args)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -55,7 +55,7 @@ inline Ref<T> EditorLibrary::RegisterWithType(const std::string& category, Asset
 }
 
 template<typename T, typename ...Args>
-inline Ref<T> EditorLibrary::Register(const std::string& category, Args && ...args)
+inline Ref<T> EditorLibrary::Register(const String& category, Args && ...args)
 {
 	VT_PROFILE_FUNCTION();
 

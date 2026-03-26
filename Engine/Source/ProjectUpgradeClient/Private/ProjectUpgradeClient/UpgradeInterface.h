@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <CoreUtilities/String/VoltString.h>
 
 namespace Volt
 {
@@ -22,7 +22,7 @@ namespace Volt
 		virtual size_t GetNumTotalActions() = 0;
 		virtual size_t GetNumActionsCompleted() = 0;
 
-		virtual std::string GetCurrentActionText() = 0;
+		virtual String GetCurrentActionText() = 0;
 
 	protected:
 		const Project& GetTargetProject() { return m_targetProject; }

@@ -796,7 +796,7 @@ namespace Volt
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
-					std::string logMessage = std::format(
+					String logMessage = FormatString(
 						"Primitive Data with ID {} added: \n"
 						"	- Entity: {}\n"
 						"	- Index: {}\n"

@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	IORequestReadFile_FileReader::IORequestReadFile_FileReader(std::string_view name, const std::filesystem::path& filepath, const Config& config)
+	IORequestReadFile_FileReader::IORequestReadFile_FileReader(StringView name, const Filesystem::Path& filepath, const Config& config)
 		: IORequest(name),
 		m_config(config),
 		m_filepath(filepath),
@@ -33,7 +33,7 @@ namespace Volt
 		return m_resultCode;
 	}
 
-	IORequestWriteFile_FileWriter::IORequestWriteFile_FileWriter(std::string_view name, FileWriter&& fileWriter)
+	IORequestWriteFile_FileWriter::IORequestWriteFile_FileWriter(StringView name, FileWriter&& fileWriter)
 		: IORequest(name),
 		m_fileWriter(std::move(fileWriter)),
 		m_resultCode(IORequestResultCode::Undefined),
@@ -54,7 +54,7 @@ namespace Volt
 		return m_resultCode;
 	}
 
-	IORequestReadFile_String::IORequestReadFile_String(std::string_view name, const std::filesystem::path& filepath)
+	IORequestReadFile_String::IORequestReadFile_String(StringView name, const Filesystem::Path& filepath)
 		: IORequest(name),
 		m_filepath(filepath),
 		m_resultCode(IORequestResultCode::Undefined)
@@ -85,7 +85,7 @@ namespace Volt
 		return m_resultCode;
 	}
 
-	IORequestWriteFile_String::IORequestWriteFile_String(std::string_view name, const std::filesystem::path& filepath, std::string&& string)
+	IORequestWriteFile_String::IORequestWriteFile_String(StringView name, const Filesystem::Path& filepath, String&& string)
 		: IORequest(name),
 		m_filepath(filepath),
 		m_string(std::move(string)),

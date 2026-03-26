@@ -2,7 +2,7 @@
 
 #include "Sandbox/EditorAssetManager.h"
 
-#include <CoreUtilities/FileSystem.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 VT_DEFINE_LOG_CATEGORY(LogEditorAssetSystem);
 
@@ -23,9 +23,9 @@ void EditorAssetManager::RemoveAssetFromCache(Volt::AssetHandle assetHandle)
 	m_assetCache.RemoveAsset(assetHandle);
 }
 
-void EditorAssetManager::RenameDirectory(const std::filesystem::path& directoryPath, const std::string& newName)
+void EditorAssetManager::RenameDirectory(const Filesystem::Path& directoryPath, const String& newName)
 {
-	VT_ENSURE(!directoryPath.empty() && !newName.empty());
+	VT_ENSURE(!directoryPath.IsEmpty() && !newName.empty());
 
 	Vector<Volt::AssetHandle> assetsToRename;
 
@@ -33,11 +33,11 @@ void EditorAssetManager::RenameDirectory(const std::filesystem::path& directoryP
 	filter.includeMemoryAssets = false;
 	filter.includeWithoutFilepath = false;
 
-	const std::filesystem::path absoluteDirectoryPath = m_referencedAssetManager.GetAssetFilesystemPath(directoryPath);
+	const Filesystem::Path absoluteDirectoryPath = m_referencedAssetManager.GetAssetFilesystemPath(directoryPath);
 
 	m_referencedAssetManager.IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata assetMetadata)
 	{
-		if (FileSystem::IsFilepathInDirectory(absoluteDirectoryPath, m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath), true))
+		if (Filesystem::IsFilepathInDirectory(absoluteDirectoryPath, m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath), true))
 		{
 			assetsToRename.emplace_back(assetMetadata->handle);
 		}
@@ -45,21 +45,21 @@ void EditorAssetManager::RenameDirectory(const std::filesystem::path& directoryP
 		return true;
 	});
 
-	std::filesystem::path relativeDirectoryPath = m_referencedAssetManager.GetRelativeAssetFilepath(absoluteDirectoryPath);
-	std::filesystem::path newRelativeDirectoryPath = relativeDirectoryPath.parent_path() / newName;
+	Filesystem::Path relativeDirectoryPath = m_referencedAssetManager.GetRelativeAssetFilepath(absoluteDirectoryPath);
+	Filesystem::Path newRelativeDirectoryPath = relativeDirectoryPath.ParentPath() / newName;
 
 	for (const Volt::AssetHandle& assetHandle : assetsToRename)
 	{
 		Volt::WriteableAssetMetadata assetMetadata = m_referencedAssetManager.GetWriteableAssetMetadata(assetHandle);
 		
-		std::filesystem::path directoryRelativeAssetPath = std::filesystem::relative(assetMetadata->filepath, relativeDirectoryPath);
+		Filesystem::Path directoryRelativeAssetPath = Filesystem::Relative(assetMetadata->filepath, relativeDirectoryPath);
 		assetMetadata->filepath = newRelativeDirectoryPath / directoryRelativeAssetPath;
 	}
 
-	FileSystem::Rename(absoluteDirectoryPath, newName);
+	Filesystem::Rename(absoluteDirectoryPath, newName);
 }
 
-void EditorAssetManager::RenameAsset(Volt::AssetHandle assetHandle, const std::string& newName)
+void EditorAssetManager::RenameAsset(Volt::AssetHandle assetHandle, const String& newName)
 {
 	Volt::WriteableAssetMetadata assetMetadata = m_referencedAssetManager.GetWriteableAssetMetadata(assetHandle);
 	if (!assetMetadata.IsValid())
@@ -68,15 +68,15 @@ void EditorAssetManager::RenameAsset(Volt::AssetHandle assetHandle, const std::s
 		return;
 	}
 
-	std::filesystem::path prevAbsolutePath = m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath);
-	assetMetadata->filepath.replace_filename(newName + assetMetadata->filepath.extension().string());
+	Filesystem::Path prevAbsolutePath = m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath);
+	assetMetadata->filepath.ReplaceFilename(newName + assetMetadata->filepath.Extension().ToString());
 
-	FileSystem::Rename(prevAbsolutePath, newName);
+	Filesystem::Rename(prevAbsolutePath, newName);
 }
 
-void EditorAssetManager::MoveAssetTo(Volt::AssetHandle asset, const std::filesystem::path& targetDirectory)
+void EditorAssetManager::MoveAssetTo(Volt::AssetHandle asset, const Filesystem::Path& targetDirectory)
 {
-	VT_ENSURE(!targetDirectory.empty());
+	VT_ENSURE(!targetDirectory.IsEmpty());
 
 	Volt::WriteableAssetMetadata assetMetadata = m_referencedAssetManager.GetWriteableAssetMetadata(asset);
 	if (!assetMetadata.IsValid())
@@ -85,17 +85,17 @@ void EditorAssetManager::MoveAssetTo(Volt::AssetHandle asset, const std::filesys
 		return;
 	}
 
-	const std::filesystem::path relativeTargetDirectory = m_referencedAssetManager.GetRelativeAssetFilepath(targetDirectory);
-	const std::filesystem::path newFilepath = targetDirectory / assetMetadata->filepath.filename();
+	const Filesystem::Path relativeTargetDirectory = m_referencedAssetManager.GetRelativeAssetFilepath(targetDirectory);
+	const Filesystem::Path newFilepath = targetDirectory / assetMetadata->filepath.Filename();
 
-	FileSystem::Move(m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath), m_referencedAssetManager.GetAssetFilesystemPath(newFilepath));
+	Filesystem::MoveTo(m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath), m_referencedAssetManager.GetAssetFilesystemPath(newFilepath));
 
 	assetMetadata->filepath = newFilepath;
 }
 
-void EditorAssetManager::MoveDirectoryTo(const std::filesystem::path& srcDirectory, const std::filesystem::path& dstDirectory)
+void EditorAssetManager::MoveDirectoryTo(const Filesystem::Path& srcDirectory, const Filesystem::Path& dstDirectory)
 {
-	VT_ENSURE(!srcDirectory.empty() && !dstDirectory.empty());
+	VT_ENSURE(!srcDirectory.IsEmpty() && !dstDirectory.IsEmpty());
 
 	Vector<Volt::AssetHandle> assetsToMove;
 
@@ -105,7 +105,7 @@ void EditorAssetManager::MoveDirectoryTo(const std::filesystem::path& srcDirecto
 
 	m_referencedAssetManager.IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata assetMetadata)
 	{
-		if (FileSystem::IsFilepathInDirectory(srcDirectory, assetMetadata->filepath, true))
+		if (Filesystem::IsFilepathInDirectory(srcDirectory, assetMetadata->filepath, true))
 		{
 			assetsToMove.emplace_back(assetMetadata->handle);
 		}
@@ -117,12 +117,12 @@ void EditorAssetManager::MoveDirectoryTo(const std::filesystem::path& srcDirecto
 	{
 		Volt::WriteableAssetMetadata assetMetadata = m_referencedAssetManager.GetWriteableAssetMetadata(assetHandle);
 
-		std::filesystem::path srcFilepath = m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath);
-		std::filesystem::path srcDirRelativePath = std::filesystem::relative(assetMetadata->filepath, srcDirectory);
+		Filesystem::Path srcFilepath = m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath);
+		Filesystem::Path srcDirRelativePath = Filesystem::Relative(assetMetadata->filepath, srcDirectory);
 
 		assetMetadata->filepath = dstDirectory / srcDirRelativePath;
 
-		FileSystem::Move(srcFilepath, dstDirectory / srcDirRelativePath.parent_path());
+		Filesystem::MoveTo(srcFilepath, dstDirectory / srcDirRelativePath.ParentPath());
 	}
 }
 
@@ -134,7 +134,7 @@ void EditorAssetManager::DeleteAsset(Volt::AssetHandle asset)
 		return;
 	}
 
-	std::filesystem::path assetFilepath;
+	Filesystem::Path assetFilepath;
 	{
 		Volt::ReadOnlyAssetMetadata assetMetadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(asset);
 		assetFilepath = m_referencedAssetManager.GetAssetFilesystemPath(assetMetadata->filepath);
@@ -142,15 +142,15 @@ void EditorAssetManager::DeleteAsset(Volt::AssetHandle asset)
 
 	m_referencedAssetManager.RemoveAsset(asset);
 
-	if (FileSystem::Exists(assetFilepath))
+	if (Filesystem::Exists(assetFilepath))
 	{
-		FileSystem::MoveToRecycleBin(assetFilepath);
+		Filesystem::MoveToRecycleBin(assetFilepath);
 	}
 
 	VT_LOGC(Trace, LogEditorAssetSystem, "Deleted asset {} (Handle: {})!", assetFilepath, asset);
 }
 
-void EditorAssetManager::DeleteDirectory(const std::filesystem::path& directoryPath)
+void EditorAssetManager::DeleteDirectory(const Filesystem::Path& directoryPath)
 {
 	Vector<Volt::AssetHandle> assetsToDelete;
 
@@ -158,11 +158,11 @@ void EditorAssetManager::DeleteDirectory(const std::filesystem::path& directoryP
 	filter.includeMemoryAssets = false;
 	filter.includeWithoutFilepath = false;
 
-	std::filesystem::path relativeDirectoryPath = m_referencedAssetManager.GetRelativeAssetFilepath(directoryPath);
+	Filesystem::Path relativeDirectoryPath = m_referencedAssetManager.GetRelativeAssetFilepath(directoryPath);
 
 	m_referencedAssetManager.IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata assetMetadata) 
 	{
-		if (FileSystem::IsFilepathInDirectory(directoryPath, assetMetadata->filepath, true))
+		if (Filesystem::IsFilepathInDirectory(directoryPath, assetMetadata->filepath, true))
 		{
 			assetsToDelete.emplace_back(assetMetadata->handle);
 		}
@@ -176,10 +176,10 @@ void EditorAssetManager::DeleteDirectory(const std::filesystem::path& directoryP
 	}
 
 	// The directory might have been deleted in the file system already, just make sure that it exists.
-	const std::filesystem::path absoluteDirectory = m_referencedAssetManager.GetAssetFilesystemPath(relativeDirectoryPath);
-	if (FileSystem::Exists(absoluteDirectory))
+	const Filesystem::Path absoluteDirectory = m_referencedAssetManager.GetAssetFilesystemPath(relativeDirectoryPath);
+	if (Filesystem::Exists(absoluteDirectory))
 	{
-		FileSystem::MoveToRecycleBin(absoluteDirectory);
+		Filesystem::MoveToRecycleBin(absoluteDirectory);
 	}
 
 	VT_LOGC(Trace, LogEditorAssetSystem, "Deleted directory {}!", relativeDirectoryPath);

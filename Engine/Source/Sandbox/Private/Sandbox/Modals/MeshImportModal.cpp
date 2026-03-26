@@ -15,12 +15,12 @@
 
 #include <imgui.h>
 
-MeshImportModal::MeshImportModal(const std::string& strId)
+MeshImportModal::MeshImportModal(const String& strId)
 	: Modal(strId)
 {
 }
 
-void MeshImportModal::SetImportMeshes(const Vector<std::filesystem::path>& filePaths)
+void MeshImportModal::SetImportMeshes(const Vector<Filesystem::Path>& filePaths)
 {
 	m_importFilePaths = filePaths;
 }
@@ -192,11 +192,11 @@ void MeshImportModal::GetInformationOfCurrentMesh()
 	}
 }
 
-void MeshImportModal::Import(const std::filesystem::path& importPath, const std::filesystem::path& destinationDirectory)
+void MeshImportModal::Import(const Filesystem::Path& importPath, const Filesystem::Path& destinationDirectory)
 {
-	VT_ENSURE(!destinationDirectory.empty());
+	VT_ENSURE(!destinationDirectory.IsEmpty());
 
-	const std::string destinationFileName = importPath.stem().string();
+	const String destinationFileName = importPath.Stem().ToString();
 
 	Volt::MeshSourceImportConfig importConfig;
 	importConfig.destinationDirectory = destinationDirectory;
@@ -225,7 +225,7 @@ void MeshImportModal::Import(const std::filesystem::path& importPath, const std:
 	Volt::SourceAssetManager::ImportSourceAsset(importPath, importConfig);
 }
 
-const std::string MeshImportModal::GetStringFromImportType(const ImportType importType)
+const String MeshImportModal::GetStringFromImportType(const ImportType importType)
 {
 	switch (importType)
 	{

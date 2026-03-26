@@ -17,7 +17,7 @@ namespace Volt::RHI
 		~D3D12Shader() override;
 
 		void Reload(bool forceCompile /* = false */) override;
-		std::string_view GetName() const override;
+		StringView GetName() const override;
 		size_t GetHash() const override;
 		bool IsValid() const override;
 		ShaderStage GetShaderStage() const override;

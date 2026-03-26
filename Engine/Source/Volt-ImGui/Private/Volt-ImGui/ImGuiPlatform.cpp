@@ -446,7 +446,7 @@ namespace Volt
 
 		platformIO.Platform_GetClipboardTextFn = [](ImGuiContext*) -> const char*
 		{
-			const std::string_view clipboard = WindowManager::Get().GetMainWindow().GetClipboard();
+			const StringView clipboard = WindowManager::Get().GetMainWindow().GetClipboard();
 			return clipboard.data();
 		};
 

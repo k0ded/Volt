@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/Array.h>
 
 namespace Volt
 {
@@ -20,7 +21,7 @@ namespace Volt
 
 	struct ContactHeader
 	{
-		std::array<Ref<PhysicsActor>, 2> actors;
+		Array<Ref<PhysicsActor>, 2> actors;
 		PhysicsContactType contactType;
 	};
 

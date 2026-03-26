@@ -72,7 +72,7 @@ namespace Volt::RHI
 
 		// Create pipeline
 		{
-			const std::string entryPoint = vulkanShader.GetShaderSourceInfo().sourceEntry.entryPoint;
+			const String entryPoint = vulkanShader.GetShaderSourceInfo().sourceEntry.entryPoint;
 
 			VkPipelineShaderStageCreateInfo stageInfo{};
 			stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

@@ -90,14 +90,14 @@ namespace Volt
 
 	struct UITagComponent
 	{
-		std::string tag;
+		String tag;
 
 		static void ReflectType(TypeDesc<UITagComponent>& reflect)
 		{
 			reflect.SetGUID("{813B1914-C653-485F-96F5-87578F6916B5}"_guid);
 			reflect.SetLabel("UI Tag Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UITagComponent::tag, 'tag', "Tag", "", std::string());
+			reflect.AddMember(&UITagComponent::tag, 'tag', "Tag", "", String());
 		}
 	};
 

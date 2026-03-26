@@ -4,8 +4,9 @@
 #include <Volt-Application/Application.h>
 #include <Volt-Core/ConfigManager.h>
 
+#include <CoreModule/CommandLineBuilder.h>
+
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
-#include <CoreUtilities/CommandLineBuilder.h>
 #include <CoreUtilities/Malloc.h>
 
 #include <SubSystem/SubSystemManager.h>
@@ -34,21 +35,21 @@ namespace Volt
 		{
 			if (const ConfigValue* url = configManager->TryGetConfigValue("CrashReporter", "ServerURL"); url != nullptr)
 			{
-				connectionInfo.serverURL = url->Get<std::string>();
+				connectionInfo.serverURL = url->Get<String>();
 			}
 
 			if (const ConfigValue* username = configManager->TryGetConfigValue("CrashReporter", "ServerUser"); username != nullptr)
 			{
-				connectionInfo.serverUser = username->Get<std::string>();
+				connectionInfo.serverUser = username->Get<String>();
 			}
 
 			if (const ConfigValue* password = configManager->TryGetConfigValue("CrashReporter", "ServerPassword"); password != nullptr)
 			{
-				connectionInfo.serverPassword = password->Get<std::string>();
+				connectionInfo.serverPassword = password->Get<String>();
 			}
 		}
 
-		g_crashReportingThread.NotifyCrash(exceptionInfo, commandLineBuilder, connectionInfo);
+		g_crashReportingThread.NotifyCrash(exceptionInfo, commandLineBuilder.GetAsString(), connectionInfo);
 	}
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)

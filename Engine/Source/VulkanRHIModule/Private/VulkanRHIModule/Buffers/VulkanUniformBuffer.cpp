@@ -76,7 +76,7 @@ namespace Volt::RHI
 		m_allocation->Unmap();
 	}
 
-	void VulkanUniformBuffer::SetName(const std::string& name)
+	void VulkanUniformBuffer::SetName(const String& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -93,7 +93,7 @@ namespace Volt::RHI
 		m_desc.debugName = name;
 	}
 
-	std::string_view VulkanUniformBuffer::GetName() const
+	StringView VulkanUniformBuffer::GetName() const
 	{
 		return m_desc.debugName;
 	}

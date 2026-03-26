@@ -34,7 +34,7 @@ void AssertionFailure(const char* expression)
 	}
 }
 
-void AssertionFailure(std::string_view expression)
+void AssertionFailure(StringView expression)
 {
 	AssertionFailure(expression.data());
 }
@@ -63,7 +63,7 @@ bool CheckExpression(bool expression, const char* str)
 	return expression;
 }
 
-bool CheckExpression(bool expression, std::string_view str)
+bool CheckExpression(bool expression, StringView str)
 {
 	return CheckExpression(expression, str.data());
 }

@@ -1,14 +1,14 @@
 #pragma once
-#include "WindowModule/WindowMode.h"
-#include <filesystem>
 
-#include "Config.h"
+#include "WindowModule/WindowMode.h"
+
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
-	struct WINDOWMODULE_API WindowProperties
+	struct WindowProperties
 	{
-		std::string title = "Volt";
+		String title = "Volt";
 		uint32_t width = 1280;
 		uint32_t height = 720;
 		bool vsync = true;
@@ -22,7 +22,7 @@ namespace Volt
 		bool createAsAlwaysOnTop = false;
 
 		WindowMode windowMode = WindowMode::Windowed;
-		std::filesystem::path iconPath;
-		std::filesystem::path cursorPath;
+		Filesystem::Path iconPath;
+		Filesystem::Path cursorPath;
 	};
 }

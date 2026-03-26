@@ -2,7 +2,7 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 
-#include <CoreUtilities/StringHash.h>
+#include <CoreUtilities/String/StringHash.h>
 
 namespace Volt::RHI
 {

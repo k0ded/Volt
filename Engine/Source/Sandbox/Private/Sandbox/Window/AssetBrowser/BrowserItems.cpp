@@ -13,7 +13,7 @@
 
 namespace AssetBrowser
 {
-	Item::Item(SelectionManager* selectionManager, const std::filesystem::path& aPath)
+	Item::Item(SelectionManager* selectionManager, const Filesystem::Path& aPath)
 		: m_selectionManager(selectionManager), path(aPath)
 	{
 		m_isRenaming = false;
@@ -71,7 +71,7 @@ namespace AssetBrowser
 									ImGui::TextUnformatted("...");
 									break;
 								}
-								ImGui::TextUnformatted(selected->path.string().c_str());
+								ImGui::TextUnformatted(selected->path.ToString().c_str());
 								i++;
 							}
 
@@ -110,11 +110,11 @@ namespace AssetBrowser
 
 				if (m_isRenaming)
 				{
-					const std::string renameId = "###renameId" + path.stem().string();
+					const String renameId = "###renameId" + path.Stem().ToString();
 					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
 
 					UI::ScopedColor background{ ImGuiCol_FrameBg, { 0.1f, 0.1f, 0.1f, 0.1f } };
-					if (ImGui::InputTextString(renameId.c_str(), &m_currentRenamingName, ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputText(renameId.c_str(), &m_currentRenamingName, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
 						if (Rename(m_currentRenamingName))
 						{
@@ -160,7 +160,7 @@ namespace AssetBrowser
 				else
 				{
 					m_lastRenaming = false;
-					ImGui::TextWrapped("%s", path.stem().string().c_str());
+					ImGui::TextWrapped("%s", path.Stem().ToString().c_str());
 				}
 
 
@@ -202,7 +202,7 @@ namespace AssetBrowser
 		ImGui::EndChild();
 		ImGui::PopID();
 
-		const auto popupID = ("RightClickAssetBrowserItemPopup" + path.string());
+		const auto popupID = ("RightClickAssetBrowserItemPopup" + path.ToString());
 		bool tileHovered = ImGui::IsMouseHoveringRect({ pos.x, pos.y }, { pos.x + itemSize.x, pos.y + itemSize.y }) &&
 			ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
 		if (tileHovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
@@ -226,7 +226,7 @@ namespace AssetBrowser
 		{
 			ImGui::BeginTooltip();
 			UI::PushFont(UI::FontType::Regular, UI::DEFAULT_FONT_SIZE);
-			ImGui::TextEx(path.stem().string().c_str(), nullptr);
+			ImGui::TextEx(path.Stem().ToString().c_str(), nullptr);
 			UI::PopFont();
 
 			ImGui::SameLine();
@@ -237,8 +237,8 @@ namespace AssetBrowser
 
 			ImGui::Separator();
 			auto pathNoName = path;
-			pathNoName._Remove_filename_and_separator();
-			DrawHoverInfo("Path", pathNoName.string());
+			pathNoName.RemoveFilename();
+			DrawHoverInfo("Path", pathNoName.ToString());
 			
 			//todo_fabian: make hover info just use metadata
 			//DrawAdditionalHoverInfo();
@@ -250,17 +250,17 @@ namespace AssetBrowser
 	void Item::StartRename()
 	{
 		m_isRenaming = true;
-		m_currentRenamingName = path.stem().string();
+		m_currentRenamingName = path.Stem().ToString();
 	}
 	float Item::GetThumbnailSize() const
 	{
 		return UserSettingsManager::GetSettings().assetBrowserSettings.thumbnailSize;
 	}
-	void Item::DrawHoverInfo(std::string_view aInfoTitle, std::string_view aInfo)
+	void Item::DrawHoverInfo(StringView aInfoTitle, StringView aInfo)
 	{
 		const ImVec4 infoTitleColor = { 0.6f,0.6f,0.6f,1 };
 		ImGui::PushStyleColor(ImGuiCol_Text, infoTitleColor);
-		ImGui::TextUnformatted((std::string(aInfoTitle) + ": ").c_str());
+		ImGui::TextUnformatted((String(aInfoTitle) + ": ").c_str());
 		ImGui::PopStyleColor();
 
 		ImGui::SameLine();

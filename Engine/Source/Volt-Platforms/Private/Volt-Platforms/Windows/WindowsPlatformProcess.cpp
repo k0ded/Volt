@@ -5,11 +5,10 @@
 #include "Volt-Platforms/Platform.h"
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
-#include <CoreUtilities/StringUtility.h>
 
 namespace Volt
 {
-	ProcessHandle WindowsPlatformProcess::CreateProc(const std::filesystem::path& processFilepath, const std::string& parameters, bool launchAsDetached, bool launchAsHidden, uint32_t* outProcessId, const std::filesystem::path& workingDirectory /*= ""*/, void* pipeWriteChild /*= nullptr*/, void* pipeReadChild /*= nullptr*/, void* stdErrChild /*= nullptr*/)
+	ProcessHandle WindowsPlatformProcess::CreateProc(const Filesystem::Path& processFilepath, const String& parameters, bool launchAsDetached, bool launchAsHidden, uint32_t* outProcessId, const Filesystem::Path& workingDirectory /*= ""*/, void* pipeWriteChild /*= nullptr*/, void* pipeReadChild /*= nullptr*/, void* stdErrChild /*= nullptr*/)
 	{
 		uint32_t processCreateFlags = NORMAL_PRIORITY_CLASS;
 
@@ -51,13 +50,13 @@ namespace Volt
 
 		bool shouldInheritHandles = (windowFlags & STARTF_USESTDHANDLES) != 0;
 
-		std::wstring processCommandLine = Utility::ToWString(std::format("\"{}\" {}", processFilepath.string(), parameters));
+		WString processCommandLine = FormatString(L"\"{}\" {}", processFilepath.ToWString(), parameters);
 
 		PROCESS_INFORMATION processInfo;
-		if (!CreateProcess(NULL, processCommandLine.data(), nullptr, nullptr, shouldInheritHandles, processCreateFlags, NULL, workingDirectory.empty() ? NULL : workingDirectory.c_str(), &windowStartupInfo, &processInfo))
+		if (!CreateProcess(NULL, processCommandLine.data(), nullptr, nullptr, shouldInheritHandles, processCreateFlags, NULL, workingDirectory.IsEmpty() ? NULL : workingDirectory.CStr(), &windowStartupInfo, &processInfo))
 		{
 			DWORD lastError = GetLastError();
-			const std::string errorString = PlatformMisc::GetSystemErrorMessage(lastError);
+			const String errorString = PlatformMisc::GetSystemErrorMessage(lastError);
 			
 			if (::IsDebuggerPresent())
 			{

@@ -158,7 +158,7 @@ namespace Volt
 				pluginFactory->DestroyInstance(pluginPtr);
 			}
 
-			VT_LOGC(Error, LogPluginSystem, "Unable to create instance of plugin {}!", binaryFilepath.string());
+			VT_LOGC(Error, LogPluginSystem, "Unable to create instance of plugin {}!", binaryFilepath);
 			return false;
 		}
 

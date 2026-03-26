@@ -38,7 +38,7 @@ namespace NodeGraph
 	class Editor : public EditorWindow
 	{
 	public:
-		Editor(const std::string& title, const std::string& context, bool dockSpace, Ref<EditorBackend> backend);
+		Editor(const String& title, const String& context, bool dockSpace, Ref<EditorBackend> backend);
 		~Editor() override;
 
 		void Update();
@@ -55,16 +55,16 @@ namespace NodeGraph
 		const Vector<UUID64> GetSelectedNodes();
 		const Vector<UUID64> GetSelectedLinks();
 
-		virtual bool SaveSettings(const std::string& data) = 0;
-		virtual size_t LoadSettings(std::string& data)  = 0;
+		virtual bool SaveSettings(const String& data) = 0;
+		virtual size_t LoadSettings(String& data)  = 0;
 
-		virtual bool SaveNodeSettings(const UUID64 nodeId, const std::string& data) = 0;
-		virtual size_t LoadNodeSettings(const UUID64 nodeId, std::string& data) = 0;
+		virtual bool SaveNodeSettings(const UUID64 nodeId, const String& data) = 0;
+		virtual size_t LoadNodeSettings(const UUID64 nodeId, String& data) = 0;
 
 		inline const EditorContext& GetContext() const { return *myEditorContext; }
 		inline EditorBackend& GetBackend() const { return *myBackend; }
 
-		inline void SetGraphTypeText(const std::string& text) { myGraphTypeText = text; }
+		inline void SetGraphTypeText(const String& text) { myGraphTypeText = text; }
 
 	protected:
 		virtual void InitializeStyle(ax::NodeEditor::Style& editorStyle) {}
@@ -79,10 +79,10 @@ namespace NodeGraph
 
 		bool myCreateNewNode = false;
 		UUID64 myNewLinkPinId = 0;
-		std::string myContext;
+		String myContext;
 
 	private:
-		std::string myGraphTypeText;
+		String myGraphTypeText;
 
 		Ref<EditorContext> myEditorContext;
 		Ref<EditorBackend> myBackend;

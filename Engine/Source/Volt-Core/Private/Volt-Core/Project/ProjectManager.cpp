@@ -7,11 +7,14 @@
 #include "Volt-Core/GlobalCommandLine.h"
 
 #include <Volt-FileSystem/FileUtility.h>
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
+#include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <SubSystem/SubSystemManager.h>
 
-#include <CoreUtilities/JSON/JSONWriter.h>
-#include <CoreUtilities/JSON/JSONReader.h>
+#include <CoreModule/JSON/JSONWriter.h>
+#include <CoreModule/JSON/JSONReader.h>
 
 VT_DEFINE_LOG_CATEGORY(LogProject);
 
@@ -36,7 +39,7 @@ namespace Volt
 		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
 
 		// Get the project from the global command line.
-		std::filesystem::path projectFilepath;
+		Filesystem::Path projectFilepath;
 		if (GlobalCommandLine::Get().IsArgDefined("project"))
 		{
 			projectFilepath = GlobalCommandLine::Get().GetArgValue("project");
@@ -50,36 +53,36 @@ namespace Volt
 		m_pluginSystem->LoadPlugins(*m_currentProject);
 	}
 
-	void ProjectManager::LoadProject(const std::filesystem::path projectPath)
+	void ProjectManager::LoadProject(const Filesystem::Path& projectPath)
 	{
 		m_currentProject = CreateUnique<Project>();
 
-		if (!projectPath.empty())
+		if (!projectPath.IsEmpty())
 		{
-			m_currentProject->rootDirectory = projectPath.parent_path();
+			m_currentProject->rootDirectory = projectPath.ParentPath();
 			m_currentProject->filepath = projectPath;
 		}
 		else
 		{
-			m_currentProject->rootDirectory = std::filesystem::current_path();
+			m_currentProject->rootDirectory = Filesystem::GetWorkingDirectory();
 		
-			for (const auto& dir : std::filesystem::directory_iterator("./"))
+			for (const auto& entry : Filesystem::DirectoryIterator("./"))
 			{
-				if (dir.path().extension() == ".vtproj")
+				if (entry.path.Extension() == L".vtproj")
 				{
-					m_currentProject->filepath = dir.path();
+					m_currentProject->filepath = entry.path;
 					break;
 				}
 			}
 		}
 
 		// Correct working directory should have been setup at this point.
-		m_currentEngineDirectory = std::filesystem::current_path();
+		m_currentEngineDirectory = Filesystem::GetWorkingDirectory();
 
 		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
 		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
 
-		if (!projectPath.empty())
+		if (!projectPath.IsEmpty())
 		{
 			VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
 			DeserializeProject();
@@ -103,27 +106,27 @@ namespace Volt
 		jsonWriter.AppendKeyValue("StartScenePath", m_currentProject->startSceneFilepath);
 		jsonWriter.EndDocument();
 
-		std::string prettyJson = jsonWriter.GetPrettyJSON();
+		String prettyJson = jsonWriter.GetPrettyJSON();
 		FileUtility::WriteStringToFile(m_currentProject->filepath, std::move(prettyJson), true);
 	}
 
 	void ProjectManager::DeserializeProject()
 	{
-		std::string jsonString;
+		String jsonString;
 		if (!FileUtility::ReadStringFromFile(m_currentProject->filepath, jsonString))
 		{
-			VT_LOGC(Error, LogProject, "Failed to open file: {0}!", m_currentProject->filepath.string());
+			VT_LOGC(Error, LogProject, "Failed to open file: {0}!", m_currentProject->filepath);
 			return;
 		}
 
 		JSONReader jsonReader;
 		if (!jsonReader.Parse(jsonString))
 		{
-			VT_LOGC(Error, LogProject, "Project file {0} is invalid!", m_currentProject->filepath.string());
+			VT_LOGC(Error, LogProject, "Project file {0} is invalid!", m_currentProject->filepath);
 			return;
 		}
 
-		std::string engineVersionStr;
+		String engineVersionStr;
 		if (jsonReader.TryGet("EngineVersion", engineVersionStr))
 		{
 			m_currentProject->engineVersion = engineVersionStr;
@@ -138,7 +141,7 @@ namespace Volt
 
 		jsonReader.IterateArray("Plugins", [&]() 
 		{
-			std::string pluginName;
+			String pluginName;
 			jsonReader.Get(pluginName);
 
 			const auto& definition = m_pluginRegistry->GetPluginDefinitionByName(pluginName);
@@ -159,73 +162,73 @@ namespace Volt
 		}
 	}
 
-	const std::filesystem::path ProjectManager::GetAssetsDirectory()
+	const Filesystem::Path ProjectManager::GetAssetsDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : GetProjectDirectory() / GetAssetsDirectoryName();
 	}
 
-	const std::string_view ProjectManager::GetAssetsDirectoryName()
+	const StringView ProjectManager::GetAssetsDirectoryName()
 	{
 		return s_instance->m_currentProject->assetsDirectoryName;
 	}
 
-	const std::filesystem::path ProjectManager::GetAudioBanksDirectory()
+	const Filesystem::Path ProjectManager::GetAudioBanksDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->audioDirectory;
 	}
 
-	const std::filesystem::path ProjectManager::GetProjectDirectory()
+	const Filesystem::Path ProjectManager::GetProjectDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory;
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineRootDirectory()
+	const Filesystem::Path ProjectManager::GetEngineRootDirectory()
 	{
 		return s_instance->m_currentEngineDirectory;
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineAssetsDirectory()
+	const Filesystem::Path ProjectManager::GetEngineAssetsDirectory()
 	{
 		return s_instance->m_currentEngineDirectory / "Engine";
 	}
 
-	const std::filesystem::path ProjectManager::GetPathRelativeToEngine(const std::filesystem::path& path)
+	const Filesystem::Path ProjectManager::GetPathRelativeToEngine(const Filesystem::Path& path)
 	{
-		return std::filesystem::relative(path, s_instance->m_currentEngineDirectory);
+		return Filesystem::Relative(path, s_instance->m_currentEngineDirectory);
 	}
 
-	const std::filesystem::path ProjectManager::GetCachePath()
+	const Filesystem::Path ProjectManager::GetCachePath()
 	{
 		return GetProjectDirectory() / GetAssetsDirectory() / "Cache";
 	}
 
-	const std::filesystem::path ProjectManager::GetPathRelativeToProject(const std::filesystem::path& path)
+	const Filesystem::Path ProjectManager::GetPathRelativeToProject(const Filesystem::Path& path)
 	{
-		return std::filesystem::relative(path, GetProjectDirectory());
+		return Filesystem::Relative(path, GetProjectDirectory());
 	}
 
-	const std::filesystem::path ProjectManager::GetOrCreateSettingsDirectory()
+	const Filesystem::Path ProjectManager::GetOrCreateSettingsDirectory()
 	{
-		const std::filesystem::path dir = GetRootDirectory() / "Settings";
-		if (!std::filesystem::exists(dir))
+		const Filesystem::Path dir = GetRootDirectory() / "Settings";
+		if (!Filesystem::Exists(dir))
 		{
-			std::filesystem::create_directories(dir);
+			Filesystem::CreateDirectories(dir);
 		}
 
 		return dir;
 	}
 
-	const std::filesystem::path ProjectManager::GetPhysicsSettingsPath()
+	const Filesystem::Path ProjectManager::GetPhysicsSettingsPath()
 	{
 		return GetOrCreateSettingsDirectory() / "PhysicsSettings.yaml";
 	}
 
-	const std::filesystem::path ProjectManager::GetPhysicsLayersPath()
+	const Filesystem::Path ProjectManager::GetPhysicsLayersPath()
 	{
 		return GetOrCreateSettingsDirectory() / "PhysicsLayers.yaml";
 	}
 
-	const std::filesystem::path& ProjectManager::GetRootDirectory()
+	const Filesystem::Path& ProjectManager::GetRootDirectory()
 	{
 		return s_instance->m_currentProject->rootDirectory;
 	}
@@ -254,6 +257,6 @@ namespace Volt
 	{
 		outDependencies.AddDependency<PluginSystem>();
 		outDependencies.AddDependency<PluginRegistry>();
-		outDependencies.AddDependency<Log>();
+		outDependencies.AddDependency<IOThreads>();
 	}
 }

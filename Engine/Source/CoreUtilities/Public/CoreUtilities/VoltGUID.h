@@ -1,10 +1,10 @@
 #pragma once
 
-#include "CoreUtilities/Core.h"
+#include "CoreUtilities/String/VoltString.h"
+#include "CoreUtilities/String/StringFormat.h"
 
 #include <cstdint>
 #include <xhash>
-#include <string>
 
 // Based on CryEngines CryGUID
 struct VoltGUID
@@ -111,9 +111,9 @@ struct VoltGUID
 		);
 	}
 
-	std::string ToString() const
+	String ToString() const
 	{
-		return std::to_string(hiPart) + "-" + std::to_string(loPart);
+		return FormatString("{} - {}", hiPart, loPart);
 	}
 
 	uint64_t hiPart;
@@ -134,6 +134,16 @@ namespace std
 		{
 			std::hash<uint64_t> hasher;
 			return hasher(guid.loPart) ^ hasher(guid.hiPart);
+		}
+	};
+
+	template<>
+	struct formatter<VoltGUID> : formatter<String>
+	{
+		template<class FmtContext>
+		FmtContext::iterator format(const VoltGUID& guid, FmtContext& ctx) const
+		{
+			return std::format_to(ctx.out(), "{} - {}", guid.hiPart, guid.loPart);
 		}
 	};
 }

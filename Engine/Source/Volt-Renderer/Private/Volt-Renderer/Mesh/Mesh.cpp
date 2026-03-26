@@ -146,7 +146,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		const std::string meshName = !m_name.empty() ? m_name + "." : "";
+		const String meshName = !m_name.empty() ? m_name + "." : "";
 
 		RHI::BufferUsage bufferRayTracingFlags = RHI::BufferUsage::None;
 

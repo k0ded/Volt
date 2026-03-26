@@ -5,8 +5,8 @@
 
 #include <LogModule/LogCategory.h>
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
-#include <CoreUtilities/Core.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
 VT_DECLARE_LOG_CATEGORY_EXPORT(VTCORE_API, LogProject, LogVerbosity::Trace);
@@ -28,22 +28,22 @@ namespace Volt
 		void Initialize() override;
 		void OnPostStageInitializaton() override;
 
-		void LoadProject(const std::filesystem::path projectPath);
+		void LoadProject(const Filesystem::Path& projectPath);
 		void SerializeProject();
 
-		static const std::filesystem::path GetAssetsDirectory();
-		static const std::string_view GetAssetsDirectoryName();
-		static const std::filesystem::path GetAudioBanksDirectory();
-		static const std::filesystem::path GetProjectDirectory();
-		static const std::filesystem::path GetEngineRootDirectory();
-		static const std::filesystem::path GetEngineAssetsDirectory();
-		static const std::filesystem::path GetPathRelativeToEngine(const std::filesystem::path& path);
-		static const std::filesystem::path GetPathRelativeToProject(const std::filesystem::path& path);
-		static const std::filesystem::path GetCachePath();
-		static const std::filesystem::path GetOrCreateSettingsDirectory();
-		static const std::filesystem::path GetPhysicsSettingsPath();
-		static const std::filesystem::path GetPhysicsLayersPath();
-		static const std::filesystem::path& GetRootDirectory();
+		static const Filesystem::Path GetAssetsDirectory();
+		static const StringView GetAssetsDirectoryName();
+		static const Filesystem::Path GetAudioBanksDirectory();
+		static const Filesystem::Path GetProjectDirectory();
+		static const Filesystem::Path GetEngineRootDirectory();
+		static const Filesystem::Path GetEngineAssetsDirectory();
+		static const Filesystem::Path GetPathRelativeToEngine(const Filesystem::Path& path);
+		static const Filesystem::Path GetPathRelativeToProject(const Filesystem::Path& path);
+		static const Filesystem::Path GetCachePath();
+		static const Filesystem::Path GetOrCreateSettingsDirectory();
+		static const Filesystem::Path GetPhysicsSettingsPath();
+		static const Filesystem::Path GetPhysicsLayersPath();
+		static const Filesystem::Path& GetRootDirectory();
 
 		static const bool IsCurrentProjectDeprecated();
 		static const bool AreCurrentProjectMetaFilesDeprecated();
@@ -59,7 +59,7 @@ namespace Volt
 
 		void DeserializeProject();
 
-		std::filesystem::path m_currentEngineDirectory;
+		Filesystem::Path m_currentEngineDirectory;
 		Unique<Project> m_currentProject;
 
 		PluginRegistry* m_pluginRegistry = nullptr;

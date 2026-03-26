@@ -18,7 +18,7 @@ namespace Volt
 class EditorWindow : public Volt::EventListener
 {
 public:
-	EditorWindow(const std::string& title, bool dockSpace = false, std::string id = "");
+	EditorWindow(const String& title, bool dockSpace = false, String id = "");
 	virtual ~EditorWindow() = default;
 
 	bool Begin();
@@ -35,7 +35,7 @@ public:
 	virtual void UpdateContent() {}
 	virtual void OpenAsset(AssetReference<Volt::Asset> asset) {}
 
-	inline const std::string& GetTitle() const { return m_title; }
+	inline const String& GetTitle() const { return m_title; }
 	inline const bool& IsOpen() const { return m_isOpen; }
 	inline const bool IsFocused() const { return m_isFocused; }
 	inline const bool IsHovered() const { return m_isHovered; }
@@ -49,8 +49,8 @@ protected:
 	void ForceWindowDocked(ImGuiWindow* childWindow);
 	inline ImGuiWindowClass* GetWindowClass() { return &m_windowClass; };
 
-	std::string m_title;
-	std::string m_id;
+	String m_title;
+	String m_id;
 	EditorCommandStack myCommandStack{};
 
 	ImGuiWindowFlags m_windowFlags = 0;

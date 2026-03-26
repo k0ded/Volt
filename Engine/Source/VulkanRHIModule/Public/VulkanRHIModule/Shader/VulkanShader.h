@@ -12,11 +12,11 @@ namespace Volt::RHI
 	{
 	public:
 		VulkanShader(const ShaderCreateInfo& createInfo);
-		VulkanShader(const ShaderCreateInfo& createInfo, const std::string& source);
+		VulkanShader(const ShaderCreateInfo& createInfo, const String& source);
 		~VulkanShader() override;
 
 		void Reload(bool forceCompile /* = false */) override;
-		std::string_view GetName() const override;
+		StringView GetName() const override;
 		size_t GetHash() const override;
 		bool IsValid() const override;
 		ShaderStage GetShaderStage() const override;
@@ -43,7 +43,7 @@ namespace Volt::RHI
 		ShaderIncludeDependencies m_shaderIncludeDependencies;
 
 		VkShaderModule_T* m_shaderModule = nullptr;
-		std::string m_name;
+		String m_name;
 		size_t m_hash = 0;
 		bool m_failureIsFatal;
 	};

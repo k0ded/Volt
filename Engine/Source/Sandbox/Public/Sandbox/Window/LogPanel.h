@@ -35,7 +35,7 @@ private:
 	Vector<LogCategoryData> m_logCategories;
 	Array<bool, static_cast<size_t>(LogVerbosity::Critical) + 1> m_logVerbosityActive;
 
-	std::string m_logSearchQuery;
+	String m_logSearchQuery;
 
 	LogCallbackHandle m_callbackHandle = 0;
 	std::mutex m_logMutex;

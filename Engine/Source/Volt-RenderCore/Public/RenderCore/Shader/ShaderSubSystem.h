@@ -5,6 +5,7 @@
 #include "RenderCore/Shader/PipelineStateCache.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Pointers/Unique.h>
@@ -25,6 +26,7 @@ namespace Volt
 		void Initialize() override;
 		void Shutdown() override;
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{B017EA3B-6D55-46B8-BEDE-A299C3580B4E}"_guid);
 	
 	private:

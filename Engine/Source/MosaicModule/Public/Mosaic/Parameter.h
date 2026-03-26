@@ -1,8 +1,8 @@
 #pragma once
 
 #include <CoreUtilities/UUID.h>
+#include <CoreUtilities/String/VoltString.h>
 
-#include <string>
 #include <functional>
 
 namespace Mosaic
@@ -31,7 +31,7 @@ namespace Mosaic
 
 	struct Parameter
 	{
-		std::string name;
+		String name;
 		TypeInfo typeInfo;
 
 		ParameterDirection direction;
@@ -59,7 +59,7 @@ namespace Mosaic
 
 	struct ResultInfo
 	{
-		std::string resultParamName;
+		String resultParamName;
 		TypeInfo resultType;
 	};
 }

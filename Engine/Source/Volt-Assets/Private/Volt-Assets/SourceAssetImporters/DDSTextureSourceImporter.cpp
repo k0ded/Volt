@@ -29,17 +29,17 @@ namespace Volt
 {
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".dds", ".DDS" }), DDSTextureSourceImporter);
 
-	inline std::string GetDDSError(tdl::Result code, const std::filesystem::path& filepath)
+	inline String GetDDSError(tdl::Result code, const Filesystem::Path& filepath)
 	{
 		switch (code)
 		{
-			case tinyddsloader::ErrorFileOpen: return std::format("Failed to open file {}", filepath);
-			case tinyddsloader::ErrorRead: return std::format("Failed to read file {}", filepath);
-			case tinyddsloader::ErrorMagicWord: return std::format("Failed to read magic word in file {}", filepath);
-			case tinyddsloader::ErrorSize: return std::format("File {} is not large enough to have any DDS data", filepath);
-			case tinyddsloader::ErrorVerify: return std::format("Failed to verify file {}", filepath);
-			case tinyddsloader::ErrorNotSupported: return std::format("File {} is not supported by importer", filepath);
-			case tinyddsloader::ErrorInvalidData: return std::format("File {} contains invalid data", filepath);
+			case tinyddsloader::ErrorFileOpen: return FormatString("Failed to open file {}", filepath);
+			case tinyddsloader::ErrorRead: return FormatString("Failed to read file {}", filepath);
+			case tinyddsloader::ErrorMagicWord: return FormatString("Failed to read magic word in file {}", filepath);
+			case tinyddsloader::ErrorSize: return FormatString("File {} is not large enough to have any DDS data", filepath);
+			case tinyddsloader::ErrorVerify: return FormatString("Failed to verify file {}", filepath);
+			case tinyddsloader::ErrorNotSupported: return FormatString("File {} is not supported by importer", filepath);
+			case tinyddsloader::ErrorInvalidData: return FormatString("File {} contains invalid data", filepath);
 		}
 
 		return "";
@@ -87,16 +87,16 @@ namespace Volt
 		return RHI::PixelFormat::R8G8B8A8_UNORM;
 	}
 
-	Vector<AssetReference<Asset>> DDSTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> DDSTextureSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);
 
 		tdl::DDSFile ddsFile;
-		auto returnCode = ddsFile.Load(filepath.string().c_str());
+		auto returnCode = ddsFile.Load(filepath.ToString().c_str());
 		if (returnCode != tdl::Result::Success)
 		{
-			const std::string error = std::format("Failed to import DDS file: {}!", GetDDSError(returnCode, filepath));
+			const String error = FormatString("Failed to import DDS file: {}!", GetDDSError(returnCode, filepath));
 
 			VT_LOGC(Error, LogDDSTextureSourceImporter, error);
 			userData.OnError(error);
@@ -105,7 +105,7 @@ namespace Volt
 
 		if (ddsFile.GetTextureDimension() != tdl::DDSFile::TextureDimension::Texture2D)
 		{
-			const std::string error = std::format("Failed to import DDS file {}: Only 2D textures are currently supported!", filepath);
+			const String error = FormatString("Failed to import DDS file {}: Only 2D textures are currently supported!", filepath);
 
 			VT_LOGC(Error, LogDDSTextureSourceImporter, error);
 			userData.OnError(error);
@@ -173,7 +173,7 @@ namespace Volt
 		IntRef<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
-		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
+		commandBuffer->BeginMarker(FormatString("Import Texture {}", filepath.ToString()), { 1.f, 1.f, 1.f, 1.f });
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -236,7 +236,7 @@ namespace Volt
 		return { voltTexture };
 	}
 
-	SourceAssetFileInformation DDSTextureSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation DDSTextureSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		VT_ENSURE(false);
 		return SourceAssetFileInformation();

@@ -15,7 +15,7 @@ RendererSettingsPanel::RendererSettingsPanel(Ref<Volt::SceneRenderer>& sceneRend
 
 void RendererSettingsPanel::UpdateMainContent()
 {
-	static const Vector<std::string> visualizationStrings =
+	static const Vector<String> visualizationStrings =
 	{
 		"None",
 		"Base Color",

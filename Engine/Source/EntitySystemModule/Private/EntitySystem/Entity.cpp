@@ -4,7 +4,6 @@
 #include "EntitySystem/ComponentRegistry.h"
 #include "EntitySystem/Scripting/CoreComponents.h"
 
-#include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Math/TQS.h>
 #include <CoreUtilities/Math/Math.h>
 
@@ -32,7 +31,7 @@ namespace Volt
 	Entity::~Entity()
 	{}
 
-	void Entity::SetTag(const std::string& tag)
+	void Entity::SetTag(const String& tag)
 	{
 		VT_ENTITY_VALIDATE(IsValid());
 		VT_ENTITY_VALIDATE(HasComponent<TagComponent>());
@@ -244,7 +243,7 @@ namespace Volt
 		return GetComponent<TransformComponent>().scale;
 	}
 
-	const std::string& Entity::GetTag() const
+	const String& Entity::GetTag() const
 	{
 		VT_ENTITY_VALIDATE(IsValid());
 		VT_ENTITY_VALIDATE(HasComponent<TagComponent>());
@@ -321,9 +320,9 @@ namespace Volt
 		return GetComponent<IDComponent>().id;
 	}
 
-	const std::string Entity::ToString() const
+	const String Entity::ToString() const
 	{
-		return std::to_string(static_cast<uint32_t>(GetComponent<IDComponent>().id));
+		return FormatString("{}", static_cast<uint32_t>(GetComponent<IDComponent>().id));
 	}
 
 	bool Entity::IsVisible() const
@@ -369,11 +368,11 @@ namespace Volt
 		ComponentRegistry::Helpers::RemoveComponentWithGUID(guid, m_sceneReference->GetRegistry(), m_handle);
 	}
 
-	bool Entity::HasComponent(std::string_view componentName) const
+	bool Entity::HasComponent(StringView componentName) const
 	{
 		VT_ENTITY_VALIDATE(IsValid());
 
-		//const std::string lowerCompName = ::Utility::ToLower(std::string(componentName));
+		//const String lowerCompName = ::Utility::ToLower(String(componentName));
 		const ICommonTypeDesc* compType = ComponentRegistry::Get().GetTypeDescFromName(componentName);
 		return ComponentRegistry::Helpers::HasComponentWithGUID(compType->GetGUID(), m_sceneReference->GetRegistry(), m_handle);
 	}
@@ -396,7 +395,8 @@ namespace Volt
 				continue;
 			}
 
-			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
+			std::string_view tempView = storage.type().name();
+			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(StringView(tempView.data(), tempView.size())));
 			if (!componentDesc)
 			{
 				continue;

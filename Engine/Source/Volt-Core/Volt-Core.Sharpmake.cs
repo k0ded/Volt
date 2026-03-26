@@ -28,6 +28,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<EventSystemModule>(target);
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<CoreModule>(target);
 			//conf.AddPrivateDependency<AssetSystemModule>(target);
 			//conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPrivateDependency<WindowModule>(target);

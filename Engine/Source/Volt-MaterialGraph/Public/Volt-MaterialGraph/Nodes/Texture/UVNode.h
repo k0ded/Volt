@@ -12,8 +12,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID("{565B7926-3604-4417-AE03-4798103A978A}"_guid);
 
-		inline const std::string GetName() const override { return "UV"; }
-		inline const std::string GetCategory() const override { return "Texture"; }
+		inline const String GetName() const override { return "UV"; }
+		inline const String GetCategory() const override { return "Texture"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		void Reset() override;
@@ -21,6 +21,6 @@ namespace Volt::MosaicNodes
 
 	private:
 		mutable bool m_evaluated = false;
-		mutable std::string m_evaluatedVariableName;
+		mutable String m_evaluatedVariableName;
 	};
 }

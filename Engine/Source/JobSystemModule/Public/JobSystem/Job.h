@@ -108,11 +108,11 @@ namespace Volt
 
 		Job() = default;
 
-		template<typename Func> void Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, FiberStackSize stackSize, Func&& jobFunc);
+		template<typename Func> void Create(StringView name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, FiberStackSize stackSize, Func&& jobFunc);
 
 		void Reset();
 
-		VT_NODISCARD VT_INLINE std::string_view GetName() const { return m_jobName; }
+		VT_NODISCARD VT_INLINE StringView GetName() const { return m_jobName; }
 		VT_NODISCARD VT_INLINE JobCounter* GetCounter() const { return m_counter; }
 		VT_NODISCARD VT_INLINE JobCounter* GetWaitCounter() const { return m_waitCounter; }
 		VT_NODISCARD VT_INLINE JobFiber* GetAssignedFiber() const { return m_assignedFiber; }
@@ -168,7 +168,7 @@ namespace Volt
 		JobFiber* m_assignedFiber = nullptr;
 		FiberStackSize m_stackSize;
 
-		std::string_view m_jobName;
+		StringView m_jobName;
 
 		// #TODO_Ivar: Figure out if we should reduce this to get a better total size.
 		uint8_t m_funcStorage[MaxJobFuncSize];
@@ -177,7 +177,7 @@ namespace Volt
 	using JobRef = Job*;
 
 	template<typename Func>
-	void Job::Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, FiberStackSize stackSize, Func&& jobFunc)
+	void Job::Create(StringView name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, FiberStackSize stackSize, Func&& jobFunc)
 	{
 		static_assert(sizeof(Func) <= Job::MaxJobFuncSize);
 

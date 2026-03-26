@@ -6,7 +6,7 @@ namespace UnitTests
 {
 	struct ComplexStruct
 	{
-		std::string str;
+		String str;
 		size_t num;
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, ComplexStruct& value)
@@ -22,13 +22,13 @@ namespace UnitTests
 	{
 		MemoryWriter writer;
 
-		std::string inputString = "This is a test";
+		String inputString = "This is a test";
 		writer << inputString;
 		writer.Close();
 	
 		MemoryReader reader(writer.GetData(), writer.GetSize());
 
-		std::string outputString;
+		String outputString;
 		reader << outputString;
 
 		ASSERT_STREQ(outputString.c_str(), "This is a test");
@@ -38,16 +38,16 @@ namespace UnitTests
 	{
 		MemoryWriter writer;
 
-		std::filesystem::path inputPath = "File/Path/To/File.txt";
+		Filesystem::Path inputPath = "File/Path/To/File.txt";
 		writer << inputPath;
 		writer.Close();
 
 		MemoryReader reader(writer.GetData(), writer.GetSize());
 
-		std::filesystem::path outputPath;
+		Filesystem::Path outputPath;
 		reader << outputPath;
 
-		ASSERT_STREQ(outputPath.c_str(), L"File/Path/To/File.txt");
+		ASSERT_STREQ(outputPath.CStr(), L"File/Path/To/File.txt");
 	}
 
 	TEST(MemoryArchive, OperatorGUID)
@@ -180,7 +180,7 @@ namespace UnitTests
 
 	TEST(MemoryArchive, OperatorMap)
 	{
-		Map<uint32_t, std::string> inputMap;
+		Map<uint32_t, String> inputMap;
 
 		for (uint32_t i = 0; i < 50; ++i)
 		{
@@ -193,7 +193,7 @@ namespace UnitTests
 
 		MemoryReader reader(writer.GetData(), writer.GetSize());
 
-		Map<uint32_t, std::string> outputMap;
+		Map<uint32_t, String> outputMap;
 		reader << outputMap;
 
 		ASSERT_EQ(outputMap.size(), inputMap.size());

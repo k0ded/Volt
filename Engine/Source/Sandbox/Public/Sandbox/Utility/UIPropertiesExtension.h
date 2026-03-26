@@ -18,11 +18,11 @@ namespace Volt
 
 namespace UI
 {
-	bool PropertyEntity(const std::string& text, Volt::Scene& scene, Volt::EntityID& value, const std::string& toolTip = "");
-	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
+	bool PropertyEntity(const String& text, Volt::Scene& scene, Volt::EntityID& value, const String& toolTip = "");
+	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const String& toolTip = "");
 
 	template<typename T, typename = std::enable_if_t<std::is_base_of<Volt::Asset, T>::value>>
-	bool Property(const std::string& text, AssetReference<T>& asset, const std::string& toolTip = "")
+	bool Property(const String& text, AssetReference<T>& asset, const String& toolTip = "")
 	{
 		bool changed = false;
 
@@ -34,14 +34,14 @@ namespace UI
 
 		ImGui::PushItemWidth(ImGui::GetColumnWidth() - 20.f);
 
-		std::string assetFileName = "Null";
+		String assetFileName = "Null";
 
 		if (asset)
 		{
 			assetFileName = asset->GetAssetName();
 		}
 
-		std::string textId = MakePropertyID();
+		String textId = MakePropertyID();
 		ImGui::InputTextString(textId.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
 
@@ -55,7 +55,7 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string buttonId = "X" + MakePropertyID();
+		String buttonId = "X" + MakePropertyID();
 		if (ImGui::Button(buttonId.c_str()))
 		{
 			asset = nullptr;

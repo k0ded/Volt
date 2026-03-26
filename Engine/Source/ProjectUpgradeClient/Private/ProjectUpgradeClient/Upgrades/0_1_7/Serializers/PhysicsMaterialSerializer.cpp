@@ -8,6 +8,8 @@
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 namespace Volt
 {
 	struct PhysicsMaterialSerializationData
@@ -39,7 +41,7 @@ namespace Volt
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);

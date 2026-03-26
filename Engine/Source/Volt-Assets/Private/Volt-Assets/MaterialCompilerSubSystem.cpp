@@ -50,7 +50,7 @@ namespace Volt
 
 	void MaterialCompilerSubSystem::ReadMaterialShaderFileContents()
 	{
-		const std::filesystem::path materialShaderFilepath = ProjectManager::GetEngineAssetsDirectory() / "Shaders" / "Source" / "Material" / "MaterialShader.hlsli";
+		const Filesystem::Path materialShaderFilepath = ProjectManager::GetEngineAssetsDirectory() / "Shaders" / "Source" / "Material" / "MaterialShader.hlsli";
 		VT_MAYBE_UNUSED bool readFile = FileUtility::ReadStringFromFile(materialShaderFilepath, m_materialShaderFileContents);
 		VT_ENSURE(readFile);
 	}

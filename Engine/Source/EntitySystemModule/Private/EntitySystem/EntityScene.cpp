@@ -91,7 +91,7 @@ namespace Volt
 		m_registry.clear();
 	}
 
-	Entity EntityScene::CreateEntity(const std::string& tag)
+	Entity EntityScene::CreateEntity(const String& tag)
 	{
 		entt::entity entityHandle = m_registry.create();
 
@@ -253,7 +253,9 @@ namespace Volt
 			for (auto&& curr : m_registry.storage())
 			{
 				auto& storage = curr.second;
-				std::string_view typeName = storage.type().name();
+				
+				std::string_view tempTypeName = storage.type().name();
+				StringView typeName(tempTypeName.data(), tempTypeName.size());
 
 				const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 				if (!typeDesc)
@@ -406,7 +408,8 @@ namespace Volt
 		for (auto&& curr : m_registry.storage())
 		{
 			auto& storage = curr.second;
-			std::string_view typeName = storage.type().name();
+			std::string_view tempTypeName = storage.type().name();
+			StringView typeName(tempTypeName.data(), tempTypeName.size());
 
 			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
@@ -435,7 +438,8 @@ namespace Volt
 		for (auto&& curr : m_registry.storage())
 		{
 			auto& storage = curr.second;
-			std::string_view typeName = storage.type().name();
+			std::string_view tempTypeName = storage.type().name();
+			StringView typeName(tempTypeName.data(), tempTypeName.size());
 
 			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)

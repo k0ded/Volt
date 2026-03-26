@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Volt-Application/Config.h"
+
+#include <CoreUtilities/String/VoltString.h>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -130,4 +134,8 @@ namespace ImGui
 		}
 		return is_open;
 	}
+
+	VTAPP_API bool InputText(const char* label, String* str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
+	VTAPP_API bool InputTextMultiline(const char* label, String* str, const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
+	VTAPP_API bool InputTextWithHint(const char* label, const char* hint, String* str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
 }

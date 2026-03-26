@@ -9,7 +9,7 @@
 
 namespace Volt
 {
-	GrowingGPUBuffer::GrowingGPUBuffer(uint32_t initialCount, uint64_t elementSize, const std::string& name, RHI::BufferUsage bufferUsage, RHI::MemoryUsage memoryUsage)
+	GrowingGPUBuffer::GrowingGPUBuffer(uint32_t initialCount, uint64_t elementSize, const String& name, RHI::BufferUsage bufferUsage, RHI::MemoryUsage memoryUsage)
 	{
 		RHI::BufferDesc desc{};
 		desc.numElements = initialCount;

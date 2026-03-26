@@ -21,7 +21,7 @@ namespace Volt
 		size_t GetNumTotalActions() override;
 		size_t GetNumActionsCompleted() override;
 
-		std::string GetCurrentActionText() override;
+		String GetCurrentActionText() override;
 
 	private:
 		enum class UpgradeStage

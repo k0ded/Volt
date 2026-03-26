@@ -3,11 +3,11 @@
 
 void StreamsClientUser::OutputInfo(char level, const char* data)
 {
-	std::string dataStr(data);
+	String dataStr(data);
 
-	if (dataStr.find("Stream ") != std::string::npos)
+	if (dataStr.find("Stream ") != String::npos)
 	{
-		std::string streamName = dataStr.substr(dataStr.find_first_of(' ') + 1);
+		String streamName = dataStr.substr(dataStr.find_first_of(' ') + 1);
 		m_streams.emplace_back(streamName);
 	}
 }
@@ -19,11 +19,11 @@ void StreamsClientUser::Clear()
 
 void WorkspacesClientUser::OutputInfo(char level, const char* data)
 {
-	std::string dataStr(data);
+	String dataStr(data);
 
-	if (dataStr.find("client ") != std::string::npos)
+	if (dataStr.find("client ") != String::npos)
 	{
-		std::string clientName = dataStr.substr(dataStr.find_first_of(' ') + 1);
+		String clientName = dataStr.substr(dataStr.find_first_of(' ') + 1);
 		m_workspaces.emplace_back(clientName);
 	}
 }

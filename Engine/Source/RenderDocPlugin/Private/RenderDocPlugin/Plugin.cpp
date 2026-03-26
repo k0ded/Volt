@@ -17,7 +17,7 @@ static Volt::ConsoleVariable<int32_t> s_rdcCaptureFrame("r.rdc.capture", 0, "Tri
 
 RenderDocPlugin::RenderDocPlugin()
 {
-	if (m_renderDocModule = VT_LOAD_LIBRARY("Binaries\\renderdoc.dll"); m_renderDocModule != nullptr)
+	if (m_renderDocModule = VT_LOAD_LIBRARY(L"Binaries\\renderdoc.dll"); m_renderDocModule != nullptr)
 	{
 		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(VT_GET_PROC_ADDRESS(m_renderDocModule, "RENDERDOC_GetAPI"));
 		int result = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&m_renderDocAPI));

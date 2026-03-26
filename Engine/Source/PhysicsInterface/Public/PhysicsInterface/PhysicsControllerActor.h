@@ -6,6 +6,8 @@
 #include "PhysicsInterface/PhysicsIDType.h"
 #include "PhysicsInterface/PhysicsLayer.h"
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt
@@ -28,7 +30,7 @@ namespace Volt
 		PhysicsControllerActorNonWalkableMode nonWalkableMode = PhysicsControllerActorNonWalkableMode::PreventClimbing;
 		Ref<PhysicsMaterial> physicalMaterial;
 	
-		std::string debugName;
+		String debugName;
 	};
 
 	class PhysicsControllerActor : public PhysicsHandleType, public PhysicsIDType

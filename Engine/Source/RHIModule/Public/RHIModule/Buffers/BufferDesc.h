@@ -12,6 +12,6 @@ namespace Volt::RHI
 		BufferUsage usage = BufferUsage::StorageBuffer;
 		MemoryUsage memoryUsage = MemoryUsage::GPU;
 
-		std::string debugName;
+		String debugName;
 	};
 }

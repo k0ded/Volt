@@ -15,7 +15,7 @@ namespace Volt
 		bool isTexelBufferDesc = false;
 
 		template<typename T, typename CountType>
-		static RGBufferDesc CreateStructuredBufferDesc(const CountType count, const std::string& name = "Buffer")
+		static RGBufferDesc CreateStructuredBufferDesc(const CountType count, const String& name = "Buffer")
 		{
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
@@ -30,7 +30,7 @@ namespace Volt
 		}
 
 		template<typename T, typename CountType>
-		static RGBufferDesc CreateBufferDesc(const CountType count, const std::string& name = "Buffer", const RHI::MemoryUsage usage = RHI::MemoryUsage::GPU)
+		static RGBufferDesc CreateBufferDesc(const CountType count, const String& name = "Buffer", const RHI::MemoryUsage usage = RHI::MemoryUsage::GPU)
 		{
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
@@ -46,7 +46,7 @@ namespace Volt
 		}
 
 		template<typename T, typename CountType>
-		static RGBufferDesc CreateMappableBufferDesc(const CountType count, const RHI::BufferUsage usage, const std::string& name = "Buffer")
+		static RGBufferDesc CreateMappableBufferDesc(const CountType count, const RHI::BufferUsage usage, const String& name = "Buffer")
 		{
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
@@ -61,7 +61,7 @@ namespace Volt
 		}
 
 		template<typename T, typename CountType>
-		static RGBufferDesc CreateBufferDescGPU(const CountType count, const std::string& name = "Buffer")
+		static RGBufferDesc CreateBufferDescGPU(const CountType count, const String& name = "Buffer")
 		{
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
@@ -76,7 +76,7 @@ namespace Volt
 		}
 
 		template<typename SizeType>
-		static RGBufferDesc CreateStagingDesc(const SizeType size, const std::string& name = "Buffer")
+		static RGBufferDesc CreateStagingDesc(const SizeType size, const String& name = "Buffer")
 		{
 			VT_ASSERT_MSG(size > 0, "Size must not be zero!");
 
@@ -91,7 +91,7 @@ namespace Volt
 		}
 
 		template<typename SizeType>
-		static RGBufferDesc CreateByteAddressDesc(const SizeType byteSize, const std::string& name = "Buffer")
+		static RGBufferDesc CreateByteAddressDesc(const SizeType byteSize, const String& name = "Buffer")
 		{
 			VT_ASSERT_MSG(byteSize > 0, "Size must not be zero!");
 			VT_ASSERT_MSG(byteSize % 4 == 0, "Size must be 4 byte aligned");
@@ -107,7 +107,7 @@ namespace Volt
 		}
 
 		template<typename CommandType, typename SizeType>
-		static RGBufferDesc CreateIndirectDesc(const SizeType numCommands, const std::string& name = "Buffer", const RHI::MemoryUsage memoryUsage = RHI::MemoryUsage::GPU)
+		static RGBufferDesc CreateIndirectDesc(const SizeType numCommands, const String& name = "Buffer", const RHI::MemoryUsage memoryUsage = RHI::MemoryUsage::GPU)
 		{
 			VT_ASSERT_MSG(numCommands > 0, "Num commands must not be zero!");
 

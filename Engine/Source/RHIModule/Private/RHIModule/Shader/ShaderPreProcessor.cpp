@@ -1,15 +1,17 @@
 #include "rhipch.h"
 #include "RHIModule/Shader/ShaderPreProcessor.h"
 
+#include <CoreUtilities/String/StringUtility.h>
+
 #define ARRAYSIZE(array) (sizeof(array) / sizeof(array[0]))
 
 namespace Volt::RHI
 {
 	namespace Utility
 	{
-		inline static bool IsDefaultType(std::string_view str)
+		inline static bool IsDefaultType(StringView str)
 		{
-			static Vector<std::string_view> baseTypes =
+			static Vector<StringView> baseTypes =
 			{
 				"bool",
 				"int",
@@ -39,14 +41,14 @@ namespace Volt::RHI
 
 				for (uint32_t i = 2; i <= 4; i++)
 				{
-					if (str == std::string(baseType) + std::to_string(i))
+					if (str == FormatString("{}{}", baseType, i))
 					{
 						return true;
 					}
 
 					for (uint32_t j = 1; j <= 4; j++)
 					{
-						if (str == std::string(baseType) + std::to_string(i) + "x" + std::to_string(j))
+						if (str == FormatString("{}{}x{}", baseType, i, j))
 						{
 							return true;
 						}
@@ -57,38 +59,20 @@ namespace Volt::RHI
 			return false;
 		}
 
-		inline static std::string ToLower(const std::string& str)
+		inline static String ToLower(const String& str)
 		{
-			std::string newStr(str);
+			String newStr(str);
 			std::transform(str.begin(), str.end(), newStr.begin(), [](unsigned char c) { return (uint8_t)std::tolower((int32_t)c); });
 
 			return newStr;
 		}
 
-		inline const Vector<std::string> SplitStringsByCharacter(const std::string& src, const char character)
-		{
-			std::istringstream iss(src);
-
-			Vector<std::string> result;
-			std::string token;
-
-			while (std::getline(iss, token, character))
-			{
-				if (!token.empty())
-				{
-					result.emplace_back(token);
-				}
-			}
-
-			return result;
-		}
-
-		inline static void RemoveAllNonLettNumCharacters(std::string& outResult)
+		inline static void RemoveAllNonLettNumCharacters(String& outResult)
 		{
 			auto newEnd = std::remove_if(outResult.begin(), outResult.end(), [](char c)
 			{
-				std::string cStr{ c };
-				if (cStr.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_") != std::string::npos)
+				String cStr{ c };
+				if (cStr.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_") != String::npos)
 				{
 					return true;
 				}
@@ -99,9 +83,9 @@ namespace Volt::RHI
 			outResult.erase(newEnd, outResult.end());
 		}
 
-		inline static const bool IsSystemValueSemantic(std::string_view semanticName)
+		inline static const bool IsSystemValueSemantic(StringView semanticName)
 		{
-			static constexpr std::string_view svSemantics[] =
+			static constexpr StringView svSemantics[] =
 			{
 				"sv_clipdistance",
 				"sv_culldistance",
@@ -129,7 +113,7 @@ namespace Volt::RHI
 				"sv_shadingrate",
 			};
 
-			const std::string strLower = ToLower(std::string(semanticName));
+			const String strLower = ToLower(String(semanticName));
 
 			for (auto svSemantic : svSemantics)
 			{
@@ -142,43 +126,43 @@ namespace Volt::RHI
 			return false;
 		}
 
-		inline static const bool IsVulkanBuiltIn(std::string_view valueStr)
+		inline static const bool IsVulkanBuiltIn(StringView valueStr)
 		{
-			return valueStr.find("[[vk::builtin") != std::string_view::npos;
+			return valueStr.find("[[vk::builtin") != StringView::npos;
 		}
 
-		inline static const bool IsResourceType(std::string_view valueStr)
+		inline static const bool IsResourceType(StringView valueStr)
 		{
-			if (valueStr.find("TextureSampler") != std::string_view::npos ||
-				valueStr.find("RawByteBuffer") != std::string_view::npos ||
-				valueStr.find("RWRawByteBuffer") != std::string_view::npos ||
-				valueStr.find("UniformBuffer") != std::string_view::npos ||
-				valueStr.find("TypedBuffer") != std::string_view::npos ||
-				valueStr.find("RWTypedBuffer") != std::string_view::npos ||
-				valueStr.find("TTexture") != std::string_view::npos ||
-				valueStr.find("RWTexture") != std::string_view::npos ||
-				valueStr.find("UniformRawByteBuffer") != std::string_view::npos ||
-				valueStr.find("UniformRWRawByteBuffer") != std::string_view::npos ||
-				valueStr.find("UniformTypedBuffer") != std::string_view::npos ||
-				valueStr.find("UniformRWTypedBuffer") != std::string_view::npos ||
+			if (valueStr.find("TextureSampler") != StringView::npos ||
+				valueStr.find("RawByteBuffer") != StringView::npos ||
+				valueStr.find("RWRawByteBuffer") != StringView::npos ||
+				valueStr.find("UniformBuffer") != StringView::npos ||
+				valueStr.find("TypedBuffer") != StringView::npos ||
+				valueStr.find("RWTypedBuffer") != StringView::npos ||
+				valueStr.find("TTexture") != StringView::npos ||
+				valueStr.find("RWTexture") != StringView::npos ||
+				valueStr.find("UniformRawByteBuffer") != StringView::npos ||
+				valueStr.find("UniformRWRawByteBuffer") != StringView::npos ||
+				valueStr.find("UniformTypedBuffer") != StringView::npos ||
+				valueStr.find("UniformRWTypedBuffer") != StringView::npos ||
 
-				valueStr.find("UniformTex2D") != std::string_view::npos ||
-				valueStr.find("UniformRWTex2D") != std::string_view::npos ||
-				valueStr.find("Tex2D") != std::string_view::npos ||
-				valueStr.find("RWTex2D") != std::string_view::npos ||
+				valueStr.find("UniformTex2D") != StringView::npos ||
+				valueStr.find("UniformRWTex2D") != StringView::npos ||
+				valueStr.find("Tex2D") != StringView::npos ||
+				valueStr.find("RWTex2D") != StringView::npos ||
 				
-				valueStr.find("UniformTex2DArray") != std::string_view::npos ||
-				valueStr.find("UniformRWTex2DArray") != std::string_view::npos ||
-				valueStr.find("Tex2DArray") != std::string_view::npos ||
-				valueStr.find("RWTex2DArray") != std::string_view::npos ||
+				valueStr.find("UniformTex2DArray") != StringView::npos ||
+				valueStr.find("UniformRWTex2DArray") != StringView::npos ||
+				valueStr.find("Tex2DArray") != StringView::npos ||
+				valueStr.find("RWTex2DArray") != StringView::npos ||
 
-				valueStr.find("UniformTexCube") != std::string_view::npos ||
-				valueStr.find("TexCube") != std::string_view::npos ||
+				valueStr.find("UniformTexCube") != StringView::npos ||
+				valueStr.find("TexCube") != StringView::npos ||
 				
-				valueStr.find("UniformTex3D") != std::string_view::npos ||
-				valueStr.find("UniformRWTex3D") != std::string_view::npos ||
-				valueStr.find("Tex3D") != std::string_view::npos ||
-				valueStr.find("RWTex3D") != std::string_view::npos)
+				valueStr.find("UniformTex3D") != StringView::npos ||
+				valueStr.find("UniformRWTex3D") != StringView::npos ||
+				valueStr.find("Tex3D") != StringView::npos ||
+				valueStr.find("RWTex3D") != StringView::npos)
 			{
 				return true;
 			}
@@ -223,30 +207,30 @@ namespace Volt::RHI
 		outResult.preProcessedResult = data.shaderSource;
 		ErasePreProcessData(outResult);
 
-		std::string processedSource = data.shaderSource;
+		String processedSource = data.shaderSource;
 
 		const size_t entryPointLocation = processedSource.find(entryPoint);
-		if (entryPointLocation == std::string::npos)
+		if (entryPointLocation == String::npos)
 		{
 			VT_LOGC(Error, LogRHI, "Unable to find Entry Point {0} in shader!", entryPoint);
 			return false;
 		}
 
 		// Find return value of "main" function
-		std::string entryPointSubStr = processedSource.substr(0, entryPointLocation);
+		String entryPointSubStr = processedSource.substr(0, entryPointLocation);
 
 		const size_t lastSpace = entryPointSubStr.find_last_of(' ');
-		std::string outputSubStr = entryPointSubStr.substr(0, lastSpace);
+		String outputSubStr = entryPointSubStr.substr(0, lastSpace);
 
 		const size_t preReturnValueChar = outputSubStr.find_last_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
-		std::string returnValueStr = outputSubStr.substr(preReturnValueChar + 1);
+		String returnValueStr = outputSubStr.substr(preReturnValueChar + 1);
 
 		// Check return value type and find it if necessary
 		const bool isDefaultType = Utility::IsDefaultType(returnValueStr);
 
 		if (isDefaultType)
 		{
-			std::string fullTypeSubStr = outputSubStr.substr(0, outputSubStr.size() - returnValueStr.size());
+			String fullTypeSubStr = outputSubStr.substr(0, outputSubStr.size() - returnValueStr.size());
 
 			// Remove all prefix characters
 			while (fullTypeSubStr[fullTypeSubStr.size() - 1] != ']' && !fullTypeSubStr.empty())
@@ -265,7 +249,7 @@ namespace Volt::RHI
 			}
 
 			const size_t lastChar = fullTypeSubStr.find_last_not_of("[[]]abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:");
-			const std::string lastSubStr = fullTypeSubStr.substr(lastChar + 1);
+			const String lastSubStr = fullTypeSubStr.substr(lastChar + 1);
 
 			if (lastSubStr.empty())
 			{
@@ -281,41 +265,41 @@ namespace Volt::RHI
 		}
 
 		const size_t structPos = outputSubStr.find("struct " + returnValueStr);
-		if (structPos == std::string::npos)
+		if (structPos == String::npos)
 		{
 			return false;
 		}
 
-		std::string structSubStr = outputSubStr.substr(structPos);
+		String structSubStr = outputSubStr.substr(structPos);
 		size_t openBracketPos = structSubStr.find_first_of('{') + 1;
 		const size_t closingBracketPos = structSubStr.find_first_of('}');
 
 		openBracketPos = structSubStr.find_first_not_of("\n ", openBracketPos);
 
-		std::string structBracketSubStr = structSubStr.substr(openBracketPos, closingBracketPos - openBracketPos);
+		String structBracketSubStr = structSubStr.substr(openBracketPos, closingBracketPos - openBracketPos);
 
 		size_t currentSemicolon = structBracketSubStr.find_first_of(';');
 
-		while (currentSemicolon != std::string::npos)
+		while (currentSemicolon != String::npos)
 		{
-			std::string outputTypeStr = structBracketSubStr.substr(0, currentSemicolon);
+			String outputTypeStr = structBracketSubStr.substr(0, currentSemicolon);
 			while (outputTypeStr[0] == ' ' || outputTypeStr[0] == '\n')
 			{
 				outputTypeStr.erase(outputTypeStr.begin());
 			}
 
 			const size_t firstSpace = outputTypeStr.find_first_of(' ');
-			std::string typeStr = outputTypeStr.substr(0, firstSpace);
+			String typeStr = outputTypeStr.substr(0, firstSpace);
 
 			const size_t qualifierPos = typeStr.find_first_of("[");
 
-			if (qualifierPos == std::string::npos)
+			if (qualifierPos == String::npos)
 			{
 				outResult.outputFormats.emplace_back(FindDefaultFormatFromString(typeStr));
 			}
 			else
 			{
-				std::string qualifierStr = typeStr.substr(qualifierPos, qualifierPos + typeStr.find_last_of("]") + 1);
+				String qualifierStr = typeStr.substr(qualifierPos, qualifierPos + typeStr.find_last_of("]") + 1);
 				outResult.outputFormats.emplace_back(FindFormatFromLayoutQualifier(qualifierStr));
 			}
 
@@ -332,10 +316,10 @@ namespace Volt::RHI
 		outResult.preProcessedResult = data.shaderSource;
 		ErasePreProcessData(outResult);
 
-		std::string processedSource = data.shaderSource;
+		String processedSource = data.shaderSource;
 
 		const size_t entryPointLocation = processedSource.find(entryPoint);
-		if (entryPointLocation == std::string::npos)
+		if (entryPointLocation == String::npos)
 		{
 			VT_LOGC(Error, LogRHI, "Unable to find Entry Point {0} in shader!", entryPoint);
 			return false;
@@ -345,16 +329,16 @@ namespace Volt::RHI
 		const size_t openParenthesesLoc = processedSource.find_first_of('(', entryPointLocation) + 1;
 		const size_t closeParenthesesLoc = processedSource.find_first_of(')', entryPointLocation);
 
-		const std::string parenthesesSubStr = processedSource.substr(openParenthesesLoc, closeParenthesesLoc - openParenthesesLoc);
+		const String parenthesesSubStr = processedSource.substr(openParenthesesLoc, closeParenthesesLoc - openParenthesesLoc);
 
-		const auto arguments = Utility::SplitStringsByCharacter(parenthesesSubStr, ' ');
-		std::string inputStruct;
+		const auto arguments = ::Utility::SplitStringsByCharacter(parenthesesSubStr, ' ');
+		String inputStruct;
 
 		// #TODO: Handle non struct inputs
 		for (const auto& arg : arguments)
 		{
 			const size_t argLoc = processedSource.find("struct " + arg);
-			if (argLoc != std::string::npos)
+			if (argLoc != String::npos)
 			{
 				inputStruct = arg;
 				break;
@@ -369,11 +353,11 @@ namespace Volt::RHI
 
 		// Find the correct declaration
 		size_t inputStructLoc = processedSource.find("struct " + inputStruct + " ");
-		if (inputStructLoc == std::string::npos)
+		if (inputStructLoc == String::npos)
 		{
 			inputStructLoc = processedSource.find("struct " + inputStruct + "\n");
 		}
-		if (inputStructLoc == std::string::npos)
+		if (inputStructLoc == String::npos)
 		{
 			inputStructLoc = processedSource.find("struct " + inputStruct + "\0");
 		}
@@ -381,23 +365,23 @@ namespace Volt::RHI
 		const size_t openBracketLoc = processedSource.find_first_of('{', inputStructLoc);
 		const size_t closeBracketLoc = processedSource.find("};", inputStructLoc);
 
-		std::string structSubStr = processedSource.substr(openBracketLoc, closeBracketLoc - openBracketLoc);
+		String structSubStr = processedSource.substr(openBracketLoc, closeBracketLoc - openBracketLoc);
 
 		Map<uint32_t, Vector<BufferElement>> inputElementsMap{};
 		Vector<BufferElement> instanceInputElements{};
 
 		size_t currentInputSemiColLoc = structSubStr.find_first_of(';');
-		while (currentInputSemiColLoc != std::string::npos)
+		while (currentInputSemiColLoc != String::npos)
 		{
-			std::string currentValueStr = structSubStr.substr(0, currentInputSemiColLoc);
+			String currentValueStr = structSubStr.substr(0, currentInputSemiColLoc);
 
 			const size_t divLoc = currentValueStr.find_last_of(':');
-			if (divLoc == std::string::npos)
+			if (divLoc == String::npos)
 			{
 				break;
 			}
 
-			std::string nameStr = currentValueStr.substr(divLoc);
+			String nameStr = currentValueStr.substr(divLoc);
 			Utility::RemoveAllNonLettNumCharacters(nameStr);
 
 			currentValueStr = currentValueStr.substr(0, divLoc);
@@ -410,23 +394,23 @@ namespace Volt::RHI
 				bool isInvalid = false;
 
 				size_t typeTagLoc = currentValueStr.find("[[vt::");
-				while (typeTagLoc != std::string::npos)
+				while (typeTagLoc != String::npos)
 				{
-					std::string tagSubstr = currentValueStr.substr(typeTagLoc, currentValueStr.find_first_of("]]", typeTagLoc) + 2 - typeTagLoc);
-					const std::string lowerStr = Utility::ToLower(tagSubstr);
+					String tagSubstr = currentValueStr.substr(typeTagLoc, currentValueStr.find_first_of("]]", typeTagLoc) + 2 - typeTagLoc);
+					const String lowerStr = Utility::ToLower(tagSubstr);
 
 					if (lowerStr == "[[vt::instance]]")
 					{
 						isPerInstance = true;
 					}
-					else if (lowerStr.find("vt::inputindex") != std::string::npos)
+					else if (lowerStr.find("vt::inputindex") != String::npos)
 					{
 						size_t delimiterBegin = lowerStr.find_first_of('(');
 						size_t delimiterEnd = lowerStr.find_last_of(')');
 
-						if (delimiterBegin != std::string::npos && delimiterEnd != std::string::npos)
+						if (delimiterBegin != String::npos && delimiterEnd != String::npos)
 						{
-							vertexInputIndex = std::stoi(lowerStr.substr(delimiterBegin + 1, delimiterBegin - delimiterEnd));
+							vertexInputIndex = StoI(lowerStr.substr(delimiterBegin + 1, delimiterBegin - delimiterEnd));
 						}
 					}
 					else
@@ -480,11 +464,11 @@ namespace Volt::RHI
 
 	void ShaderPreProcessor::ErasePreProcessData(PreProcessorResult& outResult)
 	{
-		std::string& result = outResult.preProcessedResult;
+		String& result = outResult.preProcessedResult;
 
 		size_t currentTagPos = result.find("[[vt::");
 
-		while (currentTagPos != std::string::npos)
+		while (currentTagPos != String::npos)
 		{
 			size_t endBracketPos = result.find("]]", currentTagPos);
 
@@ -494,77 +478,77 @@ namespace Volt::RHI
 		}
 	}
 
-	ElementType ShaderPreProcessor::FindDefaultElementTypeFromString(std::string_view str)
+	ElementType ShaderPreProcessor::FindDefaultElementTypeFromString(StringView str)
 	{
-		if (str.find(" half ") != std::string_view::npos)
+		if (str.find(" half ") != StringView::npos)
 		{
 			return ElementType::Half;
 		}
-		else if (str.find(" half2 ") != std::string_view::npos)
+		else if (str.find(" half2 ") != StringView::npos)
 		{
 			return ElementType::Half2;
 		}
-		else if (str.find(" half3 ") != std::string_view::npos)
+		else if (str.find(" half3 ") != StringView::npos)
 		{
 			return ElementType::Half3;
 		}
-		else if (str.find(" half4 ") != std::string_view::npos)
+		else if (str.find(" half4 ") != StringView::npos)
 		{
 			return ElementType::Half4;
 		}
-		else if (str.find(" float ") != std::string_view::npos)
+		else if (str.find(" float ") != StringView::npos)
 		{
 			return ElementType::Float;
 		}
-		else if (str.find(" float2 ") != std::string_view::npos)
+		else if (str.find(" float2 ") != StringView::npos)
 		{
 			return ElementType::Float2;
 		}
-		else if (str.find(" float3 ") != std::string_view::npos)
+		else if (str.find(" float3 ") != StringView::npos)
 		{
 			return ElementType::Float3;
 		}
-		else if (str.find(" float4 ") != std::string_view::npos)
+		else if (str.find(" float4 ") != StringView::npos)
 		{
 			return ElementType::Float4;
 		}
-		else if (str.find(" int ") != std::string_view::npos)
+		else if (str.find(" int ") != StringView::npos)
 		{
 			return ElementType::Int;
 		}
-		else if (str.find(" int2 ") != std::string_view::npos)
+		else if (str.find(" int2 ") != StringView::npos)
 		{
 			return ElementType::Int2;
 		}
-		else if (str.find(" int3 ") != std::string_view::npos)
+		else if (str.find(" int3 ") != StringView::npos)
 		{
 			return ElementType::Int3;
 		}
-		else if (str.find(" int4 ") != std::string_view::npos)
+		else if (str.find(" int4 ") != StringView::npos)
 		{
 			return ElementType::Int4;
 		}
-		else if (str.find(" uint ") != std::string_view::npos)
+		else if (str.find(" uint ") != StringView::npos)
 		{
 			return ElementType::UInt;
 		}
-		else if (str.find(" uint2 ") != std::string_view::npos)
+		else if (str.find(" uint2 ") != StringView::npos)
 		{
 			return ElementType::UInt2;
 		}
-		else if (str.find(" uint3 ") != std::string_view::npos)
+		else if (str.find(" uint3 ") != StringView::npos)
 		{
 			return ElementType::UInt3;
 		}
-		else if (str.find(" uint4 ") != std::string_view::npos)
+		else if (str.find(" uint4 ") != StringView::npos)
 		{
 			return ElementType::UInt4;
 		}
-		else if (str.find(" float3x3 ") != std::string_view::npos)
+		else if (str.find(" float3x3 ") != StringView::npos)
 		{
 			return ElementType::Float3x3;
 		}
-		else if (str.find(" float4x4 ") != std::string_view::npos)
+		else if (str.find(" float4x4 ") != StringView::npos)
 		{
 			return ElementType::Float4x4;
 		}
@@ -572,115 +556,115 @@ namespace Volt::RHI
 		return ElementType::Bool;
 	}
 
-	ElementType ShaderPreProcessor::FindElementTypeFromTag(std::string_view str)
+	ElementType ShaderPreProcessor::FindElementTypeFromTag(StringView str)
 	{
-		if (str.find("[[vt::half]]") != std::string_view::npos)
+		if (str.find("[[vt::half]]") != StringView::npos)
 		{
 			return ElementType::Half;
 		}
-		else if (str.find("[[vt::half2]]") != std::string_view::npos)
+		else if (str.find("[[vt::half2]]") != StringView::npos)
 		{
 			return ElementType::Half2;
 		}
-		else if (str.find("[[vt::half3]]") != std::string_view::npos)
+		else if (str.find("[[vt::half3]]") != StringView::npos)
 		{
 			return ElementType::Half3;
 		}
-		else if (str.find("[[vt::half4]]") != std::string_view::npos)
+		else if (str.find("[[vt::half4]]") != StringView::npos)
 		{
 			return ElementType::Half4;
 		}
 
-		else if (str.find("[[vt::byte]]") != std::string_view::npos)
+		else if (str.find("[[vt::byte]]") != StringView::npos)
 		{
 			return ElementType::Byte;
 		}
-		else if (str.find("[[vt::byte2]]") != std::string_view::npos)
+		else if (str.find("[[vt::byte2]]") != StringView::npos)
 		{
 			return ElementType::Byte2;
 		}
-		else if (str.find("[[vt::byte3]]") != std::string_view::npos)
+		else if (str.find("[[vt::byte3]]") != StringView::npos)
 		{
 			return ElementType::Byte3;
 		}
-		else if (str.find("[[vt::byte4]]") != std::string_view::npos)
+		else if (str.find("[[vt::byte4]]") != StringView::npos)
 		{
 			return ElementType::Byte4;
 		}
 
-		else if (str.find("[[vt::ushort]]") != std::string_view::npos)
+		else if (str.find("[[vt::ushort]]") != StringView::npos)
 		{
 			return ElementType::UShort;
 		}
-		else if (str.find("[[vt::ushort2]]") != std::string_view::npos)
+		else if (str.find("[[vt::ushort2]]") != StringView::npos)
 		{
 			return ElementType::UShort2;
 		}
-		else if (str.find("[[vt::ushort3]]") != std::string_view::npos)
+		else if (str.find("[[vt::ushort3]]") != StringView::npos)
 		{
 			return ElementType::UShort3;
 		}
-		else if (str.find("[[vt::ushort4]]") != std::string_view::npos)
+		else if (str.find("[[vt::ushort4]]") != StringView::npos)
 		{
 			return ElementType::UShort4;
 		}
 
-		else if (str.find("[[vt::float]]") != std::string_view::npos)
+		else if (str.find("[[vt::float]]") != StringView::npos)
 		{
 			return ElementType::Float;
 		}
-		else if (str.find("[[vt::float2]]") != std::string_view::npos)
+		else if (str.find("[[vt::float2]]") != StringView::npos)
 		{
 			return ElementType::Float2;
 		}
-		else if (str.find("[[vt::float3]]") != std::string_view::npos)
+		else if (str.find("[[vt::float3]]") != StringView::npos)
 		{
 			return ElementType::Float3;
 		}
-		else if (str.find("[[vt::float4]]") != std::string_view::npos)
+		else if (str.find("[[vt::float4]]") != StringView::npos)
 		{
 			return ElementType::Float4;
 		}
 
-		else if (str.find("[[vt::int]]") != std::string_view::npos)
+		else if (str.find("[[vt::int]]") != StringView::npos)
 		{
 			return ElementType::Int;
 		}
-		else if (str.find("[[vt::int2]]") != std::string_view::npos)
+		else if (str.find("[[vt::int2]]") != StringView::npos)
 		{
 			return ElementType::Int2;
 		}
-		else if (str.find("[[vt::int3]]") != std::string_view::npos)
+		else if (str.find("[[vt::int3]]") != StringView::npos)
 		{
 			return ElementType::Int3;
 		}
-		else if (str.find("[[vt::int4]]") != std::string_view::npos)
+		else if (str.find("[[vt::int4]]") != StringView::npos)
 		{
 			return ElementType::Int4;
 		}
 
-		else if (str.find("[[vt::uint]]") != std::string_view::npos)
+		else if (str.find("[[vt::uint]]") != StringView::npos)
 		{
 			return ElementType::UInt;
 		}
-		else if (str.find("[[vt::uint2]]") != std::string_view::npos)
+		else if (str.find("[[vt::uint2]]") != StringView::npos)
 		{
 			return ElementType::UInt2;
 		}
-		else if (str.find("[[vt::uint3]]") != std::string_view::npos)
+		else if (str.find("[[vt::uint3]]") != StringView::npos)
 		{
 			return ElementType::UInt3;
 		}
-		else if (str.find("[[vt::uint4]]") != std::string_view::npos)
+		else if (str.find("[[vt::uint4]]") != StringView::npos)
 		{
 			return ElementType::UInt4;
 		}
 
-		else if (str.find("[[vt::float3x3]]") != std::string_view::npos)
+		else if (str.find("[[vt::float3x3]]") != StringView::npos)
 		{
 			return ElementType::Float3x3;
 		}
-		else if (str.find("[[vt::float4x4]]") != std::string_view::npos)
+		else if (str.find("[[vt::float4x4]]") != StringView::npos)
 		{
 			return ElementType::Float4x4;
 		}
@@ -688,12 +672,12 @@ namespace Volt::RHI
 		return ElementType::Invalid;
 	}
 
-	ShaderUniformType ShaderPreProcessor::FindUniformTypeFromString(std::string_view str)
+	ShaderUniformType ShaderPreProcessor::FindUniformTypeFromString(StringView str)
 	{
 		ShaderUniformType resultType{};
 		bool isResourceType = false;
 
-		if (str.find("TextureSampler") != std::string_view::npos)
+		if (str.find("TextureSampler") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Sampler;
 			isResourceType = true;
@@ -703,124 +687,124 @@ namespace Volt::RHI
 		// which will lead to mislabling of the type.
 
 		// Buffers
-		else if (str.find("RWRawByteBuffer") != std::string_view::npos)
+		else if (str.find("RWRawByteBuffer") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::RWBuffer;
 			isResourceType = true;
 		}
-		else if (str.find("RawByteBuffer") != std::string_view::npos)
+		else if (str.find("RawByteBuffer") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Buffer;
 			isResourceType = true;
 		}
-		else if (str.find("UniformBuffer") != std::string_view::npos)
+		else if (str.find("UniformBuffer") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::UniformBuffer;
 			isResourceType = true;
 		}
-		else if (str.find("RWTypedBuffer") != std::string_view::npos)
+		else if (str.find("RWTypedBuffer") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::RWBuffer;
 			isResourceType = true;
 		}
-		else if (str.find("TypedBuffer") != std::string_view::npos)
+		else if (str.find("TypedBuffer") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Buffer;
 			isResourceType = true;
 		}
 
 		// Texture2D
-		else if (str.find("RWTex2D") != std::string_view::npos)
+		else if (str.find("RWTex2D") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::RWTexture2D;
 			isResourceType = true;
 		}
-		else if (str.find("Tex2D") != std::string_view::npos)
+		else if (str.find("Tex2D") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Texture2D;
 			isResourceType = true;
 		}
 
 		// Texture2DArray
-		else if (str.find("RWTex2DArray") != std::string_view::npos)
+		else if (str.find("RWTex2DArray") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::RWTexture2DArray;
 			isResourceType = true;
 		}
-		else if (str.find("Tex2DArray") != std::string_view::npos)
+		else if (str.find("Tex2DArray") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Texture2DArray;
 			isResourceType = true;
 		}
 
 		// TextureCube
-		else if (str.find("TexCube") != std::string_view::npos)
+		else if (str.find("TexCube") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Texture2D;
 			isResourceType = true;
 		}
 
 		// Texture3D
-		else if (str.find("RWTex3D") != std::string_view::npos)
+		else if (str.find("RWTex3D") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::RWTexture3D;
 			isResourceType = true;
 		}
-		else if (str.find("Tex3D") != std::string_view::npos)
+		else if (str.find("Tex3D") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Texture3D;
 			isResourceType = true;
 		}
 
-		else if (str.find("bool") != std::string_view::npos)
+		else if (str.find("bool") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Bool;
 		}
-		else if (str.find("int16_t") != std::string_view::npos)
+		else if (str.find("int16_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Short;
 		}
-		else if (str.find("uint16_t") != std::string_view::npos)
+		else if (str.find("uint16_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::UShort;
 		}
-		else if (str.find("int64_t") != std::string_view::npos)
+		else if (str.find("int64_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Int64;
 		}
-		else if (str.find("uint64_t") != std::string_view::npos)
+		else if (str.find("uint64_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::UInt64;
 		}
-		else if (str.find("uint32_t") != std::string_view::npos)
+		else if (str.find("uint32_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::UInt;
 		}
-		else if (str.find("int32_t") != std::string_view::npos)
+		else if (str.find("int32_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Int;
 		}
-		else if (str.find("float64_t") != std::string_view::npos)
+		else if (str.find("float64_t") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Double;
 		}
-		else if (str.find("uint") != std::string_view::npos)
+		else if (str.find("uint") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::UInt;
 		}
-		else if (str.find("int") != std::string_view::npos)
+		else if (str.find("int") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Int;
 		}
-		else if (str.find("double") != std::string_view::npos)
+		else if (str.find("double") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Double;
 		}
-		else if (str.find("float") != std::string_view::npos)
+		else if (str.find("float") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Float;
 		}
-		else if (str.find("half") != std::string_view::npos)
+		else if (str.find("half") != StringView::npos)
 		{
 			resultType.baseType = ShaderUniformBaseType::Half;
 		}
@@ -830,22 +814,22 @@ namespace Volt::RHI
 			size_t tTypeOffset = str.find("_t");
 			size_t findOffset = 0;
 
-			if (tTypeOffset != std::string_view::npos)
+			if (tTypeOffset != StringView::npos)
 			{
 				findOffset = tTypeOffset;
 			}
 
 			size_t lastNumOffset = str.find_first_not_of("abcdefghijklmnopqrstuvwxyz<>[]", findOffset);
-			if (lastNumOffset != std::string_view::npos)
+			if (lastNumOffset != StringView::npos)
 			{
-				std::string_view postfixStr = str.substr(lastNumOffset, str.size() - lastNumOffset);
+				StringView postfixStr = str.substr(lastNumOffset, str.size() - lastNumOffset);
 
-				const uint32_t vecSize = static_cast<uint32_t>(std::stoi(std::string(1, postfixStr[0])));
+				const uint32_t vecSize = static_cast<uint32_t>(StoI(String(1, postfixStr[0])));
 				resultType.vecsize = vecSize;
 
 				if (postfixStr.size() > 1)
 				{
-					const uint32_t columnCount = static_cast<uint32_t>(std::stoi(std::string(1, postfixStr[postfixStr.size() - 1])));
+					const uint32_t columnCount = static_cast<uint32_t>(StoI(String(1, postfixStr[postfixStr.size() - 1])));
 					resultType.columns = columnCount;
 				}
 			}
@@ -854,7 +838,7 @@ namespace Volt::RHI
 		return resultType;
 	}
 
-	PixelFormat ShaderPreProcessor::FindDefaultFormatFromString(std::string_view str)
+	PixelFormat ShaderPreProcessor::FindDefaultFormatFromString(StringView str)
 	{
 		if (str == "float")
 		{
@@ -925,9 +909,9 @@ namespace Volt::RHI
 		return PixelFormat::UNDEFINED;
 	}
 
-	PixelFormat ShaderPreProcessor::FindFormatFromLayoutQualifier(const std::string& layoutStr)
+	PixelFormat ShaderPreProcessor::FindFormatFromLayoutQualifier(const String& layoutStr)
 	{
-		std::string tempStr = layoutStr;
+		String tempStr = layoutStr;
 		tempStr.erase(std::remove(tempStr.begin(), tempStr.end(), '['), tempStr.end());
 		tempStr.erase(std::remove(tempStr.begin(), tempStr.end(), ']'), tempStr.end());
 

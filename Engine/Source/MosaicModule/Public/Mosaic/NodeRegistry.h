@@ -18,8 +18,8 @@ namespace Mosaic
 	struct NodeInfo
 	{
 		std::function<Ref<MosaicNode>(MosaicGraph* ownerGraph)> createFunction;
-		std::string name;
-		std::string category;
+		String name;
+		String category;
 	};
 
 	class VTMOSAIC_API NodeRegistry

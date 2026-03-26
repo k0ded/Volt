@@ -19,7 +19,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_registry; }
 		
-		UIWidget CreateWidget(const std::string& tag = "");
+		UIWidget CreateWidget(const String& tag = "");
 		UIWidget GetWidgetFromUUID(const EntityID uuid) const;
 
 		template<typename... T, typename F>

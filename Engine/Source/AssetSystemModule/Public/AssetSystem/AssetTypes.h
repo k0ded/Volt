@@ -17,6 +17,6 @@ VT_DECLARE_ASSET_TYPE_EXPORT(PhysicsMaterial, "{78683B2B-E786-40FB-AEB3-82F9CA7E
 VT_DECLARE_ASSET_TYPE_EXPORT(Texture, "{9E8AA137-2364-413C-B4AE-51E0A1E96D9D}"_guid, VTAS_API);
 VT_DECLARE_ASSET_TYPE_EXPORT(EnvironmentTexture, "{C9162CC3-3971-485C-9AA3-2452409F2972}"_guid, VTAS_API);
 
-VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(TextureSource, (Vector<std::string>{ ".png", ".jpg", ".jpeg", ".tga", ".dds", ".hdr" }), "{6B5BFE19-D38D-4894-AF8B-B5C1167F9D28}"_guid, VTAS_API);
-VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(MeshSource, (Vector<std::string>{ ".fbx", ".FBX", ".gltf", ".glb" }), "{1E5E401F-80E4-4CEF-B874-DE4699C7B7E8}"_guid, VTAS_API);
-VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(FontSource, (Vector<std::string>{ ".ttf" }), "{7902E1C4-CF49-455E-825C-5B823D35A463}"_guid, VTAS_API);
+VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(TextureSource, (Vector<String>{ ".png", ".jpg", ".jpeg", ".tga", ".dds", ".hdr" }), "{6B5BFE19-D38D-4894-AF8B-B5C1167F9D28}"_guid, VTAS_API);
+VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(MeshSource, (Vector<String>{ ".fbx", ".FBX", ".gltf", ".glb" }), "{1E5E401F-80E4-4CEF-B874-DE4699C7B7E8}"_guid, VTAS_API);
+VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(FontSource, (Vector<String>{ ".ttf" }), "{7902E1C4-CF49-455E-825C-5B823D35A463}"_guid, VTAS_API);

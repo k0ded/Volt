@@ -2,8 +2,10 @@
 
 #include "Volt-Application/UIApplication.h"
 #include "Volt-Application/UI/ImGuiSubSystem.h"
+#include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <Volt-Renderer/Renderer.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -13,7 +15,6 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <EventSystem/EventSystem.h>
@@ -56,8 +57,17 @@ namespace Volt
 	UIApplication::UIApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		FileSystem::Initialize();
-		FileSystem::InitializeWorkingDirectory(createInfo.isRuntime, commandLineBuilder);
+		{
+			Filesystem::Path workingDir;
+			if (commandLineBuilder.IsArgDefined("workingdir"))
+			{
+				workingDir = commandLineBuilder.GetArgValue("workingdir");
+			}
+
+			Filesystem::InitializeWorkingDirectory(IsRuntime(), workingDir, commandLineBuilder.GetExecutableFilepath());
+		}
+
+		FileDialogueHelpers::Initialize();
 
 		m_subSystemManager = CreateUnique<SubSystemManager>(SubSystemInclusionLevel::Minimal);
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
@@ -108,7 +118,7 @@ namespace Volt
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 
-		FileSystem::Shutdown();
+		FileDialogueHelpers::Shutdown();
 
 		m_subSystemManager = nullptr;
 	}

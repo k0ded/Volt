@@ -24,6 +24,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<JobSystemModule>(target);
             conf.AddPublicDependency<AssetSystemModule>(target);
 			conf.AddPublicDependency<EventSystemModule>(target);
+			conf.AddPublicDependency<CoreModule>(target);
 
             conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "entt\\include"));
 

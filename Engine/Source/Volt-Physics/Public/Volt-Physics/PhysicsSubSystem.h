@@ -3,9 +3,12 @@
 #include "Volt-Physics/Config.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <PhysicsInterface/PhysicsCore.h>
 #include <PhysicsInterface/PhysicsScene.h>
+
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
@@ -36,6 +39,6 @@ namespace Volt
 		PFN_DestroyPhysicsCore m_physicsCoreDestroyFunc = nullptr;
 
 		PhysicsCore* m_physicsCore = nullptr;
-		const std::filesystem::path m_physicsModulePath;
+		const Filesystem::Path m_physicsModulePath;
 	};
 }

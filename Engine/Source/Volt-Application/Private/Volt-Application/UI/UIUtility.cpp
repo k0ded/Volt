@@ -3,6 +3,7 @@
 #include "Volt-Application/UI/UIScopedHelpers.h"
 #include "Volt-Application/UI/UIFonts.h"
 #include "Volt-Application/UI/ImGuiSubSystem.h"
+#include "Volt-Application/UI/ImGuiExtension.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -11,8 +12,6 @@
 
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
-
-#include <CoreUtilities/StringUtility.h>
 
 #include <InputModule/Input.h>
 
@@ -63,7 +62,7 @@ namespace UI
 		//return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture, mipIndex);
 	}
 
-	void Header(const std::string& text)
+	void Header(const String& text)
 	{
 		ScopedFont font{ UI::FontType::Regular, UI::BIG_FONT_SIZE };
 		ImGui::TextUnformatted(text.c_str());
@@ -87,15 +86,15 @@ namespace UI
 		ImGui::SetCursorPos(pos);
 	}
 
-	bool BeginPopup(const std::string& name, ImGuiWindowFlags flags)
+	bool BeginPopup(const String& name, ImGuiWindowFlags flags)
 	{
 		flags |= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
 
-		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
+		const uint32_t nameHash = static_cast<uint32_t>(std::hash<String>()(name));
 		return ImGui::BeginPopupEx(nameHash, flags);
 	}
 
-	bool BeginPopupItem(const std::string& id, ImGuiPopupFlags flags)
+	bool BeginPopupItem(const String& id, ImGuiPopupFlags flags)
 	{
 		if (id.empty())
 		{
@@ -105,7 +104,7 @@ namespace UI
 		return ImGui::BeginPopupContextItem(id.c_str(), flags);
 	}
 
-	bool BeginPopupWindow(const std::string& id)
+	bool BeginPopupWindow(const String& id)
 	{
 		if (id.empty())
 		{
@@ -120,7 +119,7 @@ namespace UI
 		ImGui::EndPopup();
 	}
 
-	int32_t LevenshteinDistance(const std::string& str1, const std::string& str2)
+	int32_t LevenshteinDistance(const String& str1, const String& str2)
 	{
 		int32_t m = (int32_t)str1.length();
 		int32_t n = (int32_t)str2.length();
@@ -158,9 +157,9 @@ namespace UI
 		return dp[m][n];
 	}
 
-	const Vector<std::string> GetEntriesMatchingQuery(const std::string& query, const Vector<std::string>& entries)
+	const Vector<String> GetEntriesMatchingQuery(const String& query, const Vector<String>& entries)
 	{
-		std::multimap<int32_t, std::string> scores{};
+		std::multimap<int32_t, String> scores{};
 
 		for (const auto& entry : entries)
 		{
@@ -168,10 +167,13 @@ namespace UI
 			scores.emplace(score, entry);
 		}
 
-		Vector<std::string> result{};
+		Vector<String> result{};
 		for (const auto& [score, entry] : scores)
 		{
-			if (!Utility::StringContains(Utility::ToLower(entry), Utility::ToLower(query)))
+			const String lowerEntry = Utility::ToLower(entry);
+			const String lowerQuery = Utility::ToLower(query);
+
+			if (!lowerEntry.contains(lowerQuery))
 			{
 				continue;
 			}
@@ -182,11 +184,11 @@ namespace UI
 		return result;
 	}
 
-	void RenderMatchingTextBackground(const std::string& query, const std::string& text, const glm::vec4& color, const glm::uvec2& offset)
+	void RenderMatchingTextBackground(const String& query, const String& text, const glm::vec4& color, const glm::uvec2& offset)
 	{
 		const auto matchOffset = Utility::ToLower(text).find(Utility::ToLower(query));
 
-		if (matchOffset == std::string::npos)
+		if (matchOffset == String::npos)
 		{
 			return;
 		}
@@ -252,7 +254,7 @@ namespace UI
 		return false;
 	}
 
-	bool DragScalarN(const std::string& id, ImGuiDataType dataType, void* data, int32_t components, float speed, const void* min, const void* max)
+	bool DragScalarN(const String& id, ImGuiDataType dataType, void* data, int32_t components, float speed, const void* min, const void* max)
 	{
 		static constexpr ImGuiDataTypeInfo GDataTypeInfo[] =
 		{
@@ -354,25 +356,25 @@ namespace UI
 		return changed;
 	}
 
-	bool InputTextWithHint(const std::string& name, std::string& text, const std::string& hint, ImGuiInputTextFlags_ flags /* = ImGuiInputTextFlags_None */)
+	bool InputTextWithHint(const String& name, String& text, const String& hint, ImGuiInputTextFlags_ flags /* = ImGuiInputTextFlags_None */)
 	{
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 		return InputTextWithHint(name, id, text, hint, flags);
 	}
 
-	bool InputTextMultiline(const std::string& name, std::string& text, ImGuiInputTextFlags_ flags)
+	bool InputTextMultiline(const String& name, String& text, ImGuiInputTextFlags_ flags)
 	{
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 		return InputTextMultiline(name, text, id, flags);
 	}
 
-	bool InputText(const std::string& name, std::string& text, ImGuiInputTextFlags_ flags)
+	bool InputText(const String& name, String& text, ImGuiInputTextFlags_ flags)
 	{
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 		return InputText(name, id, text, flags);
 	}
 
-	bool InputText(const std::string& name, const std::string& id, std::string& text, ImGuiInputTextFlags_ flags)
+	bool InputText(const String& name, const String& id, String& text, ImGuiInputTextFlags_ flags)
 	{
 		if (!name.empty())
 		{
@@ -380,10 +382,10 @@ namespace UI
 			ImGui::SameLine();
 		}
 
-		return ImGui::InputTextString(id.c_str(), &text, flags);
+		return ImGui::InputText(id.c_str(), &text, flags);
 	}
 
-	bool InputTextWithHint(const std::string& name, const std::string& id, std::string& text, const std::string& hint, ImGuiInputTextFlags_ flags)
+	bool InputTextWithHint(const String& name, const String& id, String& text, const String& hint, ImGuiInputTextFlags_ flags)
 	{
 		if (!name.empty())
 		{
@@ -391,10 +393,10 @@ namespace UI
 			ImGui::SameLine();
 		}
 
-		return ImGui::InputTextWithHintString(id.c_str(), hint.c_str(), &text, flags);
+		return ImGui::InputTextWithHint(id.c_str(), hint.c_str(), &text, flags);
 	}
 
-	bool InputTextMultiline(const std::string& name, const std::string& id, std::string& text, ImGuiInputTextFlags_ flags)
+	bool InputTextMultiline(const String& name, const String& id, String& text, ImGuiInputTextFlags_ flags)
 	{
 		if (!name.empty())
 		{
@@ -402,10 +404,10 @@ namespace UI
 			ImGui::SameLine();
 		}
 
-		return ImGui::InputTextMultilineString(id.c_str(), &text, ImVec2{ 0.f, 0.f }, flags);
+		return ImGui::InputTextMultiline(id.c_str(), &text, ImVec2{ 0.f, 0.f }, flags);
 	}
 
-	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col)
+	bool ImageButton(const String& id, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col)
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = g.CurrentWindow;
@@ -417,7 +419,7 @@ namespace UI
 		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, bg_col, tint_col);
 	}
 
-	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec4& bg_col, const ImVec4& tint_col)
+	bool ImageButton(const String& id, ImTextureID textureId, const ImVec2& size, const ImVec4& bg_col, const ImVec4& tint_col)
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = g.CurrentWindow;
@@ -432,7 +434,7 @@ namespace UI
 		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, bg_col, tint_col);
 	}
 
-	bool ImageButtonState(const std::string& id, bool state, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1)
+	bool ImageButtonState(const String& id, bool state, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1)
 	{
 		if (state)
 		{
@@ -444,7 +446,7 @@ namespace UI
 		}
 	}
 
-	bool TreeNodeImage(IntRef<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen)
+	bool TreeNodeImage(IntRef<Volt::RHI::Image> texture, const String& text, ImGuiTreeNodeFlags flags, bool setOpen)
 	{
 		ScopedStyleFloat2 frame{ ImGuiStyleVar_FramePadding, { 0.f, 0.f } };
 		ScopedStyleFloat2 spacing{ ImGuiStyleVar_ItemSpacing, { 0.f, 0.f } };
@@ -462,7 +464,7 @@ namespace UI
 		return ImGui::TreeNodeEx(text.c_str(), flags);
 	}
 
-	bool TreeNodeFramed(const std::string& text, bool alwaysOpen, float rounding)
+	bool TreeNodeFramed(const String& text, bool alwaysOpen, float rounding)
 	{
 		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Framed |
 			ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -482,7 +484,7 @@ namespace UI
 		ImGui::SameLine(offsetX, spacing);
 	}
 
-	bool ImageSelectable(Ref<Volt::Texture2D> texture, const std::string& text, bool& selected)
+	bool ImageSelectable(Ref<Volt::Texture2D> texture, const String& text, bool& selected)
 	{
 		const ImVec2 size = ImGui::CalcTextSize(text.c_str());
 
@@ -492,7 +494,7 @@ namespace UI
 		return ImGui::Selectable(text.c_str(), &selected);
 	}
 
-	bool ImageSelectable(Ref<Volt::Texture2D> texture, const std::string& text)
+	bool ImageSelectable(Ref<Volt::Texture2D> texture, const String& text)
 	{
 		const ImVec2 size = ImGui::CalcTextSize(text.c_str());
 
@@ -504,7 +506,7 @@ namespace UI
 		return ImGui::Selectable(text.c_str());
 	}
 
-	bool ImageSelectable(Ref<Volt::Texture2D> texture, const std::string& text, bool selected)
+	bool ImageSelectable(Ref<Volt::Texture2D> texture, const String& text, bool selected)
 	{
 		ImVec2 size = ImGui::CalcTextSize(text.c_str());
 		ImGui::Image(GetTextureID(texture), { size.y, size.y }, { 0, 1 }, { 1, 0 });
@@ -560,7 +562,7 @@ namespace UI
 		}
 	}
 
-	void SimpleToolTip(const std::string& toolTip)
+	void SimpleToolTip(const String& toolTip)
 	{
 		if (!toolTip.empty())
 		{
@@ -644,7 +646,7 @@ namespace UI
 		window->DC.MenuBarAppending = false;
 	}
 
-	bool BeginListView(const std::string& strId)
+	bool BeginListView(const String& strId)
 	{
 		const glm::vec4 BACKGROUND = ToNormalizedRGB(26.f, 26.f, 26.f);
 
@@ -660,7 +662,7 @@ namespace UI
 	}
 
 
-	bool Combo(const std::string& text, int& currentItem, const Vector<const char*>& items, float width)
+	bool Combo(const String& text, int& currentItem, const Vector<const char*>& items, float width)
 	{
 		bool changed = false;
 
@@ -668,7 +670,7 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 
 		ImGui::SetNextItemWidth(width);
 		if (ImGui::Combo(id.c_str(), &currentItem, items.data(), (int32_t)items.size()))
@@ -679,7 +681,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Combo(const std::string& text, int& currentItem, const Vector<std::string>& strItems, float width)
+	bool Combo(const String& text, int& currentItem, const Vector<String>& strItems, float width)
 	{
 		bool changed = false;
 
@@ -687,10 +689,10 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 
 		Vector<const char*> items;
-		std::for_each(strItems.begin(), strItems.end(), [&](const std::string& string) { items.emplace_back(string.c_str()); });
+		std::for_each(strItems.begin(), strItems.end(), [&](const String& string) { items.emplace_back(string.c_str()); });
 
 		ImGui::SetNextItemWidth(width);
 		if (ImGui::Combo(id.c_str(), &currentItem, items.data(), (int32_t)items.size()))
@@ -701,7 +703,7 @@ namespace UI
 		return changed;
 	}
 
-	void Notify(NotificationType type, const std::string& title, const std::string& content, int32_t duration)
+	void Notify(NotificationType type, const String& title, const String& content, int32_t duration)
 	{
 		Volt::ImGuiNotificationInfo info;
 		info.type = ImGuiNotificationTypeFromNotificationType(type);
@@ -712,21 +714,21 @@ namespace UI
 		Volt::ImGuiNotifications::InsertNotification(info);
 	}
 
-	void OpenModal(const std::string& name, ImGuiPopupFlags flags)
+	void OpenModal(const String& name, ImGuiPopupFlags flags)
 	{
-		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
+		const uint32_t nameHash = static_cast<uint32_t>(std::hash<String>()(name));
 		ImGui::OpenPopupEx(nameHash, flags);
 	}
 
-	void OpenPopup(const std::string& name, ImGuiPopupFlags flags)
+	void OpenPopup(const String& name, ImGuiPopupFlags flags)
 	{
-		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
+		const uint32_t nameHash = static_cast<uint32_t>(std::hash<String>()(name));
 		ImGui::OpenPopupEx(nameHash, flags);
 	}
 
-	bool BeginModal(const std::string& name, ImGuiWindowFlags flags)
+	bool BeginModal(const String& name, ImGuiWindowFlags flags)
 	{
-		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
+		const uint32_t nameHash = static_cast<uint32_t>(std::hash<String>()(name));
 		return ImGui::BeginPopupModal(name.c_str(), nameHash, nullptr, flags);
 	}
 
@@ -735,7 +737,7 @@ namespace UI
 		ImGui::EndPopup();
 	}
 
-	void SmallSeparatorHeader(const std::string& text, float padding)
+	void SmallSeparatorHeader(const String& text, float padding)
 	{
 		ScopedFont font{ UI::FontType::Bold, UI::DEFAULT_FONT_SIZE };
 
@@ -749,7 +751,7 @@ namespace UI
 		ImGui::GetCurrentWindow()->DrawList->AddLine(pos + windowPos + ImVec2{ textSize.x + padding, textSize.y / 2.f }, { pos.x + availWidth + windowPos.x, pos.y + 1.f + windowPos.y + textSize.y / 2.f }, IM_COL32(255, 255, 255, 255));
 	}
 
-	bool Combo(const std::string& text, int& currentItem, const char** items, uint32_t count)
+	bool Combo(const String& text, int& currentItem, const char** items, uint32_t count)
 	{
 		bool changed = false;
 
@@ -757,7 +759,7 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		String id = FormatString("##{}", GetAndIncrementStackID());
 
 		if (ImGui::Combo(id.c_str(), &currentItem, items, count))
 		{
@@ -767,14 +769,12 @@ namespace UI
 		return changed;
 	}
 
-
-
 	void TreeNodePop()
 	{
 		ImGui::TreePop();
 	}
 
-	bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags)
+	bool CollapsingHeader(StringView label, ImGuiTreeNodeFlags flags)
 	{
 		return ImGui::CollapsingHeader(label.data(), flags);
 	}

@@ -24,12 +24,12 @@ namespace Volt
 {
 	//VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".png" }), PNGTextureSourceImporter);
 
-	Vector<AssetReference<Asset>> PNGTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> PNGTextureSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);
 		FILE* filePtr;
-		errno_t fileError = fopen_s(&filePtr, filepath.string().c_str(), "rb");
+		errno_t fileError = fopen_s(&filePtr, filepath.ToString().c_str(), "rb");
 		VT_UNUSED(fileError);
 
 		// #TODO_Ivar: Add error logging.
@@ -42,7 +42,7 @@ namespace Volt
 		fread(fileSignature, 1, 8, filePtr);
 		if (png_sig_cmp(fileSignature, 0, 8))
 		{
-			const std::string error = std::format("Failed to import file {}! Reason: File is not a PNG!", filepath);
+			const String error = FormatString("Failed to import file {}! Reason: File is not a PNG!", filepath);
 			VT_LOGC(Error, LogPNGTextureSourceImporter, error);
 			userData.OnError(error);
 
@@ -212,7 +212,7 @@ namespace Volt
 		return { voltTexture };
 	}
 
-	SourceAssetFileInformation PNGTextureSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation PNGTextureSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		VT_ENSURE(false);
 		return SourceAssetFileInformation();

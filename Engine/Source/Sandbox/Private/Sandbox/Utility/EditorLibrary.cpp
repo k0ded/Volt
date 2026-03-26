@@ -18,7 +18,7 @@ void EditorLibrary::Sort()
 	});
 }
 
-Ref<EditorWindow> EditorLibrary::GetPanel(const std::string& panelName)
+Ref<EditorWindow> EditorLibrary::GetPanel(const String& panelName)
 {
 	for (const auto& panel : s_editors)
 	{

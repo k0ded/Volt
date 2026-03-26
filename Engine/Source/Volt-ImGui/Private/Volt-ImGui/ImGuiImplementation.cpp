@@ -2,6 +2,8 @@
 #include "Volt-ImGui/ImGuiNotifications.h"
 #include "Volt-ImGui/FontAwesome.h"
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <WindowModule/Window.h>
 #include <WindowModule/WindowManager.h>
 
@@ -24,22 +26,22 @@
 
 namespace Volt
 {
-	std::filesystem::path GetOrCreateIniPath()
+	Filesystem::Path GetOrCreateIniPath()
 	{
-		const std::filesystem::path userIniPath = "User/imgui.ini";
-		const std::filesystem::path defaultIniPath = "Editor/imgui.ini";
-
-		if (!std::filesystem::exists(userIniPath))
+		const Filesystem::Path userIniPath = "User/imgui.ini";
+		const Filesystem::Path defaultIniPath = "Editor/imgui.ini";
+		 
+		if (!Filesystem::Exists(userIniPath))
 		{
 			VT_LOG(Warning, "User ini file not found! Copying default!");
 
-			std::filesystem::create_directories(userIniPath.parent_path());
-			if (!std::filesystem::exists(defaultIniPath))
+			Filesystem::CreateDirectories(userIniPath.ParentPath());
+			if (!Filesystem::Exists(defaultIniPath))
 			{
 				VT_LOG(Error, "Unable to find default ini file!");
 				return "imgui.ini";
 			}
-			std::filesystem::copy(defaultIniPath, userIniPath.parent_path());
+			Filesystem::CopyFile(defaultIniPath, userIniPath.ParentPath() / userIniPath.Filename());
 		}
 
 		return userIniPath;
@@ -69,8 +71,8 @@ namespace Volt
 
 	ImGuiImplementation::~ImGuiImplementation()
 	{
-		const std::filesystem::path iniPath = GetOrCreateIniPath();
-		ImGui::SaveIniSettingsToDisk(iniPath.string().c_str());
+		const Filesystem::Path iniPath = GetOrCreateIniPath();
+		ImGui::SaveIniSettingsToDisk(iniPath.ToString().c_str());
 
 		// Shared font altas will be destroyed here.
 		for (auto& contextData : m_contextStack)
@@ -292,16 +294,16 @@ namespace Volt
 		m_defaultFont = font;
 	}
 
-	ImFont* ImGuiImplementation::AddFont(const std::filesystem::path& fontPath)
+	ImFont* ImGuiImplementation::AddFont(const Filesystem::Path& fontPath)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.ToString().c_str());
 		MergeIconsWithLatestFont();
 
 		return newFont;
 	}
 
-	Vector<ImFont*> ImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
+	Vector<ImFont*> ImGuiImplementation::AddFonts(const Vector<Filesystem::Path>& fontPaths)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -309,7 +311,7 @@ namespace Volt
 
 		for (const auto& fontPath : fontPaths)
 		{
-			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.ToString().c_str());
 			MergeIconsWithLatestFont();
 		}
 
@@ -332,8 +334,8 @@ namespace Volt
 		// Create and add the default context
 		m_contextStack.emplace_back() = CreateAndInitializeNewContext();
 
-		const std::filesystem::path iniPath = GetOrCreateIniPath();
-		ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
+		const Filesystem::Path iniPath = GetOrCreateIniPath();
+		ImGui::LoadIniSettingsFromDisk(iniPath.ToString().c_str());
 	}
 
 	void ImGuiImplementation::CreateCopyGlobalsUniformBuffer()

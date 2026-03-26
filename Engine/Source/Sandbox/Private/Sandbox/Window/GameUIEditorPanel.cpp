@@ -200,7 +200,7 @@ void GameUIEditorPanel::UpdateHierarchy()
 		UI::PushID();
 		ImGui::BeginChild("Main", ImGui::GetContentRegionAvail(), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
-			static std::string searchQuery;
+			static String searchQuery;
 			bool hasQuery;
 
 			EditorUtils::SearchBar(searchQuery, hasQuery, false);

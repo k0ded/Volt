@@ -25,7 +25,9 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<InputModule>(target);
 			conf.AddPrivateDependency<RHIModule>(target);
 			conf.AddPrivateDependency<LogModule>(target);
+
 			conf.AddPrivateDependency<VoltRenderCore>(target);
+			conf.AddPrivateDependency<VoltFileSystem>(target);
 
 			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "imgui-notify"));
 		}

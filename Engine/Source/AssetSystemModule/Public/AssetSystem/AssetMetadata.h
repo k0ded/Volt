@@ -129,7 +129,7 @@ namespace Volt
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomMetadata() const
 		{
-			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), std::format("Custom metadata type is not for type {}!", m_assetType->GetName()));
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), FormatString("Custom metadata type is not for type {}!", m_assetType->GetName()));
 
 			return m_storage.Cast<CustomMetadataType>();
 		}
@@ -137,7 +137,7 @@ namespace Volt
 		template<typename CustomMetadataType>
 		VT_INLINE CustomMetadataType& GetMutableCustomMetadata()
 		{
-			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), std::format("Custom metadata type is not for type {}!", m_assetType->GetName()));
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), FormatString("Custom metadata type is not for type {}!", m_assetType->GetName()));
 
 			return m_storage.Cast<CustomMetadataType>();
 		}
@@ -244,7 +244,7 @@ namespace Volt
 		VT_INLINE void SetFlag(AssetMetadataFlag flag, bool state);
 
 		VT_INLINE bool IsValid() const { return handle != 0; }
-		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
+		VT_INLINE bool HasFilepath() const { return !filepath.IsEmpty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
 		VT_INLINE bool IsLoaded() const { return m_loadState.load(std::memory_order::relaxed) == AssetLoadState::Loaded; }
 		VT_INLINE AssetLoadState GetLoadState() const { return m_loadState.load(std::memory_order::relaxed); }
@@ -252,7 +252,7 @@ namespace Volt
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const
 		{
-			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type {}!", type->GetName()));
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), FormatString("Custom metadata type is not for type {}!", type->GetName()));
 
 			return customData.GetCustomMetadata<CustomMetadataType>();
 		}
@@ -301,7 +301,7 @@ namespace Volt
 		bool isEngineAsset = false;
 
 		std::atomic_uint8_t flags = static_cast<uint8_t>(AssetMetadataFlag::None);
-		std::filesystem::path filepath;
+		Filesystem::Path filepath;
 
 		CustomAssetMetadata customData;
 		AssetDependencyList assetDependencyList;

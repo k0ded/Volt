@@ -11,8 +11,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID("{08434406-3093-4AA2-B3B8-2B39AA0EE744}"_guid);
 
-		inline const std::string GetName() const override { return "Add"; }
-		inline const std::string GetCategory() const override { return "Math"; }
+		inline const String GetName() const override { return "Add"; }
+		inline const String GetCategory() const override { return "Math"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override;
@@ -27,8 +27,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID("{DF8DCC43-BD0C-42A9-A63D-AE8C1C496A8E}"_guid);
 
-		inline const std::string GetName() const override { return "Multiply"; }
-		inline const std::string GetCategory() const override { return "Math"; }
+		inline const String GetName() const override { return "Multiply"; }
+		inline const String GetCategory() const override { return "Math"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override;

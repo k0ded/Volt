@@ -5,6 +5,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <RenderCore/CommandBufferPool.h>
 
@@ -102,7 +103,7 @@ namespace Volt
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			texture->SetFlag(AssetFlag::Missing, true);
@@ -139,7 +140,7 @@ namespace Volt
 			specification.width = textureHeader.mips.front().width;
 			specification.height = textureHeader.mips.front().height;
 			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
-			specification.debugName = filePath.stem().string();
+			specification.debugName = filePath.Stem().ToString();
 			specification.initializeImage = false;
 
 			image = RHI::Image::Create(specification);

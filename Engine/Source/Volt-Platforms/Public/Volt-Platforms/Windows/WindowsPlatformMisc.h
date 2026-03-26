@@ -16,10 +16,10 @@ namespace Volt
 	public:
 		static void RequestApplicationExit(bool forceExit, uint32_t exitCode);
 		static void CreateExternalConsole();
-		static std::string GetSystemErrorMessage(int32_t error);
+		static String GetSystemErrorMessage(int32_t error);
 		static bool IsDebuggerPresent();
 		static VoltGUID GenerateGUID();
-		static std::string GetCurrentUserName();
+		static String GetCurrentUserName();
 		static uint32_t GetNumberOfPhysicalCores();
 		static uint32_t GetNumberOfLogicalCores();
 		static void SetupExceptionHandlers();

@@ -47,9 +47,9 @@ namespace Volt
 			return index != 0;
 		}
 
-		static void Resolve(std::string_view name, bool value, RHI::ShaderPermutationConfig& permutationConfig)
+		static void Resolve(StringView name, bool value, RHI::ShaderPermutationConfig& permutationConfig)
 		{
-			permutationConfig.AddPermutation(std::string(name), std::to_string(value));
+			permutationConfig.AddPermutation(String(name), FormatString("{}", value));
 		}
 	};
 
@@ -71,9 +71,9 @@ namespace Volt
 			return static_cast<T>(index);
 		}
 
-		static void Resolve(std::string_view name, T value, RHI::ShaderPermutationConfig& permutationConfig)
+		static void Resolve(StringView name, T value, RHI::ShaderPermutationConfig& permutationConfig)
 		{
-			permutationConfig.AddPermutation(std::string(name), std::to_string(std::to_underlying(value)));
+			permutationConfig.AddPermutation(String(name), FormatString("{}", std::to_underlying(value)));
 		}
 	};
 
@@ -83,7 +83,7 @@ namespace Volt
 	{
 		using PermutationType = T;
 		using Traits = ShaderPermutationTraits<T>;
-		inline static constexpr std::string_view PermutationName = Name;
+		inline static constexpr StringView PermutationName = Name;
 
 		static constexpr size_t DomainSize()
 		{

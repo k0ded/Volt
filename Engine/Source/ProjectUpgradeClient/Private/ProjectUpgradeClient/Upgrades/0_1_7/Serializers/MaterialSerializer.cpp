@@ -10,6 +10,8 @@
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-Renderer/Material/RenderMaterial.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <AssetSystem/AssetManager.h>
 
 #include <RenderCore/Shader/DefaultShaders.h>
@@ -123,7 +125,7 @@ namespace Volt
 
 		AssetReference<MaterialAsset> materialAsset = destinationAsset.ConvertTo<MaterialAsset>();
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			materialAsset->SetFlag(AssetFlag::Missing, true);
@@ -154,13 +156,13 @@ namespace Volt
 		}
 
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
-		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()));
+		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(String(materialAsset->GetAssetName()));
 		materialAsset->m_graph->m_graph->Clear();
 
 		streamReader.EnterScope("MosaicGraph");
 
 		materialAsset->m_graph->m_materialGUID = streamReader.ReadAtKey("guid", VoltGUID::Null());
-		materialAsset->m_graph->m_graph->GetEditorState() = streamReader.ReadAtKey("state", std::string(""));
+		materialAsset->m_graph->m_graph->GetEditorState() = streamReader.ReadAtKey("state", String(""));
 
 		auto& underlyingGraph = materialAsset->m_graph->m_graph->GetUnderlyingGraph();
 
@@ -168,7 +170,7 @@ namespace Volt
 		{
 			const UUID64 nodeId = streamReader.ReadAtKey("id", UUID64(0));
 			const VoltGUID guid = streamReader.ReadAtKey("guid", VoltGUID::Null());
-			const std::string state = streamReader.ReadAtKey("state", std::string());
+			const String state = streamReader.ReadAtKey("state", String());
 
 			materialAsset->m_graph->m_graph->AddNode(nodeId, guid);
 			auto& node = underlyingGraph.GetNodeFromID(nodeId);
@@ -220,12 +222,12 @@ namespace Volt
 
 		streamReader.ExitScope();
 
-		std::string logStr = std::format("Loaded material {0} with textures: \n", (uint64_t)metadata->handle);
+		String logStr = FormatString("Loaded material {0} with textures: \n", (uint64_t)metadata->handle);
 
 		// #TODO_Ivar: This should probably happen automatically while deserializing the texture nodes
 		for (const auto tex : materialAsset->m_graph->GetTextureHandles())
 		{
-			logStr += std::format("		- {0}\n", (uint64_t)tex);
+			logStr += FormatString("		- {0}\n", (uint64_t)tex);
 		}
 
 		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)

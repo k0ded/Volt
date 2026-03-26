@@ -19,9 +19,9 @@ namespace Volt
 
 		virtual ~Plugin() = default;
 		virtual uint32_t GetVersion() const = 0;
-		virtual std::string_view GetName() const = 0;
-		virtual std::string_view GetDescription() const = 0;
-		virtual std::string_view GetCategory() const = 0;
+		virtual StringView GetName() const = 0;
+		virtual StringView GetDescription() const = 0;
+		virtual StringView GetCategory() const = 0;
 		virtual VoltGUID GetGUID() const = 0;
 
 		virtual void Initialize() = 0;

@@ -38,7 +38,7 @@ namespace Volt
 	{
 		UUID64 id;
 		VoltGUID nodeTypeGUID;
-		std::string editorState;
+		String editorState;
 	
 		MemoryWriter customSerializationDataWriter;
 		MemoryReader customSerializationDataReader;
@@ -102,7 +102,7 @@ namespace Volt
 	{
 		archive << m_materialGUID;
 
-		std::string editorState = m_graph->GetEditorState();
+		String editorState = m_graph->GetEditorState();
 		archive << editorState;
 
 		if (archive.IsLoading())

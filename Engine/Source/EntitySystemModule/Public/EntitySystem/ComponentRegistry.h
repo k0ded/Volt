@@ -24,10 +24,10 @@ namespace Volt
 
 		void ClearRegistry();
 
-		const ICommonTypeDesc* GetTypeDescFromName(std::string_view name);
+		const ICommonTypeDesc* GetTypeDescFromName(StringView name);
 		const ICommonTypeDesc* GetTypeDescFromGUID(const VoltGUID& guid);
-		std::string_view GetTypeNameFromGUID(const VoltGUID& guid);
-		const VoltGUID GetGUIDFromTypeName(std::string_view typeName);
+		StringView GetTypeNameFromGUID(const VoltGUID& guid);
+		const VoltGUID GetGUIDFromTypeName(StringView typeName);
 
 		inline const auto& GetRegistry() { return m_typeRegistry; }
 
@@ -66,8 +66,8 @@ namespace Volt
 
 		Map<VoltGUID, HelperFunctions> m_componentHelperFunctions;
 		Map<VoltGUID, const ICommonTypeDesc*> m_typeRegistry;
-		Map<std::string_view, VoltGUID> m_typeNameToGUIDMap;
-		Map<VoltGUID, std::string_view> m_guidToTypeNameMap;
+		Map<StringView, VoltGUID> m_typeNameToGUIDMap;
+		Map<VoltGUID, StringView> m_guidToTypeNameMap;
 	};
 
 	template<typename T>
@@ -78,7 +78,8 @@ namespace Volt
 		const auto guid = GetTypeGUID<T>();
 		VT_ENSURE(!m_typeRegistry.contains(guid));
 
-		const std::string_view name = entt::type_name<T>();
+		constexpr std::string_view tempName = entt::type_name<T>();
+		constexpr StringView name(tempName.data(), tempName.size());
 
 		m_typeRegistry[guid] = GetTypeDesc<T>();
 		m_typeNameToGUIDMap[name] = guid;
@@ -152,7 +153,8 @@ namespace Volt
 		const auto guid = GetTypeGUID<T>();
 		VT_ENSURE(!m_typeRegistry.contains(guid));
 
-		const std::string_view name = entt::type_name<T>();
+		constexpr std::string_view tempName = entt::type_name<T>();
+		constexpr StringView name(tempName.data(), tempName.size());
 
 		m_typeRegistry[guid] = GetTypeDesc<T>();
 		m_typeNameToGUIDMap[name] = guid;

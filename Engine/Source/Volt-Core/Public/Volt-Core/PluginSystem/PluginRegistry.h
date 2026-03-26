@@ -5,6 +5,7 @@
 
 #include <LogModule/LogCategory.h>
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Map.h>
@@ -21,8 +22,8 @@ namespace Volt
 
 		void OnPostStageInitializaton() override;
 
-		void FindAndRegisterPluginsInDirectory(const std::filesystem::path& directory);
-		VT_NODISCARD const PluginDefinition& GetPluginDefinitionByName(const std::string& name) const;
+		void FindAndRegisterPluginsInDirectory(const Filesystem::Path& directory);
+		VT_NODISCARD const PluginDefinition& GetPluginDefinitionByName(const String& name) const;
 
 		void BuildPluginDependencies();
 		VT_NODISCARD VT_INLINE const Graph<VoltGUID, uint32_t>& GetPluginDependencyGraph() const { return m_pluginDependencyGraph; }
@@ -30,7 +31,7 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{DA658B2C-1C38-433F-B2C4-62958E996E6E}"_guid)
 
 	private:
-		void DeserializePlugin(const std::filesystem::path& filepath);
+		void DeserializePlugin(const Filesystem::Path& filepath);
 
 		Map<VoltGUID, PluginDefinition> m_registeredPlugins;
 

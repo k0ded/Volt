@@ -4,13 +4,13 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
 
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 using namespace Volt;
 
 struct AllocationInfo
 {
-	std::string name;
+	String name;
 	uint64_t size;
 };
 
@@ -41,7 +41,7 @@ void RenderResourcesPanel::UpdateMainContent()
 
 		for (const auto& allocation : allocInfos)
 		{
-			const std::string sizeString = ::Utility::ToStringWithMetricPrefixCharacterForBytes(allocation.size);
+			const String sizeString = ::Utility::ToStringWithMetricPrefixCharacterForBytes(allocation.size);
 			ImGui::Text("%s: %s", allocation.name.c_str(), sizeString.c_str());
 		}
 	}
@@ -64,7 +64,7 @@ void RenderResourcesPanel::UpdateMainContent()
 
 		for (const auto& allocation : allocInfos)
 		{
-			const std::string sizeString = ::Utility::ToStringWithMetricPrefixCharacterForBytes(allocation.size);
+			const String sizeString = ::Utility::ToStringWithMetricPrefixCharacterForBytes(allocation.size);
 			ImGui::Text("%s: %s", allocation.name.c_str(), sizeString.c_str());
 		}
 	}

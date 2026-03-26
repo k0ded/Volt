@@ -38,9 +38,9 @@ namespace Volt
 
 	struct FontInput
 	{
-		std::string filename;
-		std::string charsetFilename;
-		std::string fontName;
+		String filename;
+		String charsetFilename;
+		String fontName;
 		msdf_atlas::GlyphIdentifierType glyphType;
 	};
 
@@ -82,11 +82,11 @@ namespace Volt
 			}
 		}
 
-		bool Load(const std::filesystem::path& filepath)
+		bool Load(const Filesystem::Path& filepath)
 		{
 			if (m_freeTypeHandle)
 			{
-				if (m_fontHandle = msdfgen::loadFont(m_freeTypeHandle, filepath.string().c_str()); m_fontHandle != nullptr)
+				if (m_fontHandle = msdfgen::loadFont(m_freeTypeHandle, filepath.ToString().c_str()); m_fontHandle != nullptr)
 				{
 					return true;
 				}
@@ -107,7 +107,7 @@ namespace Volt
 	public:
 		using ResultType = FontLoader;
 
-		IORequestReadFont(std::string_view name, const std::filesystem::path& filepath)
+		IORequestReadFont(StringView name, const Filesystem::Path& filepath)
 			: IORequest(name),
 			m_filepath(filepath),
 			m_resultCode(IORequestResultCode::Undefined)
@@ -126,7 +126,7 @@ namespace Volt
 
 	private:
 		FontLoader m_fontLoader;
-		std::filesystem::path m_filepath;
+		Filesystem::Path m_filepath;
 		IORequestResultCode m_resultCode;
 	};
 
@@ -150,7 +150,7 @@ namespace Volt
 		return image;
 	}
 
-	Vector<AssetReference<Asset>> FontSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FontSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const FontSourceImportConfig& importConfig = *reinterpret_cast<const FontSourceImportConfig*>(config);
@@ -159,7 +159,7 @@ namespace Volt
 		Configuration msdfConfig = {};
 
 		fontInput.glyphType = msdf_atlas::GlyphIdentifierType::UNICODE_CODEPOINT;
-		fontInput.filename = filepath.string();
+		fontInput.filename = filepath.ToString();
 
 		msdfConfig.imageType = msdf_atlas::ImageType::MTSDF;
 		msdfConfig.imageFormat = msdf_atlas::ImageFormat::BINARY_FLOAT;
@@ -177,7 +177,7 @@ namespace Volt
 
 		if (ioResult.GetResultCode() == IORequestResultCode::Failure)
 		{
-			const std::string error = std::format("Failed to read font file {}!", filepath);
+			const String error = FormatString("Failed to read font file {}!", filepath);
 			VT_LOGC(Error, LogFontSourceImporter, error);
 			userData.OnError(error);
 			return {};
@@ -217,13 +217,13 @@ namespace Volt
 
 		if (glyphsLoaded == -1)
 		{
-			const std::string error = std::format("Failed to load glyphs from font file {}!", filepath);
+			const String error = FormatString("Failed to load glyphs from font file {}!", filepath);
 			VT_LOGC(Error, LogFontSourceImporter, error);
 			userData.OnError(error);
 			return {};
 		}
 
-		fontGeometry.setName(filepath.string().c_str());
+		fontGeometry.setName(filepath.ToString().c_str());
 
 		const float pxRange = 2.f;
 
@@ -253,7 +253,7 @@ namespace Volt
 				}
 				else
 				{
-					const std::string error = std::format("Could not fit {0} out of {1} glyphs in atlas!", remaining, static_cast<int32_t>(glyphs.size()));
+					const String error = FormatString("Could not fit {0} out of {1} glyphs in atlas!", remaining, static_cast<int32_t>(glyphs.size()));
 					VT_LOGC(Error, LogFontSourceImporter, error);
 					userData.OnError(error);
 					return {};
@@ -388,7 +388,7 @@ namespace Volt
 		return { fontAsset };
 	}
 
-	SourceAssetFileInformation FontSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation FontSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		return {};
 	}

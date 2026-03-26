@@ -24,7 +24,7 @@ ArchiveVersionRegistry& ArchiveVersionRegistry::Get()
 	return registry;
 }
 
-void ArchiveVersionRegistry::RegisterVersion(const VoltGUID& guid, int32_t currentVersion, std::string_view name)
+void ArchiveVersionRegistry::RegisterVersion(const VoltGUID& guid, int32_t currentVersion, StringView name)
 {
 	VT_ENSURE(!m_registeredVersions.contains(guid));
 	m_registeredVersions[guid] = { name, currentVersion };

@@ -13,7 +13,7 @@ namespace Volt
 	class MaterialShaderMap
 	{
 	public:
-		void Initialize(const std::string& name, CompiledMaterialShaders&& compiledMaterialShaders);
+		void Initialize(const String& name, CompiledMaterialShaders&& compiledMaterialShaders);
 
 		template<typename T>
 		IntRef<RHI::Shader> GetShader(const T::PermutationVector& permutationVector)
@@ -77,7 +77,7 @@ namespace Volt
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 
 		CompiledMaterialShaders m_compiledMaterialShaders;
-		std::string m_name;
+		String m_name;
 		std::shared_mutex m_mutex;
 	};
 }

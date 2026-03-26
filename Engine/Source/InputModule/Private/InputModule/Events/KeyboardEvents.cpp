@@ -3,24 +3,18 @@
 
 namespace Volt
 {
-	std::string KeyPressedEvent::ToString() const
+	String KeyPressedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "KeyPressedEvent: " << Volt::ToString(m_keyCode) << "(" << m_repeatCount << " repeats)";
-		return ss.str();
+		return FormatString("KeyPressedEvent: {} ({} repeats)", Volt::ToString(m_keyCode), m_repeatCount);
 	}
 
-	std::string KeyReleasedEvent::ToString() const
+	String KeyReleasedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "KeyReleasedEvent: " << Volt::ToString(m_keyCode);
-		return ss.str();
+		return FormatString("KeyReleasedEvent: {}", Volt::ToString(m_keyCode));
 	}
 
-	std::string KeyTypedEvent::ToString() const
+	String KeyTypedEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "KeyTypedEvent: " << m_character;
-		return ss.str();
+		return FormatString("KeyTypedEvent: {}", m_character);
 	}
 }

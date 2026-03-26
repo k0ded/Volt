@@ -23,7 +23,7 @@ namespace Volt::RHI
 	protected:
 		CompilationResultData TryCompileImpl(const Specification& specification) override;
 		void AddMacroImpl(const std::string& macroName) override;
-		void RemoveMacroImpl(std::string_view macroName) override;
+		void RemoveMacroImpl(StringView macroName) override;
 		void* GetHandleImpl() const override;
 
 	private:
@@ -46,18 +46,18 @@ namespace Volt::RHI
 		bool PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult);
 		void ReflectShader(const Specification& specification, CompilationResultData& inOutData, ID3D12ShaderReflection* reflectionData);
 
-		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
-		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source);
+		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
+		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const std::string& source);
 
 		IDxcCompiler3* m_hlslCompiler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;
 		IDxcRewriter* m_hlslRewriter = nullptr;
 		IDxcRewriter2* m_hlslRewriter2 = nullptr;
 
-		Vector<std::filesystem::path> m_includeDirectories;
+		Vector<Filesystem::Path> m_includeDirectories;
 		Vector<std::string> m_macros;
 		ShaderCompilerFlags m_flags = ShaderCompilerFlags::None;
-		std::filesystem::path m_cacheDirectory;
+		Filesystem::Path m_cacheDirectory;
 
 		IntRef<ShaderCache> m_shaderCache;
 	};

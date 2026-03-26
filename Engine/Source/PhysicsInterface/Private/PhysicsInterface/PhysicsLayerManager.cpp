@@ -6,7 +6,7 @@ Volt::PhysicsLayerManager g_physicsLayerManager;
 
 namespace Volt
 {
-	void PhysicsLayerManager::AddLayer(const std::string& name)
+	void PhysicsLayerManager::AddLayer(const String& name)
 	{
 		auto& newLayer = m_layers.emplace_back();
 		newLayer.id = GetNextLayerID();

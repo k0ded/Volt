@@ -5,11 +5,12 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <Volt-FileSystem/FileIORequest.h>
+#include <Volt-FileSystem/Filesystem.h>
 #include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
 
 #include <JobSystem/TaskGraph.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
 
@@ -26,7 +27,7 @@ namespace Volt
 		"The asset registry hash table cannot be resized.\n"
 		"This is the max number of assets that can exist.");
 
-	AssetRegistry::AssetRegistry(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
+	AssetRegistry::AssetRegistry(const Filesystem::Path& engineDirectoryPath, const Filesystem::Path& projectDirectoryPath, StringView assetsDirectoryName)
 		: m_engineDirectoryPath(engineDirectoryPath),
 		m_projectDirectoryPath(projectDirectoryPath),
 		m_assetsDirectoryName(assetsDirectoryName)
@@ -84,16 +85,16 @@ namespace Volt
 		VT_LOGC(Info, LogAssetSystem, "Fetching asset meta data...");
 		ScopedTimer timer{};
 
-		Vector<std::filesystem::path> engineAssetFilepaths;
-		Vector<std::filesystem::path> projectAssetFilepaths;
+		Vector<Filesystem::Path> engineAssetFilepaths;
+		Vector<Filesystem::Path> projectAssetFilepaths;
 
 		ScanForAssets(engineAssetFilepaths, projectAssetFilepaths);
 
 		// Project assets
 		{
-			TaskGraph taskGraph{ ExecutionPriority::Critical, static_cast<uint32_t>(projectAssetFilepaths.size()) };
+			TaskGraph taskGraph{ ExecutionPriority::Immediate, static_cast<uint32_t>(projectAssetFilepaths.size()) };
 			
-			for (const std::filesystem::path& assetFilepath : projectAssetFilepaths)
+			for (const Filesystem::Path& assetFilepath : projectAssetFilepaths)
 			{
 				taskGraph.AddTask("Deserialize Project Asset Metadata", [this, assetFilepath]() 
 				{
@@ -103,7 +104,7 @@ namespace Volt
 					{
 						if (s_assetRegistryLogAssetScan.GetValue())
 						{
-							std::string logMessage = std::format(
+							String logMessage = FormatString(
 								"AssetMetadata with handle {} added: \n"
 								"	- Filepath: {}\n"
 								"	- Type: {}\n",
@@ -127,7 +128,7 @@ namespace Volt
 		{
 			TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
-			for (const std::filesystem::path& assetFilepath : engineAssetFilepaths)
+			for (const Filesystem::Path& assetFilepath : engineAssetFilepaths)
 			{
 				taskGraph.AddTask("Deserialize Engine Asset Metadata", [this, &assetFilepath]() 
 				{
@@ -139,7 +140,7 @@ namespace Volt
 					{
 						if (s_assetRegistryLogAssetScan.GetValue())
 						{
-							std::string logMessage = std::format(
+							String logMessage = FormatString(
 								"AssetMetadata with handle {} added: \n"
 								"	- Filepath: {}\n"
 								"	- Type: {}\n",
@@ -162,7 +163,7 @@ namespace Volt
 		VT_LOGC(Info, LogAssetSystem, "Finished fetching meta data in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 
-	void AssetRegistry::DeserializeAssetMetadata(const std::filesystem::path& assetFilepath, AssetMetadata& outMetadata)
+	void AssetRegistry::DeserializeAssetMetadata(const Filesystem::Path& assetFilepath, AssetMetadata& outMetadata)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -220,24 +221,24 @@ namespace Volt
 		}
 	}
 
-	std::filesystem::path AssetRegistry::GetRelativeAssetFilepath(const std::filesystem::path& filepath) const
+	Filesystem::Path AssetRegistry::GetRelativeAssetFilepath(const Filesystem::Path& filepath) const
 	{
-		const std::filesystem::path normalizedFilepath = filepath.lexically_normal();
-		const std::filesystem::path assetsDirectoryFilepath = m_projectDirectoryPath / m_assetsDirectoryName;
+		Filesystem::Path normalizedFilepath = filepath.LexicallyNormal();
+		const Filesystem::Path assetsDirectoryFilepath = m_projectDirectoryPath / m_assetsDirectoryName;
 
-		const std::string normalizedFilepathString = normalizedFilepath.string();
+		const String normalizedFilepathString = normalizedFilepath.ToString();
 
-		if (normalizedFilepathString.find(assetsDirectoryFilepath.string()) != std::string::npos)
+		if (normalizedFilepathString.find(assetsDirectoryFilepath.ToString()) != String::npos)
 		{
-			return std::filesystem::proximate(normalizedFilepath, m_projectDirectoryPath).generic_string();
+			return Filesystem::Proximate(normalizedFilepath, m_projectDirectoryPath).MakePreferred();
 		}
 
-		if (normalizedFilepathString.find(m_engineDirectoryPath.string()) != std::string::npos)
+		if (normalizedFilepathString.find(m_engineDirectoryPath.ToString()) != String::npos)
 		{
-			return std::filesystem::proximate(normalizedFilepath, m_engineDirectoryPath).generic_string();
+			return Filesystem::Proximate(normalizedFilepath, m_engineDirectoryPath).MakePreferred();
 		}
 
-		return normalizedFilepath.generic_string();
+		return normalizedFilepath.MakePreferred();
 	}
 
 	int32_t AssetRegistry::GetNumMaxAssets()
@@ -271,40 +272,40 @@ namespace Volt
 		return AssetHeaderDeserializationResult::Success;
 	}
 
-	void AssetRegistry::ScanForAssets(Vector<std::filesystem::path>& outEngineAssets, Vector<std::filesystem::path>& outProjectAssets)
+	void AssetRegistry::ScanForAssets(Vector<Filesystem::Path>& outEngineAssets, Vector<Filesystem::Path>& outProjectAssets)
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr std::string_view AssetExtension = ".vtasset";
+		constexpr StringView AssetExtension = ".vtasset";
 		constexpr uint32_t NumEngineFilepaths = 2;
 
-		const Array<std::filesystem::path, NumEngineFilepaths> engineFilepathsToScan =
+		const Array<Filesystem::Path, NumEngineFilepaths> engineFilepathsToScan =
 		{
 			m_engineDirectoryPath / "Engine",
 			m_engineDirectoryPath / "Editor",
 		};
 
-		const std::filesystem::path projectFilepathToScan = m_projectDirectoryPath / m_assetsDirectoryName;
+		const Filesystem::Path projectFilepathToScan = m_projectDirectoryPath / m_assetsDirectoryName;
 
 		TaskGraph scanGraph{ ExecutionPriority::Immediate };
 
-		Array<Vector<std::filesystem::path>, NumEngineFilepaths> engineIntermediateFilepaths;
+		Array<Vector<Filesystem::Path>, NumEngineFilepaths> engineIntermediateFilepaths;
 
-		for (uint32_t index = 0; const std::filesystem::path& filepathToScan : engineFilepathsToScan)
+		for (uint32_t index = 0; const Filesystem::Path& filepathToScan : engineFilepathsToScan)
 		{
 			// If the directory does not exist, we skip.
-			if (!FileSystem::Exists(filepathToScan))
+			if (!Filesystem::Exists(filepathToScan))
 			{
 				continue;
 			}
 
 			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]() 
 			{
-				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(filepathToScan))
+				for (const auto& entry : Filesystem::RecursiveDirectoryIterator(filepathToScan))
 				{
-					if (pathIt.path().extension() == AssetExtension)
+					if (entry.path.Extension() == AssetExtension)
 					{
-						engineIntermediateFilepaths[index].emplace_back(pathIt.path());
+						engineIntermediateFilepaths[index].emplace_back(entry.path);
 					}
 				}
 			});
@@ -313,15 +314,15 @@ namespace Volt
 		}
 
 		// Make sure the project assets directory exists.
-		if (FileSystem::Exists(projectFilepathToScan))
+		if (Filesystem::Exists(projectFilepathToScan))
 		{
 			scanGraph.AddTask("Scan Project Assets", [&outProjectAssets, &projectFilepathToScan]() 
 			{
-				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(projectFilepathToScan))
+				for (const auto& entry : Filesystem::RecursiveDirectoryIterator(projectFilepathToScan))
 				{
-					if (pathIt.path().extension() == AssetExtension)
+					if (entry.path.Extension() == AssetExtension)
 					{
-						outProjectAssets.emplace_back(pathIt.path());
+						outProjectAssets.emplace_back(entry.path);
 					}
 				}
 			});
@@ -329,7 +330,7 @@ namespace Volt
 
 		scanGraph.ExecuteAndWait();
 
-		for (const Vector<std::filesystem::path>& intermediate : engineIntermediateFilepaths)
+		for (const Vector<Filesystem::Path>& intermediate : engineIntermediateFilepaths)
 		{
 			outEngineAssets.append(intermediate);
 		}

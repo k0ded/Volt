@@ -3,9 +3,12 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
-#include <RHIModule/Shader/ShaderUtility.h>
+#include <Volt-FileSystem/FileUtility.h>
+
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+
+#include <filesystem>
 
 #include <vulkan/vulkan.h>
 
@@ -14,7 +17,7 @@ namespace Volt::RHI
 	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo)
 		: m_name(createInfo.name), m_failureIsFatal(createInfo.failureIsFatal)
 	{
-		VT_ENSURE(!createInfo.sourceFilepath.empty());
+		VT_ENSURE(!createInfo.sourceFilepath.IsEmpty());
 		VT_ENSURE(!createInfo.entryPoint.empty());
 
 		m_sourceInfo.sourceEntry.entryPoint = createInfo.entryPoint;
@@ -25,7 +28,7 @@ namespace Volt::RHI
 		LoadAndCompileShader(createInfo.forceCompile);
 	}
 
-	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo, const std::string& source)
+	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo, const String& source)
 		: m_name(createInfo.name), m_failureIsFatal(createInfo.failureIsFatal)
 	{
 		VT_ENSURE(!source.empty());
@@ -44,7 +47,7 @@ namespace Volt::RHI
 		Release();
 	}
 	
-	std::string_view VulkanShader::GetName() const
+	StringView VulkanShader::GetName() const
 	{
 		return m_name;
 	}
@@ -71,9 +74,12 @@ namespace Volt::RHI
 
 	void VulkanShader::LoadAndCompileShader(bool forceCompile)
 	{
-		if (!m_sourceInfo.sourceEntry.filepath.empty())
+		if (!m_sourceInfo.sourceEntry.filepath.IsEmpty())
 		{
-			m_sourceInfo.source = Utility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath);
+			if (!FileUtility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath, m_sourceInfo.source))
+			{
+				return;
+			}
 		}
 	
 		if (m_sourceInfo.source.empty())
@@ -93,7 +99,7 @@ namespace Volt::RHI
 		{
 			if (m_failureIsFatal)
 			{
-				VT_ENSURE_MSG(false, std::format("Shader {} failed to compile!", m_name));
+				VT_ENSURE_MSG(false, FormatString("Shader {} failed to compile!", m_name));
 			}
 			return;
 		}
@@ -113,7 +119,7 @@ namespace Volt::RHI
 		GenerateHash();
 
 		// Clean up
-		if (!m_sourceInfo.sourceEntry.filepath.empty())
+		if (!m_sourceInfo.sourceEntry.filepath.IsEmpty())
 		{
 			m_sourceInfo.source.clear();
 		}

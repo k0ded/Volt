@@ -140,7 +140,7 @@ namespace Volt::RHI
 			nameInfo.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
 			nameInfo.objectHandle = std::bit_cast<uint64_t>(memoryHandle);
 		
-			constexpr std::string_view name = "Transient Heap Page";
+			constexpr StringView name = "Transient Heap Page";
 			nameInfo.pObjectName = name.data();
 
 			RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);

@@ -79,7 +79,7 @@ namespace Volt
 			virtual JobRef CreateJob(ExecutionPriority priority, JobCounterRef counter) = 0;
 			virtual JobRef CreateJobAsDependency(ExecutionPriority priority, JobRef dependant) = 0;
 
-			std::string_view m_name;
+			StringView m_name;
 			uint32_t m_referenceCount = 0;
 
 			// #TODO_Ivar: Switch to a sparse set when we have one.
@@ -92,9 +92,9 @@ namespace Volt
 
 		VT_DELETE_COPY_MOVE(TaskGraph);
 
-		template<typename Func> TaskGraph::Task* AddTask(std::string_view name, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> TaskGraph::Task* AddTask(StringView name, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(StringView name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(StringView name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 
 		void Execute();
 		JobCounterRef ExecuteAndExtractCounter();
@@ -140,7 +140,7 @@ namespace Volt
 	};
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTask(std::string_view name, Func&& func, FiberStackSize stackSize)
+	TaskGraph::Task* TaskGraph::AddTask(StringView name, Func&& func, FiberStackSize stackSize)
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
@@ -150,7 +150,7 @@ namespace Volt
 	}
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
+	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(StringView name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
@@ -161,7 +161,7 @@ namespace Volt
 	}
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
+	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(StringView name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;

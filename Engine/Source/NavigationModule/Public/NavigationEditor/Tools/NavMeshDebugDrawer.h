@@ -54,7 +54,7 @@ public:
 
 	static void CompileDebugMesh(Volt::AI::NavMesh* navmesh);
 
-	inline static const std::filesystem::path DebugMaterialPath = "Engine\\Materials\\M_NavMesh.vtmat";
+	inline static const Filesystem::Path DebugMaterialPath = "Engine\\Materials\\M_NavMesh.vtmat";
 
 private:
 	inline static NavMeshDrawCompiler debugDrawCompiler;

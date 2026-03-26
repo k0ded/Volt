@@ -2,8 +2,8 @@
 
 #include "Volt-Core/Config.h"
 
-#include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Pointers/Weak.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 #include <unordered_map>
 
@@ -15,8 +15,8 @@ namespace Volt
 		virtual const void* Get() const = 0;
 		virtual void Set(const void* value) = 0;
 
-		virtual std::string_view GetName() const = 0;
-		virtual std::string_view GetDescription() const = 0;
+		virtual StringView GetName() const = 0;
+		virtual StringView GetDescription() const = 0;
 		
 		virtual bool IsInteger() const = 0;
 		virtual bool IsFloat() const = 0;
@@ -24,35 +24,35 @@ namespace Volt
 	};
 
 	template<typename T>
-	concept ValidConsoleVariableType = std::is_same_v<T, int32_t> || std::is_same_v<T, float> || std::is_same_v<T, std::string>;
+	concept ValidConsoleVariableType = std::is_same_v<T, int32_t> || std::is_same_v<T, float> || std::is_same_v<T, String>;
 
 	template<ValidConsoleVariableType T>
 	class RegisteredConsoleVariable : public RegisteredConsoleVariableBase
 	{
 	public:
-		RegisteredConsoleVariable(const std::string& variableName, const T& defaultValue, std::string_view description);
+		RegisteredConsoleVariable(const String& variableName, const T& defaultValue, StringView description);
 
 		VT_NODISCARD const void* Get() const override;
 		void Set(const void* value) override;
 
-		VT_NODISCARD inline std::string_view GetName() const override { return m_variableName; }
-		VT_NODISCARD inline std::string_view GetDescription() const override { return m_description; }
+		VT_NODISCARD inline StringView GetName() const override { return m_variableName; }
+		VT_NODISCARD inline StringView GetDescription() const override { return m_description; }
 
 		VT_NODISCARD inline constexpr bool IsInteger() const override { return std::is_integral_v<T>; }
 		VT_NODISCARD inline constexpr bool IsFloat() const override { return std::is_floating_point_v<T>; }
-		VT_NODISCARD inline constexpr bool IsString() const override { return std::is_same_v<T, std::string>; }
+		VT_NODISCARD inline constexpr bool IsString() const override { return std::is_same_v<T, String>; }
 
 	private:
 		T m_value;
-		std::string m_variableName;
-		std::string_view m_description;
+		String m_variableName;
+		StringView m_description;
 	};
 
 	template<ValidConsoleVariableType T>
 	class ConsoleVariable
 	{
 	public:
-		ConsoleVariable(std::string_view variableName, const T& defaultValue, std::string_view description);
+		ConsoleVariable(StringView variableName, const T& defaultValue, StringView description);
 
 		const T& GetValue() const { return *reinterpret_cast<const T*>(m_variableReference.Lock()->Get()); }
 		void SetValue(const T& value) { m_variableReference.Lock()->Set(&value); }
@@ -76,7 +76,7 @@ namespace Volt
 	class ConsoleVariableRef
 	{
 	public:
-		ConsoleVariableRef(std::string_view variableName);
+		ConsoleVariableRef(StringView variableName);
 
 		const T& GetValue() const { return *reinterpret_cast<T*>(m_variableReference.Lock()->Get()); }
 		void SetValue(const T& value) { m_variableReference.Lock()->Set(&value); }
@@ -102,24 +102,24 @@ namespace Volt
 		~ConsoleVariableRegistry();
 
 		template<ValidConsoleVariableType T>
-		static Weak<RegisteredConsoleVariable<T>> RegisterVariable(std::string_view variableName, const T& defaultValue, std::string_view description);
+		static Weak<RegisteredConsoleVariable<T>> RegisterVariable(StringView variableName, const T& defaultValue, StringView description);
 
 		template<ValidConsoleVariableType T>
-		static Weak<RegisteredConsoleVariable<T>> FindVariable(const std::string& variableName);
+		static Weak<RegisteredConsoleVariable<T>> FindVariable(const String& variableName);
 
-		static Weak<RegisteredConsoleVariableBase> GetVariable(const std::string& variableName);
-		static bool VariableExists(const std::string& variableName);
+		static Weak<RegisteredConsoleVariableBase> GetVariable(const String& variableName);
+		static bool VariableExists(const String& variableName);
 
-		static std::unordered_map<std::string, Ref<RegisteredConsoleVariableBase>>& GetRegisteredVariables();
+		static std::unordered_map<String, Ref<RegisteredConsoleVariableBase>>& GetRegisteredVariables();
 
 		static ConsoleVariableRegistry& Get();
 
 	private:
-		std::unordered_map<std::string, Ref<RegisteredConsoleVariableBase>> m_registeredVariables;
+		std::unordered_map<String, Ref<RegisteredConsoleVariableBase>> m_registeredVariables;
 	};
 
 	template<ValidConsoleVariableType T>
-	inline RegisteredConsoleVariable<T>::RegisteredConsoleVariable(const std::string& variableName, const T& defaultValue, std::string_view description)
+	inline RegisteredConsoleVariable<T>::RegisteredConsoleVariable(const String& variableName, const T& defaultValue, StringView description)
 		: m_value(defaultValue), m_variableName(variableName), m_description(description)
 	{
 	}
@@ -137,15 +137,15 @@ namespace Volt
 	}
 
 	template<ValidConsoleVariableType T>
-	inline ConsoleVariable<T>::ConsoleVariable(std::string_view variableName, const T& defaultValue, std::string_view description)
+	inline ConsoleVariable<T>::ConsoleVariable(StringView variableName, const T& defaultValue, StringView description)
 	{
 		m_variableReference = ConsoleVariableRegistry::RegisterVariable<T>(variableName, defaultValue, description);
 	}
 
 	template<ValidConsoleVariableType T>
-	inline Weak<RegisteredConsoleVariable<T>> ConsoleVariableRegistry::RegisterVariable(std::string_view variableName, const T& defaultValue, std::string_view description)
+	inline Weak<RegisteredConsoleVariable<T>> ConsoleVariableRegistry::RegisterVariable(StringView variableName, const T& defaultValue, StringView description)
 	{
-		std::string tempVarName = ::Utility::ToLower(std::string(variableName));
+		String tempVarName = ::Utility::ToLower(String(variableName));
 
 		Ref<RegisteredConsoleVariable<T>> consoleVariable = CreateRef<RegisteredConsoleVariable<T>>(tempVarName, defaultValue, description);
 
@@ -156,9 +156,9 @@ namespace Volt
 	}
 	
 	template<ValidConsoleVariableType T>
-	inline Weak<RegisteredConsoleVariable<T>> ConsoleVariableRegistry::FindVariable(const std::string& variableName)
+	inline Weak<RegisteredConsoleVariable<T>> ConsoleVariableRegistry::FindVariable(const String& variableName)
 	{
-		const std::string tempVarName = ::Utility::ToLower(variableName);
+		const String tempVarName = ::Utility::ToLower(variableName);
 
 		if (ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName))
 		{
@@ -169,7 +169,7 @@ namespace Volt
 	}
 
 	template<ValidConsoleVariableType T>
-	inline ConsoleVariableRef<T>::ConsoleVariableRef(std::string_view variableName)
+	inline ConsoleVariableRef<T>::ConsoleVariableRef(StringView variableName)
 	{
 		m_variableReference = ConsoleVariableRegistry::FindVariable(variableName);
 		VT_ASSERT_MSG(m_variableReference, "Variable with name not found!");

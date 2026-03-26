@@ -2,6 +2,7 @@
 
 #include <CoreUtilities/Delegates/Attribute.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 #define CreateWidget(InWidgetType) \
 	CircuitDeclare<InWidgetType>() <<= InWidgetType::Arguments()

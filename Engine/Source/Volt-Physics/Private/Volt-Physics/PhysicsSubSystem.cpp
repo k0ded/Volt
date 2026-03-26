@@ -2,6 +2,7 @@
 
 #include "Volt-Physics/PhysicsSubSystem.h"
 
+#include <Volt-FileSystem/Filesystem.h>
 #include <Volt-Core/DynamicLibraryManager.h>
 
 #include <PhysicsInterface/PhysicsLayerManager.h>
@@ -12,7 +13,7 @@ namespace Volt
 	VT_REGISTER_SUBSYSTEM(PhysicsSubSystem, Default, Engine);
 
 	PhysicsSubSystem::PhysicsSubSystem()
-		: m_physicsModulePath(std::filesystem::absolute("Binaries\\PhysXPhysicsInterface.dll"))
+		: m_physicsModulePath(Filesystem::Absolute("Binaries\\PhysXPhysicsInterface.dll"))
 	{
 	}
 

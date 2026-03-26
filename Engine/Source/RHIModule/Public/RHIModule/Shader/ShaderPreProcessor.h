@@ -8,7 +8,7 @@ namespace Volt::RHI
 {
 	struct PreProcessorResult
 	{
-		std::string preProcessedResult;
+		String preProcessedResult;
 	
 		Vector<PixelFormat> outputFormats;
 		BufferLayoutMap vertexLayout;
@@ -17,8 +17,8 @@ namespace Volt::RHI
 
 	struct PreProcessorData
 	{
-		std::string shaderSource;
-		std::string entryPoint = "main";
+		String shaderSource;
+		String entryPoint = "main";
 
 		ShaderStage shaderStage;
 	};
@@ -32,13 +32,13 @@ namespace Volt::RHI
 		static bool PreProcessPixelSource(const PreProcessorData& data, PreProcessorResult& outResult);
 		static bool PreProcessVertexSource(const PreProcessorData& data, PreProcessorResult& outResult);
 
-		static PixelFormat FindDefaultFormatFromString(std::string_view str);
-		static PixelFormat FindFormatFromLayoutQualifier(const std::string& str);
+		static PixelFormat FindDefaultFormatFromString(StringView str);
+		static PixelFormat FindFormatFromLayoutQualifier(const String& str);
 
-		static ElementType FindDefaultElementTypeFromString(std::string_view str);
-		static ElementType FindElementTypeFromTag(std::string_view tagStr);
+		static ElementType FindDefaultElementTypeFromString(StringView str);
+		static ElementType FindElementTypeFromTag(StringView tagStr);
 
-		static ShaderUniformType FindUniformTypeFromString(std::string_view str);
+		static ShaderUniformType FindUniformTypeFromString(StringView str);
 
 		static void ErasePreProcessData(PreProcessorResult& outResult);
 

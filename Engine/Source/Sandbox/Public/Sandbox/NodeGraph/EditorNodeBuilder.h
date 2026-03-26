@@ -31,7 +31,7 @@ struct EditorNodePinDefinition
 	PinType pinType;
 
 	EditorNodePinID pinID;
-	std::string pinName;
+	String pinName;
 	EditorPinUserData userData;
 };
 

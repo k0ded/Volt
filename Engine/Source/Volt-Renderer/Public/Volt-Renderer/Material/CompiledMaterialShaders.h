@@ -18,11 +18,11 @@ namespace Volt
 			{}
 
 			TypeTraits::TypeIndex shaderType;
-			std::string compiledShader;
-			std::string entryPoint;
+			String compiledShader;
+			String entryPoint;
 		};
 
-		VTR_API void Add(TypeTraits::TypeIndex shaderType, std::string&& compiledShader, const std::string& entryPoint);
+		VTR_API void Add(TypeTraits::TypeIndex shaderType, String&& compiledShader, const String& entryPoint);
 		VTR_API const CompiledMaterialShader& Get(TypeTraits::TypeIndex shaderType) const;
 
 		VT_INLINE bool Empty() const { return m_compiledShaders.empty(); }

@@ -32,7 +32,7 @@ namespace Volt
 		void* m_monitoredWritePipe = nullptr;
 
 		bool m_isDisplayingCrash = false;
-		std::string m_crashMessage;
+		String m_crashMessage;
 
 		CrashContext m_crashContext;
 	};

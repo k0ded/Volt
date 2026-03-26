@@ -14,7 +14,7 @@
 
 #include <imgui.h>
 
-AssetBrowserPopup::AssetBrowserPopup(const std::string& id, AssetType wantedType, Volt::AssetHandle& handle)
+AssetBrowserPopup::AssetBrowserPopup(const String& id, AssetType wantedType, Volt::AssetHandle& handle)
 	: myId(id), myWantedType(wantedType), myHandle(handle)
 {
 }
@@ -63,7 +63,7 @@ AssetBrowserPopup::State AssetBrowserPopup::Update()
 inline static size_t GetHashFromMetadata(const Volt::AssetMetadata& metadata)
 {
 	size_t hash = 0;
-	hash = std::hash<std::string>()(metadata.filepath.stem().string());
+	hash = std::hash<Filesystem::Path>()(metadata.filepath.Stem());
 	hash = Math::HashCombine(hash, std::hash<uint64_t>()(metadata.handle));
 
 	return hash;
@@ -74,7 +74,7 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 	VT_PROFILE_FUNCTION();
 
 	State state = State::Open;
-	Vector<std::pair<std::string, Volt::AssetHandle>> nameHandle;
+	Vector<std::pair<String, Volt::AssetHandle>> nameHandle;
 
 	for (const auto& handle : items)
 	{
@@ -90,11 +90,11 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 			continue;
 		}
 
-		const std::string assetName = metadata->filepath.stem().string();
+		const String assetName = metadata->filepath.Stem().ToString();
 		nameHandle.emplace_back(assetName, metadata->handle);
 	}
 
-	Vector<std::string> searchNames{};
+	Vector<String> searchNames{};
 	for (const auto& [name, handle] : nameHandle)
 	{
 		if (std::find(searchNames.begin(), searchNames.end(), name) != searchNames.end())
@@ -117,7 +117,7 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 			continue;
 		}
 
-		std::string assetId = name + "##" + std::to_string(handle);
+		String assetId = FormatString("{}##{}", name, handle);
 
 		UI::RenderMatchingTextBackground(mySearchQuery, name, EditorTheme::MatchingTextBackground);
 		if (ImGui::Selectable(assetId.c_str()))

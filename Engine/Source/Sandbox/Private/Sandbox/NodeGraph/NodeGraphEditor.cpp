@@ -9,7 +9,7 @@ namespace ed = ax::NodeEditor;
 
 namespace NodeGraph
 {
-	Editor::Editor(const std::string& title, const std::string& context, bool dockSpace, Ref<EditorBackend> backend)
+	Editor::Editor(const String& title, const String& context, bool dockSpace, Ref<EditorBackend> backend)
 		: EditorWindow(title, dockSpace), myContext(context), myBackend(backend)
 	{
 		m_windowFlags = ImGuiWindowFlags_MenuBar;
@@ -184,7 +184,7 @@ namespace NodeGraph
 		{
 			Editor* editor = static_cast<Editor*>(userPointer);
 
-			std::string graphContext;
+			String graphContext;
 			editor->LoadSettings(graphContext);
 
 			if (data)
@@ -205,7 +205,7 @@ namespace NodeGraph
 		{
 			Editor* editor = static_cast<Editor*>(userPointer);
 
-			std::string graphContext;
+			String graphContext;
 			editor->LoadNodeSettings(nodeId.Get(), graphContext);
 
 			if (data)
@@ -232,7 +232,7 @@ namespace NodeGraph
 
 			ImGui::SetNextWindowSizeConstraints({ 100.f, 100.f }, { 0.f, 0.f });
 
-			const std::string id = "Editor##" + myContext;
+			const String id = "Editor##" + myContext;
 			ImGui::Begin(id.c_str());
 		}
 

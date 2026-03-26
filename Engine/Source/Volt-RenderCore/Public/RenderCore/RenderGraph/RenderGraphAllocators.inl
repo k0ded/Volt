@@ -3,7 +3,7 @@
 namespace Volt
 {
 	template<typename ExecFunc, typename T>
-	RGPassRef RenderGraphPassAllocator::AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
+	RGPassRef RenderGraphPassAllocator::AllocatePass(const String& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
 	{
 		// Lmabda that will execute the pass
 		auto passExecWrapperFunc = [](void* funcDataPtr, RenderContext& renderContext)

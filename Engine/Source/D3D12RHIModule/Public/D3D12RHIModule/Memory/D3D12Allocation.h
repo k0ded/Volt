@@ -24,7 +24,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
-		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
+		VT_NODISCARD VT_INLINE StringView GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -55,7 +55,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
-		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
+		VT_NODISCARD VT_INLINE StringView GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -86,7 +86,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
-		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
+		VT_NODISCARD VT_INLINE StringView GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -119,7 +119,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
-		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
+		VT_NODISCARD VT_INLINE StringView GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;

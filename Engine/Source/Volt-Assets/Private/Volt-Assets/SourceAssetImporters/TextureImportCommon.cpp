@@ -2,14 +2,14 @@
 
 #include "Volt-Assets/SourceAssetImporters/TextureImportCommon.h"
 
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 
 namespace Volt::TextureImport
 {
-	TextureCompressionType TryGetTextureCompressionTypeFromFilename(const ::std::string& filename)
+	TextureCompressionType TryGetTextureCompressionTypeFromFilename(const ::String& filename)
 	{
-		::std::string lowerFilename = Utility::ToLower(filename);
+		String lowerFilename = Utility::ToLower(filename);
 
 		// It's a base color texture
 		if (lowerFilename.contains("_basecolor") || 

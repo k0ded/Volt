@@ -38,7 +38,7 @@ namespace Volt::RHI
 		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 
 		InvalidateSwapchainImage(desc);
-		m_desc.debugName = std::format("Swapchain Image {}", desc.imageIndex);
+		m_desc.debugName = FormatString("Swapchain Image {}", desc.imageIndex);
 		SetName(m_desc.debugName);
 	}
 
@@ -186,7 +186,7 @@ namespace Volt::RHI
 		return m_viewCache.GetOrCreateView(tempDesc);
 	}
 
-	void VulkanImage::SetName(const std::string& name)
+	void VulkanImage::SetName(const String& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -212,7 +212,7 @@ namespace Volt::RHI
 		m_desc.debugName = name;
 	}
 
-	std::string_view VulkanImage::GetName() const
+	StringView VulkanImage::GetName() const
 	{
 		return m_desc.debugName;
 	}

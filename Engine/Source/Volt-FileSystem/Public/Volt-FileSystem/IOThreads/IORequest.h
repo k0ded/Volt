@@ -18,13 +18,13 @@ namespace Volt
 	class IORequest
 	{
 	public:
-		VTFS_API IORequest(std::string_view name);
+		VTFS_API IORequest(StringView name);
 		virtual ~IORequest() = default;
 
 		virtual void Execute() = 0;
 		virtual IORequestResultCode GetResultCode() const = 0;
 
-		VT_INLINE std::string_view GetName() const { return m_name; }
+		VT_INLINE StringView GetName() const { return m_name; }
 
 		VT_INLINE void IncRef() 
 		{ 
@@ -45,7 +45,7 @@ namespace Volt
 		VTFS_API void FreeRequest();
 
 		std::atomic_int32_t m_refCount;
-		std::string_view m_name;
+		StringView m_name;
 	};
 
 	template<typename T>

@@ -124,7 +124,7 @@ namespace Volt::RHI
 		virtual IntRef<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const = 0;
 
 		virtual IntRef<Shader> CreateShader(const ShaderCreateInfo& specification) const = 0;
-		virtual IntRef<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const = 0;
+		virtual IntRef<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const String& source) const = 0;
 		virtual IntRef<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 
 		virtual IntRef<Fence> CreateFence() const = 0;

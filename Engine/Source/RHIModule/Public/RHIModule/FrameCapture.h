@@ -1,9 +1,9 @@
 #pragma once
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 #include <cstdint>
-#include <filesystem>
 
 namespace Volt::RHI
 {
@@ -26,7 +26,7 @@ namespace Volt::RHI
 		virtual bool IsCaptureApplicationRunning() const = 0;
 		virtual void LaunchCaptureApplication() = 0;
 
-		virtual void SetCaptureFileTargetFilePath(const std::filesystem::path& filePath) = 0;
+		virtual void SetCaptureFileTargetFilePath(const Filesystem::Path& filePath) = 0;
 		virtual void SetFlags(FrameCaptureFlags flags) = 0;
 
 	protected:

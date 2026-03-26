@@ -1,4 +1,4 @@
-#include <CoreUtilities/VoltString.h>
+#include <CoreUtilities/String/VoltString.h>
 
 #include <gtest/gtest.h>
 

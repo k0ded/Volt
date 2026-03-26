@@ -26,7 +26,7 @@ namespace Volt
 		void RequestMaterialCompilation(AssetReference<MaterialAsset> materialAsset);
 		
 		VT_INLINE MaterialCompiledDelegate& GetMaterialCompiledDelegate() { return m_materialCompiledDelegate; }
-		VT_INLINE const std::string& GetMaterialShaderFileContents() const { return m_materialShaderFileContents; }
+		VT_INLINE const String& GetMaterialShaderFileContents() const { return m_materialShaderFileContents; }
 
 		VT_DECLARE_SUBSYSTEM("{EEB3C410-3128-486A-8F66-810CEB39314C}"_guid);
 	private:
@@ -38,6 +38,6 @@ namespace Volt
 		void ReadMaterialShaderFileContents();
 
 		MaterialCompiledDelegate m_materialCompiledDelegate;
-		std::string m_materialShaderFileContents;
+		String m_materialShaderFileContents;
 	};
 }

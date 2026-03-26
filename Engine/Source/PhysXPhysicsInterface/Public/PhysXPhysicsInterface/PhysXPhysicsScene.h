@@ -4,6 +4,7 @@
 #include <PhysicsInterface/PhysicsSubStepper.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
+#include <CoreUtilities/Containers/Map.h>
 
 namespace physx
 {

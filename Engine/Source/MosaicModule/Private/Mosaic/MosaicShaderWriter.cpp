@@ -2,24 +2,26 @@
 
 #include "Mosaic/MosaicShaderWriter.h"
 
+#include <CoreUtilities/String/StringFormat.h>
+
 namespace Mosaic
 {
-	void MosaicShaderWriter::AppendCodeBlock(const std::string& codeBlockStr)
+	void MosaicShaderWriter::AppendCodeBlock(const String& codeBlockStr)
 	{
 		m_shaderCode << codeBlockStr;
 	}
 
-	std::string MosaicShaderWriter::AddTexture(uint32_t textureIndex)
+	String MosaicShaderWriter::AddTexture(uint32_t textureIndex)
 	{
 		auto& newTexture = m_textureDeclarations.emplace_back();
 		newTexture.index = textureIndex;
-		newTexture.name = std::format("Texture_{}", textureIndex);
+		newTexture.name = FormatString("Texture_{}", textureIndex);
 
 		return newTexture.name;
 	}
 
-	std::string MosaicShaderWriter::GetAsString() const
+	String MosaicShaderWriter::GetAsString() const
 	{
-		return m_shaderCode.str();
+		return m_shaderCode.Get();
 	}
 }

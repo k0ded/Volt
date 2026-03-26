@@ -24,6 +24,7 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-ImGui/FontAwesome.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -33,9 +34,8 @@
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
-#include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 namespace Utility
 {
@@ -48,7 +48,7 @@ namespace Utility
 	}
 }
 
-SceneViewPanel::SceneViewPanel(AssetReference<Volt::Scene>& scene, const std::string& id)
+SceneViewPanel::SceneViewPanel(AssetReference<Volt::Scene>& scene, const String& id)
 	: EditorWindow("Scene View", false, id), m_scene(scene)
 {
 	Open();
@@ -238,7 +238,7 @@ void SceneViewPanel::UpdateMainContent()
 				meshComp.handle = handle;
 			}
 
-			newEntity.GetComponent<Volt::TagComponent>().tag = assetMetadata->filepath.stem().string();
+			newEntity.GetComponent<Volt::TagComponent>().tag = assetMetadata->filepath.Stem().ToString();
 		}
 		else if (assetMetadata->type == AssetTypes::Prefab)
 		{
@@ -327,7 +327,7 @@ void SceneViewPanel::DrawSceneName()
 
 	Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_scene->GetAssetHandle());
 
-	std::string tooltipText = sceneMetadata->filepath.string();
+	String tooltipText = sceneMetadata->filepath.ToString();
 	if (tooltipText.empty())
 	{
 		tooltipText = "Scene has not yet been saved to a file, it has no path.";
@@ -335,11 +335,11 @@ void SceneViewPanel::DrawSceneName()
 	UI::SimpleToolTip(tooltipText);
 }
 
-void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
+void SceneViewPanel::DrawEntity(Volt::Entity entity, const String& filter)
 {
 	bool entityDeleted = false;
 
-	std::string entityName = "Null";
+	String entityName = "Null";
 
 	Volt::Entity parent = Volt::Entity::Null();
 	Vector<Volt::EntityID> children;
@@ -360,7 +360,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	const bool hasMatchingParent = SearchRecursivelyParent(entity, filter, 10);
 	const bool hasMatchingChild = SearchRecursively(entity, filter, 10);
 	const bool matchesQuery = MatchesQuery(entityName, filter);
-	const bool hasId = std::to_string(static_cast<uint32_t>(entity.GetID())) == filter;
+	const bool hasId = FormatString("{}", static_cast<uint32_t>(entity.GetID())) == filter;
 	const bool hasComponent = HasComponent(entity, filter);
 
 	if (!matchesQuery && !hasId && !hasMatchingChild && !hasMatchingParent && !hasComponent)
@@ -383,7 +383,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 	const bool isSelected = SelectionManager::IsSelected(entity.GetID());
 
-	const std::string entityStrId = entityName + "###" + std::to_string(static_cast<uint32_t>(entity.GetID()));
+	const String entityStrId = FormatString("{}###{}", entityName, entity.GetID());
 
 	ImGui::PushClipRect(rowAreaMin, rowAreaMax, false);
 	bool isRowClicked = false;
@@ -665,7 +665,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		ImGui::EndDragDropTarget();
 	}
 
-	std::string entityMenuId = "RightClickEntity" + entity.ToString();
+	String entityMenuId = "RightClickEntity" + entity.ToString();
 	if (ImGui::BeginPopupContextItem(entityMenuId.c_str(), ImGuiPopupFlags_MouseButtonRight))
 	{
 		if (!SelectionManager::IsSelected(entity.GetID()))
@@ -681,13 +681,13 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 			AssetReference<Volt::Prefab> prefabAsset;
 			if (g_assetManager->TryGetAsset(prefabComp.prefabAsset, prefabAsset))
 			{
-				const std::string menuId = "Update Prefab Entity##" + entity.ToString();
+				const String menuId = "Update Prefab Entity##" + entity.ToString();
 				if (ImGui::MenuItem(menuId.c_str()))
 				{
 					Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(prefabComp.prefabAsset);
-					if (!FileSystem::IsWriteable(g_assetManager->GetAssetFilesystemPath(assetMetadata->filepath)))
+					if (!Filesystem::IsWriteable(g_assetManager->GetAssetFilesystemPath(assetMetadata->filepath)))
 					{
-						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", assetMetadata->filepath.string()));
+						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", FormatString("The prefab file {0} is not writeable!", assetMetadata->filepath));
 					}
 					else
 					{
@@ -696,7 +696,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 						g_assetManager->SaveAsset(prefabAsset);
 
-						UI::Notify(UI::NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", assetMetadata->filepath.string()));
+						UI::Notify(UI::NotificationType::Success, "Prefab updated!", FormatString("The prefab file {0} has been updated!", assetMetadata->filepath));
 					}
 				}
 			}
@@ -704,7 +704,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 		if (!entity.HasComponent<Volt::PrefabComponent>())
 		{
-			const std::string menuId = "Create Prefab##" + entity.ToString();
+			const String menuId = "Create Prefab##" + entity.ToString();
 			if (ImGui::MenuItem(menuId.c_str()))
 			{
 				CreatePrefabAndSetupEntities(entity);
@@ -712,20 +712,20 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		}
 		else
 		{
-			const std::string unpackId = "Unpack Prefab##" + entity.ToString();
+			const String unpackId = "Unpack Prefab##" + entity.ToString();
 			if (ImGui::MenuItem(unpackId.c_str()))
 			{
 				RecursiveUnpackPrefab(m_scene, entity.GetID());
 			}
 		}
 
-		const std::string deleteId = "Delete##" + entity.ToString();
+		const String deleteId = "Delete##" + entity.ToString();
 		if (ImGui::MenuItem(deleteId.c_str()))
 		{
 			entityDeleted = true;
 		}
 
-		const std::string copyId = "Copy ID##" + entity.ToString();
+		const String copyId = "Copy ID##" + entity.ToString();
 		if (ImGui::MenuItem(copyId.c_str()))
 		{
 			Volt::WindowManager::Get().GetMainWindow().SetClipboard(entity.ToString());
@@ -767,7 +767,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	// UUIDs
 	if (m_showEntityUUIDs)
 	{
-		const std::string text = std::to_string(entity.GetID());
+		const String text = FormatString("{}", entity.GetID());
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::TableNextColumn();
 	}
@@ -782,7 +782,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 			auto& transformComponent = entity.GetComponent<Volt::TransformComponent>();
 
 			IntRef<Volt::RHI::Image> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
-			std::string visibleId = "##visible" + entity.ToString();
+			String visibleId = "##visible" + entity.ToString();
 			if (UI::ImageButton(visibleId, UI::GetTextureID(visibleIcon), { imageSize, imageSize }))
 			{
 				auto recursiveSetVisible = [scene = m_scene](Volt::Entity entity, bool visible, auto recursiveSetVisible) -> bool
@@ -818,7 +818,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 			ImGui::SameLine();
 
 			IntRef<Volt::RHI::Image> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
-			std::string lockedId = "##locked" + entity.ToString();
+			String lockedId = "##locked" + entity.ToString();
 			if (UI::ImageButton(lockedId, UI::GetTextureID(lockedIcon), { imageSize, imageSize }))
 			{
 				const auto newVal = !transformComponent.locked;
@@ -871,10 +871,10 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 
 	const auto& tagComp = entity.GetComponent<Volt::TagComponent>();
 
-	std::string noSpacesPrefabName = tagComp.tag;
+	String noSpacesPrefabName = tagComp.tag;
 	noSpacesPrefabName.erase(std::remove_if(noSpacesPrefabName.begin(), noSpacesPrefabName.end(), ::isspace), noSpacesPrefabName.end());
 
-	const std::filesystem::path basePath = "Assets/Prefabs/";
+	const Filesystem::Path basePath = "Assets/Prefabs/";
 	g_assetManager->CreateAssetAndFile<Volt::Prefab>(basePath, noSpacesPrefabName, entity);
 
 	EditorUtils::MarkEntityAndChildrenAsEdited(*m_scene, entity);
@@ -937,7 +937,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Volt::Prefab& prefab, Volt::Entity src
 	}
 }
 
-bool SceneViewPanel::SearchRecursively(Volt::Entity entity, const std::string& filter, uint32_t maxSearchDepth, uint32_t currentDepth)
+bool SceneViewPanel::SearchRecursively(Volt::Entity entity, const String& filter, uint32_t maxSearchDepth, uint32_t currentDepth)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -950,7 +950,7 @@ bool SceneViewPanel::SearchRecursively(Volt::Entity entity, const std::string& f
 	{
 		if (child.HasComponent<Volt::TagComponent>())
 		{
-			std::string t = child.GetComponent<Volt::TagComponent>().tag;
+			String t = child.GetComponent<Volt::TagComponent>().tag;
 			if (MatchesQuery(t, filter) || child.ToString() == filter || HasComponent(child, filter))
 			{
 				return true;
@@ -967,7 +967,7 @@ bool SceneViewPanel::SearchRecursively(Volt::Entity entity, const std::string& f
 	return false;
 }
 
-bool SceneViewPanel::SearchRecursivelyParent(Volt::Entity entity, const std::string& filter, uint32_t maxSearchDepth, uint32_t currentDepth /*= 0*/)
+bool SceneViewPanel::SearchRecursivelyParent(Volt::Entity entity, const String& filter, uint32_t maxSearchDepth, uint32_t currentDepth /*= 0*/)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -986,7 +986,7 @@ bool SceneViewPanel::SearchRecursivelyParent(Volt::Entity entity, const std::str
 
 		if (parent.HasComponent<Volt::TagComponent>())
 		{
-			std::string t = parent.GetComponent<Volt::TagComponent>().tag;
+			String t = parent.GetComponent<Volt::TagComponent>().tag;
 			if (MatchesQuery(t, filter) || parent.ToString() == filter || HasComponent(parent, filter))
 			{
 				return true;
@@ -1003,7 +1003,7 @@ bool SceneViewPanel::SearchRecursivelyParent(Volt::Entity entity, const std::str
 	return false;
 }
 
-bool SceneViewPanel::MatchesQuery(const std::string& text, const std::string& filter)
+bool SceneViewPanel::MatchesQuery(const String& text, const String& filter)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -1012,22 +1012,22 @@ bool SceneViewPanel::MatchesQuery(const std::string& text, const std::string& fi
 		return true;
 	}
 
-	std::string query = Utility::ToLower(filter);
-	const std::string lowerText = Utility::ToLower(text);
+	String query = Utility::ToLower(filter);
+	const String lowerText = Utility::ToLower(text);
 
 	query.push_back(' ');
-	Vector<std::string> queries;
+	Vector<String> queries;
 
-	for (auto next = query.find_first_of(' '); next != std::string::npos; next = query.find_first_of(' '))
+	for (auto next = query.find_first_of(' '); next != String::npos; next = query.find_first_of(' '))
 	{
-		std::string split = query.substr(0, next);
+		String split = query.substr(0, next);
 		query = query.substr(next + 1);
 		queries.emplace_back(split);
 	}
 
 	for (const auto& q : queries)
 	{
-		if (Utility::StringContains(lowerText, q))
+		if (lowerText.contains(q))
 		{
 			return true;
 		}
@@ -1036,7 +1036,7 @@ bool SceneViewPanel::MatchesQuery(const std::string& text, const std::string& fi
 	return false;
 }
 
-bool SceneViewPanel::HasComponent(Volt::Entity entity, const std::string& filter)
+bool SceneViewPanel::HasComponent(Volt::Entity entity, const String& filter)
 {
 	if (filter.empty())
 	{
@@ -1048,7 +1048,7 @@ bool SceneViewPanel::HasComponent(Volt::Entity entity, const std::string& filter
 		return false;
 	}
 
-	const std::string compSearchString = filter.substr(1);
+	const String compSearchString = filter.substr(1);
 	return entity.HasComponent(compSearchString);
 }
 
@@ -1076,7 +1076,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 		{
 			if (ImGui::BeginMenu(VT_ICON_FA_CUBES " Primitives"))
 			{
-				auto newPrimitiveMenuItem = [&](std::string primitiveName, std::string_view primitivePath)
+				auto newPrimitiveMenuItem = [&](String primitiveName, StringView primitivePath)
 				{
 					if (ImGui::MenuItem((VT_ICON_FA_CUBE " " + primitiveName).c_str()))
 					{
@@ -1231,7 +1231,7 @@ void SceneViewPanel::RebuildEntityDrawList()
 	});
 }
 
-void SceneViewPanel::RebuildEntityDrawListRecursive(Volt::Entity entity, const std::string& filter)
+void SceneViewPanel::RebuildEntityDrawListRecursive(Volt::Entity entity, const String& filter)
 {
 	const bool hasMatchingChild = SearchRecursively(entity, filter, 10);
 	const bool matchesQuery = MatchesQuery(entity.GetTag(), filter);
@@ -1250,9 +1250,9 @@ void SceneViewPanel::RebuildEntityDrawListRecursive(Volt::Entity entity, const s
 		return;
 	}
 
-	std::string entityName = entity.GetTag();
+	String entityName = entity.GetTag();
 
-	const std::string entityStrId = entityName + "###" + entity.ToString();
+	const String entityStrId = entityName + "###" + entity.ToString();
 
 	auto imGuiID = ImGui::GetID(entityStrId.c_str());
 	m_entityToImGuiID[entity.GetID()] = imGuiID;

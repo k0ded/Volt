@@ -1,6 +1,9 @@
 #pragma once
 
+#include "RHIModule/Core/Core.h"
 #include "RHIModule/Core/RHICommon.h"
+
+#include <CoreModule/DataBuffer.h>
 
 namespace Volt::RHI
 {

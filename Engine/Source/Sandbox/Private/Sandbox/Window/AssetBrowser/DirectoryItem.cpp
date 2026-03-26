@@ -14,11 +14,11 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <CoreUtilities/FileSystem.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 namespace AssetBrowser
 {
-	DirectoryItem::DirectoryItem(SelectionManager* selectionManager, const std::filesystem::path& path)
+	DirectoryItem::DirectoryItem(SelectionManager* selectionManager, const Filesystem::Path& path)
 		: Item(selectionManager, path)
 	{
 		isDirectory = true;
@@ -35,14 +35,14 @@ namespace AssetBrowser
 			{
 				if (item->isDirectory && item != this)
 				{
-					const std::filesystem::path newPath = path / item->path.stem();
+					const Filesystem::Path newPath = path / item->path.Stem();
 					g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
 				}
 			}
 
 			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
-				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
+				if (!item->isDirectory && item != this && Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
 					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), path);
 				}
@@ -57,14 +57,14 @@ namespace AssetBrowser
 			{
 				if (item->isDirectory && item != this)
 				{
-					const std::filesystem::path newPath = path / item->path.stem();
+					const Filesystem::Path newPath = path / item->path.Stem();
 					g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
 				}
 			}
 
 			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
-				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
+				if (!item->isDirectory && item != this && Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
 					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), path);
 				}
@@ -78,7 +78,7 @@ namespace AssetBrowser
 
 	void DirectoryItem::PushID()
 	{
-		ImGui::PushID(path.string().c_str());
+		ImGui::PushID(path.ToString().c_str());
 	}
 
 	IntRef<Volt::RHI::Image> DirectoryItem::GetIcon() const
@@ -91,7 +91,7 @@ namespace AssetBrowser
 		return { 0.2f, 0.2f, 0.2f, 1.f };
 	}
 
-	std::string DirectoryItem::GetTypeName() const
+	String DirectoryItem::GetTypeName() const
 	{
 		return "Directory";
 	}
@@ -99,7 +99,7 @@ namespace AssetBrowser
 	void DirectoryItem::SetDragDropPayload()
 	{
 		//Data being copied
-		ImGui::SetDragDropPayload("ASSET_BROWSER_FOLDER", path.wstring().c_str(), path.wstring().size() * sizeof(wchar_t), ImGuiCond_Once);
+		ImGui::SetDragDropPayload("ASSET_BROWSER_FOLDER", path.ToWString().c_str(), path.ToWString().size() * sizeof(wchar_t), ImGuiCond_Once);
 	}
 
 	bool DirectoryItem::RenderRightClickPopup()
@@ -115,7 +115,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Show in Explorer"))
 		{
-			FileSystem::ShowFileInExplorer(Volt::ProjectManager::GetRootDirectory() / path);
+			Filesystem::ShowFileInExplorer(Volt::ProjectManager::GetRootDirectory() / path);
 		}
 
 		if (ImGui::MenuItem("Rename"))
@@ -137,7 +137,7 @@ namespace AssetBrowser
 		return removed;
 	}
 
-	bool DirectoryItem::Rename(const std::string& newName)
+	bool DirectoryItem::Rename(const String& newName)
 	{
 		if (newName.empty()) { return false; }
 

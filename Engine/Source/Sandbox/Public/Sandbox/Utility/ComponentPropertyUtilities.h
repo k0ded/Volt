@@ -35,7 +35,7 @@ private:
 	static void AddLocalChangeToEntity(Volt::Scene& scene, Volt::Entity entity, const VoltGUID& componentGuid, uint32_t memberIdentifier);
 
 	inline static bool s_initialized = false;
-	inline static std::unordered_map<TypeTraits::TypeIndex, std::function<bool(std::string_view, void*, const size_t)>> s_propertyFunctions;
+	inline static std::unordered_map<TypeTraits::TypeIndex, std::function<bool(StringView, void*, const size_t)>> s_propertyFunctions;
 
 	ComponentPropertyUtility() = delete;
 };

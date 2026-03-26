@@ -27,5 +27,5 @@ private:
 	AssetReference<Volt::Skeleton> m_skeleton;
 
 	bool m_activateJointSearch = false;
-	std::string m_jointSearchQuery;
+	String m_jointSearchQuery;
 };

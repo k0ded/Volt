@@ -9,8 +9,9 @@
 #include "UpgradesRegistry.h"
 
 #include "Volt-Platforms/Windows/WindowsPlatformThread.h"
-
-#include <CoreUtilities/FileSystem.h>
+#include "Volt-FileSystem/Filesystem.h"
+#include "Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h"
+#include "Volt-FileSystem/Iterators/DirectoryIterator.h"
 
 #include <Volt-Core/Project/Project.h>
 
@@ -35,19 +36,21 @@ namespace Volt
 			case UpgradeStage::Collecting:
 			{
 				const auto assetsDir = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectoryName;
-				if (FileSystem::Exists(assetsDir))
+				if (Filesystem::Exists(assetsDir))
 				{
-					for (auto& p : std::filesystem::recursive_directory_iterator(assetsDir))
+					for (auto& p : Filesystem::RecursiveDirectoryIterator(assetsDir))
 					{
-						if (p.path().extension() == ".vtent" ||
-							p.path().extension() == ".vtasset")
+						const auto ext = p.path.Extension();
+
+						if (ext == L".vtent" ||
+							ext == L".vtasset")
 						{
-							m_filesToProcess.emplace_back(p.path());
+							m_filesToProcess.emplace_back(p.path);
 						}
 
-						if (p.path().extension() == ".vtasset")
+						if (ext == L".vtasset")
 						{
-							BinaryStreamReader streamReader{ p.path() };
+							BinaryStreamReader streamReader{ p.path };
 							if (!streamReader.IsStreamValid())
 							{
 								continue;
@@ -65,7 +68,7 @@ namespace Volt
 							//if asset is a scene
 							if (OldMetadata.type == "{EF155FF1-61DC-4200-84DE-4A0C8A01D049}"_guid)
 							{
-								m_sceneFilesToProcess.push_back(p.path());
+								m_sceneFilesToProcess.push_back(p.path);
 							}
 						}
 					}
@@ -83,7 +86,7 @@ namespace Volt
 					{
 						break;
 					}
-					std::filesystem::path path = m_filesToProcess.back();
+					Filesystem::Path path = m_filesToProcess.back();
 					m_filesToProcess.pop_back();
 
 					ProcessFile(path);
@@ -105,7 +108,7 @@ namespace Volt
 					{
 						break;
 					}
-					std::filesystem::path path = m_sceneFilesToProcess.back();
+					Filesystem::Path path = m_sceneFilesToProcess.back();
 					m_sceneFilesToProcess.pop_back();
 
 					MoveSceneFileAndEntities(path);
@@ -133,7 +136,7 @@ namespace Volt
 		return m_numActionsCompleted;
 	}
 
-	std::string Upgrade_0_1_6::GetCurrentActionText()
+	String Upgrade_0_1_6::GetCurrentActionText()
 	{
 		switch (m_currentStage)
 		{
@@ -147,18 +150,18 @@ namespace Volt
 		return "Error";
 	}
 
-	void Upgrade_0_1_6::ProcessFile(std::filesystem::path inPath)
+	void Upgrade_0_1_6::ProcessFile(Filesystem::Path inPath)
 	{
-		if (!FileSystem::IsWriteable(inPath))
+		if (!Filesystem::IsWriteable(inPath))
 		{
-			FileSystem::MakeWriteable(inPath);
+			Filesystem::MakeWriteable(inPath);
 		}
 
-		if (inPath.extension() == ".vtent")
+		if (inPath.Extension() == ".vtent")
 		{
 			ProcessEntityFile(inPath);
 		}
-		else if (inPath.extension() == ".vtasset")
+		else if (inPath.Extension() == ".vtasset")
 		{
 			ProcessAssetFile(inPath);
 		}
@@ -166,18 +169,18 @@ namespace Volt
 		m_numActionsCompleted++;
 	}
 
-	void Upgrade_0_1_6::ProcessEntityFile(std::filesystem::path inPath)
+	void Upgrade_0_1_6::ProcessEntityFile(Filesystem::Path inPath)
 	{
 		//find the owning scene, it should be one folder up and the only vtasset in that folder
-		const std::filesystem::path sceneDir = inPath.parent_path().parent_path();
-		std::filesystem::path sceneAssetPath;
-		if (FileSystem::Exists(sceneDir))
+		const Filesystem::Path sceneDir = inPath.ParentPath().ParentPath();
+		Filesystem::Path sceneAssetPath;
+		if (Filesystem::Exists(sceneDir))
 		{
-			for (auto& p : std::filesystem::directory_iterator(sceneDir))
+			for (auto& p : Filesystem::DirectoryIterator(sceneDir))
 			{
-				if (p.path().extension() == ".vtasset")
+				if (p.path.Extension() == ".vtasset")
 				{
-					sceneAssetPath = p;
+					sceneAssetPath = p.path;
 					break;
 				}
 			}
@@ -263,12 +266,12 @@ namespace Volt
 		entityDescFileWriter.WriteToDisk(inPath, true, compressedDataOffset);
 
 		//change extension of entity file
-		std::filesystem::path newPath = inPath;
-		newPath.replace_filename(inPath.stem().string() + ".vtasset");
-		std::filesystem::rename(inPath, newPath);
+		Filesystem::Path newPath = inPath;
+		newPath.ReplaceFilename(inPath.Stem().ToString() + ".vtasset");
+		Filesystem::Rename(inPath, newPath);
 	}
 
-	void Upgrade_0_1_6::ProcessAssetFile(std::filesystem::path inPath)
+	void Upgrade_0_1_6::ProcessAssetFile(Filesystem::Path inPath)
 	{
 		BinaryStreamReader streamReader{ inPath };
 		if (!streamReader.IsStreamValid())
@@ -310,29 +313,29 @@ namespace Volt
 		streamWriter.WriteToDisk(inPath, true, compressedDataOffset);
 	}
 
-	void Upgrade_0_1_6::MoveSceneFileAndEntities(std::filesystem::path inPath)
+	void Upgrade_0_1_6::MoveSceneFileAndEntities(Filesystem::Path inPath)
 	{
-		std::filesystem::path newSceneDirectory = inPath.parent_path().parent_path();
-		FileSystem::Move(inPath, newSceneDirectory);
+		Filesystem::Path newSceneDirectory = inPath.ParentPath().ParentPath();
+		Filesystem::MoveTo(inPath, newSceneDirectory);
 
 
-		std::filesystem::path oldEntitiesDir = inPath.parent_path() / "Entities";
-		Vector<std::filesystem::path> entitiesPaths;
+		Filesystem::Path oldEntitiesDir = inPath.ParentPath() / "Entities";
+		Vector<Filesystem::Path> entitiesPaths;
 
-		for (auto& p : std::filesystem::recursive_directory_iterator(oldEntitiesDir))
+		for (auto& p : Filesystem::RecursiveDirectoryIterator(oldEntitiesDir))
 		{
-			entitiesPaths.push_back(p.path());
+			entitiesPaths.push_back(p.path);
 		}
 
-		const std::filesystem::path& newEntityDirectory = newSceneDirectory / (inPath.stem().string() + "_Entities");
-		FileSystem::CreateDirectories(newEntityDirectory);
-		for (const std::filesystem::path& entityPath : entitiesPaths)
+		const Filesystem::Path& newEntityDirectory = newSceneDirectory / (inPath.Stem().ToString() + "_Entities");
+		Filesystem::CreateDirectories(newEntityDirectory);
+		for (const Filesystem::Path& entityPath : entitiesPaths)
 		{
-			FileSystem::Move(entityPath, newEntityDirectory);
+			Filesystem::MoveTo(entityPath, newEntityDirectory);
 		}
 
 		//remove the folder that the old scene lived in
-		FileSystem::Remove(inPath.parent_path());
+		Filesystem::RemoveAll(inPath.ParentPath());
 	}
 
 	void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data)

@@ -28,7 +28,7 @@ namespace Mosaic
 		}
 
 		template<typename ParamDataType>
-		void SetNodeParameterData(UUID64 nodeId, const std::string& parameterName, const ParamDataType& data)
+		void SetNodeParameterData(UUID64 nodeId, const String& parameterName, const ParamDataType& data)
 		{
 			auto& underlyingGraph = m_graph.GetUnderlyingGraph();
 			auto& node = underlyingGraph.GetNodeFromID(nodeId);
@@ -44,7 +44,7 @@ namespace Mosaic
 		}
 
 		template<typename ParamDataType>
-		void SetNodeInputParameterData(UUID64 nodeId, const std::string& parameterName, const ParamDataType& data)
+		void SetNodeInputParameterData(UUID64 nodeId, const String& parameterName, const ParamDataType& data)
 		{
 			auto& underlyingGraph = m_graph.GetUnderlyingGraph();
 			auto& node = underlyingGraph.GetNodeFromID(nodeId);
@@ -59,7 +59,7 @@ namespace Mosaic
 			}
 		}
 
-		VTMOSAIC_API void LinkNodeParameters(UUID64 fromNode, UUID64 toNode, const std::string& fromParamName, const std::string& toParamName);
+		VTMOSAIC_API void LinkNodeParameters(UUID64 fromNode, UUID64 toNode, const String& fromParamName, const String& toParamName);
 
 	private:
 		MosaicGraph& m_graph;

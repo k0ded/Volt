@@ -2,11 +2,11 @@
 #include "Volt-Application/UI/UIProperties.h"
 #include "Volt-Application/UI/UIUtility.h"
 #include "Volt-Application/UI/UIScopedHelpers.h"
+#include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <imgui_internal.h>
 
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/FileSystem.h>
 
 namespace UI
 {
@@ -22,12 +22,12 @@ namespace UI
 		return s_propertiesContextStackIDs[s_propertiesContextIndex]++;
 	}
 
-	std::string MakePropertyID()
+	String MakePropertyID()
 	{
-		return "##Properties_" + std::to_string(s_propertiesContextIndex) + "_" + std::to_string(GetAndIncrementPropertiesStackID());
+		return FormatString("##Properties_{}_{}", s_propertiesContextIndex, GetAndIncrementPropertiesStackID());
 	}
 
-	bool BeginProperties(const std::string& name, const glm::vec2 size)
+	bool BeginProperties(const String& name, const glm::vec2 size)
 	{
 		bool open = ImGui::BeginTable(name.c_str(), 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable, size);
 
@@ -81,7 +81,7 @@ namespace UI
 	void UI::EndPropertyRow()
 	{}
 
-	bool Property(const std::string& text, bool& value, const std::string& toolTip)
+	bool Property(const String& text, bool& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -91,7 +91,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -103,7 +103,7 @@ namespace UI
 		return changed;
 	}
 
-	void PropertyInfoString(const std::string& key, const std::string& info)
+	void PropertyInfoString(const String& key, const String& info)
 	{
 		BeginPropertyRow();
 
@@ -115,7 +115,7 @@ namespace UI
 		EndPropertyRow();
 	}
 
-	bool Property(const std::string& text, int32_t& value, const std::string& toolTip)
+	bool Property(const String& text, int32_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -125,7 +125,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&id, &value]()
 		{
@@ -137,7 +137,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, uint32_t& value, const std::string& toolTip)
+	bool Property(const String& text, uint32_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -147,7 +147,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -159,7 +159,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, int16_t& value, const std::string& toolTip)
+	bool Property(const String& text, int16_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -169,7 +169,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -181,7 +181,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, uint16_t& value, const std::string& toolTip)
+	bool Property(const String& text, uint16_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -191,7 +191,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -203,7 +203,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, int8_t& value, const std::string& toolTip)
+	bool Property(const String& text, int8_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -213,7 +213,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -224,7 +224,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, uint8_t& value, const std::string& toolTip)
+	bool Property(const String& text, uint8_t& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -234,7 +234,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -246,7 +246,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, double& value, const std::string& toolTip)
+	bool Property(const String& text, double& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -256,7 +256,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -267,7 +267,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, float& value, float min, float max, const std::string& toolTip)
+	bool Property(const String& text, float& value, float min, float max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -277,7 +277,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -300,7 +300,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::vec2& value, float min, float max, const std::string& toolTip)
+	bool Property(const String& text, glm::vec2& value, float min, float max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -310,7 +310,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_Float, glm::value_ptr(value), 2, 0.1f, &min, &max);
 
@@ -319,7 +319,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::vec3& value, float min, float max, const std::string& toolTip)
+	bool Property(const String& text, glm::vec3& value, float min, float max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -329,7 +329,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_Float, glm::value_ptr(value), 3, 0.1f, &min, &max);
 
@@ -338,7 +338,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::vec4& value, float min, float max, const std::string& toolTip)
+	bool Property(const String& text, glm::vec4& value, float min, float max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -348,7 +348,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_Float, glm::value_ptr(value), 4, 0.1f, &min, &max);
 		EndPropertyRow();
@@ -356,7 +356,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::uvec2& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::uvec2& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -366,7 +366,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_U32, glm::value_ptr(value), 2, 1.f, &min, &max);
 
@@ -375,7 +375,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::uvec3& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::uvec3& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -385,7 +385,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_U32, glm::value_ptr(value), 3, 1.f, &min, &max);
 
@@ -394,7 +394,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::uvec4& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::uvec4& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -404,7 +404,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_U32, glm::value_ptr(value), 4, 1.f, &min, &max);
 		EndPropertyRow();
@@ -412,7 +412,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::ivec2& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::ivec2& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -422,7 +422,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_S32, glm::value_ptr(value), 2, 1.f, &min, &max);
 
@@ -431,7 +431,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::ivec3& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::ivec3& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -441,7 +441,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_S32, glm::value_ptr(value), 3, 1.f, &min, &max);
 		EndPropertyRow();
@@ -449,7 +449,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::ivec4& value, uint32_t min, uint32_t max, const std::string& toolTip)
+	bool Property(const String& text, glm::ivec4& value, uint32_t min, uint32_t max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -459,7 +459,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DragScalarN(id.c_str(), ImGuiDataType_S32, glm::value_ptr(value), 4, 1.f, &min, &max);
 		EndPropertyRow();
@@ -467,7 +467,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, glm::quat& value, const std::string& toolTip)
+	bool Property(const String& text, glm::quat& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -477,7 +477,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		constexpr float min = -1.f;
 		constexpr float max = 1.f;
@@ -488,7 +488,7 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyDragFloat(const std::string& text, float& value, float increment, float min, float max, const std::string& toolTip)
+	bool PropertyDragFloat(const String& text, float& value, float increment, float min, float max, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -498,7 +498,7 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -510,7 +510,7 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyTextBox(const std::string& text, const std::string& value, bool readOnly, const std::string& toolTip)
+	bool PropertyTextBox(const String& text, const String& value, bool readOnly, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -519,11 +519,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", id, const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputText("", id, const_cast<String&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -531,7 +531,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, const std::string& value, bool readOnly, const std::string& toolTip)
+	bool Property(const String& text, const String& value, bool readOnly, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -540,11 +540,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", id, const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputText("", id, const_cast<String&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -552,7 +552,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, std::string& value, bool readOnly, const std::string& toolTip)
+	bool Property(const String& text, String& value, bool readOnly, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -561,7 +561,7 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -572,14 +572,14 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyColor(const std::string& text, glm::vec4& value, const std::string& toolTip)
+	bool PropertyColor(const String& text, glm::vec4& value, const String& toolTip)
 	{
 		BeginPropertyRow();
 
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		bool changed = DrawItem([&]()
 		{
@@ -590,14 +590,14 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyColor(const std::string& text, glm::vec3& value, const std::string& toolTip)
+	bool PropertyColor(const String& text, glm::vec3& value, const String& toolTip)
 	{
 		BeginPropertyRow();
 
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		bool changed = DrawItem([&]()
 		{
@@ -608,7 +608,7 @@ namespace UI
 		return changed;
 	}
 
-	bool Property(const std::string& text, std::filesystem::path& path, const std::filesystem::path& baseDir, const std::string& toolTip)
+	bool Property(const String& text, Filesystem::Path& path, const Filesystem::Path& baseDir, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -618,14 +618,14 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string sPath = path.string();
-		std::string id = MakePropertyID();
+		String sPath = path.ToString();
+		String id = MakePropertyID();
 
 		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
 		{
 			if (InputText("", id, sPath))
 			{
-				path = std::filesystem::path(sPath);
+				path = Filesystem::Path(sPath);
 				return true;
 			}
 
@@ -634,11 +634,11 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string buttonId = "Open...##" + MakePropertyID();
+		String buttonId = "Open...##" + MakePropertyID();
 		if (ImGui::Button(buttonId.c_str(), { ImGui::GetContentRegionAvail().x, 25.f }))
 		{
-			auto newPath = FileSystem::OpenFileDialogue({ { "All (*.*)" }, { "*" } }, baseDir);
-			if (!newPath.empty())
+			auto newPath = FileDialogueHelpers::OpenFileDialogue({ { "All (*.*)" }, { "*" } }, baseDir);
+			if (!newPath.IsEmpty())
 			{
 				path = newPath;
 				changed = true;
@@ -649,7 +649,7 @@ namespace UI
 
 		return changed;
 	}
-	bool PropertyDirectory(const std::string& text, std::filesystem::path& path, const std::filesystem::path& baseDir, const std::string& toolTip)
+	bool PropertyDirectory(const String& text, Filesystem::Path& path, const Filesystem::Path& baseDir, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -658,14 +658,14 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string sPath = path.string();
-		std::string id = MakePropertyID();
+		String sPath = path.ToString();
+		String id = MakePropertyID();
 
 		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
 		{
 			if (InputText("", id, sPath))
 			{
-				path = std::filesystem::path(sPath);
+				path = Filesystem::Path(sPath);
 				return true;
 			}
 
@@ -674,11 +674,11 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string buttonId = "Open..." + MakePropertyID();
+		String buttonId = "Open..." + MakePropertyID();
 		if (ImGui::Button(buttonId.c_str(), { ImGui::GetContentRegionAvail().x, 25.f }))
 		{
-			auto newPath = FileSystem::PickFolderDialogue(baseDir);
-			if (!newPath.empty())
+			auto newPath = FileDialogueHelpers::PickFolderDialogue(baseDir);
+			if (!newPath.IsEmpty())
 			{
 				path = newPath;
 				changed = true;
@@ -690,7 +690,7 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyFile(const std::string& text, std::filesystem::path& path, const Vector<FileFilter>& fileFilter)
+	bool PropertyFile(const String& text, Filesystem::Path& path, const Vector<FileDialogueHelpers::FileFilter>& fileFilter)
 	{
 		bool changed = false;
 
@@ -698,14 +698,14 @@ namespace UI
 
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::TableNextColumn();
-		std::string sPath = path.string();
-		std::string id = MakePropertyID();
+		String sPath = path.ToString();
+		String id = MakePropertyID();
 
 		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
 		{
 			if (InputText("", id, sPath))
 			{
-				path = std::filesystem::path(sPath);
+				path = Filesystem::Path(sPath);
 				return true;
 			}
 
@@ -714,11 +714,11 @@ namespace UI
 
 		ImGui::SameLine();
 
-		std::string buttonId = "Open..." + MakePropertyID();
+		String buttonId = "Open..." + MakePropertyID();
 		if (ImGui::Button(buttonId.c_str(), { ImGui::GetContentRegionAvail().x, 25.f }))
 		{
-			auto newPath = FileSystem::OpenFileDialogue(fileFilter, "");
-			if (!newPath.empty())
+			auto newPath = FileDialogueHelpers::OpenFileDialogue(fileFilter, "");
+			if (!newPath.IsEmpty())
 			{
 				path = newPath;
 				changed = true;
@@ -730,7 +730,7 @@ namespace UI
 		return changed;
 	}
 
-	bool UI::ComboProperty(const std::string& text, int& currentItem, const Vector<const char*>& items, float width)
+	bool UI::ComboProperty(const String& text, int& currentItem, const Vector<const char*>& items, float width)
 	{
 		bool changed = false;
 
@@ -739,7 +739,7 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::TableNextColumn();
 
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 		changed = DrawItem((width == 0.f) ? ImGui::GetColumnWidth() : width, [&]()
 		{
 			return ImGui::Combo(id.c_str(), &currentItem, items.data(), (int32_t)items.size());
@@ -750,7 +750,7 @@ namespace UI
 		return changed;
 	}
 
-	bool UI::ComboProperty(const std::string& text, int& currentItem, const Vector<std::string>& strItems, float width)
+	bool UI::ComboProperty(const String& text, int& currentItem, const Vector<String>& strItems, float width)
 	{
 		bool changed = false;
 
@@ -759,10 +759,10 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::TableNextColumn();
 
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		Vector<const char*> items;
-		std::for_each(strItems.begin(), strItems.end(), [&](const std::string& string) { items.emplace_back(string.c_str()); });
+		std::for_each(strItems.begin(), strItems.end(), [&](const String& string) { items.emplace_back(string.c_str()); });
 
 		changed = DrawItem((width == 0.f) ? ImGui::GetColumnWidth() : width, [&]()
 		{
@@ -775,7 +775,7 @@ namespace UI
 	}
 
 
-	bool PropertyMultiline(const std::string& text, std::string& value, bool readOnly, const std::string& toolTip)
+	bool PropertyMultiline(const String& text, String& value, bool readOnly, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -784,7 +784,7 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -796,7 +796,7 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyPassword(const std::string& text, std::string& value, bool readOnly, const std::string& toolTip)
+	bool PropertyPassword(const String& text, String& value, bool readOnly, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -805,7 +805,7 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
@@ -856,7 +856,7 @@ namespace UI
 		}
 	}
 
-	bool PropertyAxisColor(const std::string& text, glm::vec3& value, float resetValue)
+	bool PropertyAxisColor(const String& text, glm::vec3& value, float resetValue)
 	{
 		ScopedStyleFloat2 cellPad(ImGuiStyleVar_CellPadding, { 4.f, 0.f });
 
@@ -880,7 +880,7 @@ namespace UI
 			ScopedColor colorh{ ImGuiCol_ButtonHovered, { 0.9f, 0.2f, 0.2f, 1.f } };
 			ScopedColor colora{ ImGuiCol_ButtonActive, { 0.8f, 0.1f, 0.15f, 1.f } };
 
-			std::string butId = "X" + MakePropertyID();
+			String butId = "X" + MakePropertyID();
 			if (ImGui::Button(butId.c_str(), buttonSize))
 			{
 				value.x = resetValue;
@@ -889,7 +889,7 @@ namespace UI
 		}
 
 		ImGui::SameLine();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed |= DrawItem(width, [&]()
 		{
@@ -911,7 +911,7 @@ namespace UI
 			ScopedColor colorh{ ImGuiCol_ButtonHovered, { 0.3f, 0.8f, 0.3f, 1.f } };
 			ScopedColor colora{ ImGuiCol_ButtonActive, { 0.2f, 0.7f, 0.2f, 1.f } };
 
-			std::string butId = "Y" + MakePropertyID();
+			String butId = "Y" + MakePropertyID();
 			if (ImGui::Button(butId.c_str(), buttonSize))
 			{
 				value.y = resetValue;
@@ -942,7 +942,7 @@ namespace UI
 			ScopedColor colorh{ ImGuiCol_ButtonHovered, { 0.2f, 0.35f, 0.9f, 1.f } };
 			ScopedColor colora{ ImGuiCol_ButtonActive, { 0.1f, 0.25f, 0.8f, 1.f } };
 
-			std::string butId = "Z" + MakePropertyID();
+			String butId = "Z" + MakePropertyID();
 			if (ImGui::Button(butId.c_str(), buttonSize))
 			{
 				value.z = resetValue;
@@ -973,7 +973,7 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyAxisColor(const std::string& text, glm::vec2& value, float resetValue)
+	bool PropertyAxisColor(const String& text, glm::vec2& value, float resetValue)
 	{
 		ScopedStyleFloat2 cellPad(ImGuiStyleVar_CellPadding, { 4.f, 0.f });
 
@@ -996,7 +996,7 @@ namespace UI
 			ScopedColor colorh{ ImGuiCol_ButtonHovered, { 0.9f, 0.2f, 0.2f, 1.f } };
 			ScopedColor colora{ ImGuiCol_ButtonActive, { 0.8f, 0.1f, 0.15f, 1.f } };
 
-			std::string butId = "X" + MakePropertyID();
+			String butId = "X" + MakePropertyID();
 			if (ImGui::Button(butId.c_str(), buttonSize))
 			{
 				value.x = resetValue;
@@ -1005,7 +1005,7 @@ namespace UI
 		}
 
 		ImGui::SameLine();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		changed |= DrawItem(width, [&]()
 		{
@@ -1027,7 +1027,7 @@ namespace UI
 			ScopedColor colorh{ ImGuiCol_ButtonHovered, { 0.3f, 0.8f, 0.3f, 1.f } };
 			ScopedColor colora{ ImGuiCol_ButtonActive, { 0.2f, 0.7f, 0.2f, 1.f } };
 
-			std::string butId = "Y" + MakePropertyID();
+			String butId = "Y" + MakePropertyID();
 			if (ImGui::Button(butId.c_str(), buttonSize))
 			{
 				value.y = resetValue;

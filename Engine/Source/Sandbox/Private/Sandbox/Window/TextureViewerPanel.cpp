@@ -22,10 +22,10 @@ void TextureViewerPanel::UpdateMainContent()
 	const uint32_t height = m_viewingTexture->GetHeight();
 	const uint32_t mipCount = m_viewingTexture->GetImage()->GetDesc().mips;
 
-	Vector<std::string> mipStrings(mipCount);
+	Vector<String> mipStrings(mipCount);
 	for (uint32_t i = 0; i < mipCount; i++)
 	{
-		mipStrings[i] = std::format("Mip {}", i);
+		mipStrings[i] = FormatString("Mip {}", i);
 	}
 
 	static int32_t currentMip = 0;

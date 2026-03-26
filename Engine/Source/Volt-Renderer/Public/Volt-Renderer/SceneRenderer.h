@@ -60,7 +60,7 @@ namespace Volt
 
 	struct SceneRendererCreateInfo
 	{
-		std::string debugName;
+		String debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
 		bool drawDebug = false;
 

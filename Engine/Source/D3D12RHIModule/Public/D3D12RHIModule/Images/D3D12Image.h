@@ -33,7 +33,7 @@ namespace Volt::RHI
 
 		VT_INLINE ResourceType GetType() const override { return m_desc.imageType; }
 		void SetName(const std::string& name) override;
-		std::string_view GetName() const override;
+		StringView GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
 

@@ -21,7 +21,7 @@ namespace Volt
 			Success
 		};
 
-		AssetRegistry(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
+		AssetRegistry(const Filesystem::Path& engineDirectoryPath, const Filesystem::Path& projectDirectoryPath, StringView assetsDirectoryName);
 		~AssetRegistry();
 
 		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
@@ -34,7 +34,7 @@ namespace Volt
 
 		// Returns a file path relative to either an engine asset directory,
 		// or the project asset directory.
-		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath) const;
+		Filesystem::Path GetRelativeAssetFilepath(const Filesystem::Path& filepath) const;
 
 		JobCounterRef GetMetadataLoadingCounter() { return m_metadataLoadingCounter; }
 
@@ -50,14 +50,14 @@ namespace Volt
 		void Initialize();
 		
 		void LoadAssetMetadata();
-		void DeserializeAssetMetadata(const std::filesystem::path& filepath, AssetMetadata& outMetadata);
+		void DeserializeAssetMetadata(const Filesystem::Path& filepath, AssetMetadata& outMetadata);
 
 		// Returns all asset filepaths located within engine and project asset directories.
-		void ScanForAssets(Vector<std::filesystem::path>& outEngineAssets, Vector<std::filesystem::path>& outProjectAssets);
+		void ScanForAssets(Vector<Filesystem::Path>& outEngineAssets, Vector<Filesystem::Path>& outProjectAssets);
 
-		std::filesystem::path m_engineDirectoryPath;
-		std::filesystem::path m_projectDirectoryPath;
-		std::string_view m_assetsDirectoryName;
+		Filesystem::Path m_engineDirectoryPath;
+		Filesystem::Path m_projectDirectoryPath;
+		StringView m_assetsDirectoryName;
 
 		AtomicHashTable<> m_hashTable;
 		Vector<AssetMetadata*> m_metadataIndirection;

@@ -2,14 +2,16 @@
 
 #include "Sandbox/Modals/Modal.h"
 
+#include <CoreUtilities/Filesystem/Path.h>
+
 class TextureImportModal final : public Modal
 {
 public:
-	TextureImportModal(const std::string& strId);
+	TextureImportModal(const String& strId);
 	~TextureImportModal() override = default;
 
-	VT_INLINE void SetImportTextures(const Vector<std::filesystem::path>& filePaths) { m_importFilePaths = filePaths; }
-	VT_INLINE void SetDestinationDirectory(const std::filesystem::path& destinationDirectory) { m_destinationDirectory = destinationDirectory; }
+	VT_INLINE void SetImportTextures(const Vector<Filesystem::Path>& filePaths) { m_importFilePaths = filePaths; }
+	VT_INLINE void SetDestinationDirectory(const Filesystem::Path& destinationDirectory) { m_destinationDirectory = destinationDirectory; }
 
 protected:
 	void DrawModalContent() override;
@@ -30,11 +32,11 @@ private:
 		ImportType importType = ImportType::Texture;
 	} m_importOptions;
 
-	std::string GetImportTypeStringFromFilepath(const std::filesystem::path& filepath);
+	String GetImportTypeStringFromFilepath(const Filesystem::Path& filepath);
 
-	void Import(const std::filesystem::path& filepath, const std::filesystem::path& destinationDirectory);
+	void Import(const Filesystem::Path& filepath, const Filesystem::Path& destinationDirectory);
 	void Clear();
 
-	std::filesystem::path m_destinationDirectory;
-	Vector<std::filesystem::path> m_importFilePaths;
+	Filesystem::Path m_destinationDirectory;
+	Vector<Filesystem::Path> m_importFilePaths;
 };

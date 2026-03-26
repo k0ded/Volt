@@ -4,6 +4,7 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <Volt-FileSystem/FileIORequest.h>
+#include <Volt-FileSystem/Filesystem.h>
 #include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <JobSystem/JobSystem.h>
@@ -11,8 +12,6 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
-#include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/StringUtility.h>
 
 Unique<Volt::AssetManager> g_assetManager;
 
@@ -20,7 +19,7 @@ namespace Volt
 {
 	VT_DEFINE_LOG_CATEGORY(LogAssetSystem);
 
-	AssetManager::AssetManager(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
+	AssetManager::AssetManager(const Filesystem::Path& engineDirectoryPath, const Filesystem::Path& projectDirectoryPath, StringView assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
 	{
 		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(AssetManager::UpdateInternal));
@@ -144,7 +143,7 @@ namespace Volt
 				return;
 			}
 
-			if (assetMetadata->filepath.empty())
+			if (assetMetadata->filepath.IsEmpty())
 			{
 				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
 				return;
@@ -277,7 +276,7 @@ namespace Volt
 		return newAsset != nullptr && metadata->IsLoaded();
 	}
 
-	AssetReference<Asset> AssetManager::CreateAssetTypeless(std::string_view assetName, AssetType assetType)
+	AssetReference<Asset> AssetManager::CreateAssetTypeless(StringView assetName, AssetType assetType)
 	{
 		IntRef<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetType);
 
@@ -294,7 +293,7 @@ namespace Volt
 			CustomAssetMetadataRegistry::Get().SetupInitalCustomMetadata(assetType, metadata.customData);
 		}
 
-		newAsset->SetName(std::string(assetName));
+		newAsset->SetName(String(assetName));
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
@@ -309,11 +308,11 @@ namespace Volt
 		return newAsset;
 	}
 
-	void AssetManager::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
+	void AssetManager::CreateFileForAsset(AssetHandle assetHandle, const Filesystem::Path& filepath)
 	{
-		if (FileSystem::FilePathIsOnlyExtension(filepath) || filepath.stem().empty())
+		if (Filesystem::FilepathIsOnlyExtension(filepath) || filepath.Stem().IsEmpty())
 		{
-			VT_LOGC(Error, LogAssetSystem, "No filename was provided while trying to save asset '{0}'. Target file path: '{1}'", assetHandle, filepath.string().c_str());
+			VT_LOGC(Error, LogAssetSystem, "No filename was provided while trying to save asset '{0}'. Target file path: '{1}'", assetHandle, filepath);
 			return;
 		}
 
@@ -321,19 +320,19 @@ namespace Volt
 			WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(assetHandle);
 			if (!assetMetadata.IsValid())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is not registered in the asset registry. Target file path: '{1}'", assetHandle, filepath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is not registered in the asset registry. Target file path: '{1}'", assetHandle, filepath);
 				return;
 			}
 
 			if (assetMetadata->IsMemoryAsset())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file path: '{1}'", assetHandle, filepath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file path: '{1}'", assetHandle, filepath);
 				return;
 			}
 
-			if (!assetMetadata->filepath.empty())
+			if (!assetMetadata->filepath.IsEmpty())
 			{
-				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path, overriding!. Target file path: '{1}'", assetHandle, filepath.string().c_str());
+				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path, overriding!. Target file path: '{1}'", assetHandle, filepath);
 			}
 
 			assetMetadata->filepath = filepath;
@@ -433,9 +432,9 @@ namespace Volt
 		}
 	}
 
-	std::filesystem::path AssetManager::GetContextPath(const std::filesystem::path& path) const
+	Filesystem::Path AssetManager::GetContextPath(const Filesystem::Path& path) const
 	{
-		std::filesystem::path projDir;
+		Filesystem::Path projDir;
 
 		if (!IsEngineAsset(path))
 		{
@@ -449,9 +448,9 @@ namespace Volt
 		return projDir;
 	}
 
-	std::filesystem::path AssetManager::GetAssetFilesystemPath(const std::filesystem::path& path) const
+	Filesystem::Path AssetManager::GetAssetFilesystemPath(const Filesystem::Path& path) const
 	{
-		if (path.is_absolute())
+		if (path.IsAbsolute())
 		{
 			return path;
 		}
@@ -459,24 +458,24 @@ namespace Volt
 		return GetContextPath(path) / path;
 	}
 
-	std::filesystem::path AssetManager::GetAssetFilesystemPath(AssetHandle assetHandle) const
+	Filesystem::Path AssetManager::GetAssetFilesystemPath(AssetHandle assetHandle) const
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		return GetAssetFilesystemPath(assetMetadata->filepath);
 	}
 
-	std::filesystem::path AssetManager::GetRelativeAssetFilepath(const std::filesystem::path& path) const
+	Filesystem::Path AssetManager::GetRelativeAssetFilepath(const Filesystem::Path& path) const
 	{
 		return m_assetRegistry.GetRelativeAssetFilepath(path);
 	}
 
-	bool AssetManager::IsEngineAsset(const std::filesystem::path& path) const
+	bool AssetManager::IsEngineAsset(const Filesystem::Path& path) const
 	{
-		const auto pathSplit = ::Utility::SplitStringsByCharacter(path.string(), '/');
+		const auto pathSplit = ::Utility::SplitStringsByCharacter(path.ToString(), '/');
 		if (!pathSplit.empty())
 		{
-			std::string lowerFirstPart = ::Utility::ToLower(pathSplit.front());
-			if (::Utility::StringContains(lowerFirstPart, "engine") || ::Utility::StringContains(lowerFirstPart, "editor"))
+			String lowerFirstPart = ::Utility::ToLower(pathSplit.front());
+			if (lowerFirstPart.contains("engine") || lowerFirstPart.contains("editor"))
 			{
 				return true;
 			}
@@ -561,7 +560,7 @@ namespace Volt
 		newAsset->m_referencedAssetManager = this;
 		newAsset->m_generation = currentGeneration;
 		newAsset->AssignAssetHandle(metadata->handle);
-		newAsset->SetName(metadata->filepath.stem().string());
+		newAsset->SetName(metadata->filepath.Stem().ToString());
 
 		AddAssetToCache(newAsset);
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
@@ -671,7 +670,7 @@ namespace Volt
 		Asset* asset = reinterpret_cast<Asset*>(assetUnloadData.asset);
 
 		const AssetHandle assetHandle = asset->GetAssetHandle();
-		const std::string nameCopy(asset->GetAssetName());
+		const String nameCopy(asset->GetAssetName());
 
 		const AssetType assetType = asset->GetType();
 
@@ -722,9 +721,9 @@ namespace Volt
 
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
-		const std::filesystem::path filepath = GetAssetFilesystemPath(assetMetadata->filepath);
+		const Filesystem::Path filepath = GetAssetFilesystemPath(assetMetadata->filepath);
 
-		if (!FileSystem::Exists(filepath))
+		if (!Filesystem::Exists(filepath))
 		{
 			VT_LOGC(Error, LogAssetSystem,
 				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
@@ -840,7 +839,7 @@ namespace Volt
 			return false;
 		}
 
-		const std::filesystem::path destinationFilepath = GetAssetFilesystemPath(assetMetadata->filepath);
+		const Filesystem::Path destinationFilepath = GetAssetFilesystemPath(assetMetadata->filepath);
 
 		FileWriter fileWriter;
 		if (!fileWriter.Open(destinationFilepath))
@@ -964,7 +963,7 @@ namespace Volt
 		JobSystem::RunJob(insertIntoDependencyGraphJob);
 	}
 
-	ReadOnlyAssetMetadata AssetManager::GetAssetMetadataFromFilepath(const std::filesystem::path& filepath)
+	ReadOnlyAssetMetadata AssetManager::GetAssetMetadataFromFilepath(const Filesystem::Path& filepath)
 	{
 		AssetRegistryIteratorFilter filter{};
 
@@ -984,14 +983,14 @@ namespace Volt
 		return { AssetMetadataInit::Null };
 	}
 
-	AssetHandle AssetManager::GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const
+	AssetHandle AssetManager::GetAssetHandleFromFilepath(const Filesystem::Path& filepath) const
 	{
 		AssetRegistryIteratorFilter filter{};
 		filter.includeMemoryAssets = false;
 
 		AssetHandle resultAssetHandle = Asset::Null();
 
-		std::filesystem::path relativeFilepath = GetRelativeAssetFilepath(filepath);
+		Filesystem::Path relativeFilepath = GetRelativeAssetFilepath(filepath);
 
 		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, relativeFilepath](ReadOnlyAssetMetadata assetMetadata)
 		{

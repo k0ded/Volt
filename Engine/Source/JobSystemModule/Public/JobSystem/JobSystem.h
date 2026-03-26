@@ -29,13 +29,13 @@ namespace Volt
 		JobSystem();
 		~JobSystem();
 
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(StringView jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter*& counter);

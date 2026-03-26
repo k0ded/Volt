@@ -12,7 +12,7 @@ namespace Volt
 	struct RGUniformBufferDesc : public RHI::UniformBufferDesc
 	{
 		template<typename T>
-		static RGUniformBufferDesc Create(const std::string& name = "UniformBuffer")
+		static RGUniformBufferDesc Create(const String& name = "UniformBuffer")
 		{
 			RGUniformBufferDesc result;
 			result.size = sizeof(T);

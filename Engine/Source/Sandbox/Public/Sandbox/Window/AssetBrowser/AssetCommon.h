@@ -7,14 +7,14 @@ struct AssetData
 {
 	Volt::AssetHandle handle = 0;
 	AssetType type = AssetTypes::None;
-	std::filesystem::path path;
+	Filesystem::Path path;
 	bool selected = false;
 };
 
 struct DirectoryData
 {
 	Volt::AssetHandle handle;
-	std::filesystem::path path;
+	Filesystem::Path path;
 
 	DirectoryData* parentDir;
 	bool selected = false;

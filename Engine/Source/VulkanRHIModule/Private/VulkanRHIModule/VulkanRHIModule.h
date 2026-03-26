@@ -59,7 +59,7 @@ namespace Volt::RHI
 		IntRef<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const override;
 
 		IntRef<Shader> CreateShader(const ShaderCreateInfo& specification) const override;
-		IntRef<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const override;
+		IntRef<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const String& source) const override;
 		IntRef<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		IntRef<Fence> CreateFence() const override;

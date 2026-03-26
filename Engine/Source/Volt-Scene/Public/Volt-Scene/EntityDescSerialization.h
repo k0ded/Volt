@@ -24,5 +24,5 @@ namespace Volt::EntityDescSerialization
 	VTS_API void DeserializeEntity(Archive& archive, Entity entity);
 
 
-	VTS_API std::filesystem::path GetSavePathForEntity(const Volt::AssetHandle& handle);
+	VTS_API Filesystem::Path GetSavePathForEntity(const Volt::AssetHandle& handle);
 }

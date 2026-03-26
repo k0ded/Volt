@@ -1,7 +1,7 @@
 #include "cupch.h"
 #include "DynamicLibraryHelpers.h"
 
-DynamicLibraryHelper::DynamicLibraryHelper(std::string_view libraryFilepath)
+DynamicLibraryHelper::DynamicLibraryHelper(WStringView libraryFilepath)
 	: m_moduleHandle(nullptr)
 {
 	if (!libraryFilepath.empty())
@@ -29,7 +29,7 @@ void DynamicLibraryHelper::Release()
 	m_moduleHandle = nullptr;
 }
 
-void DynamicLibraryHelper::Load(std::string_view libraryFilepath)
+void DynamicLibraryHelper::Load(WStringView libraryFilepath)
 {
 	if (m_moduleHandle != nullptr)
 	{

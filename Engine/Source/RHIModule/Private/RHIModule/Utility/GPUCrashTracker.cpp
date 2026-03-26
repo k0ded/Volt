@@ -91,7 +91,7 @@ namespace Volt::RHI
 		//AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GpuCrashDump_GetDescription(decoder, GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationName, 
 		//	uint32_t(applicationName.size()), applicationName.data()));
 	
-		const std::string crashDumpFileName = std::string("GPUCrashDump") + ".nv-gpudmp";
+		const String crashDumpFileName = String("GPUCrashDump") + ".nv-gpudmp";
 		std::ofstream dumpFile(crashDumpFileName, std::ios::out | std::ios::binary);
 		if (dumpFile)
 		{

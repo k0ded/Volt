@@ -11,11 +11,13 @@
 
 #include "Sandbox/Utility/GlobalEditorStates.h"
 #include "Sandbox/Utility/EditorLibrary.h"
-#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/VersionControl/VersionControl.h"
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
+
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -25,13 +27,13 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <CoreUtilities/StringUtility.h>
-
 #include <Volt-Animation/Assets/AssetTypes.h>
+
+#include <CoreUtilities/String/StringUtility.h>
 
 namespace AssetBrowser
 {
-	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData, Volt::AssetHandle inHandle)
+	AssetItem::AssetItem(SelectionManager* selectionManager, const Filesystem::Path& path, AssetData& aMeshToImportData, Volt::AssetHandle inHandle)
 		: Item(selectionManager, path), meshToImportData(aMeshToImportData), handle(inHandle)
 	{
 		// Assign a random handle to non registered assets
@@ -80,12 +82,12 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Open Externally"))
 		{
-			FileSystem::OpenFileExternally(Volt::ProjectManager::GetRootDirectory() / path);
+			Filesystem::OpenFileExternally(Volt::ProjectManager::GetRootDirectory() / path);
 		}
 
 		if (ImGui::MenuItem("Show In Explorer"))
 		{
-			FileSystem::ShowFileInExplorer(Volt::ProjectManager::GetRootDirectory() / path);
+			Filesystem::ShowFileInExplorer(Volt::ProjectManager::GetRootDirectory() / path);
 		}
 
 		if (ImGui::MenuItem("Reload"))
@@ -120,7 +122,7 @@ namespace AssetBrowser
 		return removed;
 	}
 
-	bool AssetItem::Rename(const std::string& aNewName)
+	bool AssetItem::Rename(const String& aNewName)
 	{
 		if (aNewName.empty()) { return false; }
 
@@ -149,15 +151,15 @@ namespace AssetBrowser
 		}
 		//file size
 		{
-			const auto fullPath = Volt::ProjectManager::GetAssetsDirectory() / std::filesystem::relative(path, "Assets\\");
-			uintmax_t fileSize = 0;
-			if (std::filesystem::exists(fullPath))
+			const auto fullPath = Volt::ProjectManager::GetAssetsDirectory() / Filesystem::Relative(path, "Assets\\");
+			uint64_t fileSize = 0;
+			if (Filesystem::Exists(fullPath))
 			{
-				fileSize = std::filesystem::file_size(fullPath);
+				fileSize = Filesystem::GetFileSize(fullPath);
 			}
 
-			const std::string sizeStringWithMetricPrefix = Utility::ToStringWithMetricPrefixCharacterForBytes(fileSize);
-			const std::string sizeStringWithSeparator = Utility::ToStringWithThousandSeparator(fileSize);
+			const String sizeStringWithMetricPrefix = Utility::ToStringWithMetricPrefixCharacterForBytes(fileSize);
+			const String sizeStringWithSeparator = Utility::ToStringWithThousandSeparator(fileSize);
 
 			DrawHoverInfo("Size", sizeStringWithMetricPrefix + " (" + sizeStringWithSeparator +" bytes)");
 		}
@@ -182,9 +184,9 @@ namespace AssetBrowser
 		return GetBackgroundColorFromType(type);
 	}
 
-	std::string AssetItem::GetTypeName() const
+	String AssetItem::GetTypeName() const
 	{
-		return std::string(type->GetName());
+		return String(type->GetName());
 	}
 
 	void AssetItem::SetDragDropPayload()

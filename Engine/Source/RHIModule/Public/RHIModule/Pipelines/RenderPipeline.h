@@ -42,7 +42,7 @@ namespace Volt::RHI
 		float depthBiasClamp = 0.f;
 		float depthBiasSlopeFactor = 0.f;
 
-		std::string name;
+		String name;
 	};
 
 	struct VertexBufferLayout

@@ -112,7 +112,7 @@ namespace AssetBrowser
 			{
 				if (ImGui::MenuItem("Reimport"))
 				{
-					UI::OpenModal(std::format("Reimport Animation##assetBrowser{0}", std::to_string(item->handle)));
+					UI::OpenModal(FormatString("Reimport Animation##assetBrowser{}", item->handle));
 
 				}
 			};

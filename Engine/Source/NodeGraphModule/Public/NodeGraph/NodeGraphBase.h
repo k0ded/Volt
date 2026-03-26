@@ -9,6 +9,8 @@
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Map.h>
 
+#include <glm/glm.hpp>
+
 #include <cstdint> 
 
 typedef uint32_t NodeInstanceID;

@@ -20,7 +20,7 @@ public:
 	//should be created using EDITOR_NODE_TYPE define
 	virtual VoltGUID GetTypeGUID() const = 0;
 	//should be created using EDITOR_NODE_TYPE define
-	virtual std::string GetTypeName() const = 0;
+	virtual String GetTypeName() const = 0;
 
 	// All node types need to have this static function
 	//static void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder);
@@ -39,8 +39,8 @@ private:
 	public: \
 		static VoltGUID GetStaticTypeGUID() { return type_guid; } \
 		VoltGUID GetTypeGUID() const override{ return GetStaticTypeGUID(); } \
-		static std::string GetStaticTypeName() { return #class_name; } \
-		std::string GetTypeName() const override{ return #class_name; } 
+		static String GetStaticTypeName() { return #class_name; } \
+		String GetTypeName() const override{ return #class_name; } 
 
 class NothingNode : public EditorNodeTypeBase
 {

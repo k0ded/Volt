@@ -5,6 +5,8 @@
 #include <WindowModule/WindowHandle.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
+#include <CoreUtilities/Pointers/Ref.h>
+#include <CoreUtilities/Containers/Vector.h>
 
 #include <map>
 

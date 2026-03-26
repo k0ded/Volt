@@ -3,6 +3,7 @@
 #include <EntitySystem/EntityID.h>
 
 #include <CoreUtilities/UUID.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 namespace Volt
 {

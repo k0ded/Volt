@@ -224,7 +224,7 @@ namespace Volt::RHI
 		m_allocation->GetResourceHandle<ID3D12Resource*>()->SetName(wname.c_str());
 	}
 
-	std::string_view D3D12StorageBuffer::GetName() const
+	StringView D3D12StorageBuffer::GetName() const
 	{
 		return m_desc.debugName;
 	}

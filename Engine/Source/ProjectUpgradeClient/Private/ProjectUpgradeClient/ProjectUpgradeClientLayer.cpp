@@ -13,9 +13,9 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <Volt-Application/UI/ImGuiSubSystem.h>
 
-#include <SubSystem/SubSystemManager.h>
+#include <Volt-FileSystem/Filesystem.h>
 
-#include <CoreUtilities/FileSystem.h>
+#include <SubSystem/SubSystemManager.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -231,7 +231,7 @@ namespace Volt
 	void ProjectUpgradeClientLayer::DeserializeProject()
 	{
 		const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
-		std::filesystem::path projectFilepath;
+		Filesystem::Path projectFilepath;
 
 		VT_ASSERT_MSG(commandLineBuilder.IsArgDefined("project"), "Project Upgrade Client expects a project to be provided!");
 		projectFilepath = commandLineBuilder.GetArgValue("project");
@@ -240,21 +240,21 @@ namespace Volt
 		//get the project engine version
 		YAMLFileStreamReader streamReader{};
 
-		VT_ASSERT_MSG(streamReader.OpenFile(projectFilepath), std::format("Failed to open file: {0}!", projectFilepath.string()));
-		VT_ASSERT_MSG(streamReader.HasKey("Project"), std::format("Project file {0} is invalid!", projectFilepath.string()));
+		VT_ASSERT_MSG(streamReader.OpenFile(projectFilepath), FormatString("Failed to open file: {0}!", projectFilepath));
+		VT_ASSERT_MSG(streamReader.HasKey("Project"), FormatString("Project file {0} is invalid!", projectFilepath));
 
 		streamReader.EnterScope("Project");
 
-		m_targetProject.engineVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
-		m_targetProject.name = streamReader.ReadAtKey("Name", std::string("None"));
-		m_targetProject.companyName = streamReader.ReadAtKey("CompanyName", std::string("None"));
-		m_targetProject.assetsDirectoryName = streamReader.ReadAtKey("AssetsDirectory", std::string("Assets"));
-		m_targetProject.audioDirectory = streamReader.ReadAtKey("AudioBanksDirectory", std::filesystem::path("Audio/Banks"));
-		m_targetProject.iconFilepath = streamReader.ReadAtKey("IconPath", std::filesystem::path(""));
-		m_targetProject.cursorFilepath = streamReader.ReadAtKey("CursorPath", std::filesystem::path(""));
-		m_targetProject.startSceneFilepath = streamReader.ReadAtKey("StartScene", std::filesystem::path(""));
+		m_targetProject.engineVersion = streamReader.ReadAtKey("EngineVersion", String(""));
+		m_targetProject.name = streamReader.ReadAtKey("Name", String("None"));
+		m_targetProject.companyName = streamReader.ReadAtKey("CompanyName", String("None"));
+		m_targetProject.assetsDirectoryName = streamReader.ReadAtKey("AssetsDirectory", String("Assets"));
+		m_targetProject.audioDirectory = streamReader.ReadAtKey("AudioBanksDirectory", Filesystem::Path("Audio/Banks"));
+		m_targetProject.iconFilepath = streamReader.ReadAtKey("IconPath", Filesystem::Path(""));
+		m_targetProject.cursorFilepath = streamReader.ReadAtKey("CursorPath", Filesystem::Path(""));
+		m_targetProject.startSceneFilepath = streamReader.ReadAtKey("StartScene", Filesystem::Path(""));
 
-		m_targetProject.rootDirectory = projectFilepath.parent_path();
+		m_targetProject.rootDirectory = projectFilepath.ParentPath();
 		m_targetProject.filepath = projectFilepath;
 
 		//dont need plugins in here 
@@ -269,32 +269,32 @@ namespace Volt
 	void ProjectUpgradeClientLayer::UpdateProjectVersion(Volt::Version newVersion)
 	{
 		const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
-		std::filesystem::path projectFilepath;
+		Filesystem::Path projectFilepath;
 
 		VT_ASSERT_MSG(commandLineBuilder.IsArgDefined("project"), "Project Upgrade Client expects a project to be provided!");
 		projectFilepath = commandLineBuilder.GetArgValue("project");
 
-		Vector<std::string> pluginNames;
+		Vector<String> pluginNames;
 		{
 			YAMLFileStreamReader streamReader{};
 
-			VT_ASSERT_MSG(streamReader.OpenFile(projectFilepath), std::format("Failed to open file: {0}!", projectFilepath.string()));
-			VT_ASSERT_MSG(streamReader.HasKey("Project"), std::format("Project file {0} is invalid!", projectFilepath.string()));
+			VT_ASSERT_MSG(streamReader.OpenFile(projectFilepath), FormatString("Failed to open file: {0}!", projectFilepath));
+			VT_ASSERT_MSG(streamReader.HasKey("Project"), FormatString("Project file {0} is invalid!", projectFilepath));
 			streamReader.GetRawNode();
 
 			streamReader.EnterScope("Project");
 
 			streamReader.ForEach("Plugins", [&]()
 			{
-				const std::string pluginName = streamReader.ReadValue<std::string>();
+				const String pluginName = streamReader.ReadValue<String>();
 				pluginNames.push_back(pluginName);
 			});
 			streamReader.ExitScope();
 		}
 
-		if (!FileSystem::IsWriteable(projectFilepath))
+		if (!Filesystem::IsWriteable(projectFilepath))
 		{
-			FileSystem::MakeWriteable(projectFilepath);
+			Filesystem::MakeWriteable(projectFilepath);
 		}
 
 		YAMLFileStreamWriter streamWriter{ projectFilepath };
@@ -312,7 +312,7 @@ namespace Volt
 		streamWriter.SetKey("StartScenePath", m_targetProject.startSceneFilepath);
 
 		streamWriter.BeginSequence("Plugins");
-		for (const std::string& plugin : pluginNames)
+		for (const String& plugin : pluginNames)
 		{
 			streamWriter.AddValue(plugin);
 		}

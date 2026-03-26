@@ -30,7 +30,7 @@ namespace Volt
 		using AssetChangedCallback = std::function<void(AssetHandle assetHandle, AssetChangedState state)>;
 		using AssetRegistryIteratorFunc = std::function<bool(ReadOnlyAssetMetadata)>;
 
-		VTAS_API AssetManager(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
+		VTAS_API AssetManager(const Filesystem::Path& engineDirectoryPath, const Filesystem::Path& projectDirectoryPath, StringView assetsDirectoryName);
 		VTAS_API ~AssetManager();
 
 		///// Asset Metadata /////
@@ -65,13 +65,13 @@ namespace Volt
 
 		// Returns the asset handle corresponding to the asset file.
 		// Has to be a relative file path.
-		VTAS_API AssetHandle GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const;
+		VTAS_API AssetHandle GetAssetHandleFromFilepath(const Filesystem::Path& filepath) const;
 
 		// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded.
 		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(AssetHandle assetHandle);
-		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(const std::filesystem::path& assetFilepath);
+		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(const Filesystem::Path& assetFilepath);
 		template<VoltAssetType T> bool TryGetAssetImmediately(AssetHandle assetHandle, AssetReference<T>& outAsset);
-		template<VoltAssetType T> bool TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset);
+		template<VoltAssetType T> bool TryGetAssetImmediately(const Filesystem::Path& assetFilepath, AssetReference<T>& outAsset);
 
 		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
 		// The outAsset value might be filled with a valid asset.
@@ -91,20 +91,20 @@ namespace Volt
 		VTAS_API bool TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(StringView assetName, Args&&... args);
 		// Creates an asset that only lives in memory, and will not show up when iterating the asset registry.
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAnonymousAsset(std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAnonymousAsset(StringView assetName, Args&&... args);
 		// Creates an asset that does not have a filepath yet.
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetWithAssetHandle(std::string_view assetName, AssetHandle assetHandle, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(StringView assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetWithAssetHandle(StringView assetName, AssetHandle assetHandle, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFileWithAssetHandle(const std::filesystem::path& targetDirectory, std::string_view assetName, AssetHandle assetHandle, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const Filesystem::Path& targetDirectory, StringView assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFileWithAssetHandle(const Filesystem::Path& targetDirectory, StringView assetName, AssetHandle assetHandle, Args&&... args);
 
 		// Creates an asset of a type without arguments.
-		VTAS_API AssetReference<Asset> CreateAssetTypeless(std::string_view assetName, AssetType assetType);
+		VTAS_API AssetReference<Asset> CreateAssetTypeless(StringView assetName, AssetType assetType);
 
-		VTAS_API void CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath);
+		VTAS_API void CreateFileForAsset(AssetHandle assetHandle, const Filesystem::Path& filepath);
 
 		///// Management /////
 		VTAS_API AssetUpdatedCallbackID RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callback);
@@ -117,11 +117,11 @@ namespace Volt
 		VTAS_API void IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const;
 
 		///// File System /////
-		VTAS_API std::filesystem::path GetContextPath(const std::filesystem::path& path) const;
-		VTAS_API std::filesystem::path GetAssetFilesystemPath(const std::filesystem::path& path) const;
-		VTAS_API std::filesystem::path GetAssetFilesystemPath(AssetHandle assetHandle) const;
-		VTAS_API std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& path) const;
-		VTAS_API bool IsEngineAsset(const std::filesystem::path& path) const;
+		VTAS_API Filesystem::Path GetContextPath(const Filesystem::Path& path) const;
+		VTAS_API Filesystem::Path GetAssetFilesystemPath(const Filesystem::Path& path) const;
+		VTAS_API Filesystem::Path GetAssetFilesystemPath(AssetHandle assetHandle) const;
+		VTAS_API Filesystem::Path GetRelativeAssetFilepath(const Filesystem::Path& path) const;
+		VTAS_API bool IsEngineAsset(const Filesystem::Path& path) const;
 
 		VTAS_API JobCounterRef GetMetadataLoadingCounter();
 	private:
@@ -129,9 +129,9 @@ namespace Volt
 
 		struct AssetManagerRoot
 		{
-			std::filesystem::path engineDirectoryPath;
-			std::filesystem::path projectDirectoryPath;
-			std::string_view assetsDirectoryName;
+			Filesystem::Path engineDirectoryPath;
+			Filesystem::Path projectDirectoryPath;
+			StringView assetsDirectoryName;
 		};
 
 		struct AssetChangedQueueInfo
@@ -151,7 +151,7 @@ namespace Volt
 			AssetRefCounter* asset;
 		};
 
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(StringView assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
 
 		VTAS_API void LoadAsset(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, IntRef<Asset> asset, AssetLoadState expectedLoadState);
@@ -175,7 +175,7 @@ namespace Volt
 		bool UpdateInternal(class AppTickEvent& e);
 
 		void CreateDependencyGraphAndAddAssetsFromRegistry();
-		ReadOnlyAssetMetadata GetAssetMetadataFromFilepath(const std::filesystem::path& filepath);
+		ReadOnlyAssetMetadata GetAssetMetadataFromFilepath(const Filesystem::Path& filepath);
 
 		AssetRegistry m_assetRegistry;
 		AssetAllocator m_assetAllocator;
@@ -219,7 +219,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T> 
-	AssetReference<T> AssetManager::GetAssetImmediately(const std::filesystem::path& assetFilepath)
+	AssetReference<T> AssetManager::GetAssetImmediately(const Filesystem::Path& assetFilepath)
 	{
 		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
 		if (assetHandle != Asset::Null())
@@ -239,7 +239,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T>
-	bool AssetManager::TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset)
+	bool AssetManager::TryGetAssetImmediately(const Filesystem::Path& assetFilepath, AssetReference<T>& outAsset)
 	{
 		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
 		if (assetHandle != Asset::Null())
@@ -301,7 +301,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args>
-	AssetReference<T> AssetManager::CreateMemoryAsset(std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager::CreateMemoryAsset(StringView assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = true;
 		constexpr bool IsAnonymous = false;
@@ -309,7 +309,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args> AssetReference<T>
-	AssetManager::CreateAnonymousAsset(std::string_view assetName, Args&&... args)
+	AssetManager::CreateAnonymousAsset(StringView assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = true;
 		constexpr bool IsAnonymous = true;
@@ -317,7 +317,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args>
-	AssetReference<T> AssetManager::CreateAsset(std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager::CreateAsset(StringView assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = false;
 		constexpr bool IsAnonymous = false;
@@ -325,7 +325,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args> AssetReference<T>
-	AssetManager::CreateAssetWithAssetHandle(std::string_view assetName, AssetHandle assetHandle, Args&&... args)
+	AssetManager::CreateAssetWithAssetHandle(StringView assetName, AssetHandle assetHandle, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = false;
 		constexpr bool IsAnonymous = false;
@@ -333,29 +333,29 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args>
-	AssetReference<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager::CreateAssetAndFile(const Filesystem::Path& targetDirectory, StringView assetName, Args&&... args)
 	{
 		AssetReference<T> asset = CreateAsset<T>(assetName, std::forward<Args>(args)...);
 
-		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
+		Filesystem::Path targetPath = targetDirectory / (String(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
 
 		return asset;
 	}
 
 	template<VoltAssetType T, typename... Args> AssetReference<T>
-	AssetManager::CreateAssetAndFileWithAssetHandle(const std::filesystem::path& targetDirectory, std::string_view assetName, AssetHandle assetHandle, Args&&... args)
+	AssetManager::CreateAssetAndFileWithAssetHandle(const Filesystem::Path& targetDirectory, StringView assetName, AssetHandle assetHandle, Args&&... args)
 	{
 		AssetReference<T> asset = CreateAssetWithAssetHandle<T>(assetName, assetHandle, std::forward<Args>(args)...);
 
-		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
+		Filesystem::Path targetPath = targetDirectory / (String(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
 
 		return asset;
 	}
 
 	template<VoltAssetType T, typename... Args>
-	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args)
+	AssetReference<T> AssetManager::CreateAssetImpl(StringView assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args)
 	{
 		IntRef<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
 		newAsset->AssignAssetHandle(assetHandle);
@@ -373,7 +373,7 @@ namespace Volt
 			CustomAssetMetadataRegistry::Get().SetupInitalCustomMetadata(metadata.type, metadata.customData);
 		}
 
-		newAsset->SetName(std::string(assetName));
+		newAsset->SetName(String(assetName));
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;

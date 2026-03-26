@@ -10,7 +10,7 @@ namespace Volt
 	class VTPI_API PhysicsLayerManager
 	{
 	public:
-		void AddLayer(const std::string& name);
+		void AddLayer(const String& name);
 		void SetLayerCollision(uint32_t layer, uint32_t otherLayer, bool shouldCollide);
 		
 		bool AreLayersColliding(PhysicsLayerID layerA, PhysicsLayerID layerB);

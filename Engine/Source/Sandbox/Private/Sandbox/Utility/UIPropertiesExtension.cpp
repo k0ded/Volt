@@ -10,7 +10,7 @@
 namespace UI
 {
 
-	bool PropertyEntity(const std::string& text, Volt::Scene& scene, Volt::EntityID& value, const std::string& toolTip)
+	bool PropertyEntity(const String& text, Volt::Scene& scene, Volt::EntityID& value, const String& toolTip)
 	{
 		bool changed = false;
 
@@ -20,11 +20,11 @@ namespace UI
 		SimpleToolTip(toolTip);
 
 		ImGui::TableNextColumn();
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		Volt::Entity entity = scene.GetEntityFromID(value);
 
-		std::string entityName;
+		String entityName;
 		if (entity)
 		{
 			entityName = entity.GetComponent<Volt::TagComponent>().tag;
@@ -36,7 +36,7 @@ namespace UI
 
 		changed = DrawItem([&]()
 		{
-			return ImGui::InputTextString(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
+			return ImGui::InputText(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
 		});
 
 		changed = DragDropTarget<Volt::EntityID>("scene_entity_hierarchy", value);
@@ -45,16 +45,16 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const std::string& toolTip)
+	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const String& toolTip)
 	{
 		bool changed = false;
 
 		SimpleToolTip(toolTip);
-		std::string id = MakePropertyID();
+		String id = MakePropertyID();
 
 		Volt::Entity entity = scene.GetEntityFromID(value);
 
-		std::string entityName;
+		String entityName;
 		if (entity)
 		{
 			entityName = entity.GetComponent<Volt::TagComponent>().tag;
@@ -66,7 +66,7 @@ namespace UI
 
 		changed = DrawItem(width, [&]()
 		{
-			return ImGui::InputTextString(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
+			return ImGui::InputText(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
 		});
 
 		changed = DragDropTarget<Volt::EntityID>("scene_entity_hierarchy", value);

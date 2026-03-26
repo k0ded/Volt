@@ -137,7 +137,7 @@ Ref<Volt::Mesh> EditorResources::GetEditorMesh(EditorMesh mesh)
 	return m_editorMeshes.at(mesh);
 }
 
-void EditorResources::TryLoadIcon(const std::filesystem::path& path, IntRef<Volt::RHI::Image>* outTexture)
+void EditorResources::TryLoadIcon(const Filesystem::Path& path, IntRef<Volt::RHI::Image>* outTexture)
 {
 	AssetReference<Volt::Texture2D> texture;
 
@@ -151,7 +151,7 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, IntRef<Volt
 	}
 }
 
-Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
+Ref<Volt::Mesh> EditorResources::TryLoadMesh(const Filesystem::Path& path)
 {
 	AssetReference<Volt::MeshAsset> meshAsset;
 

@@ -40,11 +40,11 @@ public:
 	void UpdateMainContent() override;
 	void UpdateContent() override;
 
-	bool SaveSettings(const std::string& data);
-	size_t LoadSettings(std::string& data);
+	bool SaveSettings(const String& data);
+	size_t LoadSettings(String& data);
 
-	bool SaveNodeSettings(const UUID64 nodeId, const std::string& data);
-	size_t LoadNodeSettings(const UUID64 nodeId, std::string& data);
+	bool SaveNodeSettings(const UUID64 nodeId, const String& data);
+	size_t LoadNodeSettings(const UUID64 nodeId, String& data);
 
 	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 	void OnClose() override;

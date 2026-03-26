@@ -12,7 +12,7 @@
 
 #include <RHIModule/Descriptors/ResourceTable.h>
 
-#include <CoreUtilities/StringHash.h>
+#include <CoreUtilities/String/StringHash.h>
 
 #include <string>
 
@@ -39,7 +39,7 @@ namespace Volt
 
 	struct ShaderParameterMetadata
 	{
-		std::string name;
+		String name;
 		StringHash hashedName;
 		ShaderParameterType parameterType;
 		RGResourceAccess resourceAccessType;

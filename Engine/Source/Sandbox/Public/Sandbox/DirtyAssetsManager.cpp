@@ -10,8 +10,9 @@
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <CoreUtilities/Containers/VectorVariants.h>
-#include <CoreUtilities/FileSystem.h>
 
 
 VT_REGISTER_SUBSYSTEM(DirtyAssetsManager, Default, Engine);
@@ -88,7 +89,7 @@ void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::Ass
 
 void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization)
 {
-	VT_ASSERT_MSG(!m_dirtySaveCustomizations.contains(type), std::format("Tried to register a dirty save customization for type '{0}' that already has one. ", type->GetName()));
+	VT_ASSERT_MSG(!m_dirtySaveCustomizations.contains(type), FormatString("Tried to register a dirty save customization for type '{0}' that already has one. ", type->GetName()));
 	m_dirtySaveCustomizations.emplace(type, customization);
 }
 
@@ -122,7 +123,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 	}
 
 	{
-		Map<Volt::AssetHandle, std::string> cantSaveAssets;
+		Map<Volt::AssetHandle, String> cantSaveAssets;
 		for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 		{
 			const Volt::AssetHandle& handle = assetsToSave[i];
@@ -142,7 +143,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 				continue;
 			}
 
-			std::string outCantReason = "";
+			String outCantReason = "";
 			if (!customization.CanSaveAsset(handle, outCantReason))
 			{
 				//if we arent showing the explicit save dialog, we just remove the asset from assets to save
@@ -226,7 +227,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			assetsToSave.erase(assetsToSave.begin() + i);
 		}
 
-		Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;
+		Vector<std::pair<Volt::AssetHandle, Filesystem::Path>> assetsToCreate;
 
 		//if there are no assets needing a user assigned path, dont open the modal
 		if (!assetsNeedUserAssignedPath.empty())
@@ -281,8 +282,8 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 
 			const DirtySaveCustomization& customization = m_dirtySaveCustomizations[assetType];
 
-			std::filesystem::path outNewPath = "";
-			std::string outCantReason = "CanSaveAssetPostCreateStep was not bound but CanUserAssignPath returned false!!";
+			Filesystem::Path outNewPath = "";
+			String outCantReason = "CanSaveAssetPostCreateStep was not bound but CanUserAssignPath returned false!!";
 			bool canSaveAssetPostCreateStep = false;
 			//default behaviour as false
 			if (customization.CanSaveAssetPostCreateStep)
@@ -299,7 +300,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 				continue;
 			}
 
-			VT_ENSURE(!outNewPath.empty());
+			VT_ENSURE(!outNewPath.IsEmpty());
 			assetsToCreate.push_back({ handle, outNewPath });
 		}
 
@@ -315,8 +316,8 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		GlobalMemoryStackVector<Volt::AssetHandle> readOnlyAssets;
 		for (const Volt::AssetHandle& asset : assetsToSave)
 		{
-			const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
-			if (!FileSystem::IsWriteable(assetPath))
+			const Filesystem::Path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
+			if (!Filesystem::IsWriteable(assetPath))
 			{
 				readOnlyAssets.push_back(asset);
 			}
@@ -343,16 +344,16 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			{
 				for (Volt::AssetHandle asset : outSelectedAssetsToCheckOut)
 				{
-					const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
-					FileSystem::MakeWriteable(assetPath);
+					const Filesystem::Path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
+					Filesystem::MakeWriteable(assetPath);
 				}
 			}
 
 			// remove the assets that are still read-only from the assets to save
 			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 			{
-				const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(assetsToSave[i]);
-				if (!FileSystem::IsWriteable(assetPath))
+				const Filesystem::Path assetPath = g_assetManager->GetAssetFilesystemPath(assetsToSave[i]);
+				if (!Filesystem::IsWriteable(assetPath))
 				{
 					assetsToSave.erase(assetsToSave.begin() + i);
 				}
@@ -416,7 +417,7 @@ void DirtyAssetsManager::SaveAssetsImpl(const GlobalMemoryStackVector<Volt::Asse
 	}
 }
 
-void DirtyAssetsManager::CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate)
+void DirtyAssetsManager::CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, Filesystem::Path>>& assetsToCreate)
 {
 	for (const auto& [asset, path] : assetsToCreate)
 	{

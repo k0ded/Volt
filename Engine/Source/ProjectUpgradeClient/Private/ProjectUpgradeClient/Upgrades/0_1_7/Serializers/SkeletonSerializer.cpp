@@ -5,15 +5,17 @@
 #include <Volt-Animation/Assets/Skeleton.h>
 #undef private
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {
 	struct SkeletonSerializationData
 	{
-		std::string name;
+		String name;
 		Vector<Skeleton::Joint> joints;
-		Map<std::string, size_t> jointNameToIndex;
+		Map<String, size_t> jointNameToIndex;
 		Vector<Skeleton::JointAttachment> jointAttachments;
 		Vector<glm::mat4> inverseBindPose;
 		Vector<Animation::TRS> restPose;
@@ -94,7 +96,7 @@ namespace Volt
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);

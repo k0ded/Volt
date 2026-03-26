@@ -14,7 +14,7 @@ RenderGraphDebuggerPanel::RenderGraphDebuggerPanel(Ref<Volt::SceneRenderer>& sce
 
 void RenderGraphDebuggerPanel::UpdateMainContent()
 {
-	constexpr Array<std::string_view, 6> RenderGraphPassFlagsNames =
+	constexpr Array<StringView, 6> RenderGraphPassFlagsNames =
 	{
 		"NeverCull",
 		"Compute",
@@ -78,7 +78,7 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 					ImGui::Text("Is Culled: %s", selectedPass.isCulled ? "true" : "false");
 
 					{
-						std::string flagsString;
+						String flagsString;
 						const uint32_t flagBits = static_cast<uint32_t>(selectedPass.passFlags);
 
 						for (size_t i = 0; i < RenderGraphPassFlagsNames.size(); ++i)
@@ -91,7 +91,7 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 								}
 								else
 								{
-									flagsString += " | " + std::string(RenderGraphPassFlagsNames[i]);
+									flagsString += " | " + String(RenderGraphPassFlagsNames[i]);
 								}
 							}
 						}
@@ -192,7 +192,7 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 
 			for (int32_t i = 0; i < numRenderPasses; ++i)
 			{
-				std::string passName = renderPasses[i].passName;
+				String passName = renderPasses[i].passName;
 				if (passName.size() > MaxPassNameLength)
 				{
 					passName = passName.substr(0, MaxPassNameLength - 3);

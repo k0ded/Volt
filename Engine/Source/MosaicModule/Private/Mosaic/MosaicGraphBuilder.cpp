@@ -11,7 +11,7 @@ namespace Mosaic
 		m_graph.Clear();
 	}
 
-	void MosaicGraphBuilder::LinkNodeParameters(UUID64 fromNode, UUID64 toNode, const std::string& fromParamName, const std::string& toParamName)
+	void MosaicGraphBuilder::LinkNodeParameters(UUID64 fromNode, UUID64 toNode, const String& fromParamName, const String& toParamName)
 	{
 		auto& underlyingGraph = m_graph.GetUnderlyingGraph();
 

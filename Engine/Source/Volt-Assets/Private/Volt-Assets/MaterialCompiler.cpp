@@ -27,7 +27,7 @@ VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
 
 namespace Volt
 {
-	inline void InsertTextureDeclarations(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
+	inline void InsertTextureDeclarations(String& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -35,19 +35,19 @@ namespace Volt
 
 		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = shaderWriter.GetTextureDeclarations();
 
-		std::stringstream textureDeclarationStringStream;
+		StringBuilder builder;
 		for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
 		{
-			textureDeclarationStringStream << "Texture2D " << texture.name << ";\n";
+			builder << "Texture2D " << texture.name << ";\n";
 		}
 
 		auto textureDeclarationTagOffset = shaderString.find(TextureDeclarationTag);
 		const size_t tagLength = strlen(TextureDeclarationTag);
 
-		shaderString.replace(textureDeclarationTagOffset, tagLength, textureDeclarationStringStream.str());
+		shaderString.replace(textureDeclarationTagOffset, tagLength, builder.Get());
 	}
 
-	inline void InsertMaterialEvaluation(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
+	inline void InsertMaterialEvaluation(String& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -61,17 +61,17 @@ namespace Volt
 
 	struct IncludeDirective
 	{
-		std::filesystem::path filepath;
+		Filesystem::Path filepath;
 		size_t begin;
 		size_t end;
 	};
 
-	inline Vector<IncludeDirective> FindIncludeDirectives(std::string_view shaderString)
+	inline Vector<IncludeDirective> FindIncludeDirectives(StringView shaderString)
 	{
 		Vector<IncludeDirective> includeDirectives;
 
 		size_t offset = shaderString.find("#include", 0);
-		while (offset != std::string_view::npos)
+		while (offset != StringView::npos)
 		{
 			// Move to first "
 			size_t firstQuote = shaderString.find_first_of('"', offset);
@@ -80,9 +80,9 @@ namespace Volt
 			includeDirective.begin = offset;
 			includeDirective.end = shaderString.find_first_of('"', firstQuote + 1);
 
-			std::string_view filepathString = shaderString.substr(firstQuote + 1, includeDirective.end - firstQuote - 1);
+			StringView filepathString = shaderString.substr(firstQuote + 1, includeDirective.end - firstQuote - 1);
 		
-			includeDirective.filepath = std::filesystem::path(filepathString);
+			includeDirective.filepath = Filesystem::Path(filepathString);
 
 			offset = shaderString.find("#include", includeDirective.end);
 		}
@@ -109,17 +109,17 @@ namespace Volt
 			return;
 		}
 
-		const std::filesystem::path materialShaderFilepath = "Material/MaterialShader.hlsli";
-		const std::string& materialShaderFileContents = compilerSubSystem->GetMaterialShaderFileContents();
+		const Filesystem::Path materialShaderFilepath = "Material/MaterialShader.hlsli";
+		const String& materialShaderFileContents = compilerSubSystem->GetMaterialShaderFileContents();
 
 		CompiledMaterialShaders result;
 
 		// Compile for each material shader type.
 		for (const auto& [typeIndex, registeredShader] : MaterialShaderRegistry::Get().GetRegisteredShaders())
 		{
-			const std::filesystem::path absoluteFilepath = ProjectManager::GetEngineRootDirectory() / registeredShader.baseFilepath;
+			const Filesystem::Path absoluteFilepath = ProjectManager::GetEngineRootDirectory() / registeredShader.baseFilepath;
 
-			std::string materialShaderString;
+			String materialShaderString;
 			FileUtility::ReadStringFromFile(absoluteFilepath, materialShaderString);
 
 			// Remove the MaterialShader.hlsli include if it exists.

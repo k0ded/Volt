@@ -2,6 +2,8 @@
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 namespace Volt
 {
 	namespace RHI

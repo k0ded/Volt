@@ -4,6 +4,7 @@
 #include "VulkanRHIModule/Common/VulkanPipelineCache.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 struct VkInstance_T;
 struct VkDebugUtilsMessengerEXT_T;

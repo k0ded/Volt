@@ -25,16 +25,16 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID(GUID);
 
-		inline const std::string GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
-		inline const std::string GetCategory() const override { return "Conversion"; }
+		inline const String GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
+		inline const String GetCategory() const override { return "Conversion"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {} {} = {}({}, {});\n";
 
-			std::string R = std::to_string(GetInputParameter(0).Get<ValueType>());
-			std::string G = std::to_string(GetInputParameter(1).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{
@@ -54,10 +54,10 @@ namespace Volt::MosaicNodes
 				}
 			}
 
-			const std::string varName = m_graph->GetNextVariableName();
+			const String varName = m_graph->GetNextVariableName();
 
 			const auto typeString = Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO);
-			std::string result = std::format(nodeStr, typeString, varName, typeString, R, G);
+			String result = FormatString(nodeStr, typeString, varName, typeString, R, G);
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
@@ -87,17 +87,17 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID(GUID);
 
-		inline const std::string GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
-		inline const std::string GetCategory() const override { return "Conversion"; }
+		inline const String GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
+		inline const String GetCategory() const override { return "Conversion"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5});\n";
 		
-			std::string R = std::to_string(GetInputParameter(0).Get<ValueType>());
-			std::string G = std::to_string(GetInputParameter(1).Get<ValueType>());
-			std::string B = std::to_string(GetInputParameter(2).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
+			String B = FormatString("{}", GetInputParameter(2).Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{
@@ -121,10 +121,10 @@ namespace Volt::MosaicNodes
 				}
 			}
 
-			const std::string varName = m_graph->GetNextVariableName();
+			const String varName = m_graph->GetNextVariableName();
 			
 			const auto typeString = Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO);
-			std::string result = std::format(nodeStr, typeString, varName, typeString, R, G, B);
+			String result = FormatString(nodeStr, typeString, varName, typeString, R, G, B);
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
@@ -155,18 +155,18 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID(GUID);
 
-		inline const std::string GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
-		inline const std::string GetCategory() const override { return "Conversion"; }
+		inline const String GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
+		inline const String GetCategory() const override { return "Conversion"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5}, {6});\n";
 
-			std::string R = std::to_string(GetInputParameter(0).Get<ValueType>());
-			std::string G = std::to_string(GetInputParameter(1).Get<ValueType>());
-			std::string B = std::to_string(GetInputParameter(2).Get<ValueType>());
-			std::string A = std::to_string(GetInputParameter(3).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
+			String B = FormatString("{}", GetInputParameter(2).Get<ValueType>());
+			String A = FormatString("{}", GetInputParameter(3).Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{
@@ -194,10 +194,10 @@ namespace Volt::MosaicNodes
 				}
 			}
 
-			const std::string varName = m_graph->GetNextVariableName();
+			const String varName = m_graph->GetNextVariableName();
 
 			const auto typeString = Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO);
-			std::string result = std::format(nodeStr, typeString, varName, typeString, R, G, B, A);
+			String result = FormatString(nodeStr, typeString, varName, typeString, R, G, B, A);
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};

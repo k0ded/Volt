@@ -1,6 +1,6 @@
 #include "LogCategory.h"
 
-LogCategoryBase::LogCategoryBase(std::string_view categoryName, LogVerbosity categoryVerbosity)
+LogCategoryBase::LogCategoryBase(StringView categoryName, LogVerbosity categoryVerbosity)
 	: m_verbosity(categoryVerbosity), m_name(categoryName)
 {
 }

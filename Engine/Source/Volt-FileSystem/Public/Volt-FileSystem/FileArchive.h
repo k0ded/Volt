@@ -26,8 +26,8 @@ public:
 	VTFS_API FileWriter(FileWriter&& other) noexcept;
 	VTFS_API FileWriter& operator=(FileWriter&& other) noexcept;
 
-	VTFS_API bool Open(const std::filesystem::path& destinationFilepath);
-	VTFS_API std::string_view GetError() const;
+	VTFS_API bool Open(const Filesystem::Path& destinationFilepath);
+	VTFS_API StringView GetError() const;
 
 	VTFS_API void SerializeBytes(void* value, size_t size) override;
 	VTFS_API void Reserve(size_t numBytes) override;
@@ -45,7 +45,7 @@ private:
 
 	bool m_isOpen;
 	Volt::FileHandle m_fileHandle;
-	std::string m_error;
+	String m_error;
 	Vector<uint8_t> m_allocator;
 };
 
@@ -63,8 +63,8 @@ public:
 	VTFS_API FileReader();
 	~FileReader() override = default;
 
-	VTFS_API bool Open(const std::filesystem::path& filepath, const FileReaderConfig& config = {});
-	VTFS_API std::string_view GetError() const;
+	VTFS_API bool Open(const Filesystem::Path& filepath, const FileReaderConfig& config = {});
+	VTFS_API StringView GetError() const;
 
 	VTFS_API void SerializeBytes(void* value, size_t size) override;
 	VTFS_API void Reserve(size_t numBytes) override;
@@ -78,7 +78,7 @@ public:
 	VTFS_API bool IsClosed() const override;
 
 private:
-	std::string m_error;
+	String m_error;
 	bool m_isOpen;
 
 	Vector<uint8_t> m_storage;

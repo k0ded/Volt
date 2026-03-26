@@ -7,14 +7,10 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/UUID.h>
-
-#include <SubSystem/SubSystem.h>
-#include "SubSystem/SubSystemRegistry.h"
+#include <CoreUtilities/String/StringFormat.h>
 
 #include <memory>
 #include <mutex>
-#include <format>
-#include <filesystem>
 #include <functional>
 
 namespace spdlog
@@ -25,28 +21,30 @@ namespace spdlog
 struct LogCallbackData
 {
 	const LogCategoryBase* category;
-	std::string message;
+	String message;
 
 	LogVerbosity severity;
 };
 
 typedef UUID32 LogCallbackHandle;
 
-class VTLOG_API Log : public SubSystem
+class VTLOG_API Log
 {
 public:
 	Log();
 	~Log();
 
 	template<typename LogCategory, typename... Args>
-	static void LogFormatted(LogVerbosity severity, const LogCategory& category, const std::string& format, Args&&... args)
+	static void LogFormatted(LogVerbosity severity, const LogCategory& category, const String& format, Args&&... args)
 	{
-		const std::string message = std::vformat(format, std::make_format_args(args...));
+		std::string_view formatView(format.begin(), format.length());
+
+		const String message = VFormatString(formatView, std::make_format_args(args...));
 		Get().LogMessage(severity, &category, message);
 	}
 
 	template<typename LogCategory, typename... Args>
-	static void LogUnformatted(LogVerbosity severity, const LogCategory& category, const std::string& message)
+	static void LogUnformatted(LogVerbosity severity, const LogCategory& category, const String& message)
 	{
 		Get().LogMessage(severity, &category, message);
 	}
@@ -57,15 +55,10 @@ public:
 	void Flush();
 	void EnableLogging(bool enable);
 
-	VT_NODISCARD VT_INLINE static Log& Get() { return *s_instance; }
-	VT_NODISCARD VT_INLINE static bool IsInitialized() { return s_instance != nullptr; }
-
-	VT_DECLARE_SUBSYSTEM("{AA12B0EC-2224-4A5E-A274-F6FBEE00B546}"_guid)
+	VT_NODISCARD static Log& Get();
 
 private:
-	void LogMessage(LogVerbosity severity, const LogCategoryBase* category, const std::string& message);
-
-	inline static Log* s_instance = nullptr;
+	void LogMessage(LogVerbosity severity, const LogCategoryBase* category, const String& message);
 
 	std::shared_ptr<spdlog::async_logger> m_logger;
 
@@ -85,17 +78,3 @@ private:
 
 #define VT_LOGC_UNFORMATTED(verbosity, category, message) ::Log::LogUnformatted(LogVerbosity::verbosity, category, message)
 #define VT_LOG_UNFORMATTED(verbosity, message) ::Log::LogUnformatted(LogVerbosity::verbosity, LogTemp, message)
-
-// Special formatters
-namespace std
-{
-	template <>
-	struct formatter<filesystem::path> : formatter<string>
-	{
-		auto format(filesystem::path p, format_context& ctx) const
-		{
-			return formatter<string>::format(
-			  std::format("{}", p.string()), ctx);
-		}
-	};
-}

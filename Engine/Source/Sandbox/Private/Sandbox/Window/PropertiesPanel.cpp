@@ -5,7 +5,6 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/ComponentPropertyUtilities.h"
-#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/Sandbox.h"
 #include "Sandbox/UserSettingsManager.h"
@@ -21,7 +20,7 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
+PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const String& id)
 	: EditorWindow("Properties", false, id), myCurrentScene(currentScene), myCurrentSceneRenderer(currentSceneRenderer), mySceneState(sceneState)
 {
 	Open();
@@ -60,9 +59,9 @@ void PropertiesPanel::UpdateMainContent()
 	}
 	else
 	{
-		static std::string inputText = "...";
+		static String inputText = "...";
 
-		std::string firstName;
+		String firstName;
 		bool sameName = true;
 
 		if (firstEntity.HasComponent<Volt::TagComponent>())
@@ -222,8 +221,8 @@ void PropertiesPanel::AddComponentPopup()
 	ImGui::SetNextWindowSize({ 250.f, 500.f });
 	if (UI::BeginPopup("AddComponent" + m_id, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
-		Vector<std::string> componentNames;
-		std::unordered_map<std::string, VoltGUID> nameToGUIDMap;
+		Vector<String> componentNames;
+		std::unordered_map<String, VoltGUID> nameToGUIDMap;
 
 		const auto& componentRegistry = Volt::ComponentRegistry::Get().GetRegistry();
 		for (const auto& [guid, typeDesc] : componentRegistry)
@@ -236,7 +235,7 @@ void PropertiesPanel::AddComponentPopup()
 					continue;
 				}
 
-				const std::string strLabel = std::string(compDesc->GetLabel());
+				const String strLabel = String(compDesc->GetLabel());
 
 				componentNames.emplace_back(strLabel);
 				nameToGUIDMap[strLabel] = guid;

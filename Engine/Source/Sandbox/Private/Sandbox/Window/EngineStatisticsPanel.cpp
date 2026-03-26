@@ -52,7 +52,7 @@ void EngineStatisticsPanel::UpdateMainContent()
 
 		UI::Header("Allocation");
 
-		std::string allocSizeStr = Utility::ToStringWithMetricPrefixCharacterForBytes(mySceneRenderer->GetFrameTotalGPUAllocationSize());
+		String allocSizeStr = Utility::ToStringWithMetricPrefixCharacterForBytes(mySceneRenderer->GetFrameTotalGPUAllocationSize());
 
 		ImGui::Text("Frame Total GPU Allocation: %s", allocSizeStr.c_str());
 	}

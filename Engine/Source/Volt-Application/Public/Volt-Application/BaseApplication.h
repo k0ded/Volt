@@ -4,21 +4,20 @@
 
 #include <Volt-Core/Version.h>
 
-#include <CoreUtilities/CommandLineBuilder.h>
+#include <CoreModule/CommandLineBuilder.h>
 
 #include <WindowModule/WindowMode.h>
 
-#include <string>
-#include <filesystem>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
 	struct ApplicationCreationInfo
 	{
-		std::string title;
+		String title;
 
-		std::filesystem::path iconPath;
-		std::filesystem::path cursorPath;
+		Filesystem::Path iconPath;
+		Filesystem::Path cursorPath;
 
 		WindowMode windowMode = WindowMode::Windowed;
 

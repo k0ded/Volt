@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CoreUtilities/Core.h"
-#include "CoreUtilities/Archive/Archive.h"
 
 #include <cstddef>
 #include <stdint.h>
 #include <format>
+
+class Archive;
 
 class VTCOREUTIL_API UUID64
 {
@@ -18,13 +19,7 @@ public:
 
 	operator uint64_t() const;
 
-	VT_NODISCARD VT_INLINE const uint64_t Get() const { return m_uuid; }
-	
-	VT_INLINE friend Archive& operator<<(Archive& archive, UUID64& value)
-	{
-		archive << value.m_uuid;
-		return archive;
-	}
+	VT_NODISCARD VT_INLINE uint64_t Get() const { return m_uuid; }
 
 private:
 	uint64_t m_uuid;
@@ -41,13 +36,7 @@ public:
 
 	operator uint32_t() const;
 
-	VT_NODISCARD VT_INLINE const uint32_t Get() const { return m_uuid; }
-
-	VT_INLINE friend Archive& operator<<(Archive& archive, UUID32& value)
-	{
-		archive << value.m_uuid;
-		return archive;
-	}
+	VT_NODISCARD VT_INLINE uint32_t Get() const { return m_uuid; }
 
 private:
 	uint32_t m_uuid;

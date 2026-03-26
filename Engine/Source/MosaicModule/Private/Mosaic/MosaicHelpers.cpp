@@ -1,11 +1,13 @@
 #include "mcpch.h"
 #include "Mosaic/MosaicHelpers.h"
 
+#include <CoreUtilities/String/StringFormat.h>
+
 namespace Mosaic::Helpers
 {
-	std::string GetTypeNameFromTypeInfo(const TypeInfo& typeInfo)
+	String GetTypeNameFromTypeInfo(const TypeInfo& typeInfo)
 	{
-		std::string result;
+		String result;
 
 		switch (typeInfo.baseType)
 		{
@@ -20,11 +22,11 @@ namespace Mosaic::Helpers
 			return result;
 		}
 
-		result += std::to_string(typeInfo.vectorSize);
+		result += FormatString("{}", typeInfo.vectorSize);
 
 		if (typeInfo.columnCount > 1)
 		{
-			result += "x" + std::to_string(typeInfo.columnCount);
+			result += FormatString("x{}", typeInfo.columnCount);
 		}
 
 		return result;

@@ -10,6 +10,8 @@
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-MaterialGraph/Nodes/PBROutputNode.h>
 #include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
@@ -217,7 +219,7 @@ namespace Volt
 
 		for (const auto& gltfMaterial : gltfAsset.materials)
 		{
-			std::string matName = gltfMaterial.name.c_str();
+			String matName = gltfMaterial.name.c_str();
 			if (matName.empty())
 			{
 				matName = importConfig.destinationFilename + "_UnnamnedMaterial";
@@ -315,7 +317,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
@@ -325,10 +327,11 @@ namespace Volt
 
 		fastgltf::Parser parser(supportedExtensions);
 
-		auto gltfFile = fastgltf::MappedGltfFile::FromPath(filepath);
+		std::filesystem::path tempPath(filepath.ToWString().begin(), filepath.ToWString().end());
+		auto gltfFile = fastgltf::MappedGltfFile::FromPath(tempPath);
 		if (!gltfFile)
 		{
-			const std::string outError = std::format("Unable to load GLTF file {}! Reason: {}", filepath.string(), fastgltf::getErrorMessage(gltfFile.error()));
+			const String outError = FormatString("Unable to load GLTF file {}! Reason: {}", filepath, fastgltf::getErrorMessage(gltfFile.error()));
 			VT_LOGC(Error, LogGLTFSourceImporter, outError);
 			userData.OnError(outError);
 
@@ -342,17 +345,17 @@ namespace Volt
 			fastgltf::Options::DecomposeNodeMatrices |
 			fastgltf::Options::GenerateMeshIndices;
 
-		auto asset = parser.loadGltf(gltfFile.get(), filepath.parent_path(), gltfOptions);
+		auto asset = parser.loadGltf(gltfFile.get(), tempPath.parent_path(), gltfOptions);
 		if (asset.error() != fastgltf::Error::None)
 		{
-			const std::string outError = std::format("Unable to load GLTF file {}! Reason: {}", filepath.string(), fastgltf::getErrorMessage(asset.error()));
+			const String outError = FormatString("Unable to load GLTF file {}! Reason: {}", filepath, fastgltf::getErrorMessage(asset.error()));
 			VT_LOGC(Error, LogGLTFSourceImporter, outError);
 			userData.OnError(outError);
 
 			return {};
 		}
 
-		Vector<AssetReference<Asset>> importedTextures = ProcessTextures(asset.get(), filepath.parent_path(), importConfig);
+		Vector<AssetReference<Asset>> importedTextures = ProcessTextures(asset.get(), filepath.ParentPath(), importConfig);
 
 		Vector<AssetReference<Asset>> result;
 		result.append(importedTextures);
@@ -381,12 +384,12 @@ namespace Volt
 		return result;
 	}
 
-	SourceAssetFileInformation GLTFSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
+	SourceAssetFileInformation GLTFSourceImporter::GetSourceFileInformation(const Filesystem::Path& filepath) const
 	{
 		return {};
 	}
 
-	Vector<AssetReference<Asset>> GLTFSourceImporter::ProcessTextures(fastgltf::Asset& gltfAsset, const std::filesystem::path& srcDirectory, const MeshSourceImportConfig& config) const
+	Vector<AssetReference<Asset>> GLTFSourceImporter::ProcessTextures(fastgltf::Asset& gltfAsset, const Filesystem::Path& srcDirectory, const MeshSourceImportConfig& config) const
 	{
 		Vector<JobFuture<Vector<AssetReference<Asset>>>> importedTextures;
 
@@ -397,14 +400,15 @@ namespace Volt
 				VT_ENSURE(filepath->fileByteOffset == 0);
 				VT_ENSURE(filepath->uri.isLocalPath());
 
-				std::filesystem::path sourceFilepath = std::filesystem::absolute(srcDirectory / filepath->uri.path());
+				StringView tempPath(filepath->uri.path().data(), filepath->uri.path().size());
+				Filesystem::Path sourceFilepath = Filesystem::Absolute(srcDirectory / tempPath);
 
 				Volt::TextureSourceImportConfig importConfig;
 				importConfig.destinationDirectory = config.destinationDirectory;
-				importConfig.destinationFilename = sourceFilepath.stem().string();
+				importConfig.destinationFilename = sourceFilepath.Stem().ToString();
 				importConfig.generateMipMaps = true;
 				importConfig.importMipMaps = true;
-				importConfig.compressionType = TextureImport::TryGetTextureCompressionTypeFromFilename(sourceFilepath.stem().string());
+				importConfig.compressionType = TextureImport::TryGetTextureCompressionTypeFromFilename(importConfig.destinationFilename);
 
 				importedTextures.emplace_back(SourceAssetManager::ImportSourceAsset(sourceFilepath, importConfig));
 			}
@@ -614,7 +618,7 @@ namespace Volt
 			subMesh.indexCount = static_cast<uint32_t>(indices.size());
 			subMesh.vertexCount = static_cast<uint32_t>(vertexContainer.positions.size());
 			subMesh.materialIndex = primitive.materialIndex.has_value() ? static_cast<uint32_t>(primitive.materialIndex.value()) : 0;
-			subMesh.name = gltfNode.name;
+			subMesh.name = String(gltfNode.name.c_str());
 
 			subMesh.GenerateHash();
 

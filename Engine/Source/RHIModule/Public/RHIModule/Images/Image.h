@@ -5,7 +5,7 @@
 
 #include "RHIModule/Images/ImageView.h"
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
+#include <CoreModule/DataBuffer.h>
 
 namespace Volt::RHI
 {

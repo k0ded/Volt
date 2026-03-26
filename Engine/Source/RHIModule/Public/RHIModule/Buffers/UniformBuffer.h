@@ -10,7 +10,7 @@ namespace Volt::RHI
 	struct UniformBufferDesc
 	{
 		uint32_t size;
-		std::string debugName;
+		String debugName;
 	};
 
 	class UniformBuffer : public RHIResource

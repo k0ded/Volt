@@ -15,17 +15,17 @@ public:
 		Open
 	};
 
-	AssetBrowserPopup(const std::string& id, AssetType wantedType, Volt::AssetHandle& handler);
+	AssetBrowserPopup(const String& id, AssetType wantedType, Volt::AssetHandle& handler);
 
 	State Update();
 
 private:
 	State RenderView(const Vector<Volt::AssetHandle>& items);
 
-	std::string myId;
+	String myId;
 	AssetType myWantedType;
 	Volt::AssetHandle& myHandle;
 
-	std::string mySearchQuery;
+	String mySearchQuery;
 	bool myActivateSearch = false;
 };

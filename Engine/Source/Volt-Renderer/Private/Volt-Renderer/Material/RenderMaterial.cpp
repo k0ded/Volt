@@ -12,7 +12,7 @@
 
 namespace Volt
 {
-	RenderMaterial::RenderMaterial(const std::string& name)
+	RenderMaterial::RenderMaterial(const String& name)
 		: m_name(name)
 	{
 		CompiledMaterialShaders tempMaterialShaders;
@@ -23,7 +23,7 @@ namespace Volt
 	void RenderMaterial::SetTexture(uint32_t index, RenderTexture resource)
 	{
 		// #TODO_Ivar: Hacky, should come from the graph itself.
-		m_textures[index].bindingName = StringHash::Construct("Texture_" + std::to_string(index));
+		m_textures[index].bindingName = StringHash::Construct(FormatString("Texture_{}", index));
 		m_textures[index].texture = resource;
 		m_isDirty = true;
 	}

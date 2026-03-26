@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreUtilities/CompilerTraits.h"
+#include "CoreUtilities/Concepts.h"
 
 namespace Math
 {

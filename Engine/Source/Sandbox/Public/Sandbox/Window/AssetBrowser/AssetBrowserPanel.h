@@ -32,7 +32,7 @@ class AssetPreview;
 class AssetBrowserPanel : public EditorWindow
 {
 public:
-	AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id);
+	AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const String& id);
 
 	void UpdateMainContent() override;
 	void Reload();
@@ -52,17 +52,17 @@ private:
 
 	void DeleteFilesModal();
 
-	void Search(const std::string& query);
-	void FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const std::string& query);
+	void Search(const String& query);
+	void FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const String& query);
 
-	AssetBrowser::DirectoryItem* FindDirectoryWithPath(const std::filesystem::path& path);
-	AssetBrowser::DirectoryItem* FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path);
+	AssetBrowser::DirectoryItem* FindDirectoryWithPath(const Filesystem::Path& path);
+	AssetBrowser::DirectoryItem* FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const Filesystem::Path& path);
 
 	void CreatePrefabAndSetupEntities(Volt::EntityID entity);
 	void SetupEntityAsPrefab(Volt::EntityID entity, Volt::AssetHandle prefabId);
 
 	void RecursiveRemoveFolderContents(DirectoryData* aDir);
-	void RecursiceRenameFolderContents(DirectoryData* aDir, const std::filesystem::path& newDir);
+	void RecursiceRenameFolderContents(DirectoryData* aDir, const Filesystem::Path& newDir);
 
 	void ClearAssetPreviewsInCurrentDirectory();
 
@@ -73,7 +73,7 @@ private:
 
 	struct NewShaderData
 	{
-		std::string name = "New Shader";
+		String name = "New Shader";
 		bool createPixelShader = true;
 		bool createGeometryShader = false;
 		bool createVertexShader = false;
@@ -96,7 +96,7 @@ private:
 
 	glm::vec2 myViewBounds[2];
 
-	std::string mySearchQuery;
+	String mySearchQuery;
 	Vector<RawPtr<AssetBrowser::DirectoryItem>> mySearchDirectories;
 	Vector<RawPtr<AssetBrowser::AssetItem>> mySearchAssets;
 
@@ -104,8 +104,8 @@ private:
 	AssetData myMeshToImport;
 	std::set<AssetType> m_assetMask;
 	
-	Vector<std::filesystem::path> myDragDroppedMeshes;
-	Vector<std::filesystem::path> myDragDroppedTextures;
+	Vector<Filesystem::Path> myDragDroppedMeshes;
+	Vector<Filesystem::Path> myDragDroppedTextures;
 
 	bool myIsImporting = false;
 	std::atomic_bool m_reloadingAssetManager = false;
@@ -117,7 +117,7 @@ private:
 	AssetBrowser::DirectoryItemAllocator m_directoryItemPool;
 	AssetBrowser::AssetItemAllocator m_assetItemPool;
 
-	std::unordered_map <std::filesystem::path, RawPtr<AssetBrowser::DirectoryItem>> myDirectories;
+	std::unordered_map <Filesystem::Path, RawPtr<AssetBrowser::DirectoryItem>> myDirectories;
 	Ref<AssetBrowser::SelectionManager> mySelectionManager;
 
 	AssetBrowser::DirectoryItem* myCurrentDirectory = nullptr;

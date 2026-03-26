@@ -2,9 +2,11 @@
 
 #include "ProjectUpgradeClient/Common/StreamCommon.h"
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Filesystem/Path.h>
+
+#include <CoreModule/DataBuffer.h>
 
 #include <fstream>
 
@@ -16,8 +18,8 @@
 class BinaryStreamReader
 {
 public:
-	BinaryStreamReader(const std::filesystem::path& filePath);
-	BinaryStreamReader(const std::filesystem::path& filePath, const size_t maxLoadSize);
+	BinaryStreamReader(const Filesystem::Path& filePath);
+	BinaryStreamReader(const Filesystem::Path& filePath, const size_t maxLoadSize);
 
 	bool IsStreamValid() const;
 
@@ -25,10 +27,10 @@ public:
 	void Read(T& outData);
 
 	template<>
-	void Read(std::string& data);
+	void Read(String& data);
 
 	template<>
-	void Read(std::filesystem::path& data);
+	void Read(Filesystem::Path& data);
 
 	template<>
 	void Read(DataBuffer& data);
@@ -129,7 +131,7 @@ inline bool BinaryStreamReader::TryRead(T& outData)
 }
 
 template<>
-inline void BinaryStreamReader::Read(std::string& data)
+inline void BinaryStreamReader::Read(String& data)
 {
 	TypeHeader typeHeader{};
 	TypeHeader serializedTypeHeader = ReadTypeHeader();
@@ -142,12 +144,12 @@ inline void BinaryStreamReader::Read(std::string& data)
 }
 
 template<>
-inline void BinaryStreamReader::Read(std::filesystem::path& data)
+inline void BinaryStreamReader::Read(Filesystem::Path& data)
 {
 	TypeHeader typeHeader{};
 	TypeHeader serializedTypeHeader = ReadTypeHeader();
 
-	std::string filepathStr;
+	String filepathStr;
 	filepathStr.resize(serializedTypeHeader.totalTypeSize);
 	if (serializedTypeHeader.totalTypeSize > 0)
 	{
@@ -305,7 +307,7 @@ inline void BinaryStreamReader::Read(std::unordered_map<Key, Value>& data)
 
 			ReadData(&key, keyTypeHeader, keyTypeHeader);
 		}
-		else if constexpr (std::is_same<Key, std::string>::value)
+		else if constexpr (std::is_same<Key, String>::value)
 		{
 			Read(key);
 		}
@@ -323,7 +325,7 @@ inline void BinaryStreamReader::Read(std::unordered_map<Key, Value>& data)
 
 			ReadData(&value, valueTypeHeader, valueTypeHeader);
 		}
-		else if constexpr (std::is_same<Value, std::string>::value)
+		else if constexpr (std::is_same<Value, String>::value)
 		{
 			Read(value);
 		}
@@ -354,7 +356,7 @@ inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 
 			ReadData(&key, keyTypeHeader, keyTypeHeader);
 		}
-		else if constexpr (std::is_same<Key, std::string>::value)
+		else if constexpr (std::is_same<Key, String>::value)
 		{
 			Read(key);
 		}
@@ -372,7 +374,7 @@ inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 
 			ReadData(&value, valueTypeHeader, valueTypeHeader);
 		}
-		else if constexpr (std::is_same<Value, std::string>::value)
+		else if constexpr (std::is_same<Value, String>::value)
 		{
 			Read(value);
 		}

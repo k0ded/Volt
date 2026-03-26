@@ -93,7 +93,7 @@ namespace Volt
 		void EnqueueTextureExtraction(RGTextureRef texture, IntRef<RHI::Image>* outImage);
 		void EnqueueBufferExtraction(RGBufferRef buffer, IntRef<RHI::Buffer>* outBuffer);
 
-		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
+		void BeginMarker(const String& markerName, const glm::vec4& markerColor = 1.f);
 		void EndMarker();
 
 #if 0
@@ -105,7 +105,7 @@ namespace Volt
 		VT_INLINE void* AllocData(size_t size);
 
 		template<typename ParameterStruct, typename ExecFunc>
-		void AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc);
+		void AddPass(const String& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc);
 
 		void Compile();
 
@@ -158,12 +158,12 @@ namespace Volt
 		public:
 			struct MarkerInfo
 			{
-				std::string markerName;
+				String markerName;
 				glm::vec4 markerColor;
 				bool isEnd;
 			};
 
-			void BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color);
+			void BeginMarker(uint32_t passIndex, const String& markerName, const glm::vec4& color);
 			void EndMarker(uint32_t passIndex);
 
 			VT_NODISCARD VT_INLINE bool PassHasMarkers(uint32_t passIndex) const { return m_markers.contains(passIndex); }

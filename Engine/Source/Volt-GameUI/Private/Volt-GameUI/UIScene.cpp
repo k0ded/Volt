@@ -8,7 +8,7 @@
 
 namespace Volt
 {
-	UIWidget UIScene::CreateWidget(const std::string& tag)
+	UIWidget UIScene::CreateWidget(const String& tag)
 	{
 		entt::entity handle = m_registry.create();
 		

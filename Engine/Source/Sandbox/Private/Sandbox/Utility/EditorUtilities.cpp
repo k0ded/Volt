@@ -27,10 +27,9 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
-bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHandle, AssetType wantedType)
+bool EditorUtils::Property(const String& text, Volt::AssetHandle& assetHandle, AssetType wantedType)
 {
 	bool changed = false;
 
@@ -40,7 +39,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	ImGui::TextUnformatted(text.c_str());
 	ImGui::TableNextColumn();
 
-	std::string assetFileName = "Null";
+	String assetFileName = "Null";
 
 	AssetReference<Volt::Asset> asset;
 	if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, asset))
@@ -53,11 +52,11 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 		}
 	}
 
-	std::string textId = UI::MakePropertyID();
+	String textId = UI::MakePropertyID();
 
 	changed = UI::DrawItem(ImGui::GetColumnWidth() - 2.f * 25.f, [&]()
 	{
-		ImGui::InputTextString(textId.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText(textId.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		return false;
 	});
 
@@ -74,7 +73,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string buttonId = "X" + UI::MakePropertyID();
+	String buttonId = "X" + UI::MakePropertyID();
 	if (ImGui::Button(buttonId.c_str(), { 24.5f, 24.5f }))
 	{
 		assetHandle = Volt::Asset::Null();
@@ -83,8 +82,8 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string selectButtonId = "..." + UI::MakePropertyID();
-	std::string popupId = "AssetsPopup" + UI::MakePropertyID();
+	String selectButtonId = "..." + UI::MakePropertyID();
+	String popupId = "AssetsPopup" + UI::MakePropertyID();
 	const bool startState = s_assetBrowserPopupsOpen[popupId].state;
 
 	if (ImGui::Button(selectButtonId.c_str(), { 24.5f, 24.5f }))
@@ -104,7 +103,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	return changed;
 }
 
-bool EditorUtils::AssetBrowserPopupField(const std::string& id, Volt::AssetHandle& assetHandle, AssetType wantedType)
+bool EditorUtils::AssetBrowserPopupField(const String& id, Volt::AssetHandle& assetHandle, AssetType wantedType)
 {
 	const bool startState = s_assetBrowserPopupsOpen[id].state;
 	bool changed = false;
@@ -122,7 +121,7 @@ bool EditorUtils::AssetBrowserPopupField(const std::string& id, Volt::AssetHandl
 	return changed;
 }
 
-bool EditorUtils::SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery, bool setAsActive)
+bool EditorUtils::SearchBar(String& outSearchQuery, bool& outHasSearchQuery, bool setAsActive)
 {
 	UI::ScopedColor childColor{ ImGuiCol_ChildBg, EditorTheme::DarkGreyBackground };
 	UI::ScopedStyleFloat rounding(ImGuiStyleVar_ChildRounding, 2.f);
@@ -168,7 +167,7 @@ bool EditorUtils::SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery
 	return returnVal;
 }
 
-bool EditorUtils::AssetBrowserPopupInternal(const std::string& popupId, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType)
+bool EditorUtils::AssetBrowserPopupInternal(const String& popupId, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType)
 {
 	bool changed = false;
 
@@ -202,7 +201,7 @@ bool EditorUtils::AssetBrowserPopupInternal(const std::string& popupId, Volt::As
 	return changed;
 }
 
-SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
+SaveReturnState EditorUtils::SaveFilePopup(const String& aId)
 {
 	SaveReturnState returnState = SaveReturnState::None;
 	UI::ScopedStyleFloat rounding{ ImGuiStyleVar_FrameRounding, 2.f };
@@ -236,23 +235,23 @@ SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
 	return returnState;
 }
 
-std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
+String EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 {
-	std::string originalName = entity.GetTag();
+	String originalName = entity.GetTag();
 	auto lastNumber = originalName.find_last_of("0123456789");
 	auto lastUnderscore = originalName.find_last_of('_');
 
 	int32_t currentNumber = 0;
 
-	if (lastNumber != std::string::npos && lastUnderscore != std::string::npos && lastUnderscore < lastNumber)
+	if (lastNumber != String::npos && lastUnderscore != String::npos && lastUnderscore < lastNumber)
 	{
-		std::string currentNumberStr = originalName.substr(lastUnderscore + 1, lastNumber - lastUnderscore);
+		String currentNumberStr = originalName.substr(lastUnderscore + 1, lastNumber - lastUnderscore);
 		originalName = originalName.substr(0, lastUnderscore);
-		currentNumber = std::stoi(currentNumberStr);
+		currentNumber = StoI(currentNumberStr);
 		currentNumber++;
 	}
 
-	originalName += "_" + std::to_string(currentNumber);
+	originalName += FormatString("_{}", currentNumber);
 	return originalName;
 }
 
@@ -372,13 +371,13 @@ void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>
 	}
 }
 
-bool EditorUtils::IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath)
+bool EditorUtils::IsAssetTypeFileExtension(AssetType assetType, const Filesystem::Path& filepath)
 {
-	const Vector<std::string>& extensions = assetType->GetExtensions();
+	const Vector<String>& extensions = assetType->GetExtensions();
 
-	std::string filepathExtension = filepath.extension().string();
+	String filepathExtension = filepath.Extension().ToString();
 
-	for (const std::string& ext : extensions)
+	for (const String& ext : extensions)
 	{
 		if (filepathExtension == ext)
 		{
@@ -403,7 +402,10 @@ void EditorUtils::IterateComponentsInEntity(const Volt::Entity& entity, std::fun
 			continue;
 		}
 	
-		const Volt::IComponentTypeDesc* componentDesc = static_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
+		std::string_view tempTypeName = storage.type().name();
+		StringView typeName(tempTypeName.data(), tempTypeName.size());
+
+		const Volt::IComponentTypeDesc* componentDesc = static_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName));
 		if (!componentDesc)
 		{
 			// Component isn't registered, skip

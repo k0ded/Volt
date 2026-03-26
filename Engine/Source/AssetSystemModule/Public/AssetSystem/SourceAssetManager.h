@@ -26,16 +26,16 @@ namespace Volt
 		~SourceAssetManager();
 
 		template<typename ConfigType>
-		static JobFuture<Vector<AssetReference<Asset>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
+		static JobFuture<Vector<AssetReference<Asset>>> ImportSourceAsset(const Filesystem::Path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
 			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
 
 			VT_ENSURE(s_instance);
-			VT_ENSURE(!filepath.empty());
+			VT_ENSURE(!filepath.IsEmpty());
 
 			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
-				const std::string extension = filepath.extension().string();
+				const String extension = filepath.Extension().ToString();
 				auto& importer = SourceAssetImporterRegistry::Get().GetImporterForExtension(extension);
 				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
@@ -44,17 +44,17 @@ namespace Volt
 		}
 
 		template<typename ConfigType>
-		static void ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const ImportedCallbackFunc& importedCallback, const SourceAssetUserImportData& userData = {})
+		static void ImportSourceAsset(const Filesystem::Path& filepath, const ConfigType& config, const ImportedCallbackFunc& importedCallback, const SourceAssetUserImportData& userData = {})
 		{
 			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
 
 			VT_ENSURE(s_instance);
 			VT_ENSURE(importedCallback);
-			VT_ENSURE(!filepath.empty());
+			VT_ENSURE(!filepath.IsEmpty());
 
 			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
-				const std::string extension = filepath.extension().string();
+				const String extension = filepath.Extension().ToString();
 				auto& importer = SourceAssetImporterRegistry::Get().GetImporterForExtension(extension);
 				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
@@ -62,7 +62,7 @@ namespace Volt
 			s_instance->ImportSourceAssetInternal(std::move(importFunc), importedCallback, config, filepath);
 		}
 
-		static SourceAssetFileInformation GetSourceAssetFileInformation(const std::filesystem::path& filepath);
+		static SourceAssetFileInformation GetSourceAssetFileInformation(const Filesystem::Path& filepath);
 
 	private:
 		using ImportJobFunc = std::function<Vector<AssetReference<Asset>>()>;
@@ -71,11 +71,11 @@ namespace Volt
 		{
 			JobRef job = nullptr;
 			Ref<JobPromise<Vector<AssetReference<Asset>>>> resultPromise;
-			std::string debugString;
+			String debugString;
 		};
 
-		JobFuture<Vector<AssetReference<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
-		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
+		JobFuture<Vector<AssetReference<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const Filesystem::Path& filepath);
+		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const Filesystem::Path& filepath);
 
 		void RunAssetImportWorker();
 

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <filesystem>
+#include <CoreUtilities/Filesystem/Path.h>
 
-std::filesystem::path g_workingDirectoryFilepath;
+Filesystem::Path g_workingDirectoryFilepath;
 
 int main(int argc, char** argv)
 {
@@ -10,15 +10,15 @@ int main(int argc, char** argv)
 	{
 		g_workingDirectoryFilepath = argv[0];
 
-		if (g_workingDirectoryFilepath.parent_path().stem() == "Binaries")
+		if (g_workingDirectoryFilepath.ParentPath().Stem() == "Binaries")
 		{
-			g_workingDirectoryFilepath = g_workingDirectoryFilepath.parent_path();
+			g_workingDirectoryFilepath = g_workingDirectoryFilepath.ParentPath();
 		}
 		else
 		{
-			while (g_workingDirectoryFilepath.stem() != "Engine" && g_workingDirectoryFilepath.has_parent_path())
+			while (g_workingDirectoryFilepath.Stem() != "Engine" && g_workingDirectoryFilepath.HasParentPath())
 			{
-				g_workingDirectoryFilepath = g_workingDirectoryFilepath.parent_path();
+				g_workingDirectoryFilepath = g_workingDirectoryFilepath.ParentPath();
 			}
 		}
 	}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 namespace Volt
 {
 	class ContactListener;

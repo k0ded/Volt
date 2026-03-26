@@ -44,7 +44,7 @@ namespace Volt
 		glm::vec2 m_monitorContentScale;
 
 		int32_t m_primaryVideoModeIndex = 0;
-		std::string_view m_monitorName;
+		StringView m_monitorName;
 
 		GLFWmonitor* m_nativeMonitor;
 		Vector<VideoMode> m_videoModes;

@@ -24,7 +24,7 @@ public:
 	enum class StyleVar : uint8_t;
 	enum class StyleColor : uint8_t;
 public:
-	EditorNodeGraph(std::string_view imGuiID);
+	EditorNodeGraph(StringView imGuiID);
 	~EditorNodeGraph() = default;
 
 	void Draw(NodeGraphBase& NodeGraph);
@@ -154,7 +154,7 @@ private:
 	bool m_lastFrameMovingCamera;
 	bool m_movingCamera;
 	glm::vec2 m_startMovingCameraPos;
-	std::string m_imGuiID;
+	String m_imGuiID;
 
 	ImGuiEx::Canvas m_canvas;
 
@@ -165,8 +165,8 @@ private:
 	static constexpr float GRID_LINE_THICKNESS = 2.f;
 
 	static constexpr const char* GRAPH_POPUP_ID = "GRAPH_TOOLMENU";
-	const std::string m_graphPopupID;
+	const String m_graphPopupID;
 
 	static constexpr const char* NODE_POPUP_ID = "NODE_TOOLMENU";
-	const std::string m_nodePopupID;
+	const String m_nodePopupID;
 };

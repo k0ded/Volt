@@ -25,7 +25,7 @@ namespace Circuit
 
 		CIRCUIT_ARGUMENT(Ref<Widget>, Content);
 
-		CIRCUIT_ATTRIBUTE(std::string, Text);
+		CIRCUIT_ATTRIBUTE(String, Text);
 
 		CIRCUIT_EVENT(OnClickDelegate, OnPressed);
 		CIRCUIT_EVENT(OnClickDelegate, OnReleased);
@@ -49,7 +49,7 @@ namespace Circuit
 
 		AssetReference<Volt::FontAsset> m_fontAsset;
 
-		Volt::Attribute<std::string> m_text;
+		Volt::Attribute<String> m_text;
 
 		Ref<Widget> m_content;
 

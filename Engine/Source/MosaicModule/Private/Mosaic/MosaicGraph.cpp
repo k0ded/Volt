@@ -101,9 +101,9 @@ namespace Mosaic
 		return m_currentTextureIndex++;
 	}
 
-	const std::string MosaicGraph::GetNextVariableName()
+	const String MosaicGraph::GetNextVariableName()
 	{
-		return "variable" + std::to_string(GetNextVariableIndex());
+		return FormatString("variable{}", GetNextVariableIndex());
 	}
 
 	void MosaicGraph::ForfeitTextureIndex(uint32_t textureIndex)

@@ -7,6 +7,8 @@
 
 #include "Events/WindowEvents.h"
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <InputModule/Events/KeyboardEvents.h>
 #include <InputModule/Events/MouseEvents.h>  
 
@@ -39,7 +41,7 @@ namespace Volt
 		Invalidate();
 		CreateDefaultCursors();
 
-		if (!m_data.cursorPath.empty())
+		if (!m_data.cursorPath.IsEmpty())
 		{
 			ReplaceCursor(CursorType::Arrow, m_data.cursorPath);
 		}
@@ -124,7 +126,7 @@ namespace Volt
 			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
 		}
 
-		if (!m_data.iconPath.empty() && std::filesystem::exists(m_data.iconPath))
+		if (!m_data.iconPath.IsEmpty() && Filesystem::Exists(m_data.iconPath))
 		{
 			SetIcon(m_data.iconPath);
 		}
@@ -415,13 +417,13 @@ namespace Volt
 		m_data.vsync = aState;
 	}
 
-	void Window::SetTitle(const std::string& title)
+	void Window::SetTitle(const String& title)
 	{
 		m_data.title = title;
 		glfwSetWindowTitle(m_window, m_data.title.c_str());
 	}
 
-	void Window::SetIcon(const std::filesystem::path& path)
+	void Window::SetIcon(const Filesystem::Path& path)
 	{
 		m_data.iconPath = path;
 
@@ -570,9 +572,9 @@ namespace Volt
 		return glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL;
 	}
 
-	void Window::ReplaceCursor(CursorType cursorType, const std::filesystem::path& path)
+	void Window::ReplaceCursor(CursorType cursorType, const Filesystem::Path& path)
 	{
-		if (!std::filesystem::exists(path))
+		if (!Filesystem::Exists(path))
 		{
 			return;
 		}
@@ -604,12 +606,12 @@ namespace Volt
 		glfwSetWindowOpacity(m_window, opacity);
 	}
 
-	std::string_view Window::GetClipboard() const
+	StringView Window::GetClipboard() const
 	{
 		return glfwGetClipboardString(m_window);
 	}
 
-	void Window::SetClipboard(std::string_view string)
+	void Window::SetClipboard(StringView string)
 	{
 		glfwSetClipboardString(m_window, string.data());
 	}
@@ -648,7 +650,7 @@ namespace Volt
 		return static_cast<float>(glfwGetTime());
 	}
 
-	WINDOWMODULE_API const std::string& Window::GetTitle()
+	WINDOWMODULE_API const String& Window::GetTitle()
 	{
 		return m_data.title;
 	}

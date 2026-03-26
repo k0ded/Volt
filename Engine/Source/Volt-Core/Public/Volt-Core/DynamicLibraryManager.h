@@ -3,8 +3,10 @@
 #include "Volt-Core/Config.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
@@ -16,8 +18,8 @@ namespace Volt
 		DynamicLibraryManager();
 		~DynamicLibraryManager();
 
-		VT_NODISCARD DLLHandle LoadDynamicLibrary(const std::filesystem::path& binaryFilepath, bool& outExternallyLoaded);
-		bool UnloadDynamicLibrary(const std::filesystem::path& binaryFilepath);
+		VT_NODISCARD DLLHandle LoadDynamicLibrary(const Filesystem::Path& binaryFilepath, bool& outExternallyLoaded);
+		bool UnloadDynamicLibrary(const Filesystem::Path& binaryFilepath);
 
 		VT_NODISCARD VT_INLINE static DynamicLibraryManager& Get() { return *s_instance; }
 
@@ -26,6 +28,6 @@ namespace Volt
 	private:
 		inline static DynamicLibraryManager* s_instance = nullptr;
 
-		Map<std::filesystem::path, DLLHandle> m_loadedDynamicLibraries;
+		Map<Filesystem::Path, DLLHandle> m_loadedDynamicLibraries;
 	};
 }

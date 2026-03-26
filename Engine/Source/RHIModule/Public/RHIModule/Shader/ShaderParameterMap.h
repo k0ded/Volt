@@ -21,18 +21,18 @@ namespace Volt::RHI
 		using ResourceBindings = Vector<ResourceBinding>;
 		using InlineParameterBlock = Map<StringHash, ShaderUniform>;
 
-		void AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddStructuredBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddStructuredBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTexelBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTexelBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTextureSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTextureUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddAccelerationStructure(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddUniformBuffer(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddSampler(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferUAV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferSRV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferUAV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferSRV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTextureSRV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTextureUAV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddAccelerationStructure(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 
-		void AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
-		void AddInlineParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
+		void AddParameter(const String& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
+		void AddInlineParameter(const String& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
 
 		const ShaderUniform* GetParameterFromName(StringHash name) const;
 		const ShaderResourceBinding* GetResourceBindingFromName(StringHash name) const;

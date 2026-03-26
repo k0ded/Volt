@@ -52,7 +52,7 @@ namespace Circuit
 		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
 
 		glm::u16vec2 m_windowSize;
-		std::string m_title;
+		String m_title;
 
 		Ref<WindowWidget> m_windowWidget;
 

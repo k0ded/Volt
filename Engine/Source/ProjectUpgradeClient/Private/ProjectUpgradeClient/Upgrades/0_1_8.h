@@ -18,13 +18,13 @@ namespace Volt
 		size_t GetNumTotalActions() override;
 		size_t GetNumActionsCompleted() override;
 
-		std::string GetCurrentActionText() override;
+		String GetCurrentActionText() override;
 
 	private:
 		inline static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
 		typedef Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> CustomAssetMetadataVector;
 
-		void DeserializeAssetMetadata(AssetMetadata& outMetadata, const std::filesystem::path& assetFilepath);
+		void DeserializeAssetMetadata(AssetMetadata& outMetadata, const Filesystem::Path& assetFilepath);
 
 		enum class UpgradeStage
 		{

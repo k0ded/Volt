@@ -24,23 +24,23 @@ protected:
 	void InitializeImpl() override;
 	void ShutdownImpl() override;
 	void DisconnectImpl() override;
-	bool ConnectImpl(const std::string& server, const std::string& user, const std::string& password) override;
+	bool ConnectImpl(const String& server, const String& user, const String& password) override;
 
-	void AddImpl(const std::filesystem::path& file) override;
-	void DeleteImpl(const std::filesystem::path& file) override;
-	void EditImpl(const std::filesystem::path& file) override;
+	void AddImpl(const Filesystem::Path& file) override;
+	void DeleteImpl(const Filesystem::Path& file) override;
+	void EditImpl(const Filesystem::Path& file) override;
 
-	void SubmitImpl(const std::string& message) override;
-	void SyncImpl(const std::string& depo = "") override;
+	void SubmitImpl(const String& message) override;
+	void SyncImpl(const String& depo = "") override;
 
-	void SwitchStreamImpl(const std::string& newStream) override;
+	void SwitchStreamImpl(const String& newStream) override;
 	void RefreshStreamsImpl() override;
 
-	void SwitchWorkspaceImpl(const std::string& newStream) override;
+	void SwitchWorkspaceImpl(const String& newStream) override;
 	void RefreshWorkspacesImpl() override;
 
-	const Vector<std::string>& GetWorkspacesImpl() override;
-	const Vector<std::string>& GetStreamsImpl() override;
+	const Vector<String>& GetWorkspacesImpl() override;
+	const Vector<String>& GetStreamsImpl() override;
 	bool IsConnectedImpl() override;
 
 private:

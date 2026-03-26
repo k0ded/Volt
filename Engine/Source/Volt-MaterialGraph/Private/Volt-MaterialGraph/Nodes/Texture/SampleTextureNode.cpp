@@ -118,13 +118,13 @@ namespace Volt::MosaicNodes
 			return tempInfo;
 		}
 
-		const std::string texSamplerVarName = "StaticAnisotropicSampler"; //m_graph->GetNextVariableName();
-		const std::string textureVarName = shaderWriter.AddTexture(m_textureIndex);
-		const std::string valueVarName = m_graph->GetNextVariableName();
-		const std::string tilingVarName = m_graph->GetNextVariableName();
+		const String texSamplerVarName = "StaticAnisotropicSampler"; //m_graph->GetNextVariableName();
+		const String textureVarName = shaderWriter.AddTexture(m_textureIndex);
+		const String valueVarName = m_graph->GetNextVariableName();
+		const String tilingVarName = m_graph->GetNextVariableName();
 
-		std::string texCoordsVarName = "evalData.texCoords";
-		std::string tilingParamString = std::format("{}", GetInputParameter(1).Get<glm::vec2>());
+		String texCoordsVarName = "evalData.texCoords";
+		String tilingParamString = FormatString("{}", GetInputParameter(1).Get<glm::vec2>());
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -146,14 +146,14 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-		std::string result;
+		String result;
 		if (m_textureType == TextureType::Color)
 		{
-			result = std::format(colorTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+			result = FormatString(colorTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
 		}
 		else if (m_textureType == TextureType::Normal)
 		{
-			result = std::format(normalTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+			result = FormatString(normalTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
 		}
 
 		shaderWriter.AppendCodeBlock(result);

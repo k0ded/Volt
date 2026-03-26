@@ -3,12 +3,12 @@
 #include "Config.h"
 #include "CompilerTraits.h"
 
-#include <string_view>
+#include <CoreUtilities/String/StringView.h>
 
 VTCOREUTIL_API void AssertionFailure(const char* expression);
-VTCOREUTIL_API void AssertionFailure(std::string_view expression);
+VTCOREUTIL_API void AssertionFailure(StringView expression);
 VTCOREUTIL_API bool CheckExpression(bool expression, const char* str);
-VTCOREUTIL_API bool CheckExpression(bool expression, std::string_view str);
+VTCOREUTIL_API bool CheckExpression(bool expression, StringView str);
 
 #ifdef VT_ENABLE_ASSERTS
 

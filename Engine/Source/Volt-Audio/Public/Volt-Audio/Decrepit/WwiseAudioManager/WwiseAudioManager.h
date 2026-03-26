@@ -44,7 +44,7 @@ namespace Amp
 		static bool SetParameter(const char* aParameterName, float avalue, uint64_t AkGameObjectID, int32_t aOvertime);
 
 		//TOOL
-		static Vector<std::string> GetAllEventNames(std::filesystem::path aFilePath);
+		static Vector<std::string> GetAllEventNames(Filesystem::Path aFilePath);
 
 		//LISTENERS
 		static bool RegisterListener(uint32_t aEntityID, const char* aEntityName, bool isDefault);

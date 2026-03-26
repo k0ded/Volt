@@ -171,7 +171,7 @@ namespace Volt::RHI
 			{
 				if (shaderBindingHash == newBindingHash)
 				{
-					newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
+					newNameHash = StringHash::Construct(FormatString("Duplicate{}", duplicateIndex++));
 				}
 			}
 

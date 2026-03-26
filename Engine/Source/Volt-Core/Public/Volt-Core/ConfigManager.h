@@ -7,7 +7,9 @@
 
 #include <LogModule/LogCategory.h>
 
-#include <CoreUtilities/Configs/Config.h>
+#include <CoreModule/Configs/Config.h>
+
+#include <CoreUtilities/Filesystem/Path.h>
 
 VT_DECLARE_LOG_CATEGORY(LogConfigManager, LogVerbosity::Trace);
 
@@ -18,7 +20,7 @@ namespace Volt
 	public:
 		void Initialize() override;
 
-		VTCORE_API const ConfigValue* TryGetConfigValue(const std::string& sectionName, const std::string& key) const;
+		VTCORE_API const ConfigValue* TryGetConfigValue(const String& sectionName, const String& key) const;
 
 		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{9B995954-5566-4676-8F13-F1958775679A}"_guid);
@@ -27,7 +29,7 @@ namespace Volt
 		void LoadConfigs();
 		void SetupConsoleVariables();
 
-		bool LoadConfig(const std::filesystem::path& configFilepath, Config& outConfig);
+		bool LoadConfig(const Filesystem::Path& configFilepath, Config& outConfig);
 
 		Config m_combinedConfig;
 	};

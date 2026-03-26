@@ -8,25 +8,19 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
 
-#include <CoreUtilities/StringUtility.h>
-#include <CoreUtilities/FileSystem.h>
-
-VT_REGISTER_SUBSYSTEM(Log, Minimal, PreEngine);
+#include <filesystem>
 
 Log::Log()
 {
-	VT_ENSURE(s_instance == nullptr);
-	s_instance = this;
-
 	spdlog::init_thread_pool(8192, 1);
 	spdlog::set_pattern("%^[%T] %n: %v%$");
 
 	std::vector<spdlog::sink_ptr> sinks;
 
 	const std::filesystem::path logDirectory = std::filesystem::current_path() / "Log";
-	if (!FileSystem::Exists(logDirectory))
+	if (!std::filesystem::exists(logDirectory))
 	{
-		FileSystem::CreateDirectories(logDirectory);
+		std::filesystem::create_directories(logDirectory);
 	}
 
 	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory.string() + "/Log.txt", true));
@@ -49,7 +43,6 @@ Log::~Log()
 	spdlog::shutdown();
 
 	m_logger = nullptr;
-	s_instance = nullptr;
 }
 
 LogCallbackHandle Log::RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback)
@@ -86,17 +79,24 @@ void Log::EnableLogging(bool enable)
 	m_isEnabled = enable;
 }
 
-void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, const std::string& message)
+Log& Log::Get()
+{
+	static Log instance;
+	return instance;
+}
+
+void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, const String& message)
 {
 	if (!m_isEnabled)
 	{
 		return;
 	}
 
-	std::string categoryName = std::string(category->GetName());
+	const StringView categoryNameView = category->GetName();
+	std::string categoryName(categoryNameView.begin(), categoryNameView.length());
 
 	std::string finalString = categoryName.empty() ? "" : "[" + categoryName + "]: ";
-	finalString += message;
+	finalString += std::string(message.begin(), message.length());
 
 	switch (severity)
 	{
@@ -119,7 +119,7 @@ void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, con
 
 	LogCallbackData callbackData{};
 	callbackData.category = category;
-	callbackData.message = finalString;
+	callbackData.message = String(finalString.c_str(), finalString.size());
 	callbackData.severity = severity;
 
 	std::scoped_lock lock{ m_callbackMutex };

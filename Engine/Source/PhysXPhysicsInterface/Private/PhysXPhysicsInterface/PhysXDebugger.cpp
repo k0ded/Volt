@@ -24,7 +24,7 @@ namespace Volt
 		m_debugger = nullptr;
 	}
 	
-	void PhysXDebugger::StartDebugging(const std::filesystem::path& path, bool networkDebug /* = false */)
+	void PhysXDebugger::StartDebugging(const Filesystem::Path& path, bool networkDebug /* = false */)
 	{
 		VT_ENSURE(m_debugger);
 
@@ -32,7 +32,7 @@ namespace Volt
 
 		if (!networkDebug)
 		{
-			m_debuggingTransport = physx::PxDefaultPvdFileTransportCreate((path.string() + ".pxd2").c_str());
+			m_debuggingTransport = physx::PxDefaultPvdFileTransportCreate((path.ToString() + ".pxd2").c_str());
 			m_debugger->connect(*m_debuggingTransport, physx::PxPvdInstrumentationFlag::eALL);
 		}
 		else

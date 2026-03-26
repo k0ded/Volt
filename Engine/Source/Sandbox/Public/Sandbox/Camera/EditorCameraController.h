@@ -2,6 +2,8 @@
 
 #include <EventSystem/EventListener.h>
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt

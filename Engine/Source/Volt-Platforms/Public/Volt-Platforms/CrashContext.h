@@ -10,15 +10,15 @@ namespace Volt
 	{
 		void* platformCrashContext;
 		uint32_t crashingThreadId;
-		std::string stackTrace;
-		std::string username;
-		std::string timestamp;
-		std::string commandLine;
-		std::string errorString;
+		String stackTrace;
+		String username;
+		String timestamp;
+		String commandLine;
+		String errorString;
 
-		std::string serverURL;
-		std::string serverUser;
-		std::string serverPassword;
+		String serverURL;
+		String serverUser;
+		String serverPassword;
 		
 		friend Archive& operator<<(Archive& archive, CrashContext& value)
 		{

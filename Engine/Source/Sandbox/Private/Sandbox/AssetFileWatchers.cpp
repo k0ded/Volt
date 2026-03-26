@@ -17,7 +17,7 @@ void Sandbox::CreateModifiedWatch()
 {
 	m_fileWatcher->AddCallback(efsw::Actions::Modified, [&](const auto newPath, const auto oldPath)
 	{
-		if (newPath.extension().string() == ".nv-gpudmp" || oldPath.extension().string() == ".nv-gpudmp")
+		if (newPath.ExtensionView() == L".nv-gpudmp" || oldPath.ExtensionView() == L".nv-gpudmp")
 		{
 			return;
 		}
@@ -45,9 +45,9 @@ void Sandbox::CreateModifiedWatch()
 
 void Sandbox::CreateDeleteWatch()
 {
-	m_fileWatcher->AddCallback(efsw::Actions::Delete, [&](const std::filesystem::path newPath, const std::filesystem::path oldPath)
+	m_fileWatcher->AddCallback(efsw::Actions::Delete, [&](const Filesystem::Path newPath, const Filesystem::Path oldPath)
 	{
-		if (newPath.extension() == ".tmp" || newPath.extension() == ".TMP")
+		if (newPath.ExtensionView() == L".tmp" || newPath.ExtensionView() == L".TMP")
 		{
 			return;
 		}
@@ -55,7 +55,7 @@ void Sandbox::CreateDeleteWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{
-			if (!newPath.has_extension())
+			if (!newPath.HasExtension())
 			{
 				g_editorAssetManager->DeleteDirectory(newPath);
 			}
@@ -73,7 +73,7 @@ void Sandbox::CreateDeleteWatch()
 
 void Sandbox::CreateAddWatch()
 {
-	m_fileWatcher->AddCallback(efsw::Actions::Add, [&](const std::filesystem::path newPath, const std::filesystem::path oldPath)
+	m_fileWatcher->AddCallback(efsw::Actions::Add, [&](const Filesystem::Path newPath, const Filesystem::Path oldPath)
 	{
 		std::scoped_lock lock(m_fileWatcherMutex);
 	});
@@ -81,19 +81,19 @@ void Sandbox::CreateAddWatch()
 
 void Sandbox::CreateMovedWatch()
 {
-	m_fileWatcher->AddCallback(efsw::Actions::Moved, [&](const std::filesystem::path newPath, const std::filesystem::path oldPath)
+	m_fileWatcher->AddCallback(efsw::Actions::Moved, [&](const Filesystem::Path newPath, const Filesystem::Path oldPath)
 	{
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{
 			// It's a shader file.
-			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
+			if (newPath.ExtensionView() == L".hlsl" || newPath.ExtensionView() == L".hlsli")
 			{
 				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 			else
 			{
-				if (!newPath.has_extension())
+				if (!newPath.HasExtension())
 				{
 					g_editorAssetManager->MoveDirectoryTo(oldPath, newPath);
 				}

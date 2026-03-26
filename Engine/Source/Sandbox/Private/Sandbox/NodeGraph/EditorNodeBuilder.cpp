@@ -11,7 +11,7 @@ void EditorNodeTypeDefinitionBuilder::Pin(PinDirection pinDirection, EditorNodeP
 
 	definition.direction = pinDirection;
 	definition.pinID = pinID;
-	definition.pinName = std::string(pinName);
+	definition.pinName = String(pinName);
 	if (userData)
 	{
 		definition.userData.resize(userData->size());

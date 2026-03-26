@@ -8,6 +8,7 @@
 #include "Sandbox/Utility/Theme.h"
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/FileDialogueHelpers.h>
 
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MaterialCompilerSubSystem.h>
@@ -25,8 +26,6 @@
 #include <Mosaic/NodeRegistry.h>
 
 #include <SubSystem/SubSystemManager.h>
-
-#include <CoreUtilities/FileSystem.h>
 
 #include <builders.h>
 
@@ -233,7 +232,7 @@ void MosaicEditorPanel::UpdateContent()
 	ed::SetCurrentEditor(nullptr);
 }
 
-bool MosaicEditorPanel::SaveSettings(const std::string& data)
+bool MosaicEditorPanel::SaveSettings(const String& data)
 {
 	if (!m_material)
 	{
@@ -244,7 +243,7 @@ bool MosaicEditorPanel::SaveSettings(const std::string& data)
 	return true;
 }
 
-size_t MosaicEditorPanel::LoadSettings(std::string& data)
+size_t MosaicEditorPanel::LoadSettings(String& data)
 {
 	if (!m_material)
 	{
@@ -255,7 +254,7 @@ size_t MosaicEditorPanel::LoadSettings(std::string& data)
 	return data.size();
 }
 
-bool MosaicEditorPanel::SaveNodeSettings(const UUID64 nodeId, const std::string& data)
+bool MosaicEditorPanel::SaveNodeSettings(const UUID64 nodeId, const String& data)
 {
 	if (!m_material)
 	{
@@ -272,7 +271,7 @@ bool MosaicEditorPanel::SaveNodeSettings(const UUID64 nodeId, const std::string&
 	return true;
 }
 
-size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& data)
+size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, String& data)
 {
 	if (!m_material)
 	{
@@ -374,7 +373,7 @@ void MosaicEditorPanel::InitializeEditor()
 	{
 		MosaicEditorPanel* editor = static_cast<MosaicEditorPanel*>(userPointer);
 
-		std::string graphContext;
+		String graphContext;
 		editor->LoadSettings(graphContext);
 
 		if (data)
@@ -395,7 +394,7 @@ void MosaicEditorPanel::InitializeEditor()
 	{
 		MosaicEditorPanel* editor = static_cast<MosaicEditorPanel*>(userPointer);
 
-		std::string graphContext;
+		String graphContext;
 		editor->LoadNodeSettings(nodeId.Get(), graphContext);
 
 		if (data)
@@ -464,8 +463,8 @@ void MosaicEditorPanel::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("Create"))
 			{
-				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
+				Filesystem::Path path = FileDialogueHelpers::SaveFileDialogue({{ "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				m_material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(path.ParentPath(), path.Stem().ToString());
 			}
 
 			if (ImGui::MenuItem("Save") && m_material)
@@ -475,7 +474,7 @@ void MosaicEditorPanel::DrawMenuBar()
 
 			if (ImGui::MenuItem("Load"))
 			{
-				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				Filesystem::Path path = FileDialogueHelpers::OpenFileDialogue({ { "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
 				m_material = g_assetManager->GetAssetImmediately<Volt::MaterialAsset>(g_assetManager->GetAssetHandleFromFilepath(path));
 			}
 
@@ -498,7 +497,7 @@ void MosaicEditorPanel::DrawEditor()
 
 	ImGui::SetNextWindowSizeConstraints({ 100.f, 100.f }, { 0.f, 0.f });
 
-	const std::string id = "Editor##mosaic";
+	const String id = "Editor##mosaic";
 	ImGui::Begin(id.c_str());
 
 	ed::SetCurrentEditor(m_context.editorContext);
@@ -727,7 +726,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 	{
 		ForceWindowDocked(ImGui::GetCurrentWindow());
 
-		std::unordered_map<std::string, Vector<VoltGUID>> categorizedNodes;
+		std::unordered_map<String, Vector<VoltGUID>> categorizedNodes;
 
 		for (const auto& [guid, info] : Mosaic::NodeRegistry::Get().GetRegistry())
 		{
@@ -738,7 +737,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		ImGui::BeginChild("Main", ImGui::GetContentRegionAvail(), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
-			static std::string searchQuery;
+			static String searchQuery;
 			bool hasQuery;
 
 			EditorUtils::SearchBar(searchQuery, hasQuery, false);
@@ -778,7 +777,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 void MosaicEditorPanel::DrawSettingsPanel()
 {
-	static Vector<std::string> materialBlendModeNames =
+	static Vector<String> materialBlendModeNames =
 	{
 		"Opaque",
 		"AlphaMasked",

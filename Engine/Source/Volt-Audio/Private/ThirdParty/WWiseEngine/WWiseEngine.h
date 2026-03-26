@@ -7,6 +7,7 @@ VT_RESTORE_WARNING()
 #include "SoundEngine/Common/AkJobWorkerMgr.h"
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 #include "AK/SoundEngine/Common/AkMemoryMgr.h"		// Memory Manager
 #include <AK/SoundEngine/Common/AkModule.h>			// Default memory and stream managers
@@ -27,7 +28,7 @@ namespace Amp
 		~WWiseEngine();
 
 		//ENGINE CONTROL
-		bool InitWWise(std::filesystem::path aPath);
+		bool InitWWise(Filesystem::Path aPath);
 		void TermWwise();
 		void Update();
 

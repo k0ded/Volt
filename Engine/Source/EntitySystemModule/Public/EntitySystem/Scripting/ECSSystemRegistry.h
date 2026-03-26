@@ -6,6 +6,7 @@
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/VoltGUID.h>
 
 #include <functional>
 

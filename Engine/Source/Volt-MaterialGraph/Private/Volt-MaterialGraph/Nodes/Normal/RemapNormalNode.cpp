@@ -16,12 +16,12 @@ namespace Volt::MosaicNodes
 		AddOutputParameter("Remapped Normal", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.f), false);
 	}
 
-	const std::string RemapNormalNode::GetName() const
+	const String RemapNormalNode::GetName() const
 	{
 		return "RemapNormal";
 	}
 	
-	const std::string RemapNormalNode::GetCategory() const
+	const String RemapNormalNode::GetCategory() const
 	{
 		return "Utility";
 	}
@@ -35,7 +35,7 @@ namespace Volt::MosaicNodes
 	{
 		constexpr const char* nodeStr = "const float3 {} = {} * 2.f - 1.f;\n";
 
-		std::string normal = std::format("{}", GetInputParameter(0).Get<glm::vec3>());
+		String normal = FormatString("{}", GetInputParameter(0).Get<glm::vec3>());
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -51,8 +51,8 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-		const std::string varName = m_graph->GetNextVariableName();
-		const std::string result = std::format(nodeStr, varName, normal);
+		const String varName = m_graph->GetNextVariableName();
+		const String result = FormatString(nodeStr, varName, normal);
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

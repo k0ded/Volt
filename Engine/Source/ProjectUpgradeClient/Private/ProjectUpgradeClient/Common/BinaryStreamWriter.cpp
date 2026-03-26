@@ -2,12 +2,16 @@
 
 #include "zlib.h"
 
-void BinaryStreamWriter::WriteToDisk(const std::filesystem::path& targetFilepath, bool compress, size_t compressedDataOffset)
+#include <filesystem>
+
+void BinaryStreamWriter::WriteToDisk(const Filesystem::Path& targetFilepath, bool compress, size_t compressedDataOffset)
 {
 	constexpr size_t compressionEncodingHeaderSize = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(size_t);
 	constexpr uint32_t MAGIC = 5121;
 
-	std::ofstream stream(targetFilepath, std::ios::out | std::ios::binary);
+	const std::filesystem::path tempPath(targetFilepath.ToWString().begin(), targetFilepath.ToWString().end());
+
+	std::ofstream stream(tempPath, std::ios::out | std::ios::binary);
 	VT_ASSERT(stream.is_open());
 
 	const uint8_t* writePtr = m_data.data();
@@ -54,9 +58,9 @@ void BinaryStreamWriter::WriteToDisk(const std::filesystem::path& targetFilepath
 	VT_ASSERT(!stream.fail());
 	stream.close();
 	VT_ASSERT(!stream.fail());
-	VT_ASSERT(std::filesystem::exists(targetFilepath));
+	VT_ASSERT(std::filesystem::exists(tempPath));
 
-	std::ifstream infile(targetFilepath.c_str());
+	std::ifstream infile(tempPath.c_str());
 	VT_ASSERT(infile.good());
 }
 

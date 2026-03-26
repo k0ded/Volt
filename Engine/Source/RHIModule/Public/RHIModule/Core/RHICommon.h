@@ -1,14 +1,9 @@
 #pragma once
-#include "RHIModule/Core/Core.h"
-
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Variant.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 
-#include <array>
-#include <functional>
-#include <variant>
-#include <filesystem>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt::RHI
 {
@@ -635,7 +630,7 @@ namespace Volt::RHI
 	struct DeviceCapabilities
 	{
 		DeviceVendor deviceVendor;
-		std::string_view gpuName;
+		StringView gpuName;
 
 		bool timestampSupport;
 		float timestampPeriod = 0.f;
@@ -648,7 +643,7 @@ namespace Volt::RHI
 
 	struct GraphicsContextCreateInfo
 	{
-		std::filesystem::path pipelineCacheFilepath;
+		Filesystem::Path pipelineCacheFilepath;
 
 		GraphicsAPI graphicsApi;
 		bool enableDebugLayer = false;
@@ -676,7 +671,7 @@ namespace Volt::RHI
 		bool isCubeMap = false;
 		bool initializeImage = true;
 
-		std::string debugName;
+		String debugName;
 	};
 
 	struct SwapchainImageDesc

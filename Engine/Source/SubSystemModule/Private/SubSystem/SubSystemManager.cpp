@@ -5,6 +5,8 @@
 #include "SubSystem/SubSystemRegistry.h"
 #include "SubSystem/SubSystem.h"
 
+#include <ranges>
+
 SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
 	: m_inclusionLevel(inclusionLevel)
 {
@@ -34,6 +36,7 @@ void SubSystemManager::InitializeSubSystems(SubSystemInitializationStage initial
 		Ref<SubSystem> subSystem = registeredSubSystems.at(subSystemGUID).factoryFunction();
 		m_subSystemsMap[subSystemGUID] = subSystem;
 		
+		VT_LOGC(Trace, LogSubSystem, "Initialized SubSystem {}!", subSystemGUID);
 		subSystem->Initialize();
 	}
 

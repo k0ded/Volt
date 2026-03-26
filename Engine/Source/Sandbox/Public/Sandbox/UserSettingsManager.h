@@ -8,7 +8,7 @@
 
 struct WindowSettings
 {
-	std::unordered_map<std::string, bool> windowsOpen;
+	std::unordered_map<String, bool> windowsOpen;
 };
 
 enum class NavMeshViewMode : uint32_t
@@ -63,7 +63,7 @@ struct AssetBrowserSettings
 
 struct PanelState
 {
-	std::string panelName;
+	String panelName;
 	bool isOpen = false;
 };
 

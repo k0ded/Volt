@@ -3,9 +3,10 @@
 #include "Mosaic/Parameter.h"
 #include "Mosaic/Config.h"
 
-#include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Graph.h>
+#include <CoreUtilities/Pointers/Ref.h>
+#include <CoreUtilities/Archive/Archive.h>
 
 #include <glm/glm.hpp>
 
@@ -40,8 +41,8 @@ namespace Mosaic
 		MosaicNode(MosaicGraph* ownerGraph);
 		virtual ~MosaicNode() {}
 
-		virtual const std::string GetName() const = 0;
-		virtual const std::string GetCategory() const = 0;
+		virtual const String GetName() const = 0;
+		virtual const String GetCategory() const = 0;
 		virtual const glm::vec4 GetColor() const = 0;
 		virtual const VoltGUID GetGUID() const = 0;
 		virtual void Reset() {}
@@ -62,17 +63,17 @@ namespace Mosaic
 		const Parameter& GetInputParameter(uint32_t parameterIndex) const;
 		const Parameter& GetOutputParameter(uint32_t parameterIndex) const;
 
-		inline std::string& GetEditorState() { return m_editorState; }
+		inline String& GetEditorState() { return m_editorState; }
 
 	protected:
-		void AddInputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute);
-		void AddOutputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute);
+		void AddInputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute);
+		void AddOutputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, bool showAttribute);
 
 		template<typename T>
-		void AddInputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute);
+		void AddInputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute);
 
 		template<typename T>
-		void AddOutputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute);
+		void AddOutputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute);
 
 		MosaicGraph* m_graph = nullptr;
 
@@ -80,11 +81,11 @@ namespace Mosaic
 		Vector<Parameter> m_inputParameters;
 		Vector<Parameter> m_outputParameters;
 
-		std::string m_editorState;
+		String m_editorState;
 	};
 
 	template<typename T>
-	inline void MosaicNode::AddInputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute)
+	inline void MosaicNode::AddInputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute)
 	{
 		auto& param = m_inputParameters.emplace_back();
 		param.name = name;
@@ -103,7 +104,7 @@ namespace Mosaic
 	}
 
 	template<typename T>
-	inline void MosaicNode::AddOutputParameter(const std::string& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute)
+	inline void MosaicNode::AddOutputParameter(const String& name, ValueBaseType baseType, uint32_t vectorSize, const T& defaultValue, bool showAttribute)
 	{
 		auto& param = m_outputParameters.emplace_back();
 		param.name = name;

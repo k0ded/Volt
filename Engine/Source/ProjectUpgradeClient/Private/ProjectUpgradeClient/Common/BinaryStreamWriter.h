@@ -2,7 +2,7 @@
 
 #include "ProjectUpgradeClient/Common/StreamCommon.h"
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
+#include <CoreModule/DataBuffer.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -15,13 +15,13 @@
 class BinaryStreamWriter
 {
 public:
-	void WriteToDisk(const std::filesystem::path& targetFilepath, bool compress, size_t compressedDataOffset);
+	void WriteToDisk(const Filesystem::Path& targetFilepath, bool compress, size_t compressedDataOffset);
 	[[nodiscard]] const size_t GetSize() const { return m_data.size(); }
 
 	template<typename T>
 	[[nodiscard]] const size_t GetBinarySizeOfType(const T& object) const;
 
-	template<> [[nodiscard]] const size_t GetBinarySizeOfType(const std::string& object) const;
+	template<> [[nodiscard]] const size_t GetBinarySizeOfType(const String& object) const;
 	template<typename F> [[nodiscard]] const size_t GetBinarySizeOfType(const Vector<F>& object) const;
 	template<typename F, size_t COUNT> [[nodiscard]] const size_t GetBinarySizeOfType(const std::array<F, COUNT>& object) const;
 	template<typename Key, typename Value> [[nodiscard]] const size_t GetBinarySizeOfType(const std::map<Key, Value>& object) const;
@@ -31,10 +31,10 @@ public:
 	size_t Write(const T& data);
 
 	template<>
-	size_t Write(const std::string& data);
+	size_t Write(const String& data);
 
 	template<>
-	size_t Write(const std::filesystem::path& data);
+	size_t Write(const Filesystem::Path& data);
 
 	template<>
 	size_t Write(const DataBuffer& buffer);
@@ -91,7 +91,7 @@ inline const size_t BinaryStreamWriter::GetBinarySizeOfType(const T& object) con
 }
 
 template<>
-inline const size_t BinaryStreamWriter::GetBinarySizeOfType(const std::string& object) const
+inline const size_t BinaryStreamWriter::GetBinarySizeOfType(const String& object) const
 {
 	constexpr size_t typeHeaderSize = sizeof(TypeHeader);
 	return object.size() + typeHeaderSize;
@@ -148,7 +148,7 @@ inline size_t BinaryStreamWriter::Write(const T& data)
 }
 
 template<>
-inline size_t BinaryStreamWriter::Write(const std::string& data)
+inline size_t BinaryStreamWriter::Write(const String& data)
 {
 	TypeHeader header{};
 	header.totalTypeSize = static_cast<uint32_t>(data.size());
@@ -163,9 +163,9 @@ inline size_t BinaryStreamWriter::Write(const std::string& data)
 }
 
 template<>
-inline size_t BinaryStreamWriter::Write(const std::filesystem::path& data)
+inline size_t BinaryStreamWriter::Write(const Filesystem::Path& data)
 {
-	std::string pathStr = data.string();
+	String pathStr = data.ToString();
 
 	TypeHeader header{};
 	header.totalTypeSize = static_cast<uint32_t>(pathStr.size());
@@ -323,7 +323,7 @@ inline size_t BinaryStreamWriter::Write(const std::unordered_map<Key, Value>& da
 		{
 			WriteData(&key, sizeof(Key));
 		}
-		else if constexpr (std::is_same<Key, std::string>::value)
+		else if constexpr (std::is_same<Key, String>::value)
 		{
 			Write(key);
 		}
@@ -336,7 +336,7 @@ inline size_t BinaryStreamWriter::Write(const std::unordered_map<Key, Value>& da
 		{
 			WriteData(&value, sizeof(Value));
 		}
-		else if constexpr (std::is_same<Value, std::string>::value)
+		else if constexpr (std::is_same<Value, String>::value)
 		{
 			Write(value);
 		}
@@ -363,7 +363,7 @@ inline size_t BinaryStreamWriter::Write(const Map<Key, Value>& data)
 		{
 			WriteData(&key, sizeof(Key));
 		}
-		else if constexpr (std::is_same<Key, std::string>::value)
+		else if constexpr (std::is_same<Key, String>::value)
 		{
 			Write(key);
 		}
@@ -376,7 +376,7 @@ inline size_t BinaryStreamWriter::Write(const Map<Key, Value>& data)
 		{
 			WriteData(&value, sizeof(Value));
 		}
-		else if constexpr (std::is_same<Value, std::string>::value)
+		else if constexpr (std::is_same<Value, String>::value)
 		{
 			Write(value);
 		}

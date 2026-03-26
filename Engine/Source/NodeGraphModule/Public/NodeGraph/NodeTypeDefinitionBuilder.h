@@ -22,7 +22,7 @@ struct NodePinDefinition
 	PinDirection direction;
 
 	NodePinID pinID;
-	std::string pinName;
+	String pinName;
 
 	PinTypeCustomDataVector pinTypeData;
 	VoltGUID pinTypeGUID;
@@ -61,7 +61,7 @@ public:
 
 		definition.direction = pinDirection;
 		definition.pinID = pinID;
-		definition.pinName = std::string(pinName);
+		definition.pinName = String(pinName);
 		definition.pinTypeData = std::move(customPinTypeData);
 		definition.pinTypeGUID = PinType::GetStaticTypeGUID();
 		definition.pinTypeStorageTypeSize = sizeof(PinType::StorageType);

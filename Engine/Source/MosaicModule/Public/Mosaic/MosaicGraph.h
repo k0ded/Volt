@@ -7,6 +7,7 @@
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Graph.h>
 #include <CoreUtilities/VoltGUID.h>
+#include <CoreUtilities/Pointers/Ref.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
 namespace Mosaic
@@ -25,14 +26,14 @@ namespace Mosaic
 
 		uint32_t GetNextVariableIndex();
 		uint32_t GetNextTextureIndex();
-		const std::string GetNextVariableName();
+		const String GetNextVariableName();
 
 		void ForfeitTextureIndex(uint32_t textureIndex);
 
 		inline const uint32_t GetTextureCount() { return m_textureCount; }
 
-		inline std::string& GetEditorState() { return m_editorState; }
-		inline const std::string& GetEditorState() const { return m_editorState; }
+		inline String& GetEditorState() { return m_editorState; }
+		inline const String& GetEditorState() const { return m_editorState; }
 
 		inline Graph<Ref<MosaicNode>, Ref<MosaicEdge>>& GetUnderlyingGraph() { return m_graph; }
 		inline const Graph<Ref<MosaicNode>, Ref<MosaicEdge>>& GetUnderlyingGraph() const { return m_graph; }
@@ -46,7 +47,7 @@ namespace Mosaic
 
 	private:
 		uint32_t m_currentVariableCount = 0;
-		std::string m_editorState;
+		String m_editorState;
 
 		Vector<uint32_t> m_availiableTextureIndices;
 

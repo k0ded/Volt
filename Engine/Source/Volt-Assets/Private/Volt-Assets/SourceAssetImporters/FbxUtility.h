@@ -150,8 +150,8 @@ namespace Volt
 		glm::mat4 inverseBindPose = glm::identity<glm::mat4>();
 		FbxRestPose restPose;
 
-		std::string name;
-		std::string namespaceName;
+		String name;
+		String namespaceName;
 		int32_t parentIndex;
 	};
 
@@ -159,7 +159,7 @@ namespace Volt
 	{
 		Vector<FbxJoint> joints;
 
-		VT_INLINE int32_t GetJointIndexFromName(const std::string& name) const
+		VT_INLINE int32_t GetJointIndexFromName(const String& name) const
 		{
 			for (size_t i = 0; i < joints.size(); i++)
 			{
@@ -253,7 +253,7 @@ namespace Volt
 		VisitNodes(scene, visitor);
 	}
 
-	inline std::string GetStringFromSystemUnit(const fbxsdk::FbxSystemUnit& unit)
+	inline String GetStringFromSystemUnit(const fbxsdk::FbxSystemUnit& unit)
 	{
 		if (unit == fbxsdk::FbxSystemUnit::mm)
 		{
@@ -295,7 +295,7 @@ namespace Volt
 		return "NULL";
 	}
 
-	inline std::string GetStringFromAxisSystem(const fbxsdk::FbxAxisSystem& axisSystem)
+	inline String GetStringFromAxisSystem(const fbxsdk::FbxAxisSystem& axisSystem)
 	{
 		if (axisSystem == fbxsdk::FbxAxisSystem::eDirectX)
 		{
@@ -329,22 +329,22 @@ namespace Volt
 		return "NULL";
 	}
 
-	inline std::string GetJointName(const std::string& name)
+	inline String GetJointName(const String& name)
 	{
-		if (const size_t pos = name.find_last_of(':'); pos != std::string::npos)
+		if (const size_t pos = name.find_last_of(':'); pos != String::npos)
 		{
 			return name.substr(pos + 1);
 		}
 		return name;
 	}
 
-	inline std::string GetFbxNodePath(FbxNode* node)
+	inline String GetFbxNodePath(FbxNode* node)
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr std::string_view rootName = "<root>";
+		constexpr StringView rootName = "<root>";
 
-		std::string result;
+		String result;
 		if (node != nullptr && node->GetParent() != nullptr)
 		{
 			result = rootName;
@@ -352,7 +352,7 @@ namespace Volt
 
 		while (node != nullptr && node->GetParent() != nullptr)
 		{
-			std::string nodeDesc;
+			String nodeDesc;
 
 			const char* const nodeName = node->GetName();
 			if (nodeName && nodeName[0])
@@ -378,7 +378,7 @@ namespace Volt
 
 				if (nodeIndex >= 0)
 				{
-					nodeDesc = std::format("<node at index {}>", nodeIndex);
+					nodeDesc = FormatString("<node at index {}>", nodeIndex);
 				}
 				else
 				{
@@ -406,7 +406,7 @@ namespace Volt
 		return result;
 	}
 
-	inline void SetupIOSettings(FbxIOSettings& ioSettings, const MeshSourceImportConfig& importConfig, const std::filesystem::path& filepath)
+	inline void SetupIOSettings(FbxIOSettings& ioSettings, const MeshSourceImportConfig& importConfig, const Filesystem::Path& filepath)
 	{
 		if (!importConfig.password.empty())
 		{
@@ -444,7 +444,7 @@ namespace Volt
 		ioSettings.SetBoolProp(IMP_FBX_ANIMATION, true);
 		ioSettings.SetBoolProp(IMP_FBX_EXTRACT_EMBEDDED_DATA, true);
 
-		ioSettings.SetStringProp(IMP_EXTRACT_FOLDER, filepath.parent_path().string().c_str());
+		ioSettings.SetStringProp(IMP_EXTRACT_FOLDER, filepath.ParentPath().ToString().c_str());
 
 		// 3DS
 		ioSettings.SetBoolProp(IMP_3DS_REFERENCENODE, false);

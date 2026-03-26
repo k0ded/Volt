@@ -12,7 +12,7 @@ namespace Volt::RHI
 		~PhysicalGraphicsDevice() override = default;
 
 		[[nodiscard]] virtual const DeviceVendor GetDeviceVendor() const = 0;
-		[[nodiscard]] virtual std::string_view GetDeviceName() const = 0;
+		[[nodiscard]] virtual StringView GetDeviceName() const = 0;
 
 		static IntRef<PhysicalGraphicsDevice> Create(const PhysicalDeviceCreateInfo& deviceInfo, bool enableDebugLayer);
 

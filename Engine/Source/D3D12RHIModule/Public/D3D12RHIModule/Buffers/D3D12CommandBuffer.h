@@ -54,7 +54,7 @@ namespace Volt::RHI
 
 		void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) override;
 
-		void BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor) override;
+		void BeginMarker(StringView markerLabel, const std::array<float, 4>& markerColor) override;
 		void EndMarker() override;
 
 		const uint32_t BeginTimestamp() override;

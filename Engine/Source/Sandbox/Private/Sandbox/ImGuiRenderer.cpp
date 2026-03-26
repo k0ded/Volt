@@ -6,13 +6,15 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/Theme.h"
-#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/UserSettingsManager.h"
 
 #include "Sandbox/DirtyAssetsManager.h"
 
 #include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <EventSystem/EventSystem.h>
 
@@ -597,7 +599,7 @@ void Sandbox::DrawMenuBar()
 			//	ImGui::EndMenu();
 			//}
 
-			std::map<std::string, Vector<Ref<EditorWindow>>> categorizedEditors;
+			std::map<String, Vector<Ref<EditorWindow>>> categorizedEditors;
 			Vector<Ref<EditorWindow>> uncategorizedEditors;
 
 			for (const auto& window : EditorLibrary::GetPanels())
@@ -682,7 +684,7 @@ void Sandbox::DrawMenuBar()
 			if (ImGui::MenuItem("Clear Collider Cache"))
 			{
 				const auto path = Volt::ProjectManager::GetCachePath() / "Colliders";
-				FileSystem::Remove(path);
+				Filesystem::RemoveAll(path);
 			}
 
 			ImGui::EndMenu();
@@ -716,7 +718,7 @@ void Sandbox::DrawDirtyAssetsExternalActionModal()
 		return;
 	}
 
-	const std::string modalName = "Dirty Assets Requiring external action";
+	const String modalName = "Dirty Assets Requiring external action";
 	UI::OpenModal(modalName);
 	if (UI::BeginModal(modalName))
 	{

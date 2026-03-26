@@ -13,13 +13,13 @@ namespace Volt
 	public:
 		struct ShaderRegistrationInfo
 		{
-			std::filesystem::path baseFilepath;
-			std::string entryPoint;
+			Filesystem::Path baseFilepath;
+			String entryPoint;
 			TypeTraits::TypeIndex defaultShaderClass = TypeTraits::TypeIndex::FromType<void>();
 		};
 
 		template<typename ShaderClass, typename DefaultShaderClass>
-		void RegisterShader(const std::filesystem::path& baseFilepath, const std::string& entryPoint)
+		void RegisterShader(const Filesystem::Path& baseFilepath, const String& entryPoint)
 		{
 			static_assert(std::is_base_of_v<MaterialShader, ShaderClass>);
 

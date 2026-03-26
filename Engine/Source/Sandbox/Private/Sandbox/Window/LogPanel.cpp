@@ -173,7 +173,7 @@ void LogPanel::RenderBottomBar()
 
 	if (ImGui::BeginChild("##bottomBar", { ImGui::GetContentRegionAvail().x, BottomBarHeight }))
 	{
-		static std::string query;
+		static String query;
 
 		ImGui::PushItemWidth(350.f);
 		UI::ShiftCursor(5.f, 4.f);
@@ -190,18 +190,18 @@ void LogPanel::RenderBottomBar()
 					Weak<Volt::RegisteredConsoleVariableBase> weakVariable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
 					Ref<Volt::RegisteredConsoleVariableBase> variable = weakVariable.Lock();
 
-					std::string message = std::string(variable->GetName()) + " = ";
+					String message = String(variable->GetName()) + " = ";
 
 					if (strings.size() > 1)
 					{
 						if (variable->IsFloat())
 						{
-							const float value = std::stof(strings[1]);
+							const float value = StoF(strings[1]);
 							variable->Set(&value);
 						}
 						else if (variable->IsInteger())
 						{
-							const int32_t value = std::stoi(strings[1]);
+							const int32_t value = StoI(strings[1]);
 							variable->Set(&value);
 						}
 						else if (variable->IsString())
@@ -215,15 +215,15 @@ void LogPanel::RenderBottomBar()
 					{
 						if (variable->IsFloat())
 						{
-							message += std::to_string(*static_cast<const float*>(variable->Get()));
+							message += FormatString("{}", *static_cast<const float*>(variable->Get()));
 						}
 						else if (variable->IsInteger())
 						{
-							message += std::to_string(*static_cast<const int32_t*>(variable->Get()));
+							message += FormatString("{}", * static_cast<const int32_t*>(variable->Get()));
 						}
 						else if (variable->IsString())
 						{
-							message += *static_cast<const std::string*>(variable->Get());
+							message += *static_cast<const String*>(variable->Get());
 						}
 					}
 
@@ -305,7 +305,7 @@ bool LogPanel::DoesLogEntryPassFilters(const LogCallbackData& logData)
 
 	if (!m_logSearchQuery.empty())
 	{
-		if (!Utility::StringContains(logData.message, m_logSearchQuery))
+		if (!logData.message.contains(m_logSearchQuery))
 		{
 			return false;
 		}

@@ -10,11 +10,11 @@
 class MeshImportModal final : public Modal
 {
 public:
-	MeshImportModal(const std::string& strId);
+	MeshImportModal(const String& strId);
 	~MeshImportModal() override = default;
 
-	void SetImportMeshes(const Vector<std::filesystem::path>& filePaths);
-	VT_INLINE void SetDestinationDirectory(const std::filesystem::path& destinationDirectory) { m_destinationDirectory = destinationDirectory; }
+	void SetImportMeshes(const Vector<Filesystem::Path>& filePaths);
+	VT_INLINE void SetDestinationDirectory(const Filesystem::Path& destinationDirectory) { m_destinationDirectory = destinationDirectory; }
 
 protected:
 	void DrawModalContent() override;
@@ -47,16 +47,16 @@ private:
 		Animation
 	};
 
-	const std::string GetStringFromImportType(const ImportType importType);
+	const String GetStringFromImportType(const ImportType importType);
 	void GetInformationOfCurrentMesh();
 
-	void Import(const std::filesystem::path& importPath, const std::filesystem::path& destinationDirectory);
+	void Import(const Filesystem::Path& importPath, const Filesystem::Path& destinationDirectory);
 	void Clear();
 
 	ImportType m_currentImportType = ImportType::StaticMesh;
 	ImportOptions m_importOptions{};
 	Volt::SourceAssetFileInformation m_fileInformation;
 
-	std::filesystem::path m_destinationDirectory;
-	Vector<std::filesystem::path> m_importFilePaths;
+	Filesystem::Path m_destinationDirectory;
+	Vector<Filesystem::Path> m_importFilePaths;
 };

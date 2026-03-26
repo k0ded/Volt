@@ -10,7 +10,7 @@
 
 #include <Volt-Application/UI/ImGuiSubSystem.h>
 
-Modal::Modal(const std::string& strId, ImGuiWindowFlags flags)
+Modal::Modal(const String& strId, ImGuiWindowFlags flags)
 	: m_strId(strId), m_flags(flags)
 {
 

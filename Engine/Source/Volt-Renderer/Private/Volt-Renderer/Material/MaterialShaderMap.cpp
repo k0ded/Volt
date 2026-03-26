@@ -14,7 +14,7 @@ namespace Volt
 		return std::hash<std::underlying_type_t<MaterialBlendMode>>()(std::to_underlying(blendMode));
 	}
 
-	void MaterialShaderMap::Initialize(const std::string& name, CompiledMaterialShaders&& compiledShaders)
+	void MaterialShaderMap::Initialize(const String& name, CompiledMaterialShaders&& compiledShaders)
 	{
 		m_shaderMap.clear();
 

@@ -3,6 +3,7 @@
 #include "CoreUtilities/UUID.h"
 #include "CoreUtilities/VoltGUID.h"
 #include "CoreUtilities/Containers/Vector.h"
+#include "CoreUtilities/Filesystem/Path.h"
 
 #include <glm/glm.hpp>
 #include <yaml-cpp/yaml.h>
@@ -385,18 +386,45 @@ namespace YAML
 	};
 
 	template<>
-	struct convert<std::filesystem::path>
+	struct convert<Filesystem::Path>
 	{
-		static Node encode(const std::filesystem::path& rhs)
+		static Node encode(const Filesystem::Path& rhs)
 		{
+			String temp0 = rhs.ToString();
+			std::string temp(temp0.begin(), temp0.end());
+
 			Node node;
-			node.push_back(rhs.string());
+			node.push_back(temp);
 			return node;
 		};
 
-		static bool decode(const Node& node, std::filesystem::path& v)
+		static bool decode(const Node& node, Filesystem::Path& v)
 		{
-			v = node.as<std::string>();
+			std::string temp = node.as<std::string>();
+			WString temp2(WString::CtorConvert(), temp.c_str(), temp.size());
+			v = temp2;
+
+			return true;
+		};
+	};
+
+	template<>
+	struct convert<String>
+	{
+		static Node encode(const String& rhs)
+		{
+			std::string temp(rhs.begin(), rhs.end());
+
+			Node node;
+			node.push_back(temp);
+			return node;
+		};
+
+		static bool decode(const Node& node, String& v)
+		{
+			std::string temp = node.as<std::string>();
+			v = String(temp.c_str(), temp.size());
+
 			return true;
 		};
 	};
@@ -515,13 +543,16 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const VoltGUID& handle)
 	return out;
 }
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const std::filesystem::path& path)
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const Filesystem::Path& path)
 {
-	out << path.string();
+	String temp0 = path.ToString();
+	std::string temp(temp0.begin(), temp0.end());
+
+	out << temp;
 	return out;
 }
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector<std::filesystem::path>& paths)
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector<Filesystem::Path>& paths)
 {
 	out << YAML::BeginSeq;
 	for (const auto& p : paths)

@@ -31,8 +31,8 @@ namespace Volt
 	class FbxSourceImporter final : public SourceAssetImporter
 	{
 	protected:
-		Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
-		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
+		Vector<AssetReference<Asset>> ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
+		SourceAssetFileInformation GetSourceFileInformation(const Filesystem::Path& filepath) const override;
 
 	private:
 		struct JointLink
@@ -47,7 +47,7 @@ namespace Volt
 		void CreateVoltSkeletonFromFbxSkeleton(const FbxSkeletonContainer& fbxSkeleton, Skeleton& destinationSkeleton) const;
 
 		void FindJointVertexLinksAndSetupSkeleton(const fbxsdk::FbxMesh& fbxMesh, FbxSkeletonContainer& inOutSkeleton, JointVertexLinkMap& outVertexLinks) const;
-		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
+		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const String& name) const;
 
 		void CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, const TQS& nodeTransform, const JointVertexLinkMap* jointVertexLinks, Vector<FbxVertex>& outVertices) const;
 

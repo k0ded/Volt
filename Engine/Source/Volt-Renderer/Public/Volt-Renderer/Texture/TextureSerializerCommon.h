@@ -4,7 +4,7 @@
 
 #include <RHIModule/Images/Image.h>
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
+#include <CoreModule/DataBuffer.h>
 
 namespace Volt::TextureSerializerCommon
 {

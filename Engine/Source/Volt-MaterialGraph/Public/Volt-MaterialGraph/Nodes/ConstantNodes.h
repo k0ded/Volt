@@ -24,8 +24,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID(GUID);
 
-		inline const std::string GetName() const override { return Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO) + " Constant"; }
-		inline const std::string GetCategory() const override { return "Constants"; }
+		inline const String GetName() const override { return Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO) + " Constant"; }
+		inline const String GetCategory() const override { return "Constants"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		inline void Reset() override
@@ -46,8 +46,8 @@ namespace Volt::MosaicNodes
 				return resultInfo;
 			}
 
-			const std::string varName = m_graph->GetNextVariableName();
-			std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
+			const String varName = m_graph->GetNextVariableName();
+			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
@@ -64,7 +64,7 @@ namespace Volt::MosaicNodes
 		inline static constexpr Mosaic::TypeInfo TYPE_INFO{ BASE_TYPE, VECTOR_SIZE };
 
 		mutable bool m_evaluated = false;
-		mutable std::string m_evaluatedVariableName;
+		mutable String m_evaluatedVariableName;
 	};
 
 	static void GetCorrectedColorVariableName(Mosaic::ResultInfo& resultInfo, uint32_t outputIndex, uint32_t vectorSize)
@@ -120,8 +120,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID(GUID);
 
-		VT_INLINE const std::string GetName() const override { return "Color" + std::to_string(VECTOR_SIZE); }
-		VT_INLINE const std::string GetCategory() const override { return "Constants"; }
+		VT_INLINE const String GetName() const override { return FormatString("Color", VECTOR_SIZE); }
+		VT_INLINE const String GetCategory() const override { return "Constants"; }
 		VT_INLINE const glm::vec4 GetColor() const override { return 1.f; }
 
 		VT_INLINE void Reset() override
@@ -144,8 +144,8 @@ namespace Volt::MosaicNodes
 				return resultInfo;
 			}
 
-			const std::string varName = m_graph->GetNextVariableName();
-			std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
+			const String varName = m_graph->GetNextVariableName();
+			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
@@ -164,7 +164,7 @@ namespace Volt::MosaicNodes
 		inline static constexpr Mosaic::TypeInfo TYPE_INFO{ Mosaic::ValueBaseType::Float, VECTOR_SIZE };
 
 		mutable bool m_evaluated = false;
-		mutable std::string m_evaluatedVariableName;
+		mutable String m_evaluatedVariableName;
 	};
 
 	DECLARE_NODE_TEMPLATE(ConstantFloat, (ConstantNode<float, 0.f, Mosaic::ValueBaseType::Float, 1, "{5AAE4158-7282-43F9-9D6A-2259024E17B3}"_guid>));

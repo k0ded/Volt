@@ -24,11 +24,11 @@ public:
 	~DiscordManager() override = default;
 
 	void SetApplicationID(int64_t appId) override;
-	void SetDetails(std::string_view text) override;
-	void SetState(std::string_view text) override;
+	void SetDetails(StringView text) override;
+	void SetState(StringView text) override;
 	void SetStartTime(time_t time) override;
-	void SetLargeImage(std::string_view imageName) override;
-	void SetLargeText(std::string_view text) override;
+	void SetLargeImage(StringView imageName) override;
+	void SetLargeText(StringView text) override;
 	void SetActivityType(ActivityType type) override;
 	void SetPartySize(int32_t size) override;
 	void SetMaxPartySize(int32_t size) override;

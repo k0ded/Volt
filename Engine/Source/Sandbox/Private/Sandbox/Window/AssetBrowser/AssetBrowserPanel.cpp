@@ -33,9 +33,9 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <Volt-FileSystem/Filesystem.h>
 
-#include <CoreUtilities/FileSystem.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <EventSystem/Event.h>
 
@@ -50,9 +50,11 @@
 
 #include <JobSystem/JobSystem.h>
 
+#include <CoreUtilities/String/StringUtility.h>
+
 #undef CreateDirectory
 
-AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id)
+AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const String& id)
 	: EditorWindow("Asset Browser" + id), myEditorScene(aScene)
 {
 	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -421,12 +423,12 @@ void AssetBrowserPanel::RenderControlsBar(float height)
 			{
 				ImGui::SameLine();
 
-				std::string dirName = myDirectoryButtons[i]->path.stem().string();
+				String dirName = myDirectoryButtons[i]->path.Stem().ToString();
 
 				const float buttonWidth = ImGui::CalcTextSize(dirName.c_str()).x + 5.f;
 				UI::ScopedColor bgColor(ImGuiCol_Button, { 0.5f, 0.5f, 0.5f, 1.f });
 
-				if (ImGui::BeginChild(myDirectoryButtons[i]->path.string().c_str(), { buttonWidth, height - 4.f }))
+				if (ImGui::BeginChild(myDirectoryButtons[i]->path.ToString().c_str(), { buttonWidth, height - 4.f }))
 				{
 					const bool hovered = ImGui::IsWindowHovered();
 					if (hovered)
@@ -602,7 +604,7 @@ bool AssetBrowserPanel::RenderDirectory(const RawPtr<AssetBrowser::DirectoryItem
 	}
 
 
-	const std::string id = dirData->path.stem().string() + "##" + dirData->path.string();
+	const String id = dirData->path.Stem().ToString() + "##" + dirData->path.ToString();
 	const bool open = UI::TreeNodeImage(EditorResources::GetEditorIcon(EditorIcon::Directory), id, flags, isDecendantActive);
 
 	if (ImGui::IsItemClicked() && !selected)
@@ -618,14 +620,14 @@ bool AssetBrowserPanel::RenderDirectory(const RawPtr<AssetBrowser::DirectoryItem
 		{
 			if (item->isDirectory && item != dirData.GetRaw())
 			{
-				const std::filesystem::path newPath = dirData->path / item->path.stem();
+				const Filesystem::Path newPath = dirData->path / item->path.Stem();
 				g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
 			}
 		}
 
 		for (const auto& item : mySelectionManager->GetSelectedItems())
 		{
-			if (!item->isDirectory && item != dirData.GetRaw() && std::filesystem::exists(Volt::ProjectManager::GetRootDirectory() / item->path))
+			if (!item->isDirectory && item != dirData.GetRaw() && Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 			{
 				g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), dirData->path);
 			}
@@ -643,7 +645,7 @@ bool AssetBrowserPanel::RenderDirectory(const RawPtr<AssetBrowser::DirectoryItem
 
 		for (const auto& asset : dirData->assets)
 		{
-			std::string assetId = asset->path.stem().string() + "##" + std::to_string(asset->handle);
+			String assetId = FormatString("{}##{}", asset->path, asset->handle);
 			ImGui::Selectable(assetId.c_str());
 		}
 
@@ -662,7 +664,7 @@ void AssetBrowserPanel::RenderView(Vector<RawPtr<AssetBrowser::DirectoryItem>>& 
 
 	for (const auto& dir : directories)
 	{
-		if (skipEntitiesDir && (dir->path.filename() == "Entities" || dir->path.filename() == "Layers")) { continue; }
+		if (skipEntitiesDir && (dir->path.FilenameView() == L"Entities" || dir->path.FilenameView() == L"Layers")) { continue; }
 
 		const bool changed = dir->Render();
 		ImGui::TableNextColumn();
@@ -697,7 +699,7 @@ void AssetBrowserPanel::RenderView(Vector<RawPtr<AssetBrowser::DirectoryItem>>& 
 			break;
 		}
 
-		if (UI::BeginModal(std::format("Reimport Animation##assetBrowser{0}", std::to_string(asset->handle))))
+		if (UI::BeginModal(FormatString("Reimport Animation##assetBrowser{}", asset->handle)))
 		{
 			if (UI::BeginProperties())
 			{
@@ -795,22 +797,22 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 
 			if (ImGui::MenuItem("Folder"))
 			{
-				const std::string originalName = "New Folder";
-				std::string tempName = originalName;
+				const WString originalName = L"New Folder";
+				WString tempName = originalName;
 
 				uint32_t i = 0;
-				while (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path / tempName))
+				while (Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path / tempName))
 				{
-					tempName = originalName + " (" + std::to_string(i) + ")";
+					tempName = FormatString(L"{} ({})", originalName, i);
 					i++;
 				}
 
-				FileSystem::CreateDirectories(Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path / tempName);
+				Filesystem::CreateDirectories(Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path / tempName);
 				Reload();
 
 				auto dirIt = std::find_if(myCurrentDirectory->subDirectories.begin(), myCurrentDirectory->subDirectories.end(), [tempName](const RawPtr<AssetBrowser::DirectoryItem> data)
 				{
-					return data->path.stem().string() == tempName;
+					return data->path.StemView() == tempName;
 				});
 
 				if (dirIt != myCurrentDirectory->subDirectories.end())
@@ -898,7 +900,7 @@ void AssetBrowserPanel::Reload()
 
 	Volt::JobSystem::RunJob(Volt::JobSystem::CreateJob("Reload Asset Browser...", Volt::ExecutionPriority::Latent, [this]()
 	{
-		const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
+		const Filesystem::Path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
 
 		Vector<AssetBrowser::DirectoryItem*> directoriesToClear;
 		{
@@ -959,17 +961,17 @@ void AssetBrowserPanel::Reload()
 	}, Volt::FiberStackSize::KB32));
 }
 
-void AssetBrowserPanel::Search(const std::string& inQuery)
+void AssetBrowserPanel::Search(const String& inQuery)
 {
-	Vector<std::string> queries;
-	Vector<std::string> types;
+	Vector<String> queries;
+	Vector<String> types;
 
-	std::string searchQuery = inQuery;
+	String searchQuery = inQuery;
 	searchQuery.push_back(' ');
 
-	for (auto next = searchQuery.find_first_of(' '); next != std::string::npos; next = searchQuery.find_first_of(' '))
+	for (auto next = searchQuery.find_first_of(' '); next != String::npos; next = searchQuery.find_first_of(' '))
 	{
-		std::string split = searchQuery.substr(0, next);
+		String split = searchQuery.substr(0, next);
 		searchQuery = searchQuery.substr(next + 1);
 
 		if (split.front() == '*')
@@ -996,30 +998,22 @@ void AssetBrowserPanel::Search(const std::string& inQuery)
 	}
 }
 
-void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const std::string& query)
+void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const String& query)
 {
 	for (const auto& dir : dirList)
 	{
-		std::string dirStem = dir->path.stem().string();
-		std::transform(dirStem.begin(), dirStem.end(), dirStem.begin(), [](unsigned char c)
-		{
-			return std::tolower(c);
-		});
+		String dirStem = Utility::ToLower(dir->path.Stem().ToString());
 
-		if (dirStem.find(query) != std::string::npos)
+		if (dirStem.find(query) != String::npos)
 		{
 			directories.emplace_back(dir);
 		}
 
 		for (const auto& asset : dir->assets)
 		{
-			std::string assetFilename = asset->path.filename().string();
-			std::transform(assetFilename.begin(), assetFilename.end(), assetFilename.begin(), [](unsigned char c)
-			{
-				return std::tolower(c);
-			});
+			String assetFilename = Utility::ToLower(asset->path.Filename().ToString());
 
-			if (assetFilename.find(query) != std::string::npos)
+			if (assetFilename.find(query) != String::npos)
 			{
 				assets.emplace_back(asset);
 			}
@@ -1029,7 +1023,7 @@ void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBr
 	}
 }
 
-AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPath(const std::filesystem::path& path)
+AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPath(const Filesystem::Path& path)
 {
 	Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList;
 	for (const auto& dir : myDirectories)
@@ -1040,7 +1034,7 @@ AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPath(const std:
 	return FindDirectoryWithPathRecursivly(dirList, path);
 }
 
-AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path)
+AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const Filesystem::Path& path)
 {
 	for (const auto& dir : dirList)
 	{
@@ -1073,7 +1067,7 @@ void AssetBrowserPanel::CreatePrefabAndSetupEntities(Volt::EntityID id)
 
 	const auto& tagComp = entity.GetComponent<Volt::TagComponent>();
 
-	std::string name = tagComp.tag;
+	String name = tagComp.tag;
 	name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
 
 	AssetReference<Volt::Prefab> prefab = g_assetManager->CreateAssetAndFile<Volt::Prefab>(g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path), name, entity);
@@ -1106,7 +1100,7 @@ void AssetBrowserPanel::RecursiveRemoveFolderContents(DirectoryData* aDir)
 {
 	for (const auto& asset : aDir->assets)
 	{
-		if (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / asset.path))
+		if (Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / asset.path))
 		{
 			g_editorAssetManager->DeleteAsset(asset.handle);
 		}
@@ -1116,20 +1110,20 @@ void AssetBrowserPanel::RecursiveRemoveFolderContents(DirectoryData* aDir)
 
 	for (const auto& dir : aDir->subDirectories)
 	{
-		if (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / dir->path))
+		if (Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / dir->path))
 		{
 			RecursiveRemoveFolderContents(dir.GetRaw());
-			FileSystem::Remove(Volt::ProjectManager::GetRootDirectory() / dir->path);
+			Filesystem::Remove(Volt::ProjectManager::GetRootDirectory() / dir->path);
 		}
 	}
 
 	aDir->subDirectories.clear();
 }
 
-void AssetBrowserPanel::RecursiceRenameFolderContents(DirectoryData* aDir, const std::filesystem::path& newDir)
+void AssetBrowserPanel::RecursiceRenameFolderContents(DirectoryData* aDir, const Filesystem::Path& newDir)
 {
-	FileSystem::MoveDirectory(aDir->path, newDir);
-	aDir->path = newDir / aDir->path.filename();
+	Filesystem::Move(aDir->path, newDir);
+	aDir->path = newDir / aDir->path.Filename();
 
 	for (const auto& asset : aDir->assets)
 	{
@@ -1164,8 +1158,8 @@ float AssetBrowserPanel::GetThumbnailSize()
 
 void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 {
-	std::string originalName;
-	std::string tempName;
+	String originalName;
+	String tempName;
 	uint32_t i = 0;
 
 	if (type == AssetTypes::Material) originalName = "M_NewMaterial";
@@ -1177,10 +1171,10 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	tempName = originalName;
 
-	const std::string ext = ".vtasset";
-	while (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path) / (tempName + ext)))
+	const String ext = ".vtasset";
+	while (Filesystem::Exists(Volt::ProjectManager::GetRootDirectory() / g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path) / (tempName + ext)))
 	{
-		tempName = originalName + " (" + std::to_string(i) + ")";
+		tempName = FormatString("{} ({})", originalName, i);
 		i++;
 	}
 
@@ -1190,11 +1184,11 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	}
 	else if (type == AssetTypes::Scene)
 	{
-		FileSystem::CreateDirectories(g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path) / tempName);
+		Filesystem::CreateDirectories(g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path) / tempName);
 
 		AssetReference<Volt::Scene> scene = Volt::Scene::CreateDefaultScene("New Scene");
 
-		const std::filesystem::path targetFilePath = (g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path / tempName / (tempName + ext)));
+		const Filesystem::Path targetFilePath = (g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path / tempName / (tempName + ext)));
 		g_assetManager->CreateFileForAsset(scene->GetAssetHandle(), targetFilePath);
 	}
 	else if (type == AssetTypes::BlendSpace)
@@ -1206,7 +1200,7 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	auto assetIt = std::find_if(myCurrentDirectory->assets.begin(), myCurrentDirectory->assets.end(), [&tempName](const auto& lhs)
 	{
-		return lhs->path.stem().string() == tempName;
+		return lhs->path.Stem().ToString() == tempName;
 	});
 
 	if (assetIt != myCurrentDirectory->assets.end())

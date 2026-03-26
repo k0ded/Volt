@@ -64,7 +64,7 @@ namespace Volt::RHI
 		return bufferView;
 	}
 
-	void VulkanBuffer::SetName(const std::string& name)
+	void VulkanBuffer::SetName(const String& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -81,7 +81,7 @@ namespace Volt::RHI
 		m_desc.debugName = name;
 	}
 
-	std::string_view VulkanBuffer::GetName() const
+	StringView VulkanBuffer::GetName() const
 	{
 		return m_desc.debugName;
 	}

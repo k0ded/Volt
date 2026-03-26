@@ -11,7 +11,7 @@ namespace Volt
 		m_guidToTypeNameMap.clear();
 	}
 
-	const ICommonTypeDesc* Volt::ComponentRegistry::GetTypeDescFromName(std::string_view name)
+	const ICommonTypeDesc* Volt::ComponentRegistry::GetTypeDescFromName(StringView name)
 	{
 		if (!m_typeNameToGUIDMap.contains(name))
 		{
@@ -31,12 +31,12 @@ namespace Volt
 		return m_typeRegistry.at(guid);
 	}
 
-	std::string_view ComponentRegistry::GetTypeNameFromGUID(const VoltGUID& guid)
+	StringView ComponentRegistry::GetTypeNameFromGUID(const VoltGUID& guid)
 	{
 		return m_guidToTypeNameMap.at(guid);
 	}
 
-	const VoltGUID ComponentRegistry::GetGUIDFromTypeName(std::string_view typeName)
+	const VoltGUID ComponentRegistry::GetGUIDFromTypeName(StringView typeName)
 	{
 		return m_typeNameToGUIDMap.at(typeName);
 	}

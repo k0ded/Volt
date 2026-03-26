@@ -215,7 +215,7 @@ namespace Volt::RHI
 		}
 	}
 
-	std::string_view D3D12Image::GetName() const
+	StringView D3D12Image::GetName() const
 	{
 		return m_desc.debugName;
 	}

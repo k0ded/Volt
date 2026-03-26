@@ -14,16 +14,16 @@
 namespace std
 {
 	template<typename T>
-	inline std::string to_hex_string(T n)
+	inline String to_hex_string(T n)
 	{
-		std::stringstream stream;
+		Stringstream stream;
 		stream << std::setfill('0') << std::setw(2 * sizeof(T)) << std::hex << n;
 		return stream.str();
 	}
 
-	inline std::string to_string(GFSDK_Aftermath_Result result)
+	inline String to_string(GFSDK_Aftermath_Result result)
 	{
-		return std::string("0x") + to_hex_string(static_cast<uint32_t>(result));
+		return String("0x") + to_hex_string(static_cast<uint32_t>(result));
 	}
 } // namespace std
 
@@ -42,7 +42,7 @@ namespace Volt::RHI
 			return m_result;
 		}
 
-		static std::string GetErrorMessage(GFSDK_Aftermath_Result result)
+		static String GetErrorMessage(GFSDK_Aftermath_Result result)
 		{
 			switch (result)
 			{

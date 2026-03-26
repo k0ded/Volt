@@ -3,6 +3,7 @@
 #include "Sandbox/Modals/Modal.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -28,7 +29,7 @@ public:
 	void Shutdown() override;
 
 
-	template<typename T> static T& AddModal(const std::string& strId);
+	template<typename T> static T& AddModal(const String& strId);
 	template<typename T> static [[nodiscard]] T& GetModal(const UUID64& modalId);
 
 	static void RemoveModal(const UUID64& modalId);
@@ -57,7 +58,7 @@ T& ModalSystem::GetModal(const UUID64& modalId)
 }
 
 template<typename T>
-inline T& ModalSystem::AddModal(const std::string& strId)
+inline T& ModalSystem::AddModal(const String& strId)
 {
 	UUID64 newUUID = {};
 	Unique<T> newModal = CreateUnique<T>(strId);

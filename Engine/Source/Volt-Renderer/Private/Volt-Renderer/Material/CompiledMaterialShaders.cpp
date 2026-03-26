@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	void CompiledMaterialShaders::Add(TypeTraits::TypeIndex shaderType, std::string&& compiledShader, const std::string& entryPoint)
+	void CompiledMaterialShaders::Add(TypeTraits::TypeIndex shaderType, String&& compiledShader, const String& entryPoint)
 	{
 		CompiledMaterialShader& compiledMaterialShader = m_compiledShaders.emplace_back();
 		compiledMaterialShader.shaderType = shaderType;

@@ -22,6 +22,7 @@ namespace VoltSharpmake
             conf.PrecompSource = "rhipch.cpp";
 
             conf.AddPublicDependency<LogModule>(target);
+			conf.AddPublicDependency<CoreModule>(target);
 			conf.AddPublicDependency<imgui>(target);
 
             conf.AddPrivateDependency<Aftermath>(target);
@@ -29,6 +30,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
 
 			//conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
 			//conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");

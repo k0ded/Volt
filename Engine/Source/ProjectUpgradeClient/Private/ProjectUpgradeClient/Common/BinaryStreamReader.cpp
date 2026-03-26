@@ -5,14 +5,18 @@
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Containers/Vector.h>
 
+#include <filesystem>
+
 constexpr size_t COMPRESSION_ENCODING_HEADER_SIZE = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(size_t);
 constexpr uint32_t COMPRESSED_CHUNK_SIZE = 16384;
 constexpr uint32_t MAGIC = 5121;
 
-BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath)
+BinaryStreamReader::BinaryStreamReader(const Filesystem::Path& filePath)
 {
 	VT_PROFILE_FUNCTION();
-	std::ifstream stream(filePath, std::ios::in | std::ios::binary);
+	
+	std::filesystem::path tempPath(filePath.ToWString().begin(), filePath.ToWString().end());
+	std::ifstream stream(tempPath, std::ios::in | std::ios::binary);
 	if (stream)
 	{
 		stream.seekg(0, std::ios::end);
@@ -60,12 +64,13 @@ BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath)
 	m_compressed = isCompressed;
 }
 
-BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath, const size_t maxLoadSize)
+BinaryStreamReader::BinaryStreamReader(const Filesystem::Path& filePath, const size_t maxLoadSize)
 {
 	VT_PROFILE_FUNCTION();
 	size_t bytesToLoadCount = maxLoadSize;
 
-	std::ifstream stream(filePath, std::ios::in | std::ios::binary);
+	std::filesystem::path tempPath(filePath.ToWString().begin(), filePath.ToWString().end());
+	std::ifstream stream(tempPath, std::ios::in | std::ios::binary);
 	if (stream)
 	{
 		stream.seekg(0, std::ios::end);

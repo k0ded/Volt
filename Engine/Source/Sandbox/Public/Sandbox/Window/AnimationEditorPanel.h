@@ -25,7 +25,7 @@ private:
 	struct AddAnimEventData
 	{
 		uint32_t frame;
-		std::string name;
+		String name;
 	};
 
 	void AddAnimationEventModal();

@@ -43,8 +43,8 @@ public:																	\
 		NodeTypeRegistry::Get().UnregisterNodeType<nodeTypeName>();		\
 	}																	\
 	static VoltGUID GetStaticTypeGUID() { return typeGuid; }			\
-	static std::string GetStaticTypeName() { return #nodeTypeName; }	\
-	static std::string GetStaticTypePrettyName() { return prettyName; }	\
+	static String GetStaticTypeName() { return #nodeTypeName; }	\
+	static String GetStaticTypePrettyName() { return prettyName; }	\
 	static void MakeTypeDefinition(NodeTypeDefinitionBuilder& builder);	\
 };
 
@@ -59,8 +59,8 @@ public:
 	struct NodeTypeInfo
 	{
 		VoltGUID typeGUID;
-		std::string typeName;
-		std::string prettyName;
+		String typeName;
+		String prettyName;
 		NodeTypeDefinition typeDefinition;
 	};
 

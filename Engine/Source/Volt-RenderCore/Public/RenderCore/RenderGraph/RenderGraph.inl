@@ -3,7 +3,7 @@
 namespace Volt
 {
 	template<typename ParameterStruct, typename ExecFunc>
-	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
+	void RenderGraph::AddPass(const String& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
 	{
 		VT_PROFILE_SCOPE(name.c_str());
 

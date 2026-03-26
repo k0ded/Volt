@@ -12,7 +12,7 @@ namespace Volt::RHI
 		D3D12PhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer);
 		~D3D12PhysicalGraphicsDevice() override;
 
-		VT_NODISCARD VT_INLINE std::string_view GetDeviceName() const override { return ""; }
+		VT_NODISCARD VT_INLINE StringView GetDeviceName() const override { return ""; }
 		VT_NODISCARD VT_INLINE const DeviceVendor GetDeviceVendor() const override { return m_vendor; }
 
 	protected:

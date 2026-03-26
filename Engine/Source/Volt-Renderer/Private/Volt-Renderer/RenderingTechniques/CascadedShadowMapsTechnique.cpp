@@ -71,7 +71,7 @@ namespace Volt
 			passParameters->PS.renderTargets.depthTarget = directionalShadowTexture;
 			passParameters->ProcessorParameters = m_meshProcessor->GetParameters(m_renderGraph);
 
-			const std::string passName = std::format("CascadedDirectionalShadow Cascade: {}", i);
+			const String passName = FormatString("CascadedDirectionalShadow Cascade: {}", i);
 
 			m_renderGraph.AddPass(passName,
 				RenderGraphPassFlags::Raster,

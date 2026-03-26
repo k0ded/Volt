@@ -32,13 +32,13 @@ namespace Volt::MosaicNodes
 			
 										"return materialResult;\n";
 
-		std::string paramStrings[5];
+		String paramStrings[5];
 
-		paramStrings[0] = std::format("{}", GetInputParameter(0).Get<glm::vec4>());
-		paramStrings[1] = std::format("{}", GetInputParameter(1).Get<float>());
-		paramStrings[2] = std::format("{}", GetInputParameter(2).Get<float>());
-		paramStrings[3] = std::format("{}", GetInputParameter(3).Get<glm::vec3>());
-		paramStrings[4] = std::format("{}", GetInputParameter(4).Get<glm::vec3>());
+		paramStrings[0] = FormatString("{}", GetInputParameter(0).Get<glm::vec4>());
+		paramStrings[1] = FormatString("{}", GetInputParameter(1).Get<float>());
+		paramStrings[2] = FormatString("{}", GetInputParameter(2).Get<float>());
+		paramStrings[3] = FormatString("{}", GetInputParameter(3).Get<glm::vec3>());
+		paramStrings[4] = FormatString("{}", GetInputParameter(4).Get<glm::vec3>());
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -51,7 +51,7 @@ namespace Volt::MosaicNodes
 			paramStrings[paramIndex] = info.resultParamName;
 		}
 
-		std::string result = std::format(nodeStr, paramStrings[0], paramStrings[1], paramStrings[2], paramStrings[3], paramStrings[4]);
+		String result = FormatString(nodeStr, paramStrings[0], paramStrings[1], paramStrings[2], paramStrings[3], paramStrings[4]);
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

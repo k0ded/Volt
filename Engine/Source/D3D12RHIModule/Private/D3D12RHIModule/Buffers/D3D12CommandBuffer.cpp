@@ -735,7 +735,7 @@ namespace Volt::RHI
 		VT_ENSURE(false);
 	}
 
-	void D3D12CommandBuffer::BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor)
+	void D3D12CommandBuffer::BeginMarker(StringView markerLabel, const std::array<float, 4>& markerColor)
 	{
 		uint32_t color = PIX_COLOR(static_cast<BYTE>(markerColor[0] * 255.f), static_cast<BYTE>(markerColor[1] * 255.f), static_cast<BYTE>(markerColor[2] * 255.f));
 		PIXBeginEvent(m_commandListData.commandList.Get(), color, markerLabel.data());

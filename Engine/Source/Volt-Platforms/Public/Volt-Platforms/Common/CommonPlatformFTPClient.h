@@ -2,17 +2,17 @@
 
 #include "Volt-Platforms/Config.h"
 
-#include <string>
+#include <CoreUtilities/Filesystem/Path.h>
+
 #include <atomic>
-#include <filesystem>
 
 namespace Volt
 {
 	struct FTPClientConnectInfo
 	{
-		std::string username;
-		std::string password;
-		std::string url;
+		String username;
+		String password;
+		String url;
 	};
 
 	class VTPL_API CommonPlatformFTPClient
@@ -22,7 +22,7 @@ namespace Volt
 		~CommonPlatformFTPClient();
 
 		void Connect(const FTPClientConnectInfo& connectInfo);
-		void UploadStringAsFile(const std::filesystem::path& targetFilepath, const std::string& dataStr);
+		void UploadStringAsFile(const Filesystem::Path& targetFilepath, const String& dataStr);
 
 	private:
 		void Initialize();

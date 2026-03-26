@@ -3,7 +3,7 @@
 
 namespace Volt
 {
-	IORequest::IORequest(std::string_view name)
+	IORequest::IORequest(StringView name)
 		: m_name(name),
 		m_refCount(0)
 	{

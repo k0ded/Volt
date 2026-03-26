@@ -2,7 +2,7 @@
 
 #include "RHIModule/Core/Core.h"
 
-#include <CoreUtilities/StringHash.h>
+#include <CoreUtilities/String/StringHash.h>
 
 #include <cstdint>
 #include <unordered_map>
@@ -218,7 +218,7 @@ namespace Volt::RHI
 		size_t size = 0;
 		size_t offset = 0;
 
-		std::string name;
+		String name;
 
 		friend Archive& operator<<(Archive& archive, ShaderUniform& value)
 		{
@@ -276,7 +276,7 @@ namespace Volt::RHI
 		ShaderRegisterType registerType;
 		ShaderResourceType resourceType;
 		ShaderStage shaderStage;
-		std::string name;
+		String name;
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 
@@ -285,15 +285,15 @@ namespace Volt::RHI
 
 	struct ShaderSourceEntry
 	{
-		std::string entryPoint = "main";
+		String entryPoint = "main";
 		RHI::ShaderStage shaderStage;
-		std::filesystem::path filepath;
+		Filesystem::Path filepath;
 	};
 
 	struct ShaderSourceInfo
 	{
 		ShaderSourceEntry sourceEntry;
-		std::string source;
+		String source;
 	};
 
 	inline static uint32_t GetDescriptorSetIndexFromShaderStage(ShaderStage shaderStage)

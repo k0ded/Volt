@@ -19,7 +19,7 @@ namespace Volt
 		JobSystem::s_instance->FinishJob(assignedFiber, jobPtr);
 	}
 
-	JobFiber::JobFiber(const std::string& fiberName)
+	JobFiber::JobFiber(const String& fiberName)
 		: m_name(fiberName)
 	{
 	}

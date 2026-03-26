@@ -10,46 +10,48 @@
 #include <Volt-Platforms/Platform.h>
 #include <Volt-FileSystem/FileUtility.h>
 
-#include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/JSON/JSONReader.h>
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
 
-std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
+#include <CoreModule/JSON/JSONReader.h>
+
+Filesystem::Path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
 {
-	std::filesystem::path projectFilepath;
+	Filesystem::Path projectFilepath;
 	if (commandLineBuilder.IsArgDefined("project"))
 	{
 		projectFilepath = commandLineBuilder.GetArgValue("project");
 	}
 
 	//try to find the project same way as the ProjectManager
-	if (projectFilepath.empty())
+	if (projectFilepath.IsEmpty())
 	{
-		for (const auto& dir : std::filesystem::directory_iterator("./"))
+		for (const auto& dir : Filesystem::DirectoryIterator("./"))
 		{
-			if (dir.path().extension() == ".vtproj")
+			if (dir.path.Extension() == L".vtproj")
 			{
-				projectFilepath = dir.path();
+				projectFilepath = dir.path;
 				break;
 			}
 		}
 	}
 
-	if (projectFilepath.empty())
+	if (projectFilepath.IsEmpty())
 	{
-		VT_ASSERT_MSG(projectFilepath.empty(), "No project filepath provided!");
+		VT_ASSERT_MSG(projectFilepath.IsEmpty(), "No project filepath provided!");
 	}
 
 	return projectFilepath;
 }
 
-bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
+bool PeekProjectVersionIsDeprecated(const Filesystem::Path& projectPath)
 {
-	std::string jsonString;
+	String jsonString;
 
-	std::ifstream stream(projectPath, std::ios::in | std::ios::binary | std::ios::ate);
+	std::ifstream stream(projectPath.ToString().c_str(), std::ios::in | std::ios::binary | std::ios::ate);
 	if (!stream.is_open())
 	{
-		const std::string error = std::format("Failed to open file: {0}!", projectPath.string());
+		const String error = FormatString("Failed to open file: {0}!", projectPath);
 		throw std::runtime_error(error.c_str());
 		return false;
 	}
@@ -61,12 +63,12 @@ bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
 	JSONReader jsonReader;
 	if (!jsonReader.Parse(jsonString))
 	{
-		const std::string error = std::format("Project file {0} is invalid!", projectPath.string());
+		const String error = FormatString("Project file {0} is invalid!", projectPath);
 		throw std::runtime_error(error.c_str());
 		return false;
 	}
 
-	std::string engineVersionStr;
+	String engineVersionStr;
 	Volt::Version projectVersion;
 
 	if (jsonReader.TryGet("EngineVersion", engineVersionStr))
@@ -83,23 +85,24 @@ bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
 	return false;
 }
 
-void LaunchProjectUpgradeClient(const std::filesystem::path& projectPath)
+void LaunchProjectUpgradeClient(const Filesystem::Path& projectPath)
 {
 	// As we at this point might be inside the binaries directory, we must also check if the crash reporter lies in the current directory.
-	auto projectUpgradeClientFilepath = std::filesystem::current_path() / "Binaries\\ProjectUpgradeClient.exe";
-	if (!FileSystem::Exists(projectUpgradeClientFilepath))
+	auto projectUpgradeClientFilepath = Filesystem::GetWorkingDirectory() / "Binaries\\ProjectUpgradeClient.exe";
+	if (!Filesystem::Exists(projectUpgradeClientFilepath))
 	{
-		projectUpgradeClientFilepath = std::filesystem::current_path() / "ProjectUpgradeClient.exe";
+		projectUpgradeClientFilepath = Filesystem::GetWorkingDirectory() / "ProjectUpgradeClient.exe";
 	}
 
-	if (!FileSystem::Exists(projectUpgradeClientFilepath))
+	if (!Filesystem::Exists(projectUpgradeClientFilepath))
 	{
-		throw std::runtime_error(std::format("Could not find the project upgrade client at '{0}'", projectUpgradeClientFilepath.string()));
+		const String tempString = FormatString("Could not find the project upgrade client at '{0}'", projectUpgradeClientFilepath);
+		throw std::runtime_error(tempString.c_str());
 		return;
 	}
 
 	Volt::CommandLineBuilder commandLineBuilder;
-	commandLineBuilder.AddArgument("project", projectPath.string());
+	commandLineBuilder.AddArgument("project", projectPath.ToString());
 	//commandLineBuilder.AddArgument("waitfordebugger");
 
 	Volt::PlatformProcess::CreateProc(
@@ -130,9 +133,9 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 {
 	//if the project is deprecated, dont load anything and instead launch the project upgrade client
 	{
-		std::filesystem::path projectPath = GetProjectPath(commandLineBuilder);
+		Filesystem::Path projectPath = GetProjectPath(commandLineBuilder);
 
-		if (projectPath.empty())
+		if (projectPath.IsEmpty())
 		{
 			return nullptr;
 		}

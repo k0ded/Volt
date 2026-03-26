@@ -4,6 +4,7 @@
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-Core/ConfigManager.h>
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
@@ -43,7 +44,7 @@ namespace Volt
 		"Whether or not to use warnings as errors."
 	);
 
-	static ConsoleVariable<std::string> s_shaderDebugInfoPath(
+	static ConsoleVariable<String> s_shaderDebugInfoPath(
 		"r.Shader.ShaderDebugInfoPath",
 		"Engine/Shaders/Debug/",
 		"Where to output shader debug info."
@@ -90,8 +91,8 @@ namespace Volt
 			shaderCompilerInfo.shaderCache = m_shaderCache;
 			shaderCompilerInfo.shaderDebugInfoPath = s_shaderDebugInfoPath.GetValue();
 
-			const std::filesystem::path engineShaderIncludeDirectory = "Engine/Shaders/Source/Includes";
-			const std::filesystem::path engineShaderDirectory = "Engine/Shaders/Source/";
+			const Filesystem::Path engineShaderIncludeDirectory = "Engine/Shaders/Source/Includes";
+			const Filesystem::Path engineShaderDirectory = "Engine/Shaders/Source/";
 			shaderCompilerInfo.includeDirectories =
 			{
 				engineShaderIncludeDirectory,
@@ -110,6 +111,11 @@ namespace Volt
 	{
 		m_shaderCompiler = nullptr;
 		m_shaderCache = nullptr;
+	}
+
+	void ShaderSubSystem::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<ConfigManager>();
 	}
 
 	void ShaderSubSystem::LoadRegisteredShaders()

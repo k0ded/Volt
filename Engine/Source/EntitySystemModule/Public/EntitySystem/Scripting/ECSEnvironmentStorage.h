@@ -4,8 +4,9 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
-#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
+
+#include <CoreModule/DataBuffer.h>
 
 struct ECSEnvironmentDefinition;
 

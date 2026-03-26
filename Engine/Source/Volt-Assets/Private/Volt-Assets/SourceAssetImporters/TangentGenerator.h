@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 namespace Volt::TangentGenerator
 {
 	struct GenerationData

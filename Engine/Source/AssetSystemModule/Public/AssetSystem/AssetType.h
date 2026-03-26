@@ -13,15 +13,15 @@ class VTAS_API AssetTypeBase
 {
 public:
 	inline static constexpr VoltGUID guid = VoltGUID::Null();
-	inline static constexpr std::string_view name = "None";
+	inline static constexpr StringView name = "None";
 	inline static constexpr bool isSourceType = false;
-	inline static Vector<std::string> extensions = {};
+	inline static Vector<String> extensions = {};
 
 	virtual ~AssetTypeBase() = default;
-	VT_INLINE constexpr virtual std::string_view GetName() const { return name; }
+	VT_INLINE constexpr virtual StringView GetName() const { return name; }
 	VT_INLINE constexpr virtual const VoltGUID& GetGUID() const { return guid; };
 	VT_INLINE constexpr virtual bool IsSourceType() const { return isSourceType; }
-	VT_INLINE constexpr virtual const Vector<std::string>& GetExtensions() const { return extensions; }
+	VT_INLINE constexpr virtual const Vector<String>& GetExtensions() const { return extensions; }
 
 	VT_INLINE bool operator==(const AssetTypeBase& rhs) const
 	{
@@ -43,7 +43,7 @@ public:
 	void UnregisterAssetType(const VoltGUID& guid);
 
 	AssetType GetTypeFromGUID(const VoltGUID& guid) const;
-	AssetType GetTypeFromExtension(const std::string& extension) const;
+	AssetType GetTypeFromExtension(const String& extension) const;
 	VT_INLINE const Map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
 
 	static AssetTypeRegistry& Get();
@@ -74,13 +74,13 @@ namespace AssetTypes \
 	public: \
 		~typeName ## Type() override = default; \
 		inline static constexpr VoltGUID guid = typeGuid; \
-		inline static constexpr std::string_view name = #typeName; \
+		inline static constexpr StringView name = #typeName; \
 		inline static constexpr bool isSourceType = isSourceTypeVal; \
-		inline static Vector<std::string> extensions = typeExtensions; \
-		VT_INLINE constexpr std::string_view GetName() const override { return name; } \
+		inline static Vector<String> extensions = typeExtensions; \
+		VT_INLINE constexpr StringView GetName() const override { return name; } \
 		VT_INLINE constexpr const VoltGUID& GetGUID() const override { return guid; } \
 		VT_INLINE constexpr bool IsSourceType() const override { return isSourceType; } \
-		VT_INLINE constexpr const Vector<std::string>& GetExtensions() const override { return extensions; } \
+		VT_INLINE constexpr const Vector<String>& GetExtensions() const override { return extensions; } \
 	}; \
 	extern Ref<typeName ## Type> typeName; \
 } \
@@ -94,25 +94,25 @@ namespace AssetTypes \
 	public: \
 		~typeName ## Type() override = default; \
 		inline static constexpr VoltGUID guid = typeGuid; \
-		inline static constexpr std::string_view name = #typeName; \
+		inline static constexpr StringView name = #typeName; \
 		inline static constexpr bool isSourceType = isSourceTypeVal; \
-		inline static Vector<std::string> extensions = typeExtensions; \
-		VT_INLINE constexpr std::string_view GetName() const override { return name; } \
+		inline static Vector<String> extensions = typeExtensions; \
+		VT_INLINE constexpr StringView GetName() const override { return name; } \
 		VT_INLINE constexpr const VoltGUID& GetGUID() const override { return guid; } \
 		VT_INLINE constexpr bool IsSourceType() const override { return isSourceType; } \
-		VT_INLINE constexpr const Vector<std::string>& GetExtensions() const override { return extensions; } \
+		VT_INLINE constexpr const Vector<String>& GetExtensions() const override { return extensions; } \
 	}; \
 	extern exportKeyword Ref<typeName ## Type> typeName; \
 }
 
 #define VT_DECLARE_ASSET_TYPE_EXPORT(typeName, typeGuid, exportKeyword) \
-	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, false, (Vector<std::string>{}), typeGuid, exportKeyword)
+	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, false, (Vector<String>{}), typeGuid, exportKeyword)
 
 #define VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(typeName, extensions, typeGuid, exportKeyword) \
 	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, true, extensions, typeGuid, exportKeyword)
 
 #define VT_DECLARE_ASSET_TYPE(typeName, typeGuid) \
-	VT_DECLARE_ASSET_TYPE_IMPL(typeName, false, (Vector<std::string>{}), typeGuid)
+	VT_DECLARE_ASSET_TYPE_IMPL(typeName, false, (Vector<String>{}), typeGuid)
 
 #define VT_DECLARE_ASSET_SOURCE_TYPE(typeName, extensions, typeGuid) \
 	VT_DECLARE_ASSET_TYPE_IMPL(typeName, true, extensions, typeGuid)
@@ -135,4 +135,4 @@ namespace AssetTypes \
 		} \
 	} g_assetTypeRegistrar_##typeName
 
-VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(None, false, (Vector<std::string>{}), VoltGUID::Null(), VTAS_API);
+VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(None, false, (Vector<String>{}), VoltGUID::Null(), VTAS_API);

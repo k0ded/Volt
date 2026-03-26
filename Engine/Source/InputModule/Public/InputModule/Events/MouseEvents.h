@@ -72,7 +72,7 @@ namespace Volt
 		inline float GetX() const { return m_mouseX; }
 		inline float GetY() const { return m_mouseY; }
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(MouseMovedEvent, "{7D80A1B6-FEE2-42AA-9004-AFB99EEB7E30}"_guid)
 
@@ -126,7 +126,7 @@ namespace Volt
 		{
 		}
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(MouseButtonEvent, "{86C684FF-C169-437E-BDAC-1AF7C721C8CA}"_guid)
 	};
@@ -139,7 +139,7 @@ namespace Volt
 		{
 		}
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(MouseButtonEvent, "{39C7FC4A-705C-4431-A278-811DF01773EB}"_guid)
 

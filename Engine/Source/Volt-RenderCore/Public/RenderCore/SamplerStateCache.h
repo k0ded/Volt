@@ -4,6 +4,8 @@
 
 #include <RHIModule/Images/SamplerState.h>
 
+#include <CoreUtilities/Containers/Map.h>
+
 namespace Volt
 {
 	class VTRC_API SamplerStateCache

@@ -23,7 +23,7 @@ AssetType AssetTypeRegistry::GetTypeFromGUID(const VoltGUID& guid) const
 	return m_typeMap.at(guid);
 }
 
-AssetType AssetTypeRegistry::GetTypeFromExtension(const std::string& extension) const
+AssetType AssetTypeRegistry::GetTypeFromExtension(const String& extension) const
 {
 	for (const auto& [guid, type] : m_typeMap)
 	{

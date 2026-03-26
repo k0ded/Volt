@@ -34,7 +34,7 @@ namespace Volt
 
 	struct MeshSourceImportConfig : public SourceAssetImportConfig
 	{
-		std::string password;
+		String password;
 
 		glm::vec3 translation = 0.f;
 		glm::vec3 rotation = 0.f;

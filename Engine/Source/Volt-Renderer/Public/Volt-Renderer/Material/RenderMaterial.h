@@ -51,7 +51,7 @@ namespace Volt
 
 		using TexturesMap = Map<uint32_t, TextureInfo>;
 
-		RenderMaterial(const std::string& name);
+		RenderMaterial(const String& name);
 
 		void SetTexture(uint32_t index, RenderTexture resource);
 
@@ -67,7 +67,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
+		VT_NODISCARD VT_INLINE const String& GetName() const { return m_name; }
 		VT_NODISCARD VT_INLINE MaterialBlendMode GetMaterialBlendMode() const { return m_materialBlendMode; }
 		VT_NODISCARD VT_INLINE bool GetIsDoubleSided() const { return m_isDoubleSided; }
 
@@ -97,7 +97,7 @@ namespace Volt
 		bool m_isDoubleSided = false;
 		MaterialShaderMap m_shaderMap;
 
-		std::string m_name;
+		String m_name;
 		size_t m_hash = 0;
 		bool m_isDirty = true;
 	};

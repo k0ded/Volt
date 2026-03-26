@@ -4,17 +4,13 @@
 
 namespace Volt
 {
-	std::string Volt::WindowResizeEvent::ToString() const
+	String Volt::WindowResizeEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "WindowResizeEvent: " << m_width << ", " << m_height << std::endl;
-		return ss.str();
+		return FormatString("WindowResizeEvent: {}, {}", m_width, m_height);
 	}
 
-	std::string ViewportResizeEvent::ToString() const
+	String ViewportResizeEvent::ToString() const
 	{
-		std::stringstream ss;
-		ss << "ViewportResizeEvent: " << m_width << ", " << m_height << std::endl;
-		return ss.str();
+		return FormatString("ViewportResizeEvent: {}, {}", m_width, m_height);
 	}
 }

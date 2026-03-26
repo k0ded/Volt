@@ -32,7 +32,7 @@ namespace Volt
 class PropertiesPanel : public EditorWindow
 {
 public:
-	PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id);
+	PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const String& id);
 	void UpdateMainContent() override;
 
 private:
@@ -42,8 +42,8 @@ private:
 	Ref<Volt::SceneRenderer>& myCurrentSceneRenderer;
 	SceneState& mySceneState;
 
-	std::string myComponentSearchQuery;
-	std::string myScriptSearchQuery;
+	String myComponentSearchQuery;
+	String myScriptSearchQuery;
 
 	bool myActivateComponentSearch = false;
 	bool myActivateScriptSearch = false;

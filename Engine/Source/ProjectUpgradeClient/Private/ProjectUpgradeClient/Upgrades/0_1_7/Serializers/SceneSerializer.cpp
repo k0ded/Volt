@@ -14,11 +14,12 @@
 #include <Volt-Core/Project/ProjectManager.h>
 #include <Volt-Core/Algorithms.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/FileSystem.h>
 
 namespace Volt
 {
@@ -36,50 +37,6 @@ namespace Volt
 
 	void SceneSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
-
-		std::filesystem::path directoryPath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
-		if (!std::filesystem::is_directory(directoryPath))
-		{
-			directoryPath = directoryPath.parent_path();
-		}
-
-		if (!std::filesystem::exists(directoryPath))
-		{
-			std::filesystem::create_directories(directoryPath);
-		}
-
-		std::filesystem::path scenePath = directoryPath / (metadata->filepath.stem().string() + ".vtasset");
-
-		// Serialize scene file
-		{
-			YAMLMemoryStreamWriter streamWriter{};
-			streamWriter.BeginMap();
-			streamWriter.BeginMapNamned("Scene");
-			streamWriter.SetKey("name", metadata->filepath.stem().string());
-
-			streamWriter.BeginMapNamned("Settings");
-			streamWriter.SetKey("useWorldEngine", scene->m_sceneSettings.useWorldEngine);
-			streamWriter.EndMap();
-
-			//todo: world engine
-			/*if (scene->m_sceneSettings.useWorldEngine)
-			{
-				SerializeWorldEngine(scene, streamWriter);
-			}*/
-
-			streamWriter.EndMap();
-			streamWriter.EndMap();
-
-			BinaryStreamWriter sceneFileWriter{};
-			const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), sceneFileWriter);
-
-			auto buffer = streamWriter.WriteAndGetBuffer();
-			sceneFileWriter.Write(buffer);
-			buffer.Release();
-
-			sceneFileWriter.WriteToDisk(scenePath, true, compressedDataOffset);
-		}
 	}
 
 	bool SceneSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
@@ -88,7 +45,7 @@ namespace Volt
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			scene->SetFlag(AssetFlag::Missing, true);
@@ -119,7 +76,7 @@ namespace Volt
 			}
 
 			yamlStreamReader.EnterScope("Scene");
-			scene->m_sceneInitializer.name = yamlStreamReader.ReadAtKey("name", std::string("New Scene"));
+			scene->m_sceneInitializer.name = yamlStreamReader.ReadAtKey("name", String("New Scene"));
 
 			yamlStreamReader.EnterScope("Settings");
 			{
@@ -157,15 +114,15 @@ namespace Volt
 
 		const auto& metadata = AssetManager::GetMetadataFromHandle(scene->handle);
 		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
-		const std::filesystem::path sceneDirectory = filePath.parent_path();
+		const Filesystem::Path sceneDirectory = filePath.parent_path();
 
-		std::filesystem::path layersFolderPath = sceneDirectory / "Entities";
+		Filesystem::Path layersFolderPath = sceneDirectory / "Entities";
 		if (!std::filesystem::exists(layersFolderPath))
 		{
 			return;
 		}
 
-		Vector<std::filesystem::path> entityPaths;
+		Vector<Filesystem::Path> entityPaths;
 
 		for (const auto& it : std::filesystem::directory_iterator(layersFolderPath))
 		{
@@ -179,7 +136,7 @@ namespace Volt
 		{
 			const auto& path = entityPaths.at(i);
 
-			const std::string stem = path.stem().string();
+			const String stem = path.stem().string();
 			uint32_t entityId = std::stoul(stem);
 			auto it = std::ranges::find(worldCell.cellEntities, EntityID(entityId));
 

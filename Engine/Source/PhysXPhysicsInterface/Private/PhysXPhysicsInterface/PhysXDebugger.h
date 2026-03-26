@@ -1,5 +1,7 @@
 #pragma once
 
+#include <CoreUtilities/Filesystem/Path.h>
+
 namespace physx
 {
 	class PxPvd;
@@ -15,7 +17,7 @@ namespace Volt
 		PhysXDebugger(physx::PxFoundation& foundation);
 		~PhysXDebugger();
 
-		void StartDebugging(const std::filesystem::path& path, bool networkDebug = false);
+		void StartDebugging(const Filesystem::Path& path, bool networkDebug = false);
 		void StopDebugging();
 
 		bool IsDebugging() const;

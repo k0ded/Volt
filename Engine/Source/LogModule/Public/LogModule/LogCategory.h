@@ -5,28 +5,27 @@
 
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Containers/Vector.h>
-
-#include <string_view>
+#include <CoreUtilities/String/StringView.h>
 
 class VTLOG_API LogCategoryBase
 {
 public:
-	LogCategoryBase(std::string_view categoryName, LogVerbosity categoryVerbosity);
+	LogCategoryBase(StringView categoryName, LogVerbosity categoryVerbosity);
 	~LogCategoryBase();
 
-	VT_INLINE constexpr std::string_view GetName() const { return m_name; }
+	VT_INLINE constexpr StringView GetName() const { return m_name; }
 	VT_INLINE constexpr LogVerbosity GetVerbosity() const { return m_verbosity; }
 
 private:
 	LogVerbosity m_verbosity;
-	const std::string_view m_name;
+	const StringView m_name;
 };
 
 template<LogVerbosity verbosity>
 class VTLOG_API LogCategory : public LogCategoryBase
 {
 public:
-	VT_INLINE LogCategory(std::string_view categoryName)
+	VT_INLINE LogCategory(StringView categoryName)
 		: LogCategoryBase(categoryName, verbosity)
 	{ }
 };

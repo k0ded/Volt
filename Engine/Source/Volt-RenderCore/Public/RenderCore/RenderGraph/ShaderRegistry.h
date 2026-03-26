@@ -23,8 +23,8 @@ namespace Volt
 	public:
 		struct ShaderStageInfo
 		{
-			std::filesystem::path filePath;
-			std::string entryPoint;
+			Filesystem::Path filePath;
+			String entryPoint;
 			RHI::ShaderStage shaderStage;
 			bool hasPermutations;
 		};
@@ -32,11 +32,11 @@ namespace Volt
 		struct ShaderRegistrationInfo
 		{
 			ShaderStageInfo stageInfos;
-			std::string_view name;
+			StringView name;
 		};
 
 		template<typename T>
-		void RegisterShader(const std::filesystem::path& filepath, const std::string& entryPoint, RHI::ShaderStage shaderStage)
+		void RegisterShader(const Filesystem::Path& filepath, const String& entryPoint, RHI::ShaderStage shaderStage)
 		{
 			static_assert(std::is_base_of_v<GlobalShader, T>);
 

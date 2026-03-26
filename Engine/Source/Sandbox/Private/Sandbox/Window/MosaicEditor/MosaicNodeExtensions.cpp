@@ -23,7 +23,7 @@ void ColorNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 
 void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 {
-	std::string assetFileName = "Null";
+	String assetFileName = "Null";
 
 	Ref<Volt::MosaicNodes::SampleTextureNode> sampleTextureNode = ReinterpretRefCast<Volt::MosaicNodes::SampleTextureNode>(node);
 
@@ -38,8 +38,8 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 	const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
 	ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
 
-	const std::string id = "##" + std::to_string(UI::GetAndIncrementStackID());
-	ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
+	const String id = FormatString("##", UI::GetAndIncrementStackID());
+	ImGui::InputText(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 	ImGui::PopItemWidth();
 
 	Volt::AssetHandle newHandle;

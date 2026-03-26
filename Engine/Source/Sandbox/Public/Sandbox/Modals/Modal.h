@@ -14,7 +14,7 @@ class Modal : public Volt::EventListener
 {
 public:
 	// ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysAutoResize
-	Modal(const std::string& strId, ImGuiWindowFlags flags = (1 << 1) + (1 << 3) + (1 << 4) + (1 << 6));
+	Modal(const String& strId, ImGuiWindowFlags flags = (1 << 1) + (1 << 3) + (1 << 4) + (1 << 6));
 	virtual ~Modal() = default;
 
 	void Open();
@@ -39,6 +39,6 @@ private:
 	bool m_shouldOpenNextFrame = false;
 
 	ModalID m_id;
-	std::string m_strId;
+	String m_strId;
 	ImGuiWindowFlags m_flags;
 };

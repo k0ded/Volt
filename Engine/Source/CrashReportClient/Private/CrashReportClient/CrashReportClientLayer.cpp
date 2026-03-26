@@ -7,10 +7,12 @@
 
 #include <Volt-Core/ConfigManager.h>
 #include <Volt-FileSystem/FileUtility.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <SubSystem/SubSystemManager.h>
 
-#include <CoreUtilities/JSON/JSONWriter.h>
+#include <CoreModule/JSON/JSONWriter.h>
+
 #include <CoreUtilities/Archive/MemoryArchive.h>
 
 #include <fstream>
@@ -36,18 +38,18 @@ namespace Volt
 
 		if (commandLineBuilder.IsArgDefined("monitorprocess"))
 		{
-			uint32_t processId = std::stoi(commandLineBuilder.GetArgValue("monitorprocess"));
+			uint32_t processId = StoI(commandLineBuilder.GetArgValue("monitorprocess"));
 			m_monitoredProcessHandle = PlatformProcess::OpenProcRestricted(processId);
 		}
 
 		if (commandLineBuilder.IsArgDefined("readpipe"))
 		{
-			m_monitoredReadPipe = reinterpret_cast<void*>(std::stoull(commandLineBuilder.GetArgValue("readpipe")));
+			m_monitoredReadPipe = reinterpret_cast<void*>(StoUll(commandLineBuilder.GetArgValue("readpipe")));
 		}
 
 		if (commandLineBuilder.IsArgDefined("writepipe"))
 		{
-			m_monitoredWritePipe = reinterpret_cast<void*>(std::stoull(commandLineBuilder.GetArgValue("writepipe")));
+			m_monitoredWritePipe = reinterpret_cast<void*>(StoUll(commandLineBuilder.GetArgValue("writepipe")));
 		}
 	}
 
@@ -92,12 +94,12 @@ namespace Volt
 			ImGui::Text("Message");
 
 			const ImVec2 messageSize = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f };
-			ImGui::InputTextMultilineString("##Message", &m_crashMessage, messageSize);
+			ImGui::InputTextMultiline("##Message", &m_crashMessage, messageSize);
 
 			ImGui::Text("Stack Trace");
 
 			const ImVec2 stackTraceSize = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 50.f };
-			ImGui::InputTextMultilineString("##StackTrace", &m_crashContext.stackTrace, stackTraceSize, ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputTextMultiline("##StackTrace", &m_crashContext.stackTrace, stackTraceSize, ImGuiInputTextFlags_ReadOnly);
 
 			{
 				UI::ScopedButtonColor color{ DefaultButton };
@@ -156,9 +158,9 @@ namespace Volt
 
 	void CrashReportClientLayer::SendCrashReport()
 	{
-		const std::filesystem::path logFilepath = "Log/Log.txt";
+		const Filesystem::Path logFilepath = "Log/Log.txt";
 
-		std::string logStr;
+		String logStr;
 		FileUtility::ReadStringFromFile(logFilepath, logStr);
 
 		JSONWriter jsonWriter;
@@ -177,14 +179,14 @@ namespace Volt
 		connectInfo.url = m_crashContext.serverURL;
 		ftpClient.Connect(connectInfo);
 
-		const std::string fileame = "VoltCrashLogs/CrashReport_" + m_crashContext.timestamp + ".json";
+		const String fileame = "VoltCrashLogs/CrashReport_" + m_crashContext.timestamp + ".json";
 		ftpClient.UploadStringAsFile(fileame, jsonWriter.View());
 	}
 
 	void CrashReportClientLayer::RestartEngineAfterCrash()
 	{
 		// As we have inherited the working directory from the engine we need to enter the binaries directory.
-		const auto sandboxFilepath = std::filesystem::current_path() / "Binaries\\Sandbox.exe";
+		const auto sandboxFilepath = Filesystem::GetWorkingDirectory() / "Binaries\\Sandbox.exe";
 		PlatformProcess::CreateProc(sandboxFilepath, m_crashContext.commandLine, true, false, nullptr);
 	}
 }

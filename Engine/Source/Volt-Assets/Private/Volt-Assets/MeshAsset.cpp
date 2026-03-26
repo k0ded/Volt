@@ -124,7 +124,7 @@ namespace Volt
 			m_materials[i] = materials[i]->GetAssetHandle();
 		}
 
-		m_mesh->SetName(std::string(GetAssetName()));
+		m_mesh->SetName(String(GetAssetName()));
 		m_mesh->Initialize(meshInitializer);
 
 		m_isInitialized = true;
@@ -154,7 +154,7 @@ namespace Volt
 			meshInitializer.AddMaterial(renderMaterial, i);
 		}
 
-		m_mesh->SetName(std::string(GetAssetName()));
+		m_mesh->SetName(String(GetAssetName()));
 		m_mesh->Initialize(meshInitializer);
 
 		m_isInitialized = true;

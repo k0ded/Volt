@@ -7,11 +7,10 @@
 #include "CoreUtilities/Containers/Array.h"
 #include "CoreUtilities/Containers/Map.h"
 #include "CoreUtilities/VoltGUID.h"
-#include "CoreUtilities/Buffer/DataBuffer.h"
+#include "CoreUtilities/UUID.h"
+#include "CoreUtilities/Filesystem/Path.h"
 
 #include <concepts>
-#include <string>
-#include <filesystem>
 
 class Archive
 {
@@ -42,205 +41,54 @@ public:
 
 	VT_NODISCARD VT_INLINE bool IsLoading() const { return m_isLoading; }
 
-	// Common serialization operators
-	VT_INLINE friend Archive& operator<<(Archive& archive, std::string& value)
-	{
-		size_t size = value.size();
-		archive << size;
-
-		if (archive.IsLoading())
-		{
-			value.resize(size);
-		}
-
-		if (size > 0)
-		{
-			archive.SerializeBytes(value.data(), value.size());
-		}
-		return archive;
-	}
-
-	VT_INLINE friend Archive& operator<<(Archive& archive, std::filesystem::path& value)
-	{
-		std::string tempString = value.string();
-		archive << tempString;
-
-		if (archive.IsLoading())
-		{
-			value = tempString;
-		}
-
-		return archive;
-	}
-
-	VT_INLINE friend Archive& operator<<(Archive& archive, VoltGUID& value)
-	{
-		archive << value.loPart;
-		archive << value.hiPart;
-		return archive;
-	}
-
-	template<typename T, typename Allocator>
-	VT_INLINE friend Archive& operator<<(Archive& archive, Vector<T, Allocator>& value)
-	{
-		size_t size = value.size();
-		archive << size;
-
-		if (archive.IsLoading())
-		{
-			value.resize(size);
-		}
-
-		for (size_t i = 0; i < size; ++i)
-		{
-			archive << value[i];
-		}
-		return archive;
-	}
-
-	template<Pod T, typename Allocator>
-	VT_INLINE friend Archive& operator<<(Archive& archive, Vector<T, Allocator>& value)
-	{
-		size_t size = value.size();
-		archive << size;
-
-		if (archive.IsLoading())
-		{
-			value.resize_uninitialized(size);
-		}
-
-		if (size > 0)
-		{
-			archive.SerializeBytes(value.data(), value.byte_size());
-		}
-		return archive;
-	}
-
-	template<typename T, size_t Count>
-	VT_INLINE friend Archive& operator<<(Archive& archive, Array<T, Count>& value)
-	{
-		for (size_t i = 0; i < value.size(); ++i)
-		{
-			archive << value[i];
-		}
-		return archive;
-	}
-
-	template<Pod T, size_t Count>
-	VT_INLINE friend Archive& operator<<(Archive& archive, Array<T, Count>& value)
-	{
-		archive.SerializeBytes(value.data(), value.byte_size());
-		return archive;
-	}
-
-	template<typename Key, typename Value>
-	friend Archive& operator<<(Archive& archive, Map<Key, Value>& map)
-	{
-		size_t size = map.size();
-		archive << size;
-
-		if (archive.IsLoading())
-		{
-			map.reserve(size);
-
-			for (size_t i = 0; i < size; ++i)
-			{
-				Key k;
-				Value v;
-
-				archive << k;
-				archive << v;
-
-				map[k] = std::move(v);
-			}
-		}
-		else
-		{
-			for (auto& [key, v] : map)
-			{
-				archive << key;
-				archive << v;
-			}
-		}
-
-		return archive;
-	}
-
-	VT_INLINE friend Archive& operator<<(Archive& archive, DataBuffer& buffer)
-	{
-		size_t size = buffer.GetSize();
-		archive << size;
-
-		if (archive.IsLoading())
-		{
-			buffer.Allocate(size);
-		}
-
-		if (size > 0)
-		{
-			archive.SerializeBytes(buffer.As<void*>(), size);
-		}
-		return archive;
-	}
-
-	VT_INLINE friend Archive& operator<<(Archive& archive, Archive& value)
-	{
-		if (&archive != &value)
-		{
-			value.Serialize(archive);
-		}
-		return archive;
-	}
-
-	template<Arithmetic T>
-	VT_INLINE friend Archive& operator<<(Archive& archive, T& value)
-	{
-		archive.SerializeBytes(&value, sizeof(T));
-		return archive;
-	}
-
-	template<MathType T>
-	VT_INLINE friend Archive& operator<<(Archive& archive, T& value)
-	{
-		archive.SerializeBytes(&value, sizeof(T));
-		return archive;
-	}
-
-	template<Enum T>
-	VT_INLINE friend Archive& operator<<(Archive& archive, T& value)
-	{ 
-		using UnderlyingType = std::underlying_type_t<T>;
-		UnderlyingType& tempValue = *reinterpret_cast<UnderlyingType*>(&value);
-		archive << tempValue;
-		return archive;
-	}
-
-	template<typename T, typename V>
-	VT_INLINE friend Archive& operator<<(Archive& archive, std::pair<T, V>& value)
-	{
-		archive << value.first;
-		archive << value.second;
-
-		return archive;
-	}
-
 protected:
 	struct VersionInfo
 	{
 		VoltGUID guid;
 		int32_t version;
-
-		VT_INLINE friend Archive& operator<<(Archive& archive, VersionInfo& value)
-		{
-			archive << value.guid;
-			archive << value.version;
-
-			return archive;
-		}
 	};
+
+	VTCOREUTIL_API friend Archive& operator<<(Archive& archive, VersionInfo& value);
 
 	Vector<VersionInfo> m_versions;
 
 private:
 	const bool m_isLoading;
 };
+
+// Common serialization operators
+VTCOREUTIL_API Archive& operator<<(Archive& archive, String& value);
+VTCOREUTIL_API Archive& operator<<(Archive& archive, Filesystem::Path& value);
+VTCOREUTIL_API Archive& operator<<(Archive& archive, VoltGUID& value);
+VTCOREUTIL_API Archive& operator<<(Archive& archive, Archive& value);
+VTCOREUTIL_API Archive& operator<<(Archive& archive, UUID64& value);
+VTCOREUTIL_API Archive& operator<<(Archive& archive, UUID32& value);
+
+template<typename T, typename Allocator>
+Archive& operator<<(Archive& archive, Vector<T, Allocator>& value);
+
+template<Pod T, typename Allocator>
+Archive& operator<<(Archive& archive, Vector<T, Allocator>& value);
+
+template<typename T, size_t Count>
+Archive& operator<<(Archive& archive, Array<T, Count>& value);
+
+template<Pod T, size_t Count>
+Archive& operator<<(Archive& archive, Array<T, Count>& value);
+
+template<typename Key, typename Value>
+Archive& operator<<(Archive& archive, Map<Key, Value>& map);
+
+template<Arithmetic T>
+Archive& operator<<(Archive& archive, T& value);
+
+template<MathType T>
+Archive& operator<<(Archive& archive, T& value);
+
+template<Enum T>
+Archive& operator<<(Archive& archive, T& value);
+
+template<typename T, typename V>
+Archive& operator<<(Archive& archive, std::pair<T, V>& value);
+
+#include "CoreUtilities/Archive/Archive.inl"

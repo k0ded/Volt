@@ -12,7 +12,6 @@
 #include <RHIModule/Globals.h>
 #include <RHIModule/RHICapabilities.h>
 
-#include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
@@ -28,16 +27,13 @@
 #include <spirv_reflect.h>
 #include <spirv-tools/optimizer.hpp>
 
-#include <codecvt>
-#include <locale>
-
 namespace Volt::RHI
 {
 	namespace Utility
 	{
-		inline static const std::string GetErrorStringFromResult(IDxcResult* result)
+		inline static const String GetErrorStringFromResult(IDxcResult* result)
 		{
-			std::string output;
+			String output;
 
 			IDxcBlobUtf8* errors;
 			result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr);
@@ -50,12 +46,12 @@ namespace Volt::RHI
 			return output;
 		}
 
-		inline static const std::string GetErrorStringFromResult(IDxcOperationResult* result)
+		inline static const String GetErrorStringFromResult(IDxcOperationResult* result)
 		{
 			IDxcBlobEncoding* error;
 			result->GetErrorBuffer(&error);
 
-			return std::string(reinterpret_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize());
+			return String(reinterpret_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize());
 		}
 
 		inline static ShaderUniformType GetShaderUniformTypeFromSpvTypeDesc(SpvReflectTypeDescription* typeDesc)
@@ -127,7 +123,7 @@ namespace Volt::RHI
 		VT_LOGC(Trace, LogVulkanRHI, "Destroying VulkanShaderCompiler");
 	}
 
-	void VulkanShaderCompiler::AddMacroImpl(const std::string& macroName)
+	void VulkanShaderCompiler::AddMacroImpl(const String& macroName)
 	{
 		if (std::find(m_macros.begin(), m_macros.end(), macroName) != m_macros.end())
 		{
@@ -137,7 +133,7 @@ namespace Volt::RHI
 		m_macros.push_back(macroName);
 	}
 
-	void VulkanShaderCompiler::RemoveMacroImpl(std::string_view macroName)
+	void VulkanShaderCompiler::RemoveMacroImpl(StringView macroName)
 	{
 		if (auto it = std::find(m_macros.begin(), m_macros.end(), macroName); it != m_macros.end())
 		{
@@ -189,7 +185,7 @@ namespace Volt::RHI
 		CompilationResultData result;
 
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
-		std::string processedSource = specification.shaderSourceInfo.source;
+		String processedSource = specification.shaderSourceInfo.source;
 
 		if (!PreprocessSource(specification, processedSource, result))
 		{
@@ -197,13 +193,13 @@ namespace Volt::RHI
 			return result;
 		}
 
-		const std::wstring wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
-		const std::wstring globalsBinding = std::to_wstring(Globals::SHADER_GLOBALS_BINDING);
-		const std::wstring globalsSpace = std::to_wstring(Globals::SHADER_GLOBALS_SPACE);
+		const WString wEntryPoint(WString::CtorConvert(), sourceEntry.entryPoint);
+		const WString globalsBinding = FormatString(L"{}", Globals::SHADER_GLOBALS_BINDING);
+		const WString globalsSpace = FormatString(L"{}", Globals::SHADER_GLOBALS_SPACE);
 
 		Vector<const wchar_t*> arguments =
 		{
-			sourceEntry.filepath.c_str(),
+			sourceEntry.filepath.CStr(),
 			L"-E",
 			wEntryPoint.c_str(),
 			L"-T",
@@ -220,7 +216,7 @@ namespace Volt::RHI
 		};
 
 		// Append permutations
-		const Vector<std::wstring> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
+		const Vector<WString> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
 		for (const auto& permutationStr : permutationStrings)
 		{
 			arguments.push_back(L"-D");
@@ -299,22 +295,22 @@ namespace Volt::RHI
 		return result;
 	}
 
-	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult)
+	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult)
 	{
 		VT_PROFILE_FUNCTION();
 
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 
-		Vector<std::wstring> wIncludeDirs;
+		Vector<WString> wIncludeDirs;
 		Vector<const wchar_t*> wcIncludeDirs;
 
 		// Add platform include
-		constexpr std::string_view platformInclude = "#include \"Platforms/Vulkan/VulkanInterop.hlsli\"\n";
+		constexpr StringView platformInclude = "#include \"Platforms/Vulkan/VulkanInterop.hlsli\"\n";
 		outProcessedSource.insert(outProcessedSource.begin(), platformInclude.begin(), platformInclude.end());
 
 		for (const auto& includeDir : m_includeDirectories)
 		{
-			wIncludeDirs.push_back(L"-I " + includeDir.wstring());
+			wIncludeDirs.push_back(L"-I " + includeDir.ToWString());
 		}
 
 		for (const auto& includeDir : wIncludeDirs)
@@ -329,7 +325,7 @@ namespace Volt::RHI
 		};
 
 		// Append permutations
-		Vector<std::wstring> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
+		Vector<WString> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
 		for (const auto& permutationStr : permutationStrings)
 		{
 			definesAndIncludes.push_back(L"-D");
@@ -343,10 +339,10 @@ namespace Volt::RHI
 		}
 
 		// Append global macros
-		Vector<std::wstring> wMacros;
+		Vector<WString> wMacros;
 		for (const auto& macro : m_macros)
 		{
-			wMacros.push_back(::Utility::ToWString(macro));
+			wMacros.emplace_back(WString::CtorConvert(), macro);
 		}
 
 		for (const auto& macro : wMacros)
@@ -367,7 +363,7 @@ namespace Volt::RHI
 		{
 			Vector<const wchar_t*> compilationArgs =
 			{
-				sourceEntry.filepath.c_str(),
+				sourceEntry.filepath.CStr(),
 				L"-P", // Preprocess
 			};
 			compilationArgs.append(definesAndIncludes);
@@ -433,7 +429,7 @@ namespace Volt::RHI
 #if 0
 		if (succeded)
 		{
-			const std::wstring wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
+			const WString wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
 
 			Vector<const wchar_t*> rewriteArgs =
 			{
@@ -480,14 +476,14 @@ namespace Volt::RHI
 		ReflectAndRewriteSpirv(specification.shaderSourceInfo.sourceEntry.shaderStage, inOutData.shaderBinary, inOutData.shaderParameterMap);
 	}
 
-	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
+	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source, HLSLIncluder* includer)
 	{
 		VT_PROFILE_FUNCTION();
 
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.
 		size_t firstNullChar = source.find('\0');
-		if (firstNullChar == std::string::npos)
+		if (firstNullChar == String::npos)
 		{
 			firstNullChar = source.size();
 		}
@@ -513,8 +509,8 @@ namespace Volt::RHI
 
 		if (failed)
 		{
-			result.error = std::format("Failed to compile. Error: {}\n", hResult);
-			result.error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(dxcCompilationOutput), sourceFilepath.string()));
+			result.error = FormatString("Failed to compile. Error: {}\n", hResult);
+			result.error.append(FormatString("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(dxcCompilationOutput), sourceFilepath.ToString()));
 		}
 
 		sourceBlob->Release();
@@ -522,14 +518,14 @@ namespace Volt::RHI
 		return result;
 	}
 
-  	VulkanShaderCompiler::RewriteResult VulkanShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source)
+  	VulkanShaderCompiler::RewriteResult VulkanShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source)
 	{
 		VT_PROFILE_FUNCTION();
 
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.
 		size_t firstNullChar = source.find('\0');
-		if (firstNullChar == std::string::npos)
+		if (firstNullChar == String::npos)
 		{
 			firstNullChar = source.size();
 		}
@@ -537,7 +533,7 @@ namespace Volt::RHI
 		m_hlslUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(firstNullChar), CP_UTF8, &sourceBlob);
 
 		IDxcOperationResult* rewriteResult = nullptr;
-		HRESULT hResult = m_hlslRewriter2->RewriteWithOptions(sourceBlob, sourceFilepath.c_str(), arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, 0, nullptr, &rewriteResult);
+		HRESULT hResult = m_hlslRewriter2->RewriteWithOptions(sourceBlob, sourceFilepath.CStr(), arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, 0, nullptr, &rewriteResult);
 
 		HRESULT hStatus;
 		rewriteResult->GetStatus(&hStatus);
@@ -549,15 +545,15 @@ namespace Volt::RHI
 
 		if (failed)
 		{
-			result.error = std::format("Failed to rewrite. Error: {}\n", hResult);
-			result.error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(rewriteResult), sourceFilepath.string()));
+			result.error = FormatString("Failed to rewrite. Error: {}\n", hResult);
+			result.error.append(FormatString("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(rewriteResult), sourceFilepath.ToString()));
 		}
 		else
 		{
 			IDxcBlob* blob;
 			rewriteResult->GetResult(&blob);
 
-			result.outSource = std::string(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
+			result.outSource = String(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
 			
 			blob->Release();
 		}
@@ -724,7 +720,7 @@ namespace Volt::RHI
 
 			// If it's the globals uniform buffer we will extract the members
 			// as they are the shaders parameters.
-			if (std::string_view(uniformBuffer->name) == "$Globals")
+			if (StringView(uniformBuffer->name) == "$Globals")
 			{
 				for (uint32_t memberIndex = 0; memberIndex < uniformBuffer->block.member_count; memberIndex++)
 				{

@@ -6,6 +6,8 @@
 
 #include <PhysicsInterface/PhysicsTypes.h>
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 namespace Volt
 {
 	class Entity;

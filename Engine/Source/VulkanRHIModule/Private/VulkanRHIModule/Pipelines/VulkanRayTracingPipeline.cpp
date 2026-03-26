@@ -37,7 +37,7 @@ namespace Volt::RHI
 
 		Vector<VkPipelineShaderStageCreateInfo> shaderStages;
 		Vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
-		Vector<std::string> entryPointNames;
+		Vector<String> entryPointNames;
 
 		for (const auto& rayGenShader : m_createInfo.rayGenTable)
 		{

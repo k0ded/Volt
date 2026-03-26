@@ -18,12 +18,12 @@ namespace Volt
 		LegacyProjectUpgrade(const Project& inProject);
 		~LegacyProjectUpgrade() override;
 
-		void TryConvertProject(const std::filesystem::path& projectFilepath, const std::filesystem::path& targetDirectory);
+		void TryConvertProject(const Filesystem::Path& projectFilepath, const Filesystem::Path& targetDirectory);
 
 		bool ProcessUpgrade() override;
 		size_t GetNumTotalActions() override;
 		size_t GetNumActionsCompleted() override;
-		std::string GetCurrentActionText() override;
+		String GetCurrentActionText() override;
 
 	private:
 		struct MaterialDeclaration
@@ -47,8 +47,8 @@ namespace Volt
 
 		void LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata);
 
-		std::filesystem::path m_projectToConvertFilepath;
-		std::filesystem::path m_targetDirectory;
+		Filesystem::Path m_projectToConvertFilepath;
+		Filesystem::Path m_targetDirectory;
 
 		Unique<Volt::AssetManager> m_assetManager;
 	};

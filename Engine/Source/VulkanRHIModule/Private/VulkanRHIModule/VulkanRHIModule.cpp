@@ -218,7 +218,7 @@ namespace Volt::RHI
 		return IntRef<VulkanShader>::Create(specification);
 	}
 
-	IntRef<Shader> VulkanRHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
+	IntRef<Shader> VulkanRHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const String& source) const
 	{
 		return IntRef<VulkanShader>::Create(specification, source);
 	}

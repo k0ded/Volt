@@ -2,7 +2,7 @@
 #include "Volt-Core/DynamicLibraryManager.h"
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 namespace Volt
 {
@@ -20,39 +20,41 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	VT_NODISCARD DLLHandle DynamicLibraryManager::LoadDynamicLibrary(const std::filesystem::path& binaryFilepath, bool& outExternallyLoaded)
+	VT_NODISCARD DLLHandle DynamicLibraryManager::LoadDynamicLibrary(const Filesystem::Path& binaryFilepath, bool& outExternallyLoaded)
 	{
-		DLLHandle handle = VT_GET_MODULE_HANDLE(binaryFilepath.string().c_str());
-		outExternallyLoaded = handle != nullptr;
+		Filesystem::Path tempPath = binaryFilepath;
+		tempPath.MakePreferred();
 
-		const std::string cleanFilePath = ::Utility::ReplaceCharacter(binaryFilepath.string(), '/', '\\');
+		DLLHandle handle = VT_GET_MODULE_HANDLE(tempPath.ToWString().c_str());
+		outExternallyLoaded = handle != nullptr;
 
 		if (!outExternallyLoaded)
 		{
-			handle = VT_LOAD_LIBRARY(cleanFilePath.c_str());
+			handle = VT_LOAD_LIBRARY(tempPath.CStr());
 		}
 
 		if (!handle)
 		{
-			VT_LOGC(Error, LogApplication, "Unable to load DLL {}!", cleanFilePath);
+			VT_LOGC(Error, LogApplication, "Unable to load DLL {}!", tempPath);
 			return nullptr;
 		}
 
-		m_loadedDynamicLibraries[cleanFilePath] = handle;
+		m_loadedDynamicLibraries[tempPath] = handle;
 		return handle;
 	}
 
-	bool DynamicLibraryManager::UnloadDynamicLibrary(const std::filesystem::path& binaryFilepath)
+	bool DynamicLibraryManager::UnloadDynamicLibrary(const Filesystem::Path& binaryFilepath)
 	{
-		const std::string cleanFilePath = ::Utility::ReplaceCharacter(binaryFilepath.string(), '/', '\\');
+		Filesystem::Path tempPath = binaryFilepath;
+		tempPath.MakePreferred();
 
-		if (!m_loadedDynamicLibraries.contains(cleanFilePath))
+		if (!m_loadedDynamicLibraries.contains(tempPath))
 		{
 			return false;
 		}
 
-		VT_FREE_LIBRARY(m_loadedDynamicLibraries.at(cleanFilePath));
-		m_loadedDynamicLibraries.erase(cleanFilePath);
+		VT_FREE_LIBRARY(m_loadedDynamicLibraries.at(tempPath));
+		m_loadedDynamicLibraries.erase(tempPath);
 	
 		return true;
 	}

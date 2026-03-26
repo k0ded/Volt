@@ -12,9 +12,9 @@ namespace Volt::RHI
 {
 	struct ShaderCreateInfo
 	{
-		std::string name;
-		std::filesystem::path sourceFilepath;
-		std::string entryPoint;
+		String name;
+		Filesystem::Path sourceFilepath;
+		String entryPoint;
 		ShaderStage stage;
 		bool forceCompile = false;
 		bool failureIsFatal = true;
@@ -35,10 +35,10 @@ namespace Volt::RHI
 	class VTRHI_API Shader : public RHIInterface
 	{
 	public:
-		using ShaderIncludeDependencies = Vector<std::filesystem::path>;
+		using ShaderIncludeDependencies = Vector<Filesystem::Path>;
 
 		virtual void Reload(bool forceCompile = false) = 0;
-		virtual std::string_view GetName() const = 0;
+		virtual StringView GetName() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual ShaderStage GetShaderStage() const = 0;
 		virtual const ShaderParameterMap& GetParameterMap() const = 0;
@@ -48,7 +48,7 @@ namespace Volt::RHI
 		virtual bool IsValid() const = 0;
 
 		static IntRef<Shader> Create(const ShaderCreateInfo& createInfo);
-		static IntRef<Shader> CreateWithSource(const ShaderCreateInfo& createInfo, const std::string& source);
+		static IntRef<Shader> CreateWithSource(const ShaderCreateInfo& createInfo, const String& source);
 
 	protected:
 		Shader() = default;

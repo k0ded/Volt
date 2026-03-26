@@ -30,7 +30,7 @@ namespace Volt::RHI
 		VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer);
 		~VulkanPhysicalGraphicsDevice() override;
 
-		VT_NODISCARD VT_INLINE std::string_view GetDeviceName() const override { return g_physicalDeviceProperties.deviceName; }
+		VT_NODISCARD VT_INLINE StringView GetDeviceName() const override { return g_physicalDeviceProperties.deviceName; }
 		VT_NODISCARD VT_INLINE const DeviceVendor GetDeviceVendor() const override { return g_physicalDeviceProperties.vendor; }
 		VT_NODISCARD VT_INLINE const PhysicalDeviceProperties& GetProperties() const { return g_physicalDeviceProperties; }
 

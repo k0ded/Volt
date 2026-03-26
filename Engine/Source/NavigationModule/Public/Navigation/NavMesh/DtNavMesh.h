@@ -1,7 +1,7 @@
 #pragma once
 
-#include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 #include <glm/glm.hpp>
 

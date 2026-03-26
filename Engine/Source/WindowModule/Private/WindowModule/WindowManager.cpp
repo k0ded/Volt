@@ -69,7 +69,6 @@ namespace Volt
 
 	void WindowManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
-		outDependencies.AddDependency<Log>();
 	}
 
 	void WindowManager::InitializeMonitors()

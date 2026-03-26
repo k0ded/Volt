@@ -10,7 +10,7 @@ namespace Volt::RHI
 		return RHIModule::GetInstance().CreateShader(createInfo);
 	}
 
-	IntRef<Shader> Shader::CreateWithSource(const ShaderCreateInfo& createInfo, const std::string& source)
+	IntRef<Shader> Shader::CreateWithSource(const ShaderCreateInfo& createInfo, const String& source)
 	{
 		return RHIModule::GetInstance().CreateShaderWithSource(createInfo, source);
 	}

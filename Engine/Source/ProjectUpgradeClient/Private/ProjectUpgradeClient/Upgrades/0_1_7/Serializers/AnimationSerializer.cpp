@@ -4,6 +4,8 @@
 #include <Volt-Animation/Assets/Animation.h>
 #undef private
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
@@ -91,7 +93,7 @@ namespace Volt
 	{
 		const auto filepath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filepath))
+		if (!Filesystem::Exists(filepath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);

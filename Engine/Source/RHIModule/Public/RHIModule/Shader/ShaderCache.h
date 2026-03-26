@@ -8,7 +8,7 @@ namespace Volt::RHI
 {
 	struct ShaderCacheCreateInfo
 	{
-		std::filesystem::path cacheDirectory;
+		Filesystem::Path cacheDirectory;
 	};
 
 	struct CachedShaderResult
@@ -27,7 +27,7 @@ namespace Volt::RHI
 		void CacheShader(const ShaderCompiler::Specification& shaderSpec, const ShaderCompiler::CompilationResultData& compilationResult);
 
 	private:
-		std::filesystem::path GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const;
+		Filesystem::Path GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const;
 
 		ShaderCacheCreateInfo m_info;
 	};

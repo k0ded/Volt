@@ -56,7 +56,7 @@ namespace Volt::RHI
 		VT_NODISCARD virtual const uint64_t GetDeviceAddress() const = 0;
 		VT_NODISCARD virtual const size_t GetHash() const = 0;
 		VT_NODISCARD virtual const MemoryRequirement& GetMemoryRequirements() const = 0;
-		VT_NODISCARD virtual std::string_view GetName() const = 0;
+		VT_NODISCARD virtual StringView GetName() const = 0;
 
 	protected:
 		friend class GPUAllocator;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <filesystem>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
@@ -9,19 +9,19 @@ namespace Volt
 	public:
 		NativePluginModule() = default;
 		NativePluginModule(NativePluginModule&& other) noexcept;
-		NativePluginModule(const std::filesystem::path& binaryFilepath, bool externallyLoaded) noexcept;
+		NativePluginModule(const Filesystem::Path& binaryFilepath, bool externallyLoaded) noexcept;
 
 		NativePluginModule(const NativePluginModule& other) noexcept;
 		NativePluginModule& operator=(const NativePluginModule& other) noexcept;
 
 		~NativePluginModule();
 
-		VT_NODISCARD VT_INLINE const std::filesystem::path& GetBinaryFilepath() const { return m_binaryFilepath; }
+		VT_NODISCARD VT_INLINE const Filesystem::Path& GetBinaryFilepath() const { return m_binaryFilepath; }
 
 		void Unload();
 
 	private:
-		std::filesystem::path m_binaryFilepath;
+		Filesystem::Path m_binaryFilepath;
 		bool m_externallyLoaded = false;
 	};
 }

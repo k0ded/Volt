@@ -26,6 +26,7 @@ namespace VoltSharpmake
 			base.ConfigureWin64(conf, target);
 
 			conf.LibraryFiles.Add("Dbghelp.lib");
+			conf.LibraryFiles.Add("Shlwapi.lib");
 		}
 	}
 }

@@ -75,7 +75,7 @@ namespace Volt
 
 		m_imguiImplementation = CreateRef<ImGuiImplementation>(createInfo);
 
-		Vector<std::filesystem::path> fontPaths;
+		Vector<Filesystem::Path> fontPaths;
 		fontPaths.resize(2);
 
 		fontPaths[0] = "Engine/Fonts/Inter/inter-regular.ttf";

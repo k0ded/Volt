@@ -319,7 +319,7 @@ namespace Volt
 		Clear();
 	}
 
-	Entity Scene::CreateEntity(const std::string& tag)
+	Entity Scene::CreateEntity(const String& tag)
 	{
 		Entity newEntity = m_entityScene.CreateEntity(tag);
 		VT_ENSURE(newEntity);
@@ -363,7 +363,7 @@ namespace Volt
 		VT_ENSURE(!m_entityIDToDescHandle.contains(id));
 		VT_ENSURE(m_entityScene.IsEntityValid(id));
 
-		std::string name = std::to_string(id);
+		String name = FormatString("{}", id);
 		
 		AssetReference<EntityDesc> asset;
 		if (this->IsFlagSet(AssetFlag::MemoryOnly))
@@ -459,7 +459,7 @@ namespace Volt
 		return m_entityScene.IsEntityValid(entityId);
 	}
 
-	AssetReference<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh, bool asMemoryAsset)
+	AssetReference<Scene> Scene::CreateDefaultScene(const String& name, bool createDefaultMesh, bool asMemoryAsset)
 	{
 		AssetReference<Scene> newScene;
 		if (asMemoryAsset)

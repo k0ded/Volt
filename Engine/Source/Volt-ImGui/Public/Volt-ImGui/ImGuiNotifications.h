@@ -2,8 +2,9 @@
 
 #include "Volt-ImGui/Config.h"
 
+#include <CoreUtilities/String/VoltString.h>
+
 #include <functional>
-#include <string>
 
 enum class ImGuiToastType : uint8_t;
 
@@ -21,13 +22,13 @@ namespace Volt
 	struct ImGuiNotificationInfo
 	{
 		ImGuiNotificationType type;
-		std::string title;
-		std::string message;
+		String title;
+		String message;
 
 		int32_t dismissTime;
 
 		std::function<void()> onButtonPress;
-		std::string buttonLabel;
+		String buttonLabel;
 	};
 
 

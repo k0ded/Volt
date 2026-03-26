@@ -30,6 +30,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<SubSystemModule>(target);
 			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<CoreModule>(target);
 			conf.AddPrivateDependency<VoltRenderer>(target);
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
 			conf.AddPrivateDependency<VoltAssets>(target);

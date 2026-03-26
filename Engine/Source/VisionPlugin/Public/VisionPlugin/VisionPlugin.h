@@ -13,9 +13,9 @@ public:
 	VT_DECLARE_PLUGIN_GUID("1033DFF7-F5F3-4127-A404-5ECBAB06E2CE"_guid);
 
 	inline uint32_t GetVersion() const override { return 1; }
-	inline std::string_view GetName() const override { return "VisionPlugin"; }
-	inline std::string_view GetDescription() const override { return "Camera Plugin"; }
-	inline std::string_view GetCategory() const override { return "None"; }
+	inline StringView GetName() const override { return "VisionPlugin"; }
+	inline StringView GetDescription() const override { return "Camera Plugin"; }
+	inline StringView GetCategory() const override { return "None"; }
 
 	void Initialize() override;
 	void Shutdown() override;

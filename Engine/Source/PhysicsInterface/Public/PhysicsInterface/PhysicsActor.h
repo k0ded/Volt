@@ -30,7 +30,7 @@ namespace Volt
 		bool isKinematic = false;
 		bool disableGravity = false;
 
-		std::string debugName;
+		String debugName;
 	};
 
 	class PhysicsActor : public PhysicsHandleType, public PhysicsIDType

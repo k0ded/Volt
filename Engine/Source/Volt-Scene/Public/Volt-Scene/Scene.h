@@ -30,14 +30,14 @@ namespace Volt
 
 	struct SceneInitializer
 	{
-		std::string name = "New Scene";
+		String name = "New Scene";
 
 		/*
 			Can be set to false if the scene will never be renderered.
 		*/
 		bool shouldHaveRenderScene = true;
 	
-		static SceneInitializer Create(const std::string& name)
+		static SceneInitializer Create(const String& name)
 		{
 			SceneInitializer result;
 			result.name = name;
@@ -77,7 +77,7 @@ namespace Volt
 
 		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
 		VT_NODISCARD VT_INLINE EntityScene& GetEntityScene() { return m_entityScene; }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_sceneInitializer.name; }
+		VT_NODISCARD VT_INLINE const String& GetName() const { return m_sceneInitializer.name; }
 		VT_NODISCARD VT_INLINE const Statistics& GetStatistics() const { return m_statistics; }
 		VT_NODISCARD VT_INLINE bool IsPlaying() const { return m_isPlaying; }
 		VT_NODISCARD VT_INLINE float GetDeltaTime() const { return m_currentDeltaTime; }
@@ -92,7 +92,7 @@ namespace Volt
 
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
-		Entity CreateEntity(const std::string& tag = "");
+		Entity CreateEntity(const String& tag = "");
 		Entity CreateEntityWithID(const EntityID& id);
 		Entity CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle);
 
@@ -125,7 +125,7 @@ namespace Volt
 
 		Vector<Entity> GetAllEntities() const;
 
-		static AssetReference<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
+		static AssetReference<Scene> CreateDefaultScene(const String& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
 		AssetType GetType() const override { return GetStaticType(); }

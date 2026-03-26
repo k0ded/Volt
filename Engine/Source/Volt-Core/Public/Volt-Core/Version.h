@@ -2,7 +2,7 @@
 
 #include "Volt-Core/Config.h"
 
-#include <string>
+#include <CoreUtilities/String/VoltString.h>
 
 namespace Volt
 {
@@ -10,13 +10,13 @@ namespace Volt
 	{
 	public:
 		Version() = default;
-		Version(const std::string& strValue);
+		Version(const String& strValue);
 		Version(const uint32_t major, const uint32_t minor, const uint32_t patch);
 
-		static Version CreateFromString(const std::string& strValue);
+		static Version CreateFromString(const String& strValue);
 		static Version Create(const uint32_t major, const uint32_t minor, const uint32_t patch);
 
-		[[nodiscard]] const std::string ToString() const;
+		[[nodiscard]] const String ToString() const;
 		[[nodiscard]] const bool IsValid() const;
 
 		[[nodiscard]] inline const uint32_t GetMajor() const { return m_major; }

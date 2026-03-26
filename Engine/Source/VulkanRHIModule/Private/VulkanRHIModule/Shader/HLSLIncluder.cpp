@@ -1,6 +1,9 @@
 #include "vkpch.h"
 #include "VulkanRHIModule/Shader/HLSLIncluder.h"
 
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/FileUtility.h>
+
 namespace Volt::RHI
 {
 	HLSLIncluder::HLSLIncluder()
@@ -22,7 +25,7 @@ namespace Volt::RHI
 
 	HRESULT HLSLIncluder::LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource)
 	{
-		const std::filesystem::path filepath = pFilename;
+		const Filesystem::Path filepath = pFilename;
 		if (m_includedFiles.contains(filepath))
 		{
 			static const char nullStr[] = " ";
@@ -35,28 +38,20 @@ namespace Volt::RHI
 			return S_OK;
 		}
 
-		if (!std::filesystem::exists(filepath))
+		if (!Filesystem::Exists(filepath))
 		{
 			// #TODO_Ivar: Should error if not found in any of the directories.
 			return S_FALSE;
 		}
 
-		std::ifstream inStream{};
-		inStream.open(filepath);
-
-		if (!inStream)
+		String data;
+		if (!FileUtility::ReadStringFromFile(filepath, data))
 		{
-			VT_LOGC(Error, LogVulkanRHI, std::format("Failed to read file {0}!", filepath.string()));
+			VT_LOGC(Error, LogVulkanRHI, FormatString("Failed to read file {0}!", filepath.ToString()));
 			return S_FALSE;
 		}
 
 		m_includedFiles.insert(filepath);
-
-		std::stringstream buffer;
-		buffer << inStream.rdbuf();
-		inStream.close();
-
-		std::string data = buffer.str();
 
 		IDxcBlobEncoding* encoding = nullptr;
 		m_hlslUtils->CreateBlob(data.data(), static_cast<uint32_t>(data.size()), CP_UTF8, &encoding);

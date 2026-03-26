@@ -5,6 +5,7 @@
 #include <AssetSystem/AssetReference.h>
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
@@ -31,11 +32,11 @@ struct DirtySaveCustomization
 {
 	// initial check if the asset is allowed to be saved,
 	// the asset will still show up in the explicit save popup but will be disabled
-	std::function<bool(const Volt::AssetHandle&/*asset*/, std::string& /*outCantReason*/)> CanSaveAsset;
+	std::function<bool(const Volt::AssetHandle&/*asset*/, String& /*outCantReason*/)> CanSaveAsset;
 
 	// check if we can save asset after the create assets modal has been run
 	// only called if CanUserAssignPath returned false
-	std::function<bool(const Volt::AssetHandle&/*asset*/, std::filesystem::path& /*outAssetNewPath*/, std::string& /*outCantReason*/)> CanSaveAssetPostCreateStep;
+	std::function<bool(const Volt::AssetHandle&/*asset*/, Filesystem::Path& /*outAssetNewPath*/, String& /*outCantReason*/)> CanSaveAssetPostCreateStep;
 
 	// check if the user is allowed to set the path of the asset manually, 
 	// returning false will hide the asset in the create assets modal
@@ -82,7 +83,7 @@ private:
 	void OnAssetChanged(Volt::AssetHandle assetHandle, Volt::AssetChangedState state);
 
 	void SaveAssetsImpl(const GlobalMemoryStackVector<Volt::AssetHandle>& assetsToSave);
-	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate);
+	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, Filesystem::Path>>& assetsToCreate);
 
 	Map<Volt::AssetHandle, AssetReference<Volt::Asset>> m_dirtyAssets;
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;

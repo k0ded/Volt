@@ -15,6 +15,7 @@
 
 #include <EntitySystem/EntityID.h>
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/UUID.h>
 #include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>

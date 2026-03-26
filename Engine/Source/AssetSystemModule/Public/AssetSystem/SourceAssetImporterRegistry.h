@@ -4,6 +4,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 namespace Volt
 {
@@ -13,15 +14,15 @@ namespace Volt
 class VTAS_API SourceAssetImporterRegistry
 {
 public:
-	Ref<Volt::SourceAssetImporter> RegisterImporter(const Vector<std::string>& assignedExtensions, Ref<Volt::SourceAssetImporter> importer);
+	Ref<Volt::SourceAssetImporter> RegisterImporter(const Vector<String>& assignedExtensions, Ref<Volt::SourceAssetImporter> importer);
 	void UnregisterImporter(Ref<Volt::SourceAssetImporter> importer);
-	bool ImporterForExtensionExists(const std::string& extension) const;
-	Volt::SourceAssetImporter& GetImporterForExtension(const std::string& extension) const;
+	bool ImporterForExtensionExists(const String& extension) const;
+	Volt::SourceAssetImporter& GetImporterForExtension(const String& extension) const;
 	
 	static SourceAssetImporterRegistry& Get();
 
 private:
-	Map<std::string, Ref<Volt::SourceAssetImporter>> m_importers;
+	Map<String, Ref<Volt::SourceAssetImporter>> m_importers;
 };
 
 // Must lie in a compilation unit (cpp file)
@@ -31,7 +32,7 @@ private:
 	public: \
 		VT_INLINE SourceAssetImporterRegistrar_##importerClass() \
 		{ \
-			m_importer = SourceAssetImporterRegistry::Get().RegisterImporter(Vector<std::string>extensions, CreateRef<importerClass>()); \
+			m_importer = SourceAssetImporterRegistry::Get().RegisterImporter(Vector<String>extensions, CreateRef<importerClass>()); \
 		} \
 		VT_INLINE ~SourceAssetImporterRegistrar_##importerClass() \
 		{ \

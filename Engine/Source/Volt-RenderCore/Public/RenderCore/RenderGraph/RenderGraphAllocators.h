@@ -54,7 +54,7 @@ namespace Volt
 		void Release();
 
 		template<typename ExecFunc, typename T>
-		RGPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
+		RGPassRef AllocatePass(const String& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
 
 		void ExecutePass(RGPassRef pass, RenderContext& renderContext);
 

@@ -25,5 +25,8 @@ namespace Volt
 	using PlatformMemory = WindowsPlatformMemory;
 	using PlatformFileSystem = WindowsPlatformFileSystem;
 	using PlatformFTPClient = CommonPlatformFTPClient;
+
+	using PlatformRecursiveDirectoryIterator = WindowsPlatformRecursiveDirectoryIterator;
+	using PlatformDirectoryIterator = WindowsPlatformDirectoryIterator;
 }
 #endif

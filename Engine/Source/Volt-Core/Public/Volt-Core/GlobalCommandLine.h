@@ -2,7 +2,7 @@
 
 #include "Volt-Core/Config.h"
 
-#include <CoreUtilities/CommandLineBuilder.h>
+#include <CoreModule/CommandLineBuilder.h>
 
 namespace GlobalCommandLine
 {

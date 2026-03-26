@@ -22,8 +22,8 @@ namespace Volt::MosaicNodes
 		constexpr const char* nodeStr = "const {0} {1} = {2} + {3}; \n";
 		constexpr Mosaic::TypeInfo DEFAULT_PARAM_TYPEINFO{ Mosaic::ValueBaseType::Float, 1 };
 
-		std::string A = std::to_string(GetInputParameter(0).Get<float>());
-		std::string B = std::to_string(GetInputParameter(1).Get<float>());
+		String A = FormatString("{}", GetInputParameter(0).Get<float>());
+		String B = FormatString("{}", GetInputParameter(1).Get<float>());
 
 		Mosaic::TypeInfo AInfo = DEFAULT_PARAM_TYPEINFO;
 		Mosaic::TypeInfo BInfo = DEFAULT_PARAM_TYPEINFO;
@@ -48,11 +48,11 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-		const std::string varName = m_graph->GetNextVariableName();
+		const String varName = m_graph->GetNextVariableName();
 		
 		const Mosaic::TypeInfo resultType = Mosaic::Helpers::GetPromotedTypeInfo(AInfo, BInfo);
 
-		std::string codeBlock = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
+		String codeBlock = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
 		shaderWriter.AppendCodeBlock(codeBlock);
 
 		Mosaic::ResultInfo resultInfo{};
@@ -78,8 +78,8 @@ namespace Volt::MosaicNodes
 		constexpr const char* nodeStr = "const {0} {1} = {2} * {3}; \n";
 		constexpr Mosaic::TypeInfo DEFAULT_PARAM_TYPEINFO{ Mosaic::ValueBaseType::Float, 1 };
 
-		std::string A = std::to_string(GetInputParameter(0).Get<float>());
-		std::string B = std::to_string(GetInputParameter(1).Get<float>());
+		String A = FormatString("{}", GetInputParameter(0).Get<float>());
+		String B = FormatString("{}", GetInputParameter(1).Get<float>());
 
 		Mosaic::TypeInfo AInfo = DEFAULT_PARAM_TYPEINFO;
 		Mosaic::TypeInfo BInfo = DEFAULT_PARAM_TYPEINFO;
@@ -104,11 +104,11 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-		const std::string varName = m_graph->GetNextVariableName();
+		const String varName = m_graph->GetNextVariableName();
 
 		const Mosaic::TypeInfo resultType = Mosaic::Helpers::GetPromotedTypeInfo(AInfo, BInfo);
 
-		std::string codeBlock = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
+		String codeBlock = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
 		shaderWriter.AppendCodeBlock(codeBlock);
 
 		Mosaic::ResultInfo resultInfo{};

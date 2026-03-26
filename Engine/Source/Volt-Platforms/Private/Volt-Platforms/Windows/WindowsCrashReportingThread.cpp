@@ -7,9 +7,8 @@
 #include <LogModule/Log.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
-#include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/CommandLineBuilder.h>
 #include <CoreUtilities/Archive/MemoryArchive.h>
+#include <CoreUtilities/String/StringBuilder.h>
 
 #include <cpptrace/cpptrace.hpp>
 
@@ -18,20 +17,10 @@
 
 namespace Volt
 {
-	inline std::string GetTimestampString()
+	inline String GetTimestampString()
 	{
-		auto currentTime = std::time(nullptr);
-		tm timeInfo;
-
-		const auto localTimeError = localtime_s(&timeInfo, &currentTime);
-		if (localTimeError != 0)
-		{
-			return "NULL";
-		}
-
-		std::ostringstream sstream;
-		sstream << std::put_time(&timeInfo, "%Y-%m-%d_%H-%M");
-		return sstream.str();
+		const auto time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
+		return FormatString("{:%Y-%m-%d %X}", time);
 	}
 
 	WindowsCrashReportingThread::WindowsCrashReportingThread(bool isEnabled)
@@ -58,7 +47,7 @@ namespace Volt
 		}
 	}
 
-	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder, const CrashReporterConnectionInfo& connectionInfo)
+	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const String& commandLine, const CrashReporterConnectionInfo& connectionInfo)
 	{
 		if (m_isEnabled)
 		{
@@ -73,16 +62,15 @@ namespace Volt
 			// Create stack trace
 			std::ostringstream strStream;
 			cpptrace::generate_trace().print(strStream);
-			m_crashingThreadStackTrace = strStream.str();
+			std::string tempStr = strStream.str();
+
+			m_crashingThreadStackTrace = String(tempStr.data(), tempStr.length());
 
 			// Command line for restarting.
-			m_crashCommandLine = commandLineBuilder.GetAsString();
+			m_crashCommandLine = commandLine;
 
 			// Flush logs to disk
-			if (Log::IsInitialized())
-			{
-				Log::Get().Flush();
-			}
+			Log::Get().Flush();
 
 			m_hasCrashed = true;
 			m_conditionVariable.notify_one();
@@ -112,13 +100,13 @@ namespace Volt
 	void WindowsCrashReportingThread::LaunchCrashReportClient()
 	{
 		// As we at this point might be inside the binaries directory, we must also check if the crash reporter lies in the current directory.
-		auto crashReportClientFilepath = std::filesystem::current_path() / "Binaries\\CrashReportClient.exe";
-		if (!FileSystem::Exists(crashReportClientFilepath))
+		auto crashReportClientFilepath = PlatformFileSystem::GetWorkingDirectory() / "Binaries\\CrashReportClient.exe";
+		if (!PlatformFileSystem::Exists(crashReportClientFilepath))
 		{
-			crashReportClientFilepath = std::filesystem::current_path() / "CrashReportClient.exe";
+			crashReportClientFilepath = PlatformFileSystem::GetWorkingDirectory() / "CrashReportClient.exe";
 		}
 
-		if (FileSystem::Exists(crashReportClientFilepath))
+		if (PlatformFileSystem::Exists(crashReportClientFilepath))
 		{
 			void *pipeChildInRead, *pipeChildInWrite, *pipeChildOutRead, *pipeChildOutWrite;
 
@@ -130,15 +118,14 @@ namespace Volt
 			m_crashReporterWritePipe = pipeChildInWrite;
 			m_crashReporterReadPipe = pipeChildOutRead;
 
-			CommandLineBuilder commandLineBuilder;
-			commandLineBuilder.AddArgument("monitorprocess", std::to_string(PlatformProcess::GetCurrentProcessId()));
-			commandLineBuilder.AddArgument("readpipe", std::format("{}", reinterpret_cast<uintptr_t>(pipeChildInRead)));
-			commandLineBuilder.AddArgument("writepipe", std::format("{}", reinterpret_cast<uintptr_t>(pipeChildOutWrite)));
-			//commandLineBuilder.AddArgument("waitfordebugger");
+			StringBuilder builder;
+			builder << "-monitorProcess=" << PlatformProcess::GetCurrentProcessId();
+			builder << "-readpipe=" << reinterpret_cast<uintptr_t>(pipeChildInRead);
+			builder << "-writepipe=" << reinterpret_cast<uintptr_t>(pipeChildOutWrite);
 
 			m_crashReporterProcessHandle = PlatformProcess::CreateProc(
 				crashReportClientFilepath,
-				commandLineBuilder.GetAsString(),
+				builder.Get(),
 				true, false, &m_crashReporterProcessID,
 				"",
 				pipeChildInRead);
@@ -147,9 +134,9 @@ namespace Volt
 
 	bool WindowsCrashReportingThread::GenerateAndSerializeMiniDump()
 	{
-		const std::filesystem::path dumpFilepath = "Volt.dmp";
+		const Filesystem::Path dumpFilepath = "Volt.dmp";
 
-		HANDLE dumpFileHandle = CreateFileW(dumpFilepath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE dumpFileHandle = CreateFileW(dumpFilepath.CStr(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 		if (dumpFileHandle == INVALID_HANDLE_VALUE)
 		{
@@ -194,9 +181,9 @@ namespace Volt
 		PlatformProcess::WritePipe(m_crashReporterWritePipe, reinterpret_cast<const uint8_t*>(archive.GetData()), static_cast<uint32_t>(archive.GetSize()));
 	}
 
-	std::string WindowsCrashReportingThread::CreateExceptionString()
+	String WindowsCrashReportingThread::CreateExceptionString()
 	{
-		std::string errorString = "Unhandled Exception: ";
+		String errorString = "Unhandled Exception: ";
 
 #define HANDLE_CASE(value) case value: errorString += #value; break
 
@@ -213,7 +200,7 @@ namespace Volt
 				{
 					errorString += "writing address ";
 				}
-				errorString += std::format("{}", m_exceptionInfo->ExceptionRecord->ExceptionInformation[1]);
+				errorString += FormatString("{}", m_exceptionInfo->ExceptionRecord->ExceptionInformation[1]);
 				break;
 			}
 
@@ -228,7 +215,7 @@ namespace Volt
 			HANDLE_CASE(EXCEPTION_STACK_OVERFLOW);
 
 			default:
-				errorString += std::format("{}", m_exceptionInfo->ExceptionRecord->ExceptionCode);
+				errorString += FormatString("{}", m_exceptionInfo->ExceptionRecord->ExceptionCode);
 		}
 
 		return errorString;

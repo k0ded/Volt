@@ -7,6 +7,8 @@
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
@@ -98,7 +100,7 @@ namespace Volt
 
 		AssetReference<MeshAsset> meshAsset = destinationAsset.ConvertTo<MeshAsset>();
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			meshAsset->SetFlag(AssetFlag::Missing, true);

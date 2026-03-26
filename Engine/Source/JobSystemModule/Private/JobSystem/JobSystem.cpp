@@ -235,7 +235,7 @@ namespace Volt
 			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
 			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
 
-			std::string threadName = std::format("Volt::Worker {}", i);
+			String threadName = FormatString("Volt::Worker {}", i);
 			PlatformThread::SetThreadName(worker->thread.native_handle(), threadName);
 		}
 

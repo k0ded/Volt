@@ -6,6 +6,8 @@
 #include "Sandbox/Window/AssetBrowser/AssetCommon.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
+#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
+
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -14,20 +16,20 @@ AssetDirectoryProcessor::AssetDirectoryProcessor(Weak<AssetBrowser::SelectionMan
 	: m_selectionManager(selectionManager), m_assetMask(assetMask), m_directoryItemAllocatorRef(inDirItemAllocator), m_assetItemAllocatorRef(inAssetItemAllocator)
 {}
 
-RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(const std::filesystem::path& path, AssetData& meshToImportData)
+RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(const Filesystem::Path& path, AssetData& meshToImportData)
 {
 	VT_PROFILE_FUNCTION();
 
 	struct AssetEntryData
 	{
-		std::filesystem::path path = "";
+		Filesystem::Path path = "";
 		bool isDirectory = false;
 		Volt::AssetHandle handle = Volt::Asset::Null();
 	};
 
 	Vector<AssetEntryData> assetEntries;
 
-	Vector<std::filesystem::path> pathsToProcess;
+	Vector<Filesystem::Path> pathsToProcess;
 	pathsToProcess.emplace_back(path);
 
 	{
@@ -38,17 +40,17 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 			auto currentPath = pathsToProcess.back();
 			pathsToProcess.pop_back();
 
-			for (const auto& entry : std::filesystem::directory_iterator(currentPath))
+			for (const auto& entry : Filesystem::DirectoryIterator(currentPath))
 			{
-				constexpr std::string_view AssetExtension = ".vtasset";
-				if (entry.path().extension() == AssetExtension)
+				constexpr StringView AssetExtension = ".vtasset";
+				if (entry.path.Extension() == AssetExtension)
 				{
 					continue;
 				}
 
 				auto& assetEntry = assetEntries.emplace_back();
-				assetEntry.path = entry.path();
-				assetEntry.isDirectory = entry.is_directory();
+				assetEntry.path = entry.path;
+				assetEntry.isDirectory = entry.isDirectory;
 
 				if (assetEntry.isDirectory)
 				{
@@ -66,9 +68,9 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 		filter.includeWithoutFilepath = false;
 		g_assetManager->IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata metadata) -> bool
 		{
-			std::filesystem::path filesystemPath = g_assetManager->GetAssetFilesystemPath(metadata->handle);
+			Filesystem::Path filesystemPath = g_assetManager->GetAssetFilesystemPath(metadata->handle);
 			//!filesystemPath.starts_with(path)
-			if (path.compare(filesystemPath) > 0)
+			if (path.Compare(filesystemPath) > 0)
 			{
 				return true;
 			}
@@ -84,7 +86,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 
 	auto relStartPath = g_assetManager->GetRelativeAssetFilepath(path);
 	RawPtr<AssetBrowser::DirectoryItem> resultItem = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), relStartPath);
-	std::unordered_map<std::filesystem::path, RawPtr<AssetBrowser::DirectoryItem>> directoryItems;
+	std::unordered_map<Filesystem::Path, RawPtr<AssetBrowser::DirectoryItem>> directoryItems;
 	directoryItems[relStartPath] = resultItem;
 
 	{
@@ -98,7 +100,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 				auto relPath = g_assetManager->GetRelativeAssetFilepath(entry.path);
 				RawPtr<AssetBrowser::DirectoryItem> dirData = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), relPath);
 				directoryItems[relPath] = dirData;
-				const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
+				const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.ParentPath());
 				directoryItems[parentPath]->subDirectories.emplace_back(dirData);
 				dirData->parentDirectory = directoryItems[parentPath].GetRaw();
 			}
@@ -118,7 +120,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
 					{
 						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Lock().GetRaw(), entry.path, meshToImportData, entry.handle);
-						const auto parentPath = entry.path.parent_path();
+						const auto parentPath = entry.path.ParentPath();
 						if (directoryItems.contains(parentPath))
 						{
 							directoryItems[parentPath]->assets.emplace_back(assetItem);
@@ -158,8 +160,8 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 	VT_PROFILE_SCOPE("Sort Items");
 	for (const auto& [dirPath, dirData] : directoryItems)
 	{
-		std::sort(dirData->subDirectories.begin(), dirData->subDirectories.end(), [](const RawPtr<AssetBrowser::DirectoryItem>& a, const RawPtr<AssetBrowser::DirectoryItem>& b) { return a->path.string() < b->path.string(); });
-		std::sort(dirData->assets.begin(), dirData->assets.end(), [](const RawPtr<AssetBrowser::AssetItem>& a, const RawPtr<AssetBrowser::AssetItem>& b) { return a->path.stem().string() < b->path.stem().string(); });
+		std::sort(dirData->subDirectories.begin(), dirData->subDirectories.end(), [](const RawPtr<AssetBrowser::DirectoryItem>& a, const RawPtr<AssetBrowser::DirectoryItem>& b) { return a->path.ToWString() < b->path.ToWString(); });
+		std::sort(dirData->assets.begin(), dirData->assets.end(), [](const RawPtr<AssetBrowser::AssetItem>& a, const RawPtr<AssetBrowser::AssetItem>& b) { return a->path.Stem().ToWString() < b->path.Stem().ToWString(); });
 	}
 
 	return resultItem;

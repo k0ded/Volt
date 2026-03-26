@@ -12,7 +12,7 @@ namespace Volt
 		m_inverseBindPose.clear();
 	}
 
-	const Skeleton::JointAttachment& Skeleton::GetJointAttachmentFromName(std::string_view name) const
+	const Skeleton::JointAttachment& Skeleton::GetJointAttachmentFromName(StringView name) const
 	{
 		for (const auto& attachment : m_jointAttachments)
 		{
@@ -39,7 +39,7 @@ namespace Volt
 		return nullAttachment;
 	}
 
-	bool Skeleton::HasJointAttachment(std::string_view name) const
+	bool Skeleton::HasJointAttachment(StringView name) const
 	{
 		for (const auto& attachment : m_jointAttachments)
 		{
@@ -66,7 +66,7 @@ namespace Volt
 		return JointIsDecendantOf(m_joints.at(jointIndex).parentIndex, parentIndex);
 	}
 
-	const int32_t Skeleton::GetJointIndexFromName(const std::string& str)
+	const int32_t Skeleton::GetJointIndexFromName(const String& str)
 	{
 		if (m_jointNameToIndex.contains(str))
 		{
@@ -85,7 +85,7 @@ namespace Volt
 		return -1;
 	}
 
-	const std::string Skeleton::GetNameFromJointIndex(int32_t index)
+	const String Skeleton::GetNameFromJointIndex(int32_t index)
 	{
 		if (index >= (int32_t)m_joints.size())
 		{

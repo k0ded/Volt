@@ -8,7 +8,7 @@
 #include <imgui_internal.h>
 
 
-EditorNodeGraph::EditorNodeGraph(std::string_view imGuiID)
+EditorNodeGraph::EditorNodeGraph(StringView imGuiID)
 	: m_imGuiID(imGuiID)
 	, m_graphScreenAreaTL(0, 0), m_graphScreenAreaBR(0, 0)
 	, m_graphScreenSize(0, 0)
@@ -248,7 +248,7 @@ void EditorNodeGraph::DrawNode(NodeInstance& instance)
 
 void EditorNodeGraph::DrawNodeHeader(const NodeInstance& instance, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize)
 {
-	const std::string& PrettyNodeName = NodeTypeRegistry::Get().GetTypeInfo(instance.typeGUID).prettyName;
+	const String& PrettyNodeName = NodeTypeRegistry::Get().GetTypeInfo(instance.typeGUID).prettyName;
 
 	const float fontSize = GetStyleVar(StyleVar::Node_HeaderFontSize);
 	const float textPadding = GetStyleVar(StyleVar::Node_HeaderTextPadding);

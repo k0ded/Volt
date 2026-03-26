@@ -37,7 +37,7 @@ namespace Circuit
 		void AddCircle(float x, float y, float radius, CircuitColor color, float scale = 1);
 		void AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale = 1);
 		void AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color);
-		void AddText(float x, float y, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
+		void AddText(float x, float y, const String& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float scale = 1.f);
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
 

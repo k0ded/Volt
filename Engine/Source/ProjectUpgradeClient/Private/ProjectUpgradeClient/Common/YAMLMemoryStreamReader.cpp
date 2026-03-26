@@ -1,6 +1,6 @@
 #include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
+#include <CoreModule/DataBuffer.h>
 
 const bool YAMLMemoryStreamReader::ReadBuffer(const DataBuffer& buffer)
 {

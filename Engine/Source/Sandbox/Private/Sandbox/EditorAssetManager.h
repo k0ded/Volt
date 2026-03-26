@@ -34,7 +34,7 @@ public:
 	// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded, will also cache the asset.
 	template<Volt::VoltAssetType T> AssetReference<T> GetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle);
 	template<Volt::VoltAssetType T> bool TryGetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset);
-	template<Volt::VoltAssetType T> bool TryGetAssetImmediatelyAndCache(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset);
+	template<Volt::VoltAssetType T> bool TryGetAssetImmediatelyAndCache(const Filesystem::Path& assetFilepath, AssetReference<T>& outAsset);
 
 	// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading, and cache the asset.
 	template<Volt::VoltAssetType T> bool TryGetAssetAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset);
@@ -43,12 +43,12 @@ public:
 	// referenced.
 	void RemoveAssetFromCache(Volt::AssetHandle assetHandle);
 
-	void RenameDirectory(const std::filesystem::path& directoryPath, const std::string& newName);
-	void RenameAsset(Volt::AssetHandle assetHandle, const std::string& newName);
-	void MoveAssetTo(Volt::AssetHandle asset, const std::filesystem::path& targetDirectory);
-	void MoveDirectoryTo(const std::filesystem::path& srcDirectory, const std::filesystem::path& dstDirectory);
+	void RenameDirectory(const Filesystem::Path& directoryPath, const String& newName);
+	void RenameAsset(Volt::AssetHandle assetHandle, const String& newName);
+	void MoveAssetTo(Volt::AssetHandle asset, const Filesystem::Path& targetDirectory);
+	void MoveDirectoryTo(const Filesystem::Path& srcDirectory, const Filesystem::Path& dstDirectory);
 	void DeleteAsset(Volt::AssetHandle asset);
-	void DeleteDirectory(const std::filesystem::path& directoryPath);
+	void DeleteDirectory(const Filesystem::Path& directoryPath);
 
 private:
 	Volt::AssetManager& m_referencedAssetManager;
@@ -81,7 +81,7 @@ inline bool EditorAssetManager::TryGetAssetImmediatelyAndCache(Volt::AssetHandle
 }
 
 template<Volt::VoltAssetType T>
-bool EditorAssetManager::TryGetAssetImmediatelyAndCache(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset)
+bool EditorAssetManager::TryGetAssetImmediatelyAndCache(const Filesystem::Path& assetFilepath, AssetReference<T>& outAsset)
 {
 	Volt::AssetHandle assetHandle = m_referencedAssetManager.GetAssetHandleFromFilepath(assetFilepath);
 	if (assetHandle != Volt::Asset::Null())

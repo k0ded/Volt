@@ -5,6 +5,8 @@
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 #undef private
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
@@ -71,7 +73,7 @@ namespace Volt
 
 		AssetReference<EnvironmentTexture> environmentTexture = destinationAsset.ConvertTo<EnvironmentTexture>();
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			environmentTexture->SetFlag(AssetFlag::Missing, true);
@@ -108,7 +110,7 @@ namespace Volt
 		specification.mips = static_cast<uint32_t>(diffuseHeader.mips.size());
 		specification.usage = RHI::ImageUsage::Texture;
 		specification.isCubeMap = true;
-		specification.debugName = filePath.stem().string();
+		specification.debugName = filePath.Stem().ToString();
 
 		diffuseImage = RHI::Image::Create(specification);
 

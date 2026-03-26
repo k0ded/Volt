@@ -16,7 +16,7 @@ public:
 	bool IsCaptureApplicationRunning() const override;
 	void LaunchCaptureApplication() override;
 
-	void SetCaptureFileTargetFilePath(const std::filesystem::path& filePath) override;
+	void SetCaptureFileTargetFilePath(const Filesystem::Path& filePath) override;
 	void SetFlags(Volt::RHI::FrameCaptureFlags flags) override;
 
 private:

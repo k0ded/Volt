@@ -39,8 +39,8 @@ namespace Volt
 		void PopContext();
 
 		void SetDefaultFont(ImFont* font);
-		ImFont* AddFont(const std::filesystem::path& fontPath);
-		Vector<ImFont*> AddFonts(const Vector<std::filesystem::path>& fontPaths);
+		ImFont* AddFont(const Filesystem::Path& fontPath);
+		Vector<ImFont*> AddFonts(const Vector<Filesystem::Path>& fontPaths);
 
 		ImTextureID GetTextureID(IntRef<RHI::Image> image, int32_t mipIndex);
 

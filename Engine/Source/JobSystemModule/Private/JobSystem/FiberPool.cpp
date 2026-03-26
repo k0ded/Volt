@@ -11,7 +11,7 @@ namespace Volt
 
 		for (uint32_t i = 0; i < numFibers; ++i)
 		{
-			JobFiber* fiber = m_fiberAllocator.Allocate(std::format("Fiber {}", i));
+			JobFiber* fiber = m_fiberAllocator.Allocate(FormatString("Fiber {}", i));
 			m_fiberStack.Push(fiber);
 		}
 	}

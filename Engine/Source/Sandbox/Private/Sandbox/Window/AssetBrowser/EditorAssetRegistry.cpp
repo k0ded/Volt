@@ -17,9 +17,9 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
-#define ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandleVarName) [](Volt::AssetHandle aAssetHandleVarName)->Vector<std::pair<std::string, std::string>>
+#define ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandleVarName) [](Volt::AssetHandle aAssetHandleVarName)->Vector<std::pair<String, String>>
 
 
 
@@ -28,7 +28,7 @@
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
 				auto asset = Volt::AssetManager::GetAsset<Volt::Animation>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
+				Vector<std::pair<String, String>> data =
 				{
 					std::make_pair("TEMPLATE", "TEMPLATE")),
 				};
@@ -46,15 +46,15 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::MeshAsset> meshAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, meshAsset))
 				{
-					std::filesystem::path sourceMeshPath = "Could not find the source mesh path";
+					Filesystem::Path sourceMeshPath = "Could not find the source mesh path";
 
-					Vector<std::pair<std::string, std::string>> data =
+					Vector<std::pair<String, String>> data =
 					{
-						std::make_pair("Submesh Count", std::to_string(meshAsset->GetMesh()->GetSubMeshes().size())),
+						std::make_pair("Submesh Count", FormatString("{}", meshAsset->GetMesh()->GetSubMeshes().size())),
 
 						std::make_pair("Vertex Count", Utility::ToStringWithThousandSeparator(meshAsset->GetMesh()->GetVertexCount())),
 						std::make_pair("Index Count", Utility::ToStringWithThousandSeparator(meshAsset->GetMesh()->GetIndexCount())),
-						std::make_pair("Source Mesh Path", sourceMeshPath.string())
+						std::make_pair("Source Mesh Path", sourceMeshPath.ToString())
 					};
 					return data;
 				}
@@ -70,11 +70,11 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Animation> animationAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, animationAsset))
 				{
-					Vector<std::pair<std::string, std::string>> data =
+					Vector<std::pair<String, String>> data =
 					{
-						std::make_pair("Duration", std::to_string(animationAsset->GetDuration()) + " seconds"),
+						std::make_pair("Duration", FormatString("{} seconds", animationAsset->GetDuration())),
 						std::make_pair("Frame Count", Utility::ToStringWithThousandSeparator(animationAsset->GetFrameCount())),
-						std::make_pair("Frames Per Second", std::to_string(animationAsset->GetFramesPerSecond())),
+						std::make_pair("Frames Per Second", FormatString("{}", animationAsset->GetFramesPerSecond())),
 					};
 					return data;
 				}
@@ -90,9 +90,9 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Skeleton> skeletonAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, skeletonAsset))
 				{
-					Vector<std::pair<std::string, std::string>> data =
+					Vector<std::pair<String, String>> data =
 					{
-						std::make_pair("Joint Count", std::to_string(skeletonAsset->GetJointCount()))
+						std::make_pair("Joint Count", FormatString("{}", skeletonAsset->GetJointCount()))
 					};
 					return data;
 				}
@@ -108,10 +108,10 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Texture2D> textureAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, textureAsset))
 				{
-					Vector<std::pair<std::string, std::string>> data =
+					Vector<std::pair<String, String>> data =
 					{
-						std::make_pair("Width", std::to_string(textureAsset->GetWidth())),
-						std::make_pair("Height", std::to_string(textureAsset->GetHeight())),
+						std::make_pair("Width", FormatString("{}", textureAsset->GetWidth())),
+						std::make_pair("Height", FormatString("{}", textureAsset->GetHeight())),
 					};
 					return data;
 				}
@@ -136,7 +136,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				if (g_assetManager->TryGetAsset(aAssetHandle, sceneAsset))
 				{
 					const auto& stats = sceneAsset->GetStatistics();
-					Vector<std::pair<std::string, std::string>> data =
+					Vector<std::pair<String, String>> data =
 					{
 						std::make_pair("Entity Count", Utility::ToStringWithThousandSeparator(stats.entityCount)),
 					};
@@ -153,7 +153,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		//	ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 		//	{
 		//		auto asset = Volt::AssetManager::GetAsset<Volt::PhysicsMaterial>(aAssetHandle);
-		//		Vector<std::pair<std::string, std::string>> data =
+		//		Vector<std::pair<String, String>> data =
 		//		{
 		//			std::make_pair("Static Friction", std::to_string(asset->staticFriction)),
 		//			std::make_pair("Dynamic Friction", std::to_string(asset->dynamicFriction)),
@@ -164,7 +164,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 	}
 };
 
-Vector<std::pair<std::string, std::string>> EditorAssetRegistry::GetAssetBrowserPopupData(AssetType aAssetType, Volt::AssetHandle aAssetHandle)
+Vector<std::pair<String, String>> EditorAssetRegistry::GetAssetBrowserPopupData(AssetType aAssetType, Volt::AssetHandle aAssetHandle)
 {
 	if (myAssetData.contains(aAssetType))
 	{
@@ -173,7 +173,7 @@ Vector<std::pair<std::string, std::string>> EditorAssetRegistry::GetAssetBrowser
 			return myAssetData[aAssetType].assetBrowserPopupDataFunction(aAssetHandle);
 		}
 	}
-	return Vector<std::pair<std::string, std::string>>();
+	return Vector<std::pair<String, String>>();
 }
 
 void EditorAssetRegistry::RegisterAssetBrowserPopupData(AssetType aAssetType, AssetBrowserPopupDataFunction aAssetBrowserPopupDataFunction)

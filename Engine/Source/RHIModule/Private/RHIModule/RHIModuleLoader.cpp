@@ -6,8 +6,10 @@
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <CoreUtilities/DynamicLibraryHelpers.h>
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 namespace Volt::RHI
 {
@@ -22,28 +24,29 @@ namespace Volt::RHI
 	{
 		// At this point in the runtime our working directory should be right out side of Binaries.
 		// And for now we assume it is.
-		std::filesystem::path filepath = "Binaries";
+		Filesystem::Path filepath = "Binaries";
 		switch (rhiConfig.api)
 		{
 			case Volt::RHI::GraphicsAPI::Vulkan: filepath /= "VulkanRHIModule.dll"; break;
 			case Volt::RHI::GraphicsAPI::D3D12: filepath /= "D3D12RHIModule.dll"; break;
 		}
 
-		VT_ENSURE_MSG(std::filesystem::exists(filepath), std::format("RHI module at filepath {} not found!", filepath));
+		VT_ENSURE_MSG(Filesystem::Exists(filepath), FormatString("RHI module at filepath {} not found!", filepath));
 
 		LoadRHIFromFilepath(filepath);
 		CreateGraphicsContextForRHI(rhiConfig, callbackInfo);
 	}
 
-	void RHIModuleLoader::LoadRHIFromFilepath(const std::filesystem::path& filepath)
+	void RHIModuleLoader::LoadRHIFromFilepath(const Filesystem::Path& filepath)
 	{
-		const std::string cleanFilepath = ::Utility::ReplaceCharacter(filepath.string(), '/', '\\');
+		Filesystem::Path tempPath = filepath;
+		tempPath.MakePreferred();
 
 		// Check if module is already loaded
-		m_rhiModuleHandle = VT_GET_MODULE_HANDLE(cleanFilepath.c_str());
+		m_rhiModuleHandle = VT_GET_MODULE_HANDLE(tempPath.CStr());
 		if (!m_rhiModuleHandle)
 		{
-			m_rhiModuleHandle = VT_LOAD_LIBRARY(cleanFilepath.c_str());
+			m_rhiModuleHandle = VT_LOAD_LIBRARY(tempPath.CStr());
 		}
 
 		VT_ENSURE_MSG(m_rhiModuleHandle != nullptr, "RHI module failed to load!");
@@ -99,6 +102,5 @@ namespace Volt::RHI
 	void RHIModuleLoader::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
 		outDependencies.AddDependency<EventSystem>();
-		outDependencies.AddDependency<Log>();
 	}
 }

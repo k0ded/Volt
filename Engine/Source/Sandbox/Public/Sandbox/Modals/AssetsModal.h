@@ -6,10 +6,9 @@
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
-#include <filesystem>
-
-#include <string>
 
 CREATE_ENUM(CreateFilesTableColumns,
 	Selected,
@@ -48,7 +47,7 @@ enum class AssetModalResult
 class AssetsModal final : public Modal
 {
 public:
-	AssetsModal(const std::string& strId);
+	AssetsModal(const String& strId);
 	~AssetsModal() override = default;
 
 	//this should be called instead of OpenModalBlocking
@@ -57,14 +56,14 @@ public:
 		const Vector<Volt::AssetHandle,
 		Allocator>& inAssets,
 		std::set<Volt::AssetHandle>& outSelectedAssets,
-		const Map<Volt::AssetHandle, std::string /*disabled reason*/>* disabledAssets = nullptr)
+		const Map<Volt::AssetHandle, String /*disabled reason*/>* disabledAssets = nullptr)
 	{
 		m_assetHandles.resize_uninitialized(inAssets.size());
 		memcpy_s(m_assetHandles.data(), m_assetHandles.byte_size() * sizeof(Volt::AssetHandle), inAssets.data(), inAssets.byte_size());
 		return OpenAssetModalTypeBlockingImpl(inAssetModalType, outSelectedAssets, disabledAssets);
 	}
 
-	[[nodiscard]] std::filesystem::path GetNewAssetPath(Volt::AssetHandle handle) 
+	[[nodiscard]] Filesystem::Path GetNewAssetPath(Volt::AssetHandle handle) 
 	{
 		VT_ASSERT(m_assetToNewPath.contains(handle));
 		return m_assetToNewPath[handle];
@@ -77,7 +76,7 @@ private:
 private:
 	AssetModalResult OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType,
 		std::set<Volt::AssetHandle>& outSelectedAssets,
-		const Map<Volt::AssetHandle, std::string /*disabled reason*/>* disabledAssets);
+		const Map<Volt::AssetHandle, String /*disabled reason*/>* disabledAssets);
 	AssetModalResult GetResult() { return m_result; }
 	bool ShouldColumnExist(CreateFilesTableColumns column);
 
@@ -97,7 +96,7 @@ private:
 
 	Vector<Volt::AssetHandle> m_assetHandles;
 	std::set<Volt::AssetHandle> m_selectedAssets;
-	Map<Volt::AssetHandle, std::filesystem::path> m_assetToNewPath;
-	Map<Volt::AssetHandle, std::string> m_disabledAssets;
+	Map<Volt::AssetHandle, Filesystem::Path> m_assetToNewPath;
+	Map<Volt::AssetHandle, String> m_disabledAssets;
 
 };

@@ -23,34 +23,34 @@ namespace Volt::RHI
 
 	protected:
 		CompilationResultData TryCompileImpl(const Specification& specification) override;
-		void AddMacroImpl(const std::string& macroName) override;
-		void RemoveMacroImpl(std::string_view macroName) override;
+		void AddMacroImpl(const String& macroName) override;
+		void RemoveMacroImpl(StringView macroName) override;
 		void* GetHandleImpl() const override;
 
 	private:
 		struct DxcCompilationResult
 		{
 			IDxcResult* dxcResult;
-			std::string error;
+			String error;
 			bool succeded;
 		};
 
 		struct RewriteResult
 		{
-			std::string outSource;
-			std::string error;
+			String outSource;
+			String error;
 			bool succeded;
 		};
 
 		CompilationResultData CompileShader(const Specification& specification);
-		bool PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult);
+		bool PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult);
 
 		void OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv);
 		void ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap);
 		void ReflectShader(const Specification& specification, CompilationResultData& inOutData);
 
-		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
-		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source);
+		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source, HLSLIncluder* includer);
+		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source);
 
 		IDxcCompiler3* m_hlslCompiler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;
@@ -59,8 +59,8 @@ namespace Volt::RHI
 	
 		ShaderCompilerCreateInfo m_createInfo;
 
-		Vector<std::filesystem::path> m_includeDirectories;
-		Vector<std::string> m_macros;
+		Vector<Filesystem::Path> m_includeDirectories;
+		Vector<String> m_macros;
 
 		IntRef<ShaderCache> m_shaderCache;
 	};

@@ -2,14 +2,14 @@
 
 #include "AssetSystem/AssetHandle.h"
 
-#include <filesystem>
+#include <CoreUtilities/Filesystem/Path.h>
 
 namespace Volt
 {
 	struct SourceAssetImportConfig
 	{
-		std::filesystem::path destinationDirectory;
-		std::string destinationFilename;
+		Filesystem::Path destinationDirectory;
+		String destinationFilename;
 
 		/*
 			Set to true if the asset should only live in memory (will not be serialized to disk)

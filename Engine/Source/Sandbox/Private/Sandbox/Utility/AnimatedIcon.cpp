@@ -9,31 +9,31 @@
 
 #include <EventSystem/ApplicationEvents.h>
 
-AnimatedIcon::AnimatedIcon(const std::filesystem::path& firstFrame, uint32_t frameCount, float animTime)
+AnimatedIcon::AnimatedIcon(const Filesystem::Path& firstFrame, uint32_t frameCount, float animTime)
 	: m_animationTime(animTime), m_frameCount(frameCount), m_perFrameTime(animTime / (float)frameCount)
 {
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(AnimatedIcon::Animate), [this]() { return m_isEnabled; });
 
-	std::string filename = firstFrame.stem().string();
+	String filename = firstFrame.Stem().ToString();
 	const size_t numPos = filename.find_first_of("0123456789");
-	if (numPos != std::string::npos)
+	if (numPos != String::npos)
 	{
 		filename = filename.substr(0, numPos);
 	}
 
-	const std::filesystem::path dirPath = firstFrame.parent_path();
+	const Filesystem::Path dirPath = firstFrame.ParentPath();
 
 	Vector<Volt::JobFuture<Vector<AssetReference<Volt::Asset>>>> futures;
 
 	for (uint32_t frame = 1; frame <= frameCount; frame++)
 	{
-		const std::filesystem::path path = dirPath / (filename + std::to_string(frame) + firstFrame.extension().string());
+		const Filesystem::Path path = dirPath / FormatString("{}{}{}", filename, frame, firstFrame.Extension());
 		
 		Volt::TextureSourceImportConfig importConfig{};
 		importConfig.createAsMemoryAsset = true;
 		importConfig.generateMipMaps = true;
 		importConfig.importMipMaps = true;
-		importConfig.destinationFilename = path.stem().string();
+		importConfig.destinationFilename = path.Stem().ToString();
 
 		futures.emplace_back(Volt::SourceAssetManager::ImportSourceAsset(path, importConfig));
 	}

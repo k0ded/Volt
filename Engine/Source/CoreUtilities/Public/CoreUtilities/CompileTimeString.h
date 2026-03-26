@@ -13,7 +13,7 @@ struct CompileTimeString
 		}
 	}
 
-	constexpr operator std::string_view() const
+	constexpr operator StringView() const
 	{
 		return { value, N - 1 };
 	}

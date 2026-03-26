@@ -41,6 +41,10 @@
 #include <Volt-MaterialGraph/Nodes/Normal/NormalStrengthNode.h>
 #include <Volt-MaterialGraph/Nodes/ConversionNodes.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
+#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
+
 #include <AssetSystem/SourceAssetManager.h>
 
 #include <Mosaic/MosaicGraphBuilder.h>
@@ -49,14 +53,13 @@
 
 #include <EntitySystem/Scripting/CommonComponent.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 using namespace Volt;
 
 constexpr const char* MetafileFileExtension = ".vtmeta";
 
-static Map<std::string, AssetType> g_fileExtensionToAssetType
+static Map<String, AssetType> g_fileExtensionToAssetType
 {
 	{ ".fbx", AssetTypes::MeshSource },
 	{ ".gltf", AssetTypes::MeshSource },
@@ -157,16 +160,16 @@ void RegisterVectorDeserializationFunction(Map<TypeTraits::TypeIndex, std::funct
 Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>> g_deserializationFunctions;
 Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>> g_vectorDeserializationFunctions;
 
-Map<VoltGUID, Map<std::string_view, uint32_t>> g_componentPropertyRemapping;
-Map<const IComponentTypeDesc*, std::unordered_set<std::string>> g_missingMembers;
+Map<VoltGUID, Map<StringView, uint32_t>> g_componentPropertyRemapping;
+Map<const IComponentTypeDesc*, std::unordered_set<String>> g_missingMembers;
 
 template<typename T>
-void AddRemapping(std::string_view oldName, uint32_t identifier)
+void AddRemapping(StringView oldName, uint32_t identifier)
 {
 	g_componentPropertyRemapping[GetTypeGUID<T>()][oldName] = identifier;
 }
 
-const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* typeDesc, std::string_view name)
+const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* typeDesc, StringView name)
 {
 	auto componentIt = g_componentPropertyRemapping.find(typeDesc->GetGUID());
 	const ComponentMember* componentMember = nullptr;
@@ -190,7 +193,7 @@ const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* t
 	// If still null, log a warning
 	if (componentMember == nullptr)
 	{
-		g_missingMembers[typeDesc].insert(std::string(name));
+		g_missingMembers[typeDesc].insert(String(name));
 		VT_LOG(Warning, "Unable to find member with old name {} in component {}", name, typeDesc->GetLabel());
 	}
 
@@ -222,8 +225,8 @@ LegacyProjectUpgrade::LegacyProjectUpgrade(const Project& inProject)
 		RegisterDeserializationFunction<glm::quat>(g_deserializationFunctions);
 		RegisterDeserializationFunction<glm::mat4>(g_deserializationFunctions);
 		RegisterDeserializationFunction<VoltGUID>(g_deserializationFunctions);
-		RegisterDeserializationFunction<std::string>(g_deserializationFunctions);
-		RegisterDeserializationFunction<std::filesystem::path>(g_deserializationFunctions);
+		RegisterDeserializationFunction<String>(g_deserializationFunctions);
+		RegisterDeserializationFunction<Filesystem::Path>(g_deserializationFunctions);
 		RegisterDeserializationFunction<Volt::EntityID>(g_deserializationFunctions);
 		RegisterDeserializationFunction<AssetHandle>(g_deserializationFunctions);
 	}
@@ -250,8 +253,8 @@ LegacyProjectUpgrade::LegacyProjectUpgrade(const Project& inProject)
 		RegisterVectorDeserializationFunction<glm::quat>(g_vectorDeserializationFunctions);
 		RegisterVectorDeserializationFunction<glm::mat4>(g_vectorDeserializationFunctions);
 		RegisterVectorDeserializationFunction<VoltGUID>(g_vectorDeserializationFunctions);
-		RegisterVectorDeserializationFunction<std::string>(g_vectorDeserializationFunctions);
-		RegisterVectorDeserializationFunction<std::filesystem::path>(g_vectorDeserializationFunctions);
+		RegisterVectorDeserializationFunction<String>(g_vectorDeserializationFunctions);
+		RegisterVectorDeserializationFunction<Filesystem::Path>(g_vectorDeserializationFunctions);
 		RegisterVectorDeserializationFunction<Volt::EntityID>(g_vectorDeserializationFunctions);
 		RegisterVectorDeserializationFunction<AssetHandle>(g_vectorDeserializationFunctions);
 	}
@@ -427,7 +430,7 @@ void LegacyProjectUpgrade::UpdateMainContent()
 }
 #endif
 
-void LegacyProjectUpgrade::TryConvertProject(const std::filesystem::path& projectFilepath, const std::filesystem::path& targetDirectory)
+void LegacyProjectUpgrade::TryConvertProject(const Filesystem::Path& projectFilepath, const Filesystem::Path& targetDirectory)
 {
 	m_projectToConvertFilepath = projectFilepath;
 	m_targetDirectory = targetDirectory;
@@ -474,7 +477,7 @@ size_t LegacyProjectUpgrade::GetNumActionsCompleted()
 	return 1;
 }
 
-std::string LegacyProjectUpgrade::GetCurrentActionText()
+String LegacyProjectUpgrade::GetCurrentActionText()
 {
 	return "Upgrading";
 }
@@ -496,36 +499,36 @@ bool LegacyProjectUpgrade::TryLoadProject(Volt::Project& project)
 
 	projectFileReader.EnterScope("Project");
 
-	project.engineVersion = projectFileReader.ReadAtKey("EngineVersion", std::string(""));
-	project.name = projectFileReader.ReadAtKey("Name", std::string("None"));
-	project.companyName = projectFileReader.ReadAtKey("CompanyName", std::string("None"));
+	project.engineVersion = projectFileReader.ReadAtKey("EngineVersion", String(""));
+	project.name = projectFileReader.ReadAtKey("Name", String("None"));
+	project.companyName = projectFileReader.ReadAtKey("CompanyName", String("None"));
 
-	project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsDirectory", std::string(""));
+	project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsDirectory", String(""));
 	if (project.assetsDirectoryName.empty())
 	{
-		project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsPath", std::string("Assets"));
+		project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsPath", String("Assets"));
 	}
 
-	project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksDirectory", std::string(""));
-	if (project.audioDirectory.empty())
+	project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksDirectory", String(""));
+	if (project.audioDirectory.IsEmpty())
 	{
-		project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksPath", std::filesystem::path("Audio/Banks"));
+		project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksPath", Filesystem::Path("Audio/Banks"));
 	}
 
-	project.iconFilepath = projectFileReader.ReadAtKey("IconPath", std::filesystem::path(""));
-	project.cursorFilepath = projectFileReader.ReadAtKey("CursorPath", std::filesystem::path(""));
+	project.iconFilepath = projectFileReader.ReadAtKey("IconPath", Filesystem::Path(""));
+	project.cursorFilepath = projectFileReader.ReadAtKey("CursorPath", Filesystem::Path(""));
 
-	project.startSceneFilepath = projectFileReader.ReadAtKey("StartScenePath", std::filesystem::path(""));
-	if (project.startSceneFilepath.empty())
+	project.startSceneFilepath = projectFileReader.ReadAtKey("StartScenePath", Filesystem::Path(""));
+	if (project.startSceneFilepath.IsEmpty())
 	{
-		project.startSceneFilepath = projectFileReader.ReadAtKey("StartScene", std::filesystem::path(""));
+		project.startSceneFilepath = projectFileReader.ReadAtKey("StartScene", Filesystem::Path(""));
 	}
 
 	PluginRegistry* pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
 
 	projectFileReader.ForEach("Plugins", [&]()
 	{
-		const std::string pluginName = projectFileReader.ReadValue<std::string>();
+		const String pluginName = projectFileReader.ReadValue<String>();
 		const auto& definition = pluginRegistry->GetPluginDefinitionByName(pluginName);
 		if (definition.guid != VoltGUID::Null())
 		{
@@ -539,7 +542,7 @@ bool LegacyProjectUpgrade::TryLoadProject(Volt::Project& project)
 
 	projectFileReader.ExitScope();
 
-	project.rootDirectory = m_projectToConvertFilepath.parent_path();
+	project.rootDirectory = m_projectToConvertFilepath.ParentPath();
 	return true;
 }
 
@@ -610,9 +613,9 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 
 Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs, const MaterialsMap& materialsMap)
 {
-	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
+	const Filesystem::Path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
-	if (!FileSystem::Exists(absoluteScenePath))
+	if (!Filesystem::Exists(absoluteScenePath))
 	{
 		return {};
 	}
@@ -629,36 +632,36 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 	}
 
 	streamReader.EnterScope("Scene");
-	std::string sceneName = streamReader.ReadAtKey("name", std::string(""));
+	String sceneName = streamReader.ReadAtKey("name", String(""));
 	streamReader.ExitScope();
 
-	const std::filesystem::path layersDirectoryPath = absoluteScenePath.parent_path() / "Layers";
+	const Filesystem::Path layersDirectoryPath = absoluteScenePath.ParentPath() / "Layers";
 
-	if (!FileSystem::Exists(layersDirectoryPath))
+	if (!Filesystem::Exists(layersDirectoryPath))
 	{
 		return {};
 	}
 
-	Vector<std::filesystem::path> layerFilepaths;
+	Vector<Filesystem::Path> layerFilepaths;
 
-	for (const auto& it : std::filesystem::directory_iterator(layersDirectoryPath))
+	for (const auto& it : Filesystem::DirectoryIterator(layersDirectoryPath))
 	{
-		if (!it.is_directory() && it.path().extension().string() == ".vtlayer")
+		if (!it.isDirectory && it.path.Extension() == L".vtlayer")
 		{
-			layerFilepaths.emplace_back(it.path());
+			layerFilepaths.emplace_back(it.path);
 		}
 	}
 
-	AssetReference<Scene> scene = g_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.parent_path(), sceneName, metadata.handle);
+	AssetReference<Scene> scene = g_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.ParentPath(), sceneName, metadata.handle);
 
 	Vector<AssetReference<Asset>> resultAssets;
 	resultAssets.emplace_back(scene);
 
-	const std::filesystem::path entitiesTargetDir = metadata.filepath.parent_path() / (metadata.filepath.stem().string() + "_Entities");
+	const Filesystem::Path entitiesTargetDir = metadata.filepath.ParentPath() / (metadata.filepath.Stem().ToString() + "_Entities");
 
 	Vector<AssetReference<EntityDesc>> entityDescs;
 
-	for (const std::filesystem::path& layerFilepath : layerFilepaths)
+	for (const Filesystem::Path& layerFilepath : layerFilepaths)
 	{
 		YAMLFileStreamReader layerReader;
 		if (!layerReader.OpenFile(layerFilepath))
@@ -681,7 +684,7 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 			// Entity id is serialized as a uint32_t.
 			EntityID entityId = layerReader.ReadAtKey("id", 0u);
 
-			const std::string entityDescName = std::to_string(entityId);
+			const String entityDescName = FormatString("{}", entityId);
 
 			Entity newEntity = scene->CreateEntityWithID(entityId);
 			AssetHandle entityDescHandle = scene->GetEntityDescHandleFromEntityID(entityId);
@@ -719,7 +722,7 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 						{
 							Wire::ComponentRegistry::PropertyType type = static_cast<Wire::ComponentRegistry::PropertyType>(layerReader.ReadAtKey("type", static_cast<uint32_t>(Wire::ComponentRegistry::PropertyType::Unknown)));
 							Wire::ComponentRegistry::PropertyType vectorType = static_cast<Wire::ComponentRegistry::PropertyType>(layerReader.ReadAtKey("vectorType", static_cast<uint32_t>(Wire::ComponentRegistry::PropertyType::Unknown)));
-							std::string name = layerReader.ReadAtKey("name", std::string(""));
+							String name = layerReader.ReadAtKey("name", String(""));
 						
 							VT_UNUSED(vectorType);
 
@@ -891,19 +894,36 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 		glm::vec4 weights;
 	};
 
-	const std::filesystem::path absoluteMeshPath = project.rootDirectory / metadata.filepath;
+	const Filesystem::Path absoluteMeshPath = project.rootDirectory / metadata.filepath;
 
-	if (!FileSystem::Exists(absoluteMeshPath))
+	if (!Filesystem::Exists(absoluteMeshPath))
 	{
 		return {};
 	}
 
 	Vector<AssetReference<Volt::Asset>> assets;
 
-	DataBuffer dataBuffer = DataBuffer::ReadFromFile(absoluteMeshPath);
+	DataBuffer dataBuffer;
+	{
+		std::filesystem::path tempPath(absoluteMeshPath.ToWString().begin(), absoluteMeshPath.ToWString().end());
+		std::ifstream file(tempPath, std::ios::in | std::ios::binary);
+		if (!file.is_open())
+		{
+			return {};
+		}
 
-	const std::string meshName = absoluteMeshPath.stem().string();
-	AssetReference<MeshAsset> newMesh = g_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
+		Vector<uint8_t> totalData;
+		const size_t srcSize = file.seekg(0, std::ios::end).tellg();
+		totalData.resize(srcSize);
+		file.seekg(0, std::ios::beg);
+		file.read(reinterpret_cast<char*>(totalData.data()), totalData.size());
+		file.close();
+
+		dataBuffer.Copy(totalData.data(), totalData.size());
+	}
+
+	const String meshName = absoluteMeshPath.Stem().ToString();
+	AssetReference<MeshAsset> newMesh = g_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.ParentPath(), metadata.filepath.Stem().ToString(), metadata.handle);
 	assets.emplace_back(newMesh);
 
 	{
@@ -939,7 +959,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 		const uint32_t numSubMeshNames = *dataBuffer.As<uint32_t>(offset);
 		offset += sizeof(uint32_t);
 
-		Vector<std::string> names;
+		Vector<String> names;
 		names.reserve(numSubMeshNames);
 
 		for (uint32_t i = 0; i < numSubMeshNames; ++i)
@@ -1049,8 +1069,8 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 			// Material doesn't exist. Create fallback
 			for (uint32_t i = 0; i < requiredMaterialCount; ++i)
 			{
-				std::string materialName = std::format("{}_Mat_{}", meshName, i);
-				AssetReference<Asset> newMaterial = g_assetManager->CreateAssetAndFile<MaterialAsset>(metadata.filepath.parent_path(), materialName);
+				String materialName = FormatString("{}_Mat_{}", meshName, i);
+				AssetReference<Asset> newMaterial = g_assetManager->CreateAssetAndFile<MaterialAsset>(metadata.filepath.ParentPath(), materialName);
 				
 				materials.emplace_back(newMaterial->GetAssetHandle());
 				assets.emplace_back(newMaterial);
@@ -1067,9 +1087,9 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 
 AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
-	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filepath;
+	const Filesystem::Path absolutePrefabPath = project.rootDirectory / metadata.filepath;
 	
-	if (!FileSystem::Exists(absolutePrefabPath))
+	if (!Filesystem::Exists(absolutePrefabPath))
 	{
 		return nullptr;
 	}
@@ -1132,7 +1152,7 @@ AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Projec
 					{
 						Wire::ComponentRegistry::PropertyType type = static_cast<Wire::ComponentRegistry::PropertyType>(streamReader.ReadAtKey("type", static_cast<uint32_t>(Wire::ComponentRegistry::PropertyType::Unknown)));
 						Wire::ComponentRegistry::PropertyType vectorType = static_cast<Wire::ComponentRegistry::PropertyType>(streamReader.ReadAtKey("vectorType", static_cast<uint32_t>(Wire::ComponentRegistry::PropertyType::Unknown)));
-						std::string name = streamReader.ReadAtKey("name", std::string(""));
+						String name = streamReader.ReadAtKey("name", String(""));
 
 						VT_UNUSED(vectorType);
 
@@ -1207,9 +1227,9 @@ AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Projec
 
 	VT_ENSURE(rootEntityId != EntityID::Null());
 
-	AssetReference<Prefab> prefab = g_assetManager->CreateAssetAndFileWithAssetHandle<Prefab>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle, prefabScene, rootEntityId, version);
+	AssetReference<Prefab> prefab = g_assetManager->CreateAssetAndFileWithAssetHandle<Prefab>(metadata.filepath.ParentPath(), metadata.filepath.Stem().ToString(), metadata.handle, prefabScene, rootEntityId, version);
 
-	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.stem().string());
+	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.Stem().ToString());
 	return prefab;
 }
 
@@ -1228,30 +1248,30 @@ void LegacyProjectUpgrade::PrintMissingMembers()
 
 void LegacyProjectUpgrade::LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata)
 {
-	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectoryName;
+	const Filesystem::Path assetsDirectoryPath = project.rootDirectory / project.assetsDirectoryName;
 
-	if (FileSystem::Exists(assetsDirectoryPath))
+	if (Filesystem::Exists(assetsDirectoryPath))
 	{
-		for (auto& pathEntry : std::filesystem::recursive_directory_iterator(assetsDirectoryPath))
+		for (auto& pathEntry : Filesystem::RecursiveDirectoryIterator(assetsDirectoryPath))
 		{
-			if (pathEntry.path().extension() == MetafileFileExtension)
+			if (pathEntry.path.Extension() == MetafileFileExtension)
 			{
 				AssetMetadata& newMetadata = outMetadata.emplace_back();
 				
 				YAMLFileStreamReader metadataReader;
-				if (!metadataReader.OpenFile(pathEntry.path()))
+				if (!metadataReader.OpenFile(pathEntry.path))
 				{
 					continue;
 				}
 
 				newMetadata.handle = metadataReader.ReadAtKey("Handle", AssetHandle(0));
-				newMetadata.filepath = metadataReader.ReadAtKey("Path", std::filesystem::path(""));
+				newMetadata.filepath = metadataReader.ReadAtKey("Path", Filesystem::Path(""));
 				newMetadata.type = AssetTypes::None;
 
-				const std::filesystem::path absoluteAssetPath = project.rootDirectory / newMetadata.filepath;
-				if (FileSystem::Exists(absoluteAssetPath))
+				const Filesystem::Path absoluteAssetPath = project.rootDirectory / newMetadata.filepath;
+				if (Filesystem::Exists(absoluteAssetPath))
 				{
-					const std::string fileExtension = absoluteAssetPath.extension().string();
+					const String fileExtension = absoluteAssetPath.Extension().ToString();
 					if (g_fileExtensionToAssetType.contains(fileExtension))
 					{
 						newMetadata.type = g_fileExtensionToAssetType.at(fileExtension);
@@ -1267,9 +1287,9 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 	// Since materials at this time had sub materials, 
 	// we will create a material per sub material.
 	
-	const std::filesystem::path absoluteMaterialPath = project.rootDirectory / metadata.filepath;
+	const Filesystem::Path absoluteMaterialPath = project.rootDirectory / metadata.filepath;
 
-	if (!FileSystem::Exists(absoluteMaterialPath))
+	if (!Filesystem::Exists(absoluteMaterialPath))
 	{
 		return {};
 	}
@@ -1287,7 +1307,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 
 	streamReader.EnterScope("Material");
 
-	const std::string materialName = streamReader.ReadAtKey("name", std::string("Null"));
+	const String materialName = streamReader.ReadAtKey("name", String("Null"));
 	VT_LOG(Trace, "Material {}", materialName);
 
 	MaterialDeclaration& materialDeclaration = materialsMap[metadata.handle];
@@ -1295,15 +1315,15 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 
 	streamReader.ForEach("materials", [&]() 
 	{
-		const std::string subMaterialName = streamReader.ReadAtKey("material", std::string("Null"));
+		const String subMaterialName = streamReader.ReadAtKey("material", String("Null"));
 		const uint32_t materialIndex = streamReader.ReadAtKey("index", 0u);
-		const std::string shaderName = streamReader.ReadAtKey("shader", std::string("None"));
+		const String shaderName = streamReader.ReadAtKey("shader", String("None"));
 
 		//const uint32_t materialFlags = streamReader.ReadAtKey("flags", 0);
 		//const bool isPermutation = streamReader.ReadAtKey("isPermutation", false);
 
-		const std::string assetName = materialName + "_" + subMaterialName;
-		AssetReference<Volt::MaterialAsset> material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.parent_path(), assetName);
+		const String assetName = materialName + "_" + subMaterialName;
+		AssetReference<Volt::MaterialAsset> material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.ParentPath(), assetName);
 		// Since all materials were assumued to be alpha masked, we will set all materials to be
 		// alpha masked here as well.
 
@@ -1332,7 +1352,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		{
 			streamReader.ForEach("textures", [&]()
 			{
-				const std::string binding = streamReader.ReadAtKey("binding", std::string());
+				const String binding = streamReader.ReadAtKey("binding", String());
 				const AssetHandle handle = streamReader.ReadAtKey("handle", Asset::Null());
 
 				// Skip null textures.
@@ -1485,19 +1505,19 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 
  AssetReference<Volt::Asset> LegacyProjectUpgrade::TryConvertTexture(const Volt::Project& project, const Volt::AssetMetadata& metadata)
  {
-	 const std::filesystem::path absoluteTexturePath = project.rootDirectory / metadata.filepath;
+	 const Filesystem::Path absoluteTexturePath = project.rootDirectory / metadata.filepath;
 
-	 if (!FileSystem::Exists(absoluteTexturePath))
+	 if (!Filesystem::Exists(absoluteTexturePath))
 	 {
 		 return {};
 	 }
 
 	 Volt::TextureSourceImportConfig importConfig;
-	 importConfig.destinationDirectory = m_targetDirectory / metadata.filepath.parent_path();
-	 importConfig.destinationFilename = metadata.filepath.stem().string();
+	 importConfig.destinationDirectory = m_targetDirectory / metadata.filepath.ParentPath();
+	 importConfig.destinationFilename = metadata.filepath.Stem().ToString();
 
 	 // If it's a HDR file, it should be imported as an environment texture.
-	 if (metadata.filepath.extension() == ".hdr")
+	 if (metadata.filepath.Extension() == ".hdr")
 	 {
 		 importConfig.createAsMemoryAsset = true;
 		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);

@@ -4,6 +4,8 @@
 #include "PhysicsInterface/PhysicsHandleType.h"
 #include "PhysicsInterface/PhysicsLayer.h"
 
+#include <CoreUtilities/Pointers/Ref.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt

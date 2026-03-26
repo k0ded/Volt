@@ -44,7 +44,7 @@ namespace Volt
 
 		inline int GetRepeatCount() const { return m_repeatCount; }
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(KeyPressedEvent, "{35E9A5ED-54B1-46F0-B5A3-3851BC78FC93}"_guid);
 	private:
@@ -59,7 +59,7 @@ namespace Volt
 		{
 		}
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		EVENT_CLASS(KeyReleasedEvent, "{683AC3F1-9CEC-4BEA-9944-1740CD80E7A4}"_guid);
 	};
@@ -72,7 +72,7 @@ namespace Volt
 		{
 		}
 
-		std::string ToString() const override;
+		String ToString() const override;
 
 		VT_NODISCARD VT_INLINE uint32_t GetCharacter() const { return m_character; }
 		VT_NODISCARD VT_INLINE Window& GetWindow() const { return m_window; }

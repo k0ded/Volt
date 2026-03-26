@@ -56,14 +56,14 @@ namespace Volt
 		m_curlContext = curl_easy_init();
 
 		// "Connect"
-		const std::string usrPwdString = connectInfo.username + ":" + connectInfo.password;
+		const String usrPwdString = connectInfo.username + ":" + connectInfo.password;
 		curl_easy_setopt(m_curlContext, CURLOPT_USERPWD, usrPwdString.c_str());
 		curl_easy_setopt(m_curlContext, CURLOPT_UPLOAD, 1L);
 	}
 
-	void CommonPlatformFTPClient::UploadStringAsFile(const std::filesystem::path& targetFilepath, const std::string& dataStr)
+	void CommonPlatformFTPClient::UploadStringAsFile(const Filesystem::Path& targetFilepath, const String& dataStr)
 	{
-		const std::string finalURL = std::format("ftp://{}/{}", m_connectionInfo.url, targetFilepath.string());
+		const String finalURL = FormatString("ftp://{}/{}", m_connectionInfo.url, targetFilepath.ToString());
 		UploadData uploadData = { reinterpret_cast<const uint8_t*>(dataStr.c_str()), dataStr.size(), 0 };
 
 		curl_easy_setopt(m_curlContext, CURLOPT_URL, finalURL.c_str());

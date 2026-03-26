@@ -29,7 +29,7 @@ namespace Volt
 		~ShaderMap();
 
 		static void ReloadAll();
-		static bool ReloadAllWithReferenceToFile(const std::filesystem::path& filepath);
+		static bool ReloadAllWithReferenceToFile(const Filesystem::Path& filepath);
 
 		static void RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader, bool hasPermutations);
 

@@ -44,7 +44,7 @@ namespace Volt
 		struct UpgradingProgressData
 		{
 			Volt::Version UpgradingToVersion;
-			std::string ProcessingTask;
+			String ProcessingTask;
 
 			int32_t NumTotalActions;
 			int32_t NumActionsFinished;

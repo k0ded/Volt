@@ -233,7 +233,7 @@ namespace Volt::RHI
 	struct PhysicalDeviceProperties
 	{
 		DeviceVendor vendor;
-		std::string_view deviceName;
+		StringView deviceName;
 
 		PhysicalDeviceDescriptorBufferPropertiesEXT descriptorBufferProperties;
 		PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;

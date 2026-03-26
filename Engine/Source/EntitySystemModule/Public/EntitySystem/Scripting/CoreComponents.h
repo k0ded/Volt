@@ -30,14 +30,14 @@ namespace Volt
 
 	struct VTES_API TagComponent
 	{
-		std::string tag;
+		String tag;
 
 		static void ReflectType(TypeDesc<TagComponent>& reflect)
 		{
 			reflect.SetGUID("{282FA5FB-6A77-47DB-8340-3D34F1A1FBBD}"_guid);
 			reflect.SetLabel("Tag Component");
 			reflect.SetHidden();
-			reflect.AddMember(&TagComponent::tag, 'tag', "Tag", "", std::string(""));
+			reflect.AddMember(&TagComponent::tag, 'tag', "Tag", "", String(""));
 		}
 	};
 

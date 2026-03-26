@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/Config.h"
 
-#include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Ref.h>
 
 namespace Volt
 {

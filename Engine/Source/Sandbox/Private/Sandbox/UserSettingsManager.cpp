@@ -8,15 +8,15 @@
 
 #include <Volt-FileSystem/FileUtility.h>
 
-#include <CoreUtilities/JSON/CommonJSONSerialization.h>
-#include <CoreUtilities/JSON/JSONWriter.h>
-#include <CoreUtilities/JSON/JSONReader.h>
+#include <CoreModule/JSON/CommonJSONSerialization.h>
+#include <CoreModule/JSON/JSONWriter.h>
+#include <CoreModule/JSON/JSONReader.h>
 
-inline static const std::filesystem::path s_userSettingsPath = "User/UserSettings.json";
+inline static const Filesystem::Path s_userSettingsPath = "User/UserSettings.json";
 
 void UserSettingsManager::LoadUserSettings()
 {
-	std::string jsonString;
+	String jsonString;
 	if (!FileUtility::ReadStringFromFile(s_userSettingsPath, jsonString))
 	{
 		return;
@@ -35,7 +35,7 @@ void UserSettingsManager::LoadUserSettings()
 
 	jsonReader.IterateArray("Windows", [&]() 
 	{
-		std::string panelTitle;
+		String panelTitle;
 		bool isOpen;
 
 		bool success = jsonReader.TryGet("title", panelTitle);
@@ -141,7 +141,7 @@ void UserSettingsManager::SaveUserSettings()
 
 	jsonWriter.EndDocument();
 
-	std::string prettyJSON = jsonWriter.GetPrettyJSON();
+	String prettyJSON = jsonWriter.GetPrettyJSON();
 	FileUtility::WriteStringToFile(s_userSettingsPath, std::move(prettyJSON), true);
 }
 

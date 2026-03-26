@@ -105,8 +105,8 @@ namespace Volt
 		void Serialize(Archive& archive);
 		void SetMaterial(Ref<RenderMaterial> material, uint32_t index);
 
-		VT_INLINE void SetName(const std::string& name) { m_name = name; }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
+		VT_INLINE void SetName(const String& name) { m_name = name; }
+		VT_NODISCARD VT_INLINE const String& GetName() const { return m_name; }
 
 		inline const Vector<SubMesh>& GetSubMeshes() const { return m_subMeshes; }
 		inline Vector<SubMesh>& GetSubMeshesMutable() { return m_subMeshes; }
@@ -162,6 +162,6 @@ namespace Volt
 
 		bool m_isDirty = false;
 		size_t m_hash = 0;
-		std::string m_name;
+		String m_name;
 	};
 }

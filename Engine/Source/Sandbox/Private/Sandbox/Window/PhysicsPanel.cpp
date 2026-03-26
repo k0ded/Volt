@@ -118,7 +118,7 @@ void PhysicsPanel::DrawLayersMenu()
 
 	//for (auto& layer : Volt::PhysicsLayerManager::GetLayers())
 	//{
-	//	const std::string layerId = layer.name + "###" + std::to_string(layer.layerId);
+	//	const String layerId = layer.name + "###" + std::to_string(layer.layerId);
 	//	if (ImGui::CollapsingHeader(layerId.c_str()))
 	//	{
 	//		UI::PushID();
@@ -140,7 +140,7 @@ void PhysicsPanel::DrawLayersMenu()
 	//
 	//		{
 	//			UI::ScopedColor color{ ImGuiCol_Button, { 0.2f, 0.2f, 0.2f, 1.f } };
-	//			std::string buttonId = "Remove###rem" + std::to_string(layer.layerId);
+	//			String buttonId = "Remove###rem" + std::to_string(layer.layerId);
 	//			if (ImGui::Button(buttonId.c_str()))
 	//			{
 	//				layerToRemove = (int32_t)layer.layerId;

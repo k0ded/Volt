@@ -11,7 +11,8 @@
 
 #include <JobSystem/JobSystem.h>
 #include <JobSystem/TaskGraph.h>
-#include <CoreUtilities/StringUtility.h>
+
+#include <CoreUtilities/String/StringUtility.h>
 
 AssetRegistryPanel::AssetRegistryPanel()
 	: EditorWindow("Asset Registry")
@@ -43,7 +44,7 @@ void AssetRegistryPanel::UpdateMainContent()
 		}
 	}
 
-	if (ImGui::InputTextWithHintString("##AssetRegistrySearch", "Search Asset Registry...", &m_searchString))
+	if (ImGui::InputTextWithHint("##AssetRegistrySearch", "Search Asset Registry...", &m_searchString))
 	{
 		OnSearchChanged();
 	}
@@ -91,9 +92,8 @@ void AssetRegistryPanel::UpdateMainContent()
 			{
 				Volt::AssetHandle handle = (*m_assetHandles)[n];
 				Volt::ReadOnlyAssetMetadata metadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
-				
 
-				std::string handleString = std::format("{}", handle);
+				String handleString = FormatString("{}", handle);
 				ImGui::PushID(handleString.c_str());
 
 				//Handle
@@ -129,7 +129,7 @@ void AssetRegistryPanel::UpdateMainContent()
 				ImGui::TableNextColumn();
 				if (metadata->HasFilepath())
 				{
-					ImGui::Text(metadata->filepath.string().c_str());
+					ImGui::Text(metadata->filepath.ToString().c_str());
 				}
 				else
 				{
@@ -302,17 +302,17 @@ void AssetRegistryPanel::SwapOpportunity()
 	m_wantsSwap.exchange(false, std::memory_order::acq_rel);
 }
 
-bool AssetRegistryPanel::PassesFilter(Volt::ReadOnlyAssetMetadata& metadata, std::string_view search)
+bool AssetRegistryPanel::PassesFilter(Volt::ReadOnlyAssetMetadata& metadata, StringView search)
 {
 	VT_ENSURE(metadata.IsValid());
 	{
-		std::string handleAsString = std::format("{}", metadata->handle);
+		String handleAsString = FormatString("{}", metadata->handle);
 		if (handleAsString.contains(search))
 		{
 			return true;
 		}
 	}
-	if (Utility::ToLower(metadata->filepath.string()).contains(search))
+	if (Utility::ToLower(metadata->filepath.ToString()).contains(search))
 	{
 		return true;
 	}

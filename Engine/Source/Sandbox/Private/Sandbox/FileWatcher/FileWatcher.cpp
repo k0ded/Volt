@@ -3,7 +3,7 @@
 
 #include "Sandbox/FileWatcher/FileListener.h"
 
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 FileWatcher::FileWatcher()
 {
@@ -30,15 +30,17 @@ FileWatcher::~FileWatcher()
 	myInstance = nullptr;
 }
 
-void FileWatcher::AddWatch(const std::filesystem::path& path, bool recursive)
+void FileWatcher::AddWatch(const Filesystem::Path& path, bool recursive)
 {
-	std::string watchPath = Utility::ReplaceCharacter(path.string(), '\\', '/');
+	String watchPath = Utility::ReplaceCharacter(path.ToString(), '\\', '/');
 
-	efsw::WatchID watchId = myFileWatcher->addWatch(watchPath, myFileListener.GetRaw(), recursive);
+	std::string tempStr(watchPath.begin(), watchPath.end());
+
+	efsw::WatchID watchId = myFileWatcher->addWatch(tempStr, myFileListener.GetRaw(), recursive);
 	myWatchIds.emplace_back(watchId);
 }
 
-void FileWatcher::AddCallback(efsw::Actions::Action action, std::function<void(const std::filesystem::path, const std::filesystem::path)>&& callback)
+void FileWatcher::AddCallback(efsw::Actions::Action action, std::function<void(const Filesystem::Path, const Filesystem::Path)>&& callback)
 {
 	myFileListener->AddCallback(std::move(callback), action);
 }

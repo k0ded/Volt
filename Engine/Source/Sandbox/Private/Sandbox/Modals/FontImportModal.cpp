@@ -8,7 +8,7 @@
 
 #include <imgui.h>
 
-FontImportModal::FontImportModal(const std::string& strId)
+FontImportModal::FontImportModal(const String& strId)
 	: Modal(strId)
 {
 
@@ -37,11 +37,11 @@ void FontImportModal::OnClose()
 	Clear();
 }
 
-void FontImportModal::Import(const std::filesystem::path& filepath, const std::filesystem::path& destinationDirectory)
+void FontImportModal::Import(const Filesystem::Path& filepath, const Filesystem::Path& destinationDirectory)
 {
-	VT_ENSURE(!destinationDirectory.empty());
+	VT_ENSURE(!destinationDirectory.IsEmpty());
 
-	const std::string destinationFileName = filepath.stem().string();
+	const String destinationFileName = filepath.Stem().ToString();
 
 	Volt::FontSourceImportConfig importConfig;
 	importConfig.destinationDirectory = destinationDirectory;
@@ -52,5 +52,5 @@ void FontImportModal::Import(const std::filesystem::path& filepath, const std::f
 
 void FontImportModal::Clear()
 {
-	m_importFilepath.clear();
+	m_importFilepath.Clear();
 }

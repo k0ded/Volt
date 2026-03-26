@@ -12,7 +12,7 @@ namespace Volt
 	class FontSourceImporter : public SourceAssetImporter
 	{
 	protected:
-		Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
-		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
+		Vector<AssetReference<Asset>> ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
+		SourceAssetFileInformation GetSourceFileInformation(const Filesystem::Path& filepath) const override;
 	};
 }

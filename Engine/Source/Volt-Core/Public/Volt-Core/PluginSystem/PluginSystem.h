@@ -5,6 +5,8 @@
 #include "Volt-Core/PluginSystem/NativePluginModule.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <EventSystem/Event.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -72,7 +74,7 @@ namespace Volt
 
 		PluginRegistry* m_pluginRegistry = nullptr;
 
-		Map<std::filesystem::path, Ref<PluginFactory>> m_pluginFactories;
+		Map<Filesystem::Path, Ref<PluginFactory>> m_pluginFactories;
 		Map<VoltGUID, size_t> m_guidToIndexMap;
 
 		Vector<PluginContainer<Plugin>> m_loadedPlugins;

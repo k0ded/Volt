@@ -157,7 +157,7 @@
 //		return Amp::WWiseEngine::Get().SetParameter(aParameterName, avalue, AkGameObjectID, aOvertime);
 //	}
 //
-//	Vector<std::string> WwiseAudioManager::GetAllEventNames(std::filesystem::path aFilePath)
+//	Vector<std::string> WwiseAudioManager::GetAllEventNames(Filesystem::Path aFilePath)
 //	{
 //		Vector<std::string> strings;
 //
@@ -165,7 +165,7 @@
 //
 //		for (auto bankName : bankNames)
 //		{
-//			std::filesystem::path aBankFile = aFilePath / bankName;
+//			Filesystem::Path aBankFile = aFilePath / bankName;
 //
 //			aBankFile.replace_extension(".txt");
 //

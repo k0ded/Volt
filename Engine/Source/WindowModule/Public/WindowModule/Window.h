@@ -61,9 +61,9 @@ namespace Volt
 		void SetPosition(int32_t x, int32_t y);
 		void SetWindowMode(WindowMode aWindowMode, bool first = false);
 		void SetVsync(bool aState);
-		void SetTitle(const std::string& title);
+		void SetTitle(const String& title);
 
-		void SetIcon(const std::filesystem::path& path);
+		void SetIcon(const Filesystem::Path& path);
 		void EnableMousePassthrough(bool state);
 
 		void Maximize() const;
@@ -80,12 +80,12 @@ namespace Volt
 		bool IsMinimized() const;
 		bool IsCursorEnabled() const;
 
-		void ReplaceCursor(CursorType cursorType, const std::filesystem::path& path);
+		void ReplaceCursor(CursorType cursorType, const Filesystem::Path& path);
 		void SetCursor(CursorType cursorType);
 
 		void SetOpacity(float opacity) const;
-		std::string_view GetClipboard() const;
-		void SetClipboard(std::string_view string);
+		StringView GetClipboard() const;
+		void SetClipboard(StringView string);
 
 		const std::pair<float, float> GetPosition() const;
 		const std::pair<int32_t, int32_t> GetFramebufferSize() const;
@@ -95,7 +95,7 @@ namespace Volt
 		const float GetOpacity() const;
 		const float GetTime() const;
 
-		const std::string& GetTitle();
+		const String& GetTitle();
 
 		inline const uint32_t GetWidth() const { return m_data.width; }
 		inline const uint32_t GetHeight() const { return m_data.height; }
@@ -136,9 +136,9 @@ namespace Volt
 
 		struct WindowData
 		{
-			std::string title;
-			std::filesystem::path iconPath;
-			std::filesystem::path cursorPath;
+			String title;
+			Filesystem::Path iconPath;
+			Filesystem::Path cursorPath;
 			uint32_t width;
 			uint32_t height;
 			bool vsync;

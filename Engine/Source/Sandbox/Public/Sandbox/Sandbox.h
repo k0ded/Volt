@@ -89,7 +89,7 @@ public:
 
 	void NewScene();
 	void OpenScene();
-	void OpenScene(const std::filesystem::path& path);
+	void OpenScene(const Filesystem::Path& path);
 	void OpenScene(Volt::AssetHandle sceneHandle);
 	//returns false if user cancels save
 	bool SaveScene(bool showDialog = false, bool allowDiscard = false);
@@ -97,8 +97,8 @@ public:
 private:
 	struct SaveSceneAsData
 	{
-		std::string name = "New Scene";
-		std::filesystem::path destinationPath = "Assets/Scenes/";
+		String name = "New Scene";
+		Filesystem::Path destinationPath = "Assets/Scenes/";
 	} m_saveSceneData;
 
 	struct DirtyAssetExternalSaveData
@@ -106,7 +106,6 @@ private:
 		bool SceneSavedAs = false;
 	} m_dirtyAssetExternalSaveData;
 
-	void InstallMayaTools();
 	void RegisterEventListeners();
 	//return whether to procced
 	//false when user cancels unload

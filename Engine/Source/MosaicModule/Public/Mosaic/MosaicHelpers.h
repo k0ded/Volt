@@ -5,6 +5,6 @@
 
 namespace Mosaic::Helpers
 {
-	extern VTMOSAIC_API std::string GetTypeNameFromTypeInfo(const TypeInfo& typeInfo);
+	extern VTMOSAIC_API String GetTypeNameFromTypeInfo(const TypeInfo& typeInfo);
 	extern VTMOSAIC_API TypeInfo GetPromotedTypeInfo(const TypeInfo& A, const TypeInfo& B);
 }

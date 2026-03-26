@@ -1,9 +1,9 @@
 #include "Volt-FileSystem/FileArchive.h"
+#include "Volt-FileSystem/Filesystem.h"
 
 #include <Volt-Platforms/FileHandle.h>
 #include <Volt-Platforms/Platform.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -47,20 +47,20 @@ FileWriter::~FileWriter()
 	}
 }
 
-bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
+bool FileWriter::Open(const Filesystem::Path& destinationFilepath)
 {
 	VT_PROFILE_FUNCTION();
 
-	if (FileSystem::Exists(destinationFilepath) && !FileSystem::IsWriteable(destinationFilepath))
+	if (Filesystem::Exists(destinationFilepath) && !Filesystem::IsWriteable(destinationFilepath))
 	{
-		m_error = std::format("Filepath '{}' is not writeable!", destinationFilepath.string());
+		m_error = FormatString("Filepath '{}' is not writeable!", destinationFilepath);
 		return false;
 	}
 
 	// Create the required directory tree
-	if (!FileSystem::Exists(destinationFilepath.parent_path()))
+	if (!Filesystem::Exists(destinationFilepath.ParentPath()))
 	{
-		FileSystem::CreateDirectories(destinationFilepath.parent_path());
+		Filesystem::CreateDirectories(destinationFilepath.ParentPath());
 	}
 
 	m_fileHandle = Volt::PlatformFileSystem::CreateFile(destinationFilepath);
@@ -68,14 +68,14 @@ bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
 
 	if (!m_fileHandle.IsValid())
 	{
-		m_error = std::format("I/O error while writing '{}'", destinationFilepath.string());
+		m_error = FormatString("I/O error while writing '{}'", destinationFilepath);
 		return false;
 	}
 
 	return m_fileHandle.IsValid();
 }
 
-std::string_view FileWriter::GetError() const
+StringView FileWriter::GetError() const
 {
 	return m_error;
 }
@@ -195,7 +195,7 @@ FileReader::FileReader()
 
 }
 
-bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderConfig& config)
+bool FileReader::Open(const Filesystem::Path& filepath, const FileReaderConfig& config)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -222,7 +222,7 @@ bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderCon
 		if (fileArchiveHeader.magic != FileArchiveHeader::MagicValue)
 		{
 			m_isOpen = false;
-			m_error = std::format("File '{}' was not written with a file archive!", filepath.string());
+			m_error = FormatString("File '{}' was not written with a file archive!", filepath);
 			return false;
 		}
 
@@ -238,13 +238,13 @@ bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderCon
 	}
 	else
 	{
-		m_error = std::format("Failed to open file '{}'", filepath.string());
+		m_error = FormatString("Failed to open file '{}'", filepath);
 	}
 
 	return m_isOpen;
 }
 
-std::string_view FileReader::GetError() const
+StringView FileReader::GetError() const
 {
 	return m_error;
 }

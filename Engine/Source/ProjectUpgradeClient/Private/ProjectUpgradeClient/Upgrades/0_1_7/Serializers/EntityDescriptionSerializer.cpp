@@ -20,11 +20,13 @@
 
 #include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
+#include <Volt-FileSystem/Filesystem.h>
+
 #include <CoreUtilities/Containers/Map.h>
 
 namespace Volt
 {
-	Map<VoltGUID, Map<std::string, uint32_t>> g_componentMemberRemap =
+	Map<VoltGUID, Map<String, uint32_t>> g_componentMemberRemap =
 	{
 		// TagComponent
 		{
@@ -322,8 +324,8 @@ namespace Volt
 		RegisterDeserializationFunction<glm::mat4>(m_typeDeserializers);
 		RegisterDeserializationFunction<VoltGUID>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<std::string>(m_typeDeserializers);
-		RegisterDeserializationFunction<std::filesystem::path>(m_typeDeserializers);
+		RegisterDeserializationFunction<String>(m_typeDeserializers);
+		RegisterDeserializationFunction<Filesystem::Path>(m_typeDeserializers);
 
 		RegisterDeserializationFunction<Volt::EntityID>(m_typeDeserializers);
 		RegisterDeserializationFunction<AssetHandle>(m_typeDeserializers);
@@ -344,7 +346,7 @@ namespace Volt
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!Filesystem::Exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			entityDesc->SetFlag(AssetFlag::Missing, true);
@@ -457,7 +459,7 @@ namespace Volt
 		return result;
 	}
 
-	std::filesystem::path EntityDescSerializer::GetSavePathForEntity_ThreadSafe(const Volt::AssetHandle& handle)
+	Filesystem::Path EntityDescSerializer::GetSavePathForEntity_ThreadSafe(const Volt::AssetHandle& handle)
 	{
 		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 		VT_ENSURE(assetMetadata->type == AssetTypes::EntityDesc);
@@ -468,10 +470,10 @@ namespace Volt
 
 		VT_ENSURE(sceneAssetMetadata->HasFilepath());
 
-		const std::filesystem::path& owningScenePath = sceneAssetMetadata->filepath;
-		const std::string owningSceneName = owningScenePath.stem().string();
+		const Filesystem::Path& owningScenePath = sceneAssetMetadata->filepath;
+		const String owningSceneName = owningScenePath.Stem().ToString();
 
-		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
+		const Filesystem::Path relativePath = owningScenePath.ParentPath() / (owningSceneName + "_Entities") / FormatString("{}.vtasset", entityMetadata.entityID);
 		return g_assetManager->GetAssetFilesystemPath(relativePath);
 	}
 
@@ -487,7 +489,7 @@ namespace Volt
 	{
 		streamReader.ForEach("members", [&]()
 		{
-			const std::string memberName = streamReader.ReadAtKey("name", std::string(""));
+			const String memberName = streamReader.ReadAtKey("name", String(""));
 			if (memberName.empty())
 			{
 				return;

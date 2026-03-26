@@ -4,6 +4,8 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 
+#include <CoreUtilities/String/StringBuilder.h>
+
 namespace Volt::RHI
 {
 	static const Vector<VkValidationFeatureEnableEXT> s_enabledValidationFeatures = { /*VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT, /*VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT*/ };
@@ -18,41 +20,41 @@ namespace Volt::RHI
 			return VK_FALSE;
 		}
 
-		std::stringstream sstream;
-		sstream << "[";
-		sstream << pCallbackData->pMessageIdName;
-		sstream << "]\n";
-		sstream << pCallbackData->pMessage;
+		StringBuilder builder;
+		builder << "[";
+		builder << pCallbackData->pMessageIdName;
+		builder << "]\n";
+		builder << pCallbackData->pMessage;
 
 		for (uint32_t i = 0; i < pCallbackData->objectCount; ++i)
 		{
-			sstream << '\n';
+			builder << '\n';
 			if (pCallbackData->pObjects[i].objectHandle)
 			{
-				sstream << "	Object Handle [" << i << "] = " << " 0x" << std::hex << pCallbackData->pObjects[i].objectHandle;
+				builder << "	Object Handle [" << i << "] = " << FormatString("0x{:x}", pCallbackData->pObjects[i].objectHandle);
 			}
 
 			if (pCallbackData->pObjects[i].pObjectName)
 			{
-				sstream << "[" << pCallbackData->pObjects[i].pObjectName << "]";
+				builder << "[" << pCallbackData->pObjects[i].pObjectName << "]";
 			}
 		}
 
-		sstream << '\n';
+		builder << '\n';
 
 		switch (messageSeverity)
 		{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-				VT_LOGC_UNFORMATTED(Trace, LogVulkanRHI, sstream.str());
+				VT_LOGC_UNFORMATTED(Trace, LogVulkanRHI, builder.Get());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-				VT_LOGC_UNFORMATTED(Info, LogVulkanRHI, sstream.str());
+				VT_LOGC_UNFORMATTED(Info, LogVulkanRHI, builder.Get());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-				VT_LOGC_UNFORMATTED(Warning, LogVulkanRHI, sstream.str());
+				VT_LOGC_UNFORMATTED(Warning, LogVulkanRHI, builder.Get());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, sstream.str());
+				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, builder.Get());
 				break;
 		}
 

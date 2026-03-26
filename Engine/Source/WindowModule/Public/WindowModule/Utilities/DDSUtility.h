@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Buffer/DataBuffer.h>
+#include <CoreModule/DataBuffer.h>
 
 namespace std
 {
@@ -21,7 +21,7 @@ namespace Volt
 			uint32_t height = 0;
 		};
 
-		static const TextureData GetRawDataFromDDS(const std::filesystem::path& path);
+		static const TextureData GetRawDataFromDDS(const Filesystem::Path& path);
 
 	private:
 		DDSUtility() = delete;

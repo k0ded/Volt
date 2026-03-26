@@ -4,7 +4,8 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 
-#include <sstream>
+#include <CoreUtilities/String/VoltString.h>
+#include <CoreUtilities/String/StringBuilder.h>
 
 namespace Mosaic
 {
@@ -14,18 +15,18 @@ namespace Mosaic
 		struct TextureDeclaration
 		{
 			uint32_t index;
-			std::string name;
+			String name;
 		};
 
-		void AppendCodeBlock(const std::string& codeBlockStr);
-		std::string AddTexture(uint32_t textureIndex);
+		void AppendCodeBlock(const String& codeBlockStr);
+		String AddTexture(uint32_t textureIndex);
 
-		std::string GetAsString() const;
+		String GetAsString() const;
 
 		VT_NODISCARD VT_INLINE const Vector<TextureDeclaration>& GetTextureDeclarations() const { return m_textureDeclarations; }
 
 	private:
-		std::stringstream m_shaderCode;
+		StringBuilder m_shaderCode;
 		
 		Vector<TextureDeclaration> m_textureDeclarations;
 	};

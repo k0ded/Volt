@@ -5,8 +5,6 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <CoreUtilities/StringUtility.h>
-
 namespace Circuit
 {
 	glm::vec2 CircuitPainter::GetAllottedSize() const
@@ -138,7 +136,7 @@ namespace Circuit
 		AddDrawCommand(std::move(command));
 	}
 
-	void CircuitPainter::AddText(float inX, float inY, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale)
+	void CircuitPainter::AddText(float inX, float inY, const String& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale)
 	{
 		using namespace Volt;
 
@@ -151,7 +149,7 @@ namespace Circuit
 			return;
 		}
 
-		std::u32string utf32string = ::Utility::To_UTF32(text);
+		U32String utf32string(U32String::CtorConvert(), text);
 
 		const FontMetrics& fontMetrics = font->GetMetrics();
 		const FontGeometry& fontGeometry = font->GetGeometry();

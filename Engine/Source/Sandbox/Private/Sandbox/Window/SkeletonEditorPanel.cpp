@@ -54,25 +54,25 @@ void SkeletonEditorPanel::UpdateMainContent()
 			auto jointName = m_skeleton->GetNameFromJointIndex(attachment.jointIndex);
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
-			const std::string jntId = "##" + std::to_string(UI::GetAndIncrementStackID());
+			const String jntId = FormatString("##{}", UI::GetAndIncrementStackID());
 
-			ImGui::InputTextString(jntId.c_str(), &jointName, ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputText(jntId.c_str(), &jointName, ImGuiInputTextFlags_ReadOnly);
 			ImGui::PopItemWidth();
 
 			ImGui::TableNextColumn();
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
 
-			const std::string attId = "##" + std::to_string(UI::GetAndIncrementStackID());
-			ImGui::InputTextString(attId.c_str(), &attachment.name);
+			const String attId = FormatString("##{}", UI::GetAndIncrementStackID());
+			ImGui::InputText(attId.c_str(), &attachment.name);
 
-			std::string popupName = "offsetRightclick" + std::to_string(index);
+			String popupName = FormatString("offsetRightclick{}", index);
 			if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 			{
 				ImGui::OpenPopup(popupName.c_str());
 			}
 
-			std::string rightClickId = "offsetRightclick" + std::to_string(index);
+			String rightClickId = FormatString("offsetRightclick{}", index);
 			if (ImGui::BeginPopupContextItem(rightClickId.c_str(), ImGuiPopupFlags_MouseButtonRight))
 			{
 				ImGui::SetWindowSize({ 100.f, 100.f });
@@ -92,7 +92,9 @@ void SkeletonEditorPanel::UpdateMainContent()
 			ImGui::PopItemWidth();
 
 			ImGui::TableNextColumn();
-			if (ImGui::Button((std::string("-##") + std::to_string(index)).c_str(), { 22.f, 22.f }))
+
+			const String buttonId = FormatString("-##{}", index);
+			if (ImGui::Button(buttonId.c_str(), { 22.f, 22.f }))
 			{
 				indexToRemove = index;
 			}
@@ -135,7 +137,7 @@ void SkeletonEditorPanel::AddJointAttachmentPopup()
 
 	if (UI::BeginPopup("addJointAttachmentSkeleton", ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
-		Vector<std::string> jointNames;
+		Vector<String> jointNames;
 		for (const auto& joint : m_skeleton->GetJoints())
 		{
 			jointNames.emplace_back(joint.name);
@@ -165,7 +167,7 @@ void SkeletonEditorPanel::AddJointAttachmentPopup()
 
 			for (const auto& name : jointNames)
 			{
-				const std::string id = name + "##" + std::to_string(UI::GetAndIncrementStackID());
+				const String id = FormatString("{}##{}", name, UI::GetAndIncrementStackID());
 
 				UI::ShiftCursor(4.f, 0.f);
 				UI::RenderMatchingTextBackground(m_jointSearchQuery, name, EditorTheme::MatchingTextBackground);

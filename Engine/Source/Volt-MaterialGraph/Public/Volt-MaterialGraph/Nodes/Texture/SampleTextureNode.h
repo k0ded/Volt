@@ -28,8 +28,8 @@ namespace Volt::MosaicNodes
 
 		MOSAIC_NODE_DECLARE_GUID("{DB60F69D-EFC5-4AA4-BF5A-C89D58942D3F}"_guid);
 
-		inline const std::string GetName() const override { return "Sample Texture"; }
-		inline const std::string GetCategory() const override { return "Texture"; }
+		inline const String GetName() const override { return "Sample Texture"; }
+		inline const String GetCategory() const override { return "Texture"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		void Reset() override;

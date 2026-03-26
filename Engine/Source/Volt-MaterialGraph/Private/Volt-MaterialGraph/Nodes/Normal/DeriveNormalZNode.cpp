@@ -15,12 +15,12 @@ namespace Volt::MosaicNodes
 		AddOutputParameter("Result", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.f), false);
 	}
 
-	const std::string DeriveNormalZNode::GetName() const
+	const String DeriveNormalZNode::GetName() const
 	{
 		return "DeriveNormalZ";
 	}
 
-	const std::string DeriveNormalZNode::GetCategory() const
+	const String DeriveNormalZNode::GetCategory() const
 	{
 		return "Utility";
 	}
@@ -34,7 +34,7 @@ namespace Volt::MosaicNodes
 	{
 		constexpr const char* nodeStr = "const float3 {} = float3({}, sqrt(1.f - saturate({}.x * {}.x + {}.y * {}.y)));\n";
 
-		std::string xyVector = std::format("{}", GetInputParameter(0).Get<glm::vec2>());
+		String xyVector = FormatString("{}", GetInputParameter(0).Get<glm::vec2>());
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -46,8 +46,8 @@ namespace Volt::MosaicNodes
 			xyVector = info.resultParamName;
 		}
 
-		const std::string varName = m_graph->GetNextVariableName();
-		const std::string result = std::format(nodeStr, varName, xyVector, xyVector, xyVector, xyVector, xyVector);
+		const String varName = m_graph->GetNextVariableName();
+		const String result = FormatString(nodeStr, varName, xyVector, xyVector, xyVector, xyVector, xyVector);
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

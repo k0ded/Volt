@@ -1,21 +1,21 @@
 #include "vtcorepch.h"
 #include "Volt-Core/Version.h"
 
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/StringUtility.h>
 
 namespace Volt
 {
-	Version::Version(const std::string& strValue)
+	Version::Version(const String& strValue)
 	{
-		Vector<std::string> strParts = Utility::SplitStringsByCharacter(strValue, '.');
+		Vector<String> strParts = Utility::SplitStringsByCharacter(strValue, '.');
 		if (strParts.size() != 3)
 		{
 			return;
 		}
 
-		m_major = std::stoi(strParts[0]);
-		m_minor = std::stoi(strParts[1]);
-		m_patch = std::stoi(strParts[2]);
+		m_major = StoI(strParts[0]);
+		m_minor = StoI(strParts[1]);
+		m_patch = StoI(strParts[2]);
 	}
 
 	Version::Version(const uint32_t major, const uint32_t minor, const uint32_t patch)
@@ -23,7 +23,7 @@ namespace Volt
 	{
 	}
 
-	Version Version::CreateFromString(const std::string& strValue)
+	Version Version::CreateFromString(const String& strValue)
 	{
 		return Version(strValue);
 	}
@@ -33,9 +33,9 @@ namespace Volt
 		return Version(major, minor, patch);
 	}
 
-	const std::string Version::ToString() const
+	const String Version::ToString() const
 	{
-		return std::to_string(m_major) + "." + std::to_string(m_minor) + "." + std::to_string(m_patch);
+		return FormatString("{}.{}.{}", m_major, m_minor, m_patch);
 	}
 
 	const bool Version::IsValid() const

@@ -5,32 +5,32 @@
 namespace Volt
 {
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJob(StringView jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize)
 	{
 		return CreateJob(jobName, priority, ExecutionPolicy::WorkerThread, std::move(func), stackSize);
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJob(StringView jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize)
 	{
 		return CreateJob(jobName, priority, ExecutionPolicy::WorkerThread, associatedCounter, std::move(func), stackSize);
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize)
 	{
 		return CreateJob(jobName, priority, executionPolicy, nullptr, std::move(func), stackSize);
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize)
 	{
 		// Will create a wait counter for us
 		return CreateJob(jobName, priority, executionPolicy, associatedCounter, nullptr, std::move(func), stackSize);
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -59,14 +59,14 @@ namespace Volt
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJobAsDependency(StringView jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize)
 	{
 		// Inherit the priority.
 		return CreateJob(jobName, dependantJob->GetPriority(), dependantJob->GetWaitCounter(), std::move(func), stackSize);
 	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* JobSystem::CreateJobWithDependency(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize)
 	{
 		return CreateJob(jobName, priority, executionPolicy, nullptr, dependencyJob->GetCounter(), std::move(func), stackSize);
 	}

@@ -3,7 +3,7 @@
 
 #include "Sandbox/Utility/Theme.h"
 
-EditorWindow::EditorWindow(const std::string& title, bool dockSpace, std::string id)
+EditorWindow::EditorWindow(const String& title, bool dockSpace, String id)
 	: m_title(title + id), m_hasDockspace(dockSpace), m_id(id)
 {
 	m_backgroundColor = EditorTheme::DarkGreyBackground;

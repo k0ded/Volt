@@ -12,10 +12,10 @@ public:
 	void OutputInfo(char level, const char* data) override;
 	void Clear();
 
-	inline const Vector<std::string>& GetData() const { return m_streams; }
+	inline const Vector<String>& GetData() const { return m_streams; }
 
 private:
-	Vector<std::string> m_streams;
+	Vector<String> m_streams;
 };
 
 class WorkspacesClientUser : public ClientUser
@@ -24,8 +24,8 @@ public:
 	void OutputInfo(char level, const char* data) override;
 	void Clear();
 
-	inline const Vector<std::string>& GetData() const { return m_workspaces; }
+	inline const Vector<String>& GetData() const { return m_workspaces; }
 
 private:
-	Vector<std::string> m_workspaces;
+	Vector<String> m_workspaces;
 };

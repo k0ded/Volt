@@ -22,5 +22,5 @@ namespace Volt::TextureImport
 		return RHI::PixelFormat::UNDEFINED;
 	}
 
-	TextureCompressionType TryGetTextureCompressionTypeFromFilename(const std::string& filename);
+	TextureCompressionType TryGetTextureCompressionTypeFromFilename(const String& filename);
 }

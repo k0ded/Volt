@@ -8,7 +8,7 @@ namespace AssetBrowser
 	class DirectoryItem : public Item
 	{
 	public:
-		DirectoryItem(SelectionManager* selectionManager, const std::filesystem::path& path);
+		DirectoryItem(SelectionManager* selectionManager, const Filesystem::Path& path);
 		~DirectoryItem() override = default;
 
 		bool Render() override;
@@ -24,10 +24,10 @@ namespace AssetBrowser
 		void PushID() override;
 		IntRef<Volt::RHI::Image> GetIcon() const override;
 		ImVec4 GetBackgroundColor() const override;
-		std::string GetTypeName() const override;
+		String GetTypeName() const override;
 		void SetDragDropPayload() override;
 		bool RenderRightClickPopup() override;
-		bool Rename(const std::string& newName) override;
+		bool Rename(const String& newName) override;
 		void Open() override;
 	};
 }

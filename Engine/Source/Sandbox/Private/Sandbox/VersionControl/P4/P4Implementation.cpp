@@ -31,7 +31,7 @@ void P4Implementation::DisconnectImpl()
 	m_isConnected = false;
 }
 
-bool P4Implementation::ConnectImpl(const std::string& server, const std::string& user, const std::string& password)
+bool P4Implementation::ConnectImpl(const String& server, const String& user, const String& password)
 {
 	Error e;
 
@@ -69,38 +69,38 @@ bool P4Implementation::ConnectImpl(const std::string& server, const std::string&
 	return true;
 }
 
-void P4Implementation::AddImpl(const std::filesystem::path& file)
+void P4Implementation::AddImpl(const Filesystem::Path& file)
 {
-	std::string stringPath = file.string();
+	String stringPath = file.ToString();
 	char* argv[] = { stringPath.data() };
 
 	m_client.SetArgv(1, argv);
 	m_client.Run("add", &m_defaultUser);
 }
 
-void P4Implementation::DeleteImpl(const std::filesystem::path& file)
+void P4Implementation::DeleteImpl(const Filesystem::Path& file)
 {
 }
 
-void P4Implementation::EditImpl(const std::filesystem::path& file)
+void P4Implementation::EditImpl(const Filesystem::Path& file)
 {
-	std::string stringPath = file.string();
+	String stringPath = file.ToString();
 	char* argv[] = { stringPath.data() };
 
 	m_client.SetArgv(1, argv);
 	m_client.Run("edit", &m_defaultUser);
 }
 
-void P4Implementation::SubmitImpl(const std::string& message)
+void P4Implementation::SubmitImpl(const String& message)
 {
 }
 
-void P4Implementation::SyncImpl(const std::string& depo)
+void P4Implementation::SyncImpl(const String& depo)
 {
 	m_client.Run("sync", &m_defaultUser);
 }
 
-void P4Implementation::SwitchStreamImpl(const std::string& newStream)
+void P4Implementation::SwitchStreamImpl(const String& newStream)
 {
 	char* argv[] = { const_cast<char*>(newStream.c_str()) };
 
@@ -114,7 +114,7 @@ void P4Implementation::RefreshStreamsImpl()
 	m_client.Run("streams", &m_streamsCU);
 }
 
-void P4Implementation::SwitchWorkspaceImpl(const std::string& newWorkspace)
+void P4Implementation::SwitchWorkspaceImpl(const String& newWorkspace)
 {
 	m_client.SetClient(newWorkspace.c_str());
 }
@@ -125,12 +125,12 @@ void P4Implementation::RefreshWorkspacesImpl()
 	m_client.Run("clients", &m_workspacesCU);
 }
 
-const Vector<std::string>& P4Implementation::GetWorkspacesImpl()
+const Vector<String>& P4Implementation::GetWorkspacesImpl()
 {
 	return m_workspacesCU.GetData();
 }
 
-const Vector<std::string>& P4Implementation::GetStreamsImpl()
+const Vector<String>& P4Implementation::GetStreamsImpl()
 {
 	return m_streamsCU.GetData();
 }

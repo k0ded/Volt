@@ -25,7 +25,7 @@ namespace Volt::RHI
 	{
 	}
 
-	std::string_view D3D12Shader::GetName() const
+	StringView D3D12Shader::GetName() const
 	{
 		return m_name;
 	}

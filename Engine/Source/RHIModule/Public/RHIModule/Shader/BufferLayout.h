@@ -56,7 +56,7 @@ namespace Volt::RHI
 	struct BufferElement
 	{
 		BufferElement() = default;
-		BufferElement(ElementType aElementType, const std::string& aName, uint32_t aArrayIndex = 0, InputUsage aUsage = InputUsage::PerVertex, uint32_t aInputSlot = 0)
+		BufferElement(ElementType aElementType, const String& aName, uint32_t aArrayIndex = 0, InputUsage aUsage = InputUsage::PerVertex, uint32_t aInputSlot = 0)
 			: name(aName), size(GetSizeFromType(aElementType)), arrayIndex(aArrayIndex), inputSlot(aInputSlot), type(aElementType), usage(aUsage)
 		{
 		}
@@ -159,7 +159,7 @@ namespace Volt::RHI
 			return archive;
 		}
 
-		std::string name;
+		String name;
 		size_t offset;
 
 		uint32_t size;
@@ -190,7 +190,7 @@ namespace Volt::RHI
 			CalculateOffsetAndStride();
 		}
 
-		VT_NODISCARD VT_INLINE static std::string GetNameFromElementType(ElementType type)
+		VT_NODISCARD VT_INLINE static String GetNameFromElementType(ElementType type)
 		{
 			switch (type)
 			{

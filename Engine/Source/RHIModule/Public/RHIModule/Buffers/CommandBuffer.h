@@ -92,7 +92,7 @@ namespace Volt::RHI
 
 		virtual void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) = 0;
 
-		virtual void BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor) = 0;
+		virtual void BeginMarker(StringView markerLabel, const std::array<float, 4>& markerColor) = 0;
 		virtual void EndMarker() = 0;
 
 		virtual const uint32_t BeginTimestamp() = 0;

@@ -264,9 +264,13 @@ public:
 	}
 
 	CompressedPairImp(FirstParamType x)
-		: m_first(x), m_second(x)
+		: m_first(x)
 	{
 	}
+
+	CompressedPairImp(SecondParamType x)
+		: m_second(x)
+	{}
 
 	FirstReference First() { return m_first; }
 	FirstConstReference First() const { return m_first; }

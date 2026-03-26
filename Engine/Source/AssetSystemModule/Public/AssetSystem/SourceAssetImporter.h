@@ -16,10 +16,10 @@ namespace Volt
 	struct SourceAssetUserImportData
 	{
 		std::function<void(float)> progressCallback;
-		std::function<void(const std::string&, LogVerbosity)> messageCallback;
-		std::function<std::string()> passwordRequiredCallback;
+		std::function<void(const String&, LogVerbosity)> messageCallback;
+		std::function<String()> passwordRequiredCallback;
 
-		VT_INLINE void OnInfo(const std::string& string) const
+		VT_INLINE void OnInfo(const String& string) const
 		{
 			if (messageCallback)
 			{
@@ -27,7 +27,7 @@ namespace Volt
 			}
 		}
 
-		VT_INLINE void OnWarning(const std::string& string) const
+		VT_INLINE void OnWarning(const String& string) const
 		{
 			if (messageCallback)
 			{
@@ -35,7 +35,7 @@ namespace Volt
 			}
 		}
 
-		VT_INLINE void OnError(const std::string& string) const
+		VT_INLINE void OnError(const String& string) const
 		{
 			if (messageCallback)
 			{
@@ -43,7 +43,7 @@ namespace Volt
 			}
 		}
 
-		VT_INLINE std::string OnPasswordRrquired() const
+		VT_INLINE String OnPasswordRrquired() const
 		{
 			if (passwordRequiredCallback)
 			{
@@ -56,11 +56,11 @@ namespace Volt
 
 	struct SourceAssetFileInformation
 	{
-		std::string fileVersion;
-		std::string fileCreator;
-		std::string fileCreatorApplication;
-		std::string fileUnits;
-		std::string fileAxisDirection;
+		String fileVersion;
+		String fileCreator;
+		String fileCreatorApplication;
+		String fileUnits;
+		String fileAxisDirection;
 
 		bool hasSkeleton;
 		bool hasMesh;
@@ -70,15 +70,15 @@ namespace Volt
 	class VTAS_API SourceAssetImporter
 	{
 	public:
-		virtual SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const = 0;
+		virtual SourceAssetFileInformation GetSourceFileInformation(const Filesystem::Path& filepath) const = 0;
 
 		template<typename ConfigType>
-		Vector<AssetReference<Asset>> Import(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
+		Vector<AssetReference<Asset>> Import(const Filesystem::Path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
 			return ImportInternal(filepath, reinterpret_cast<const void*>(&config), userData);
 		}
 
 	protected:
-		virtual Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const = 0;
+		virtual Vector<AssetReference<Asset>> ImportInternal(const Filesystem::Path& filepath, const void* config, const SourceAssetUserImportData& userData) const = 0;
 	};
 }

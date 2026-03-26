@@ -8,6 +8,7 @@
 
 #include <Volt-FileSystem/FileIORequest.h>
 #include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <Volt-FileSystem/Filesystem.h>
 
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Time/TimeUtility.h>
@@ -18,10 +19,10 @@ namespace Volt::RHI
 {
 	namespace Utility
 	{
-		inline static std::filesystem::path GetShaderCacheSubDirectory()
+		inline static Filesystem::Path GetShaderCacheSubDirectory()
 		{
 			const auto api = GraphicsContext::GetAPI();
-			std::filesystem::path subDir;
+			Filesystem::Path subDir;
 
 			switch (api)
 			{
@@ -85,7 +86,7 @@ namespace Volt::RHI
 		BufferLayoutMap vertexLayout;
 		BufferLayout instanceLayout;
 		ShaderParameterMap shaderParameterMap;
-		Vector<std::filesystem::path> includeDependencies;
+		Vector<Filesystem::Path> includeDependencies;
 
 		friend Archive& operator<<(Archive& archive, CachedShader& value)
 		{
@@ -113,14 +114,14 @@ namespace Volt::RHI
 
 	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
-		const std::filesystem::path cachedPath = GetCachedFilePath(shaderSpecification);
+		const Filesystem::Path cachedPath = GetCachedFilePath(shaderSpecification);
 	
-		if (shaderSpecification.shaderSourceInfo.sourceEntry.filepath.empty() || std::filesystem::exists(cachedPath) == false)
+		if (shaderSpecification.shaderSourceInfo.sourceEntry.filepath.IsEmpty() || Filesystem::Exists(cachedPath) == false)
 		{
 			return {};
 		}
 		
-		const uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
+		const uint64_t lastWriteTime = Filesystem::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
 
 		IORequestResult<IORequestReadFile_FileReader> ioResult = IOThreads::SubmitRequest<IORequestReadFile_FileReader>("Read Cached Shader", cachedPath);
 		FileReader& fileReader = ioResult.GetResult();
@@ -163,7 +164,7 @@ namespace Volt::RHI
 
 	void ShaderCache::CacheShader(const ShaderCompiler::Specification& shaderSpec, const ShaderCompiler::CompilationResultData& compilationResult)
 	{
-		const std::filesystem::path cachedPath = GetCachedFilePath(shaderSpec);
+		const Filesystem::Path cachedPath = GetCachedFilePath(shaderSpec);
 
 		FileWriter archive{};
 		if (!archive.Open(cachedPath))
@@ -191,16 +192,24 @@ namespace Volt::RHI
 		IOThreads::SubmitRequest<IORequestWriteFile_FileWriter>("Write Cached Shader", std::move(archive));
 	}
 
-	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const
+	Filesystem::Path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const
 	{
-		const size_t hash = Math::HashCombine(std::hash<std::filesystem::path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<std::string>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
+		const size_t hash = Math::HashCombine(std::hash<Filesystem::Path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<String>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
 
 		const auto cacheDir = m_info.cacheDirectory / Utility::GetShaderCacheSubDirectory();
-		const auto cachePath = cacheDir / (shaderSpec.shaderSourceInfo.sourceEntry.filepath.stem().string() + "_" + shaderSpec.shaderSourceInfo.sourceEntry.entryPoint + "_" + std::to_string(hash) + "_" + std::to_string(shaderSpec.permutationConfig.GetPermutationIndex()) + ".vtshcache");
+		
+		const WString filename = FormatString(
+			L"{}_{}_{}_{}.vtscache",
+			shaderSpec.shaderSourceInfo.sourceEntry.filepath.Stem(),
+			shaderSpec.shaderSourceInfo.sourceEntry.entryPoint,
+			hash,
+			shaderSpec.permutationConfig.GetPermutationIndex());
 
-		if (!std::filesystem::exists(cacheDir))
+		const auto cachePath = cacheDir / filename;
+
+		if (!Filesystem::Exists(cacheDir))
 		{
-			std::filesystem::create_directories(cacheDir);
+			Filesystem::CreateDirectories(cacheDir);
 		}
 
 		return cachePath;

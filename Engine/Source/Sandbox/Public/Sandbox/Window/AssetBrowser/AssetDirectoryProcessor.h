@@ -18,7 +18,7 @@ class AssetDirectoryProcessor
 public:
 	AssetDirectoryProcessor(Weak<AssetBrowser::SelectionManager> selectionManager, std::set<AssetType> assetMask, AssetBrowser::DirectoryItemAllocator& inDirItemAllocator, AssetBrowser::AssetItemAllocator& inAssetItemAllocator);
 
-	RawPtr<AssetBrowser::DirectoryItem> ProcessDirectories(const std::filesystem::path& path, AssetData& meshToImportData);
+	RawPtr<AssetBrowser::DirectoryItem> ProcessDirectories(const Filesystem::Path& path, AssetData& meshToImportData);
 
 private:
 	AssetBrowser::AssetItemAllocator& m_assetItemAllocatorRef;

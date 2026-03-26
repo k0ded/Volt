@@ -7,6 +7,7 @@
 #include "Volt-Platforms/ThreadPriority.h"
 
 #include <CoreUtilities/Time/Time.h>
+#include <CoreUtilities/String/StringView.h>
 
 #include <thread>
 #include <chrono>
@@ -19,7 +20,7 @@ namespace Volt
 		static void Initialize();
 		static void Shutdown();
 
-		static void SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName);
+		static void SetThreadName(std::thread::native_handle_type threadHandle, StringView threadName);
 		static void SetThreadPriority(std::thread::native_handle_type threadHandle, ThreadPriority priority);
 		static void AssignThreadToCore(std::thread::native_handle_type threadHandle, uint64_t affinityMask);
 		static std::thread::native_handle_type GetMainThreadHandle() { return m_mainThreadHandle; }

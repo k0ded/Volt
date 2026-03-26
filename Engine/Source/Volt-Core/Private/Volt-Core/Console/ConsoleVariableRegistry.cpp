@@ -2,6 +2,8 @@
 
 #include "Volt-Core/Console/ConsoleVariableRegistry.h"
 
+#include <CoreUtilities/String/StringUtility.h>
+
 namespace Volt
 {
 	ConsoleVariableRegistry::ConsoleVariableRegistry()
@@ -12,7 +14,7 @@ namespace Volt
 	{
 	}
 
-	std::unordered_map<std::string, Ref<RegisteredConsoleVariableBase>>& ConsoleVariableRegistry::GetRegisteredVariables()
+	std::unordered_map<String, Ref<RegisteredConsoleVariableBase>>& ConsoleVariableRegistry::GetRegisteredVariables()
 	{
 		return ConsoleVariableRegistry::Get().m_registeredVariables;
 	}
@@ -23,15 +25,15 @@ namespace Volt
 		return registry;
 	}
 
-	bool ConsoleVariableRegistry::VariableExists(const std::string& variableName)
+	bool ConsoleVariableRegistry::VariableExists(const String& variableName)
 	{
-		std::string tempVarName = ::Utility::ToLower(std::string(variableName));
+		String tempVarName = ::Utility::ToLower(variableName);
 		return ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName);
 	}
 
-	Weak<RegisteredConsoleVariableBase> ConsoleVariableRegistry::GetVariable(const std::string& variableName)
+	Weak<RegisteredConsoleVariableBase> ConsoleVariableRegistry::GetVariable(const String& variableName)
 	{
-		const std::string tempVarName = ::Utility::ToLower(variableName);
+		const String tempVarName = ::Utility::ToLower(variableName);
 		return ConsoleVariableRegistry::Get().m_registeredVariables.at(tempVarName);
 	}
 }

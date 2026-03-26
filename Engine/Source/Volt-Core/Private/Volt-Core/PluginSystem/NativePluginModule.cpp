@@ -5,7 +5,7 @@
 
 namespace Volt
 {
-	NativePluginModule::NativePluginModule(const std::filesystem::path& binaryFilepath, bool externallyLoaded) noexcept
+	NativePluginModule::NativePluginModule(const Filesystem::Path& binaryFilepath, bool externallyLoaded) noexcept
 		: m_binaryFilepath(binaryFilepath), m_externallyLoaded(externallyLoaded)
 	{
 	}
@@ -32,12 +32,12 @@ namespace Volt
 	NativePluginModule::NativePluginModule(NativePluginModule&& other) noexcept
 		: m_binaryFilepath(other.m_binaryFilepath), m_externallyLoaded(other.m_externallyLoaded)
 	{
-		other.m_binaryFilepath.clear();
+		other.m_binaryFilepath.Clear();
 	}
 
 	NativePluginModule::~NativePluginModule()
 	{
-		if (!m_binaryFilepath.empty() && !m_externallyLoaded)
+		if (!m_binaryFilepath.IsEmpty() && !m_externallyLoaded)
 		{
 			DynamicLibraryManager::Get().UnloadDynamicLibrary(m_binaryFilepath);
 		}
@@ -45,11 +45,11 @@ namespace Volt
 
 	void NativePluginModule::Unload()
 	{
-		if (!m_binaryFilepath.empty() && !m_externallyLoaded)
+		if (!m_binaryFilepath.IsEmpty() && !m_externallyLoaded)
 		{
 			DynamicLibraryManager::Get().UnloadDynamicLibrary(m_binaryFilepath);
 		}
 
-		m_binaryFilepath.clear();
+		m_binaryFilepath.Clear();
 	}
 }

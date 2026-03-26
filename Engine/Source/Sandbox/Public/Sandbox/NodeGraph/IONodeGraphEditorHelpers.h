@@ -47,7 +47,7 @@ public:
 			myAttributeFunctions[GetTypeIndex<glm::uvec2>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<glm::uvec2&>(value)); };
 			myAttributeFunctions[GetTypeIndex<glm::uvec3>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<glm::uvec3&>(value)); };
 			myAttributeFunctions[GetTypeIndex<glm::uvec4>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<glm::uvec4&>(value)); };
-			myAttributeFunctions[GetTypeIndex<std::string>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<std::string&>(value)); };
+			myAttributeFunctions[GetTypeIndex<String>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<String&>(value)); };
 
 			myAttributeFunctions[GetTypeIndex<Volt::Entity>()] = [](std::any& value) { IONodeGraphEditorHelpers::Attribute(std::any_cast<Volt::Entity&>(value)); };
 		}
@@ -84,7 +84,7 @@ public:
 			myAttributeColors[GetTypeIndex<glm::uvec3>()] = { 0.88f, 0.7f, 0.13f, 1.f };
 			myAttributeColors[GetTypeIndex<glm::uvec4>()] = { 0.88f, 0.7f, 0.13f, 1.f };
 
-			myAttributeColors[GetTypeIndex<std::string>()] = { 0.83f, 0.023f, 0.7f, 1.f };
+			myAttributeColors[GetTypeIndex<String>()] = { 0.83f, 0.023f, 0.7f, 1.f };
 
 			myAttributeColors[GetTypeIndex<Volt::Entity>()] = { 0.3f, 1.f, 0.49f, 1.f };
 
@@ -111,7 +111,7 @@ public:
 
 	inline static void Attribute(bool& value)
 	{
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::Checkbox(id.c_str(), &value);
 	}
 
@@ -121,7 +121,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value);
 
 		ImGui::PopItemWidth();
@@ -133,7 +133,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value);
 
 		ImGui::PopItemWidth();
@@ -145,7 +145,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_S16, &value);
 
 		ImGui::PopItemWidth();
@@ -157,7 +157,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_U16, &value);
 
 		ImGui::PopItemWidth();
@@ -169,7 +169,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_S8, &value);
 
 		ImGui::PopItemWidth();
@@ -181,7 +181,7 @@ public:
 
 		ImGui::PushItemWidth(width.x + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_U8, &value);
 
 		ImGui::PopItemWidth();
@@ -196,7 +196,7 @@ public:
 
 		ImGui::PushItemWidth(std::max(width.x, 20.f) + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_Double, &value, 1.f, nullptr, nullptr, "%.1f");
 
 		ImGui::PopItemWidth();
@@ -211,7 +211,7 @@ public:
 
 		ImGui::PushItemWidth(std::max(width.x, 20.f) + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
+		const String id = FormatString("##{}", s_stackId++);
 		ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value, 1.f, nullptr, nullptr, "%.3f");
 
 		ImGui::PopItemWidth();
@@ -222,12 +222,12 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.x, 1.f, nullptr, nullptr, "%.1f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.y, 1.f, nullptr, nullptr, "%.1f");
 		}
 
@@ -239,17 +239,17 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.x, 1.f, nullptr, nullptr, "%.3f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.y, 1.f, nullptr, nullptr, "%.3f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.z, 1.f, nullptr, nullptr, "%.3f");
 		}
 
@@ -261,22 +261,22 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.x, 1.f, nullptr, nullptr, "%.1f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.y, 1.f, nullptr, nullptr, "%.1f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.z, 1.f, nullptr, nullptr, "%.1f");
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_Float, &value.w, 1.f, nullptr, nullptr, "%.1f");
 		}
 
@@ -288,12 +288,12 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.y);
 		}
 
@@ -305,17 +305,17 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.y);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.z);
 		}
 
@@ -327,22 +327,22 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.y);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.z);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_U32, &value.w);
 		}
 
@@ -354,12 +354,12 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.y);
 		}
 
@@ -371,17 +371,17 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.y);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.z);
 		}
 
@@ -393,39 +393,39 @@ public:
 		ImGui::PushItemWidth(40.f);
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.x);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.y);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.z);
 		}
 
 		{
-			const std::string id = "##" + std::to_string(s_stackId++);
+			const String id = FormatString("##{}", s_stackId++);
 			ImGui::DragScalar(id.c_str(), ImGuiDataType_S32, &value.w);
 		}
 
 		ImGui::PopItemWidth();
 	}
 
-	inline static void Attribute(std::string& value)
+	inline static void Attribute(String& value)
 	{
 		ImGui::PushItemWidth(50.f);
-		const std::string id = "##" + std::to_string(s_stackId++);
-		ImGui::InputTextString(id.c_str(), &value);
+		const String id = FormatString("##{}", s_stackId++);
+		ImGui::InputText(id.c_str(), &value);
 		ImGui::PopItemWidth();
 	}
 
 	inline static void Attribute(Volt::Entity& entity)
 	{
-		std::string entityName;
+		String entityName;
 		if (entity)
 		{
 			entityName = entity.GetComponent<Volt::TagComponent>().tag;
@@ -438,15 +438,15 @@ public:
 		const ImVec2 width = ImGui::CalcTextSize(entityName.c_str());
 		ImGui::PushItemWidth(std::max(width.x, 20.f) + ATTR_PADDING);
 
-		const std::string id = "##" + std::to_string(s_stackId++);
-		ImGui::InputTextString(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
+		const String id = FormatString("##{}", s_stackId++);
+		ImGui::InputText(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
 
 		ImGui::PopItemWidth();
 	}
 
 	inline static void Attribute(Volt::AssetHandle& assetHandle, AssetType supportedTypes)
 	{
-		std::string assetFileName = "Null";
+		String assetFileName = "Null";
 
 		AssetReference<Volt::Asset> rawAsset;
 		if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, rawAsset))
@@ -465,8 +465,8 @@ public:
 		const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
 		ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
 
-		const std::string id = "##" + std::to_string(IONodeGraphEditorHelpers::GetId());
-		ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
+		const String id = FormatString("##{}", IONodeGraphEditorHelpers::GetId());
+		ImGui::InputText(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
 
 		UI::DragDropTarget("ASSET_BROWSER_ITEM", assetHandle);

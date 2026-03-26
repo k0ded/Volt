@@ -2,6 +2,8 @@
 #include "WindowModule/Monitor.h"
 #include "WindowModule/WindowLogCategory.h"
 
+#include <CoreUtilities/String/StringBuilder.h>
+
 #include <LogModule/Log.h>
 
 #include <GLFW/glfw3.h>
@@ -13,12 +15,13 @@ namespace Volt
 	{
 		Initialize();
 
-		std::stringstream sstream;
-		sstream << "Initialized monitor: " << m_monitorName << "\n";
-		sstream << "	Num Video Modes: " << m_videoModes.size() << "\n";
-		sstream << "	Size: " << m_monitorSize.x << ", " << m_monitorSize.y << "\n";
+		StringBuilder stringBuilder;
 
-		VT_LOGC_UNFORMATTED(Trace, LogWindowManagement, sstream.str());
+		stringBuilder << "Initialized monitor: " << m_monitorName << "\n";
+		stringBuilder << "	Num Video Modes: " << m_videoModes.size() << "\n";
+		stringBuilder << "	Size: " << m_monitorSize.x << ", " << m_monitorSize.y << "\n";
+
+		VT_LOGC_UNFORMATTED(Trace, LogWindowManagement, stringBuilder.Get());
 	}
 
 	void Monitor::Initialize()

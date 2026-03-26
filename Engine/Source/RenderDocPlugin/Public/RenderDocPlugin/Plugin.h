@@ -34,9 +34,9 @@ public:
 	VT_DECLARE_PLUGIN_GUID("5AFA1093-1162-4C90-A2E8-946001C427E8"_guid);
 
 	inline uint32_t GetVersion() const override { return 1; }
-	inline std::string_view GetName() const override { return "RenderDocPlugin"; }
-	inline std::string_view GetDescription() const override { return "RenderDoc"; }
-	inline std::string_view GetCategory() const override { return "None"; }
+	inline StringView GetName() const override { return "RenderDocPlugin"; }
+	inline StringView GetDescription() const override { return "RenderDoc"; }
+	inline StringView GetCategory() const override { return "None"; }
 
 	void Initialize() override;
 	void Shutdown() override;

@@ -34,9 +34,9 @@ void RenderDocFrameCapture::LaunchCaptureApplication()
 	m_renderDocAPI->LaunchReplayUI(1, nullptr);
 }
 
-void RenderDocFrameCapture::SetCaptureFileTargetFilePath(const std::filesystem::path& filePath)
+void RenderDocFrameCapture::SetCaptureFileTargetFilePath(const Filesystem::Path& filePath)
 {
-	const std::string strPath = filePath.string();
+	const String strPath = filePath.ToString();
 	m_renderDocAPI->SetCaptureFilePathTemplate(strPath.c_str());
 }
 

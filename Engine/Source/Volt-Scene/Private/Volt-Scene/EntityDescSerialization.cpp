@@ -209,7 +209,8 @@ namespace Volt::EntityDescSerialization
 				continue;
 			}
 
-			const IComponentTypeDesc* componentDesc = static_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
+			const std::string_view tempName = storage.type().name();
+			const IComponentTypeDesc* componentDesc = static_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(StringView(tempName.data(), tempName.size())));
 			if (!componentDesc)
 			{
 				// Component isn't registered, skip
@@ -372,7 +373,7 @@ namespace Volt::EntityDescSerialization
 		}
 	}
 
-	std::filesystem::path GetSavePathForEntity(const Volt::AssetHandle& handle)
+	Filesystem::Path GetSavePathForEntity(const Volt::AssetHandle& handle)
 	{
 		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 		VT_ENSURE(assetMetadata->type == AssetTypes::EntityDesc);
@@ -383,10 +384,10 @@ namespace Volt::EntityDescSerialization
 
 		VT_ENSURE(sceneAssetMetadata->HasFilepath());
 
-		const std::filesystem::path& owningScenePath = sceneAssetMetadata->filepath;
-		const std::string owningSceneName = owningScenePath.stem().string();
+		const Filesystem::Path& owningScenePath = sceneAssetMetadata->filepath;
+		const String owningSceneName = owningScenePath.Stem().ToString();
 
-		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
+		const Filesystem::Path relativePath = owningScenePath.ParentPath() / (owningSceneName + "_Entities") / FormatString("{}.vtasset", entityMetadata.entityID);
 		return g_assetManager->GetAssetFilesystemPath(relativePath);
 	}
 }

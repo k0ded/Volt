@@ -22,7 +22,7 @@ namespace Volt
 	struct RGTextureDesc : public RHI::ImageDesc
 	{
 		template<RHI::PixelFormat PixelFormat>
-		static RGTextureDesc Create2D(const uint32_t width, const uint32_t height, RHI::ImageUsage usage, const std::string& name = "Texture")
+		static RGTextureDesc Create2D(const uint32_t width, const uint32_t height, RHI::ImageUsage usage, const String& name = "Texture")
 		{
 			VT_ASSERT_MSG(width > 0 && height > 0, "Width and height must not be zero!");
 			
@@ -38,7 +38,7 @@ namespace Volt
 		}
 
 		template<RHI::PixelFormat PixelFormat>
-		static RGTextureDesc CreateCube(const uint32_t width, const uint32_t height, RHI::ImageUsage usage, const std::string& name = "Texture")
+		static RGTextureDesc CreateCube(const uint32_t width, const uint32_t height, RHI::ImageUsage usage, const String& name = "Texture")
 		{
 			VT_ASSERT_MSG(width > 0 && height > 0, "Width and height must not be zero!");
 			

@@ -42,17 +42,17 @@ void AnimationEditorPanel::UpdateMainContent()
 					const auto id = UI::GetAndIncrementStackID();
 					bool selected = false;
 
-					ImGui::Selectable(std::format("{0}: ", events[index].name).c_str(), &selected, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(150, 25));
+					ImGui::Selectable(FormatString("{0}: ", events[index].name).c_str(), &selected, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(150, 25));
 					ImGui::SameLine();
-					ImGui::DragInt(std::format("-##rem{0}", id).c_str(), (int*)&events[index].frame);
+					ImGui::DragInt(FormatString("-##rem{0}", id).c_str(), (int*)&events[index].frame);
 
-					std::string popupName = "eventPopup" + std::to_string(index);
+					String popupName = FormatString("eventPopup{}", index);
 					if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 					{
 						ImGui::OpenPopup(popupName.c_str());
 					}
 
-					std::string rightClickId = "eventRightClick" + std::to_string(index);
+					String rightClickId = FormatString("eventRightClick{}", index);
 					if (ImGui::BeginPopupContextItem(rightClickId.c_str(), ImGuiPopupFlags_MouseButtonRight))
 					{
 						if (ImGui::MenuItem("Remove"))

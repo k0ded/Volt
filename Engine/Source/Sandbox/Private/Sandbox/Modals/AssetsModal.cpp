@@ -2,8 +2,6 @@
 
 #include "Sandbox/Modals/AssetsModal.h"
 
-#include <CoreUtilities/FileSystem.h>
-
 #include <AssetSystem/AssetManager.h>
 
 #include <SubSystem/SubSystemManager.h>
@@ -12,11 +10,12 @@
 #include <Volt-ImGui/FontAwesome.h>
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/FileDialogueHelpers.h>
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <imgui.h>
 
-AssetsModal::AssetsModal(const std::string& strId)
+AssetsModal::AssetsModal(const String& strId)
 	: Modal(strId, ImGuiWindowFlags_None)
 	, m_result(AssetModalResult::None)
 	, m_assetModalType(AssetModalType::None)
@@ -48,7 +47,7 @@ void AssetsModal::OnClose()
 
 AssetModalResult AssetsModal::OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType,
 	std::set<Volt::AssetHandle>& outSelectedAssets,
-	const Map<Volt::AssetHandle, std::string>* disabledAssets)
+	const Map<Volt::AssetHandle, String>* disabledAssets)
 {
 	m_assetModalType = inAssetModalType;
 	m_selectedAssets.clear();
@@ -72,7 +71,7 @@ AssetModalResult AssetsModal::OpenAssetModalTypeBlockingImpl(AssetModalType inAs
 
 	if (m_assetModalType == AssetModalType::Create)
 	{
-		for (std::pair<Volt::AssetHandle, std::filesystem::path> pair : m_assetToNewPath)
+		for (std::pair<Volt::AssetHandle, Filesystem::Path> pair : m_assetToNewPath)
 		{
 			m_selectedAssets.insert(pair.first);
 		}
@@ -325,7 +324,7 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		}
 		case CreateFilesTableColumns::AssetHandle:
 		{
-			const std::string assetHandleString = std::to_string(handle);
+			const String assetHandleString = FormatString("{}", handle);
 			ImGui::Text(assetHandleString.c_str());
 			break;
 		}
@@ -341,8 +340,8 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 			{
 				if (m_assetToNewPath.contains(handle))
 				{
-					std::filesystem::path path = m_assetToNewPath[handle];
-					ImGui::Text(path.string().c_str());
+					Filesystem::Path path = m_assetToNewPath[handle];
+					ImGui::Text(path.ToString().c_str());
 				}
 				else
 				{
@@ -352,7 +351,7 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 			else
 			{
 				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
-				ImGui::Text(assetMetadata->filepath.string().c_str());
+				ImGui::Text(assetMetadata->filepath.ToString().c_str());
 			}
 			break;
 		}
@@ -360,10 +359,10 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		{
 			if (ImGui::Button("...##SetPathButton"))
 			{
-				FileFilter filter;
+				FileDialogueHelpers::FileFilter filter;
 				filter.extensions = "vtasset";
-				std::filesystem::path pickedPath = FileSystem::SaveFileDialogue({ filter }, Volt::ProjectManager::GetAssetsDirectory());
-				if (!pickedPath.empty())
+				Filesystem::Path pickedPath = FileDialogueHelpers::SaveFileDialogue({ filter }, Volt::ProjectManager::GetAssetsDirectory());
+				if (!pickedPath.IsEmpty())
 				{
 					m_assetToNewPath[handle] = pickedPath;
 				}

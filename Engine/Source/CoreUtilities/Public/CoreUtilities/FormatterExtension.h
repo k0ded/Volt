@@ -6,7 +6,7 @@
 #include <iostream>
 
 template<>
-struct std::formatter<glm::vec2> : std::formatter<std::string>
+struct std::formatter<glm::vec2> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec2 s, FmtContext& ctx) const
@@ -16,7 +16,7 @@ struct std::formatter<glm::vec2> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::vec3> : std::formatter<std::string>
+struct std::formatter<glm::vec3> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec3 s, FmtContext& ctx) const
@@ -26,7 +26,7 @@ struct std::formatter<glm::vec3> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::vec4> : std::formatter<std::string>
+struct std::formatter<glm::vec4> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec4 s, FmtContext& ctx) const
@@ -36,7 +36,7 @@ struct std::formatter<glm::vec4> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::quat> : std::formatter<std::string>
+struct std::formatter<glm::quat> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::quat s, FmtContext& ctx) const
@@ -46,7 +46,7 @@ struct std::formatter<glm::quat> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::ivec2> : std::formatter<std::string>
+struct std::formatter<glm::ivec2> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec2 s, FmtContext& ctx) const
@@ -56,7 +56,7 @@ struct std::formatter<glm::ivec2> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::ivec3> : std::formatter<std::string>
+struct std::formatter<glm::ivec3> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec3 s, FmtContext& ctx) const
@@ -66,7 +66,7 @@ struct std::formatter<glm::ivec3> : std::formatter<std::string>
 };
 
 template<>
-struct std::formatter<glm::ivec4> : std::formatter<std::string>
+struct std::formatter<glm::ivec4> : std::formatter<String>
 {
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec4 s, FmtContext& ctx) const

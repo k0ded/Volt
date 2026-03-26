@@ -16,8 +16,8 @@ namespace Volt::RHI
 		VT_DELETE_COPY_MOVE(RHIResource);
 
 		virtual constexpr ResourceType GetType() const = 0;
-		virtual void SetName(const std::string& name) = 0;
-		virtual std::string_view GetName() const = 0;
+		virtual void SetName(const String& name) = 0;
+		virtual StringView GetName() const = 0;
 		virtual uint64_t GetDeviceAddress() const = 0;
 		virtual const MemoryRequirement& GetMemoryRequirements() const = 0;
 		virtual uint64_t GetResourceByteSize() const = 0;

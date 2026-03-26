@@ -2,7 +2,7 @@
 #include "Volt-Platforms/Windows/WindowsPlatformThread.h"
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
-#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/String/VoltString.h>
 
 namespace Volt
 {
@@ -21,9 +21,10 @@ namespace Volt
 		m_mainThreadHandle = nullptr;
 	}
 
-	void WindowsPlatformThread::SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName)
+	void WindowsPlatformThread::SetThreadName(std::thread::native_handle_type threadHandle, StringView threadName)
 	{
-		std::wstring wThreadName = Utility::ToWString(threadName);
+		WString wThreadName(WString::CtorConvert(), threadName.begin(), threadName.length());
+
 		HRESULT hr = SetThreadDescription(threadHandle, wThreadName.c_str());
 		VT_UNUSED(hr);
 		VT_ASSERT(SUCCEEDED(hr));

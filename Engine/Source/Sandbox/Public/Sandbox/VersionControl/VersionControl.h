@@ -2,15 +2,16 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Pointers/Unique.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 struct VersionControlSettings
 {
-	std::string server = "localhost:1666";
-	std::string user;
-	std::string password;
+	String server = "localhost:1666";
+	String user;
+	String password;
 
-	std::string workspace;
-	std::string stream;
+	String workspace;
+	String stream;
 };
 
 enum class VersionControlSystem
@@ -24,47 +25,47 @@ public:
 	static void Initialize(VersionControlSystem system);
 	static void Shutdown();
 
-	static bool Connect(const std::string& server, const std::string& user, const std::string& password);
+	static bool Connect(const String& server, const String& user, const String& password);
 	static void Disconnect();
 
-	static void Add(const std::filesystem::path& file);
-	static void Delete(const std::filesystem::path& file);
-	static void Edit(const std::filesystem::path& file);
+	static void Add(const Filesystem::Path& file);
+	static void Delete(const Filesystem::Path& file);
+	static void Edit(const Filesystem::Path& file);
 
-	static void Submit(const std::string& message);
-	static void Sync(const std::string& stream = "");
+	static void Submit(const String& message);
+	static void Sync(const String& stream = "");
 
-	static void SwitchStream(const std::string& newStream);
+	static void SwitchStream(const String& newStream);
 	static void RefreshStreams();
 
-	static void SwitchWorkspace(const std::string& workspace);
+	static void SwitchWorkspace(const String& workspace);
 	static void RefreshWorkspaces();
 
-	static const Vector<std::string>& GetWorkspaces();
-	static const Vector<std::string>& GetStreams();
+	static const Vector<String>& GetWorkspaces();
+	static const Vector<String>& GetStreams();
 	static bool IsConnected();
 
 protected:
 	virtual void InitializeImpl() = 0;
 	virtual void ShutdownImpl() = 0;
 	virtual void DisconnectImpl() = 0;
-	virtual bool ConnectImpl(const std::string& server, const std::string& user, const std::string& password) = 0;
+	virtual bool ConnectImpl(const String& server, const String& user, const String& password) = 0;
 
-	virtual void AddImpl(const std::filesystem::path& file) = 0;
-	virtual void DeleteImpl(const std::filesystem::path& file) = 0;
-	virtual void EditImpl(const std::filesystem::path& file) = 0;
+	virtual void AddImpl(const Filesystem::Path& file) = 0;
+	virtual void DeleteImpl(const Filesystem::Path& file) = 0;
+	virtual void EditImpl(const Filesystem::Path& file) = 0;
 
-	virtual void SubmitImpl(const std::string& message) = 0;
-	virtual void SyncImpl(const std::string& depo = "") = 0;
+	virtual void SubmitImpl(const String& message) = 0;
+	virtual void SyncImpl(const String& depo = "") = 0;
 
-	virtual void SwitchWorkspaceImpl(const std::string& newStream) = 0;
+	virtual void SwitchWorkspaceImpl(const String& newStream) = 0;
 	virtual void RefreshWorkspacesImpl() = 0;
 
-	virtual void SwitchStreamImpl(const std::string& newStream) = 0;
+	virtual void SwitchStreamImpl(const String& newStream) = 0;
 	virtual void RefreshStreamsImpl() = 0;
 
-	virtual const Vector<std::string>& GetWorkspacesImpl() = 0;
-	virtual const Vector<std::string>& GetStreamsImpl() = 0;
+	virtual const Vector<String>& GetWorkspacesImpl() = 0;
+	virtual const Vector<String>& GetStreamsImpl() = 0;
 	virtual bool IsConnectedImpl() = 0;
 
 private:

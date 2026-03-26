@@ -1,6 +1,5 @@
 #include "cupch.h"
 #include "CoreUtilities/Archive/Archive.h"
-
 #include "CoreUtilities/Archive/ArchiveVersionRegistry.h"
 
 Archive::Archive(bool isLoading)
@@ -79,4 +78,82 @@ int32_t Archive::GetVersion(const VoltGUID& guid) const
 	}
 
 	return -1;
+}
+
+Archive& operator<<(Archive& archive, String& value)
+{
+	size_t size = value.size();
+	archive << size;
+
+	if (archive.IsLoading())
+	{
+		value.resize(size);
+	}
+
+	if (size > 0)
+	{
+		archive.SerializeBytes(value.data(), value.size());
+	}
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, Filesystem::Path& value)
+{
+	String tempString = value.ToString();
+	archive << tempString;
+
+	if (archive.IsLoading())
+	{
+		value = tempString;
+	}
+
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, VoltGUID& value)
+{
+	archive << value.loPart;
+	archive << value.hiPart;
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, Archive& value)
+{
+	if (&archive != &value)
+	{
+		value.Serialize(archive);
+	}
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, UUID64& value)
+{
+	uint64_t tempValue = value.Get();
+	archive << tempValue;
+
+	if (archive.IsLoading())
+	{
+		value = { tempValue };
+	}
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, UUID32& value)
+{
+	uint32_t tempValue = value.Get();
+	archive << tempValue;
+
+	if (archive.IsLoading())
+	{
+		value = { tempValue };
+	}
+	return archive;
+}
+
+Archive& operator<<(Archive& archive, Archive::VersionInfo& value)
+{
+	archive << value.guid;
+	archive << value.version;
+
+	return archive;
 }

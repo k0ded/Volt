@@ -104,10 +104,10 @@ namespace Volt
 		virtual void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) {}
 
 		VT_NODISCARD VT_INLINE const AssetHandle& GetAssetHandle() const { return m_handle; }
-		VT_NODISCARD VT_INLINE std::string_view GetAssetName() const { return m_name; }
+		VT_NODISCARD VT_INLINE StringView GetAssetName() const { return m_name; }
 		VT_NODISCARD VT_INLINE bool IsFlagSet(AssetFlag flag) const;
 
-		VT_INLINE void SetName(const std::string& name);
+		VT_INLINE void SetName(const String& name);
 		VT_INLINE void SetFlag(AssetFlag flag, bool state);
 
 		VT_INLINE bool operator==(const Asset& other) { return m_handle == other.m_handle; }
@@ -126,7 +126,7 @@ namespace Volt
 
 		VT_INLINE void AssignAssetHandle(AssetHandle assetHandle);
 
-		std::string m_name;
+		String m_name;
 		AssetHandle m_handle = Null();
 		uint64_t m_generation;
 		std::atomic_uint8_t m_assetFlags = static_cast<uint8_t>(AssetFlag::None);
@@ -138,7 +138,7 @@ namespace Volt
 		return value != AssetFlag::None;
 	}
 
-	VT_INLINE void Asset::SetName(const std::string& name)
+	VT_INLINE void Asset::SetName(const String& name)
 	{
 		if (name == m_name)
 		{

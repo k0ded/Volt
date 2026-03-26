@@ -6,6 +6,7 @@
 #include "RHIModule/Graphics/GraphicsContext.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 #include <EventSystem/EventListener.h>
 
 namespace Volt
@@ -29,7 +30,7 @@ namespace Volt::RHI
 		RHI::GraphicsAPI api;
 		bool enableDebugLayer = false;
 
-		std::filesystem::path pipelineCacheFilepath;
+		Filesystem::Path pipelineCacheFilepath;
 	};
 
 	class VTRHI_API RHIModuleLoader : public SubSystem, public EventListener
@@ -45,7 +46,7 @@ namespace Volt::RHI
 	private:
 		typedef void* RHIModuleHandle;
 
-		void LoadRHIFromFilepath(const std::filesystem::path& filepath);
+		void LoadRHIFromFilepath(const Filesystem::Path& filepath);
 		void CreateGraphicsContextForRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 		bool OnPostFrameUpdate(AppPostFrameUpdateEvent& event);

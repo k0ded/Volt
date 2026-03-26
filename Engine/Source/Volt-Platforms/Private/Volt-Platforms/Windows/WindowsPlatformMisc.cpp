@@ -3,7 +3,6 @@
 #include "Volt-Platforms/Windows/WindowsPlatformMisc.h"
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
-#include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/Math/Math.h>
 
@@ -48,17 +47,17 @@ namespace Volt
 		freopen_s(&newstderr, "conout$", "w", stderr);
 	}
 
-	std::string WindowsPlatformMisc::GetSystemErrorMessage(int32_t error)
+	String WindowsPlatformMisc::GetSystemErrorMessage(int32_t error)
 	{
 		if (error == 0)
 		{
 			error = GetLastError();
 		}
 
-		LPWSTR strBuffer = nullptr;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPWSTR)&strBuffer, 0, NULL);
+		LPSTR strBuffer = nullptr;
+		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPSTR)&strBuffer, 0, NULL);
 
-		std::string result = Utility::ToString(std::wstring(strBuffer));
+		String result(strBuffer);
 		LocalFree(strBuffer);
 
 		return result;
@@ -81,17 +80,17 @@ namespace Volt
 			newGuid.Data4[5], newGuid.Data4[6], newGuid.Data4[7]);
 	}
 
-	std::string WindowsPlatformMisc::GetCurrentUserName()
+	String WindowsPlatformMisc::GetCurrentUserName()
 	{
 		char name[UNLEN + 1];
 		DWORD size = UNLEN + 1;
 
 		if (GetUserNameA(name, &size))
 		{
-			return std::string(name);
+			return String(name);
 		}
 
-		return std::string("Unnamned");
+		return String("Unnamned");
 	}
 
 	static void QueryCPUInfo(uint32_t& outNumCores, uint32_t& outNumLogicalCores)

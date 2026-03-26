@@ -957,7 +957,7 @@ namespace Volt::RHI
 		vkCmdBuildAccelerationStructuresKHR(m_commandBufferData.commandBuffer, static_cast<uint32_t>(buildGeometries.size()), buildGeometries.data(), vulkanBuildRangesPtrs.data());
 	}
 
-	void VulkanCommandBuffer::BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor)
+	void VulkanCommandBuffer::BeginMarker(StringView markerLabel, const std::array<float, 4>& markerColor)
 	{
 		if (Volt::RHI::vkCmdBeginDebugUtilsLabelEXT)
 		{
