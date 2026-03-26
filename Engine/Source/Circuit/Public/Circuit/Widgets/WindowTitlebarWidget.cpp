@@ -37,7 +37,7 @@ namespace Circuit
 
 	void WindowTitlebarWidget::OnPaint(CircuitPainter& painter)
 	{
-		painter.AddRect(0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y, m_titlebarColor);
+		painter.AddRect(0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y, m_titlebarColor);
 
 		//volt icon
 		const CircuitColor White = 0xffffffff;

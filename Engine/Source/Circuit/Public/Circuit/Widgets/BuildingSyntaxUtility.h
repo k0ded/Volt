@@ -63,6 +63,12 @@
 	{ \
 		_##AttrName = std::move(Volt::Attribute< AttrType >::Create(std::move(Volt::Attribute< AttrType >::Getter::CreateRaw(userObject, func,  std::forward(params)...)))); \
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
+ } \
+	template <typename UserClass, typename... RawFnParamTypes> \
+	WidgetArgumentsType& AttrName##_Raw(const UserClass* userObject, typename Volt::Attribute< AttrType >::Getter::template MemberFnPtr<UserClass> func, RawFnParamTypes&&... params) \
+	{ \
+		static_assert(false, #AttrName "_Raw: The bound member function must be const-qualified. Add 'const' to the member function signature."); \
+		return static_cast<WidgetArgumentsType*>(this)->Me(); \
 	} \
 
 

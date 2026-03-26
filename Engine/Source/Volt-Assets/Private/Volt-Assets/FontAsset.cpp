@@ -6,6 +6,8 @@
 
 #include <AssetSystem/AssetFactory.h>
 
+#include <CoreUtilities/StringUtility.h>
+
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Font, FontAsset);
@@ -63,5 +65,53 @@ namespace Volt
 
 		archive << m_metrics;
 		archive << m_fontGeometry;
+	}
+
+	glm::vec2 FontAsset::CalcTextSize(std::string_view string, float size)
+	{
+		if (string.empty())
+		{
+			return glm::vec2(0.f);
+		}
+
+		std::u32string utf32string = ::Utility::To_UTF32(std::string(string));
+
+		const double fsScale = 1.0 / (m_metrics.ascenderY - m_metrics.descenderY);
+
+		double maxLineWidth = 0.0;
+		double sX = 0.0;
+		int32_t lineCount = 1;
+
+		for (int32_t i = 0; i < static_cast<int32_t>(utf32string.size()); i++)
+		{
+			char32_t character = utf32string[i];
+			if (character == '\n')
+			{
+				maxLineWidth = glm::max(maxLineWidth, sX);
+				sX = 0.0;
+				lineCount++;
+				continue;
+			}
+
+			const GlyphGeometry* glyph = m_fontGeometry.GetGlyph(character);
+			if (!glyph)
+			{
+				glyph = m_fontGeometry.GetGlyph('?');
+			}
+			VT_ENSURE(glyph);
+
+			double advance = glyph->GetAdvance();
+			if (i + 1 < static_cast<int32_t>(utf32string.size()))
+			{
+				m_fontGeometry.GetAdvance(advance, character, utf32string[i + 1]);
+			}
+			sX += fsScale * advance;
+		}
+		maxLineWidth = glm::max(maxLineWidth, sX);
+
+		const double lineHeight = fsScale * m_metrics.lineHeight;
+		const double totalHeight = 1.0 + (lineCount - 1) * lineHeight;
+
+		return glm::vec2(static_cast<float>(maxLineWidth) * size, static_cast<float>(totalHeight) * size);
 	}
 }

@@ -39,7 +39,7 @@ namespace Circuit
 	{
 		const CircuitColor windowBgColor(59, 59, 59);
 
-		painter.AddRect(0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y, windowBgColor);
+		painter.AddRect(0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y, windowBgColor);
 
 		CompoundWidget::OnPaint(painter);
 	}

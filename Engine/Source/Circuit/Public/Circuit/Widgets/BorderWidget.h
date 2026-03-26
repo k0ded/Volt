@@ -17,7 +17,8 @@ namespace Circuit
 		{
 		};
 
-		CIRCUIT_ARGUMENT(CircuitColor, BackgroundColor);
+		CIRCUIT_ATTRIBUTE(CircuitColor, BackgroundColor);
+
 		CIRCUIT_ARGUMENT(Ref<Widget>, Content);
 
 		// Padding: left, top, right, bottom
@@ -27,13 +28,12 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
-		virtual glm::vec2 GetDesiredSize() override;
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 		virtual bool IsHittestInvisible() const override { return true; };
 
 	private:
-		CircuitColor m_backgroundColor;
+		Volt::Attribute<CircuitColor> m_backgroundColor;
 		Ref<Widget> m_content;
 		glm::vec4 m_padding;
 	};

@@ -67,10 +67,10 @@ namespace Circuit
 			switch (m_orientation)
 			{
 				case Circuit::LayoutOrientation::Horizontal:
-					sizeLeftForUndeterminedFlexibleSlices = painter.GetAllotedSize().x - determinedSize;
+					sizeLeftForUndeterminedFlexibleSlices = painter.GetAllottedSize().x - determinedSize;
 					break;
 				case Circuit::LayoutOrientation::Vertical:
-					sizeLeftForUndeterminedFlexibleSlices = painter.GetAllotedSize().y - determinedSize;
+					sizeLeftForUndeterminedFlexibleSlices = painter.GetAllottedSize().y - determinedSize;
 					break;
 			}
 			VT_ASSERT(sizeLeftForUndeterminedFlexibleSlices >= 0);
@@ -97,10 +97,10 @@ namespace Circuit
 				switch (m_orientation)
 				{
 					case Circuit::LayoutOrientation::Horizontal:
-						painter.AddWidget(widget, currentSliceOffset + margin, margin, widgetAllotedSizes[i] - margin * 2, painter.GetAllotedSize().y - margin * 2);
+						painter.AddWidget(widget, currentSliceOffset + margin, margin, widgetAllotedSizes[i] - margin * 2, painter.GetAllottedSize().y - margin * 2);
 						break;
 					case Circuit::LayoutOrientation::Vertical:
-						painter.AddWidget(widget, margin, currentSliceOffset + margin, painter.GetAllotedSize().x - margin * 2, widgetAllotedSizes[i] - margin * 2);
+						painter.AddWidget(widget, margin, currentSliceOffset + margin, painter.GetAllottedSize().x - margin * 2, widgetAllotedSizes[i] - margin * 2);
 						break;
 				}
 			}

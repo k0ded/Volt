@@ -60,10 +60,12 @@ void CircuitSandbox::OnAttach()
 	Ref<Circuit::LayoutWidget> topRow = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
 	topRow->AddFlexibleSlice(
 	CreateWidget(SceneViewWidget)
+	.Scene(m_editorScene)
 	);
 	topRow->AddFlexibleSlice(
 	CreateWidget(ViewportWidget)
 	.SceneRenderer(m_sceneRenderer)
+	.Scene(m_editorScene)
 	);
 	topRow->AddFlexibleSlice(
 	CreateWidget(InspectorWidget)

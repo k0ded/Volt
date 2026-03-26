@@ -134,7 +134,7 @@ namespace Circuit
 	{
 		m_mousePos = mouseScreenPos;
 
-		Ref<Widget> hoveredWidget = GetHoveredWidget();
+		Weak<Widget> hoveredWidget = GetHoveredWidget();
 
 		if (!m_draggingWidget.IsExpired())
 		{
@@ -164,28 +164,27 @@ namespace Circuit
 			}
 		}
 
-
-		if (!m_prevHoveredWidget.IsExpired())
+		bool hoveredChanged = m_prevHoveredWidget.IsExpired() && !hoveredWidget.IsExpired();
+		if (!hoveredChanged)
 		{
-			Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
+			hoveredChanged = m_prevHoveredWidget.Lock() != hoveredWidget.Lock();
+		}
+		if (hoveredChanged)
+		{
+			WidgetInteractionData interactionData;
+			interactionData.mouseButton = Volt::InputCode::Unknown;
+			interactionData.mousePos = m_mousePos;
 
-			if (hoveredWidget != prevHoveredWidget)
+			if (!m_prevHoveredWidget.IsExpired())
 			{
-				WidgetInteractionData interactionData;
-				interactionData.mouseButton = Volt::InputCode::Unknown;
-				interactionData.mousePos = m_mousePos;
+				m_prevHoveredWidget.Lock()->OnEndHover(interactionData);
+			}
 
-				if (prevHoveredWidget)
-				{
-					prevHoveredWidget->OnEndHover(interactionData);
-				}
+			m_prevHoveredWidget = hoveredWidget;
 
-				m_prevHoveredWidget = hoveredWidget;
-
-				if (prevHoveredWidget)
-				{
-					prevHoveredWidget->OnBeginHover(interactionData);
-				}
+			if (!m_prevHoveredWidget.IsExpired())
+			{
+				m_prevHoveredWidget.Lock()->OnBeginHover(interactionData);
 			}
 		}
 	}

@@ -9,7 +9,7 @@
 
 namespace Circuit
 {
-	glm::vec2 CircuitPainter::GetAllotedSize() const
+	glm::vec2 CircuitPainter::GetAllottedSize() const
 	{
 		return m_allottedScreenArea.GetSize();
 	}
@@ -71,6 +71,25 @@ namespace Circuit
 
 		command.halfSize.x = width / 2;
 		command.halfSize.y = height / 2;
+
+		command.color = color;
+
+		AddDrawCommand(std::move(command));
+	}
+
+	void CircuitPainter::AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rotation, float scale)
+	{
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
+		command.type = CircuitPrimitiveType::Rect;
+
+		command.position = ToPixelPos({ x,y });
+		command.rotation = rotation;
+		command.scale = scale;
+
+		command.halfSize.x = width / 2;
+		command.halfSize.y = height / 2;
+
+		command.radiusInner = lineThickness;
 
 		command.color = color;
 
@@ -334,10 +353,15 @@ namespace Circuit
 		//}
 		//drawCommandsToAppendTo->push_back(command);
 
+		//TODO: extremely wasteful to add to 3 different lists, need to refactor this whole paiting system
 		m_drawCommands.push_back(CircuitDrawCommand(command));
 		if (m_basePainter != this)
 		{
 			m_basePainter->m_drawCommands.push_back(command);
+		}
+		if (m_parentPainter)
+		{
+			m_parentPainter->m_drawCommands.push_back(command);
 		}
 	}
 

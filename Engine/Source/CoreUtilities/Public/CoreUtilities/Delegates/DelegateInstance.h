@@ -24,7 +24,7 @@ namespace Volt
 	public:
 		template<typename... InParamTypes>
 		explicit DelegateInstance(InParamTypes&&... params)
-			: m_paramTypes(std::forward<InParamTypes>(params)...)
+			//: m_paramTypes(std::forward<InParamTypes>(params)...)
 		{
 		}
 
@@ -37,23 +37,22 @@ namespace Volt
 		VT_NODISCARD VT_INLINE DelegateHandle GetHandle() const { return m_handle; }
 
 	protected:
-		std::tuple<ParamTypes...> m_paramTypes;
+		//std::tuple<ParamTypes...> m_paramTypes;
 
 		DelegateHandle m_handle;
 	};
 
 
 	template <typename ReturnType, typename... ParamTypes, typename FunctorType, typename... VarTypes>
-	class FunctorDelegateInstance<ReturnType(ParamTypes...), FunctorType, VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...), VarTypes...>
+	class FunctorDelegateInstance<ReturnType(ParamTypes...), FunctorType, VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...)>
 	{
 		static_assert(std::is_same_v<FunctorType, typename std::remove_reference_t<FunctorType>>, "FunctorType cannot be a reference");
 
-		using Base = DelegateInstance<ReturnType(ParamTypes...), VarTypes...>;
 	public:
 		template <typename InFunctorType, typename... InVarTypes>
 		explicit FunctorDelegateInstance(InFunctorType&& inFunctor, InVarTypes&&... vars)
-			:Base(std::forward(vars)...)
-			, m_functor(std::forward<InFunctorType>(inFunctor))
+			: m_functor(std::forward<InFunctorType>(inFunctor))
+			, m_vars(std::forward<InVarTypes>(vars)...)
 		{
 		}
 
@@ -62,16 +61,16 @@ namespace Volt
 			//functors are always considered safe to execute
 			return true;
 		}
-		
+
 		ReturnType Execute(ParamTypes... params) const override final
 		{
-			return m_functor(std::forward<ParamTypes>(params)...);
+			return ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 		}
 
 		bool ExecuteIfSafe(ParamTypes...params) const override final
 		{
 			//functors are always considered safe to execute
-			m_functor(std::forward<ParamTypes>(params)...);
+			ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 
 			return true;
 		}
@@ -81,21 +80,27 @@ namespace Volt
 			return new FunctorDelegateInstance(*this);
 		}
 	private:
+		template<size_t... Indices>
+		ReturnType ExecuteImpl(std::index_sequence<Indices...>, ParamTypes... params) const
+		{
+			return m_functor(std::forward<ParamTypes>(params)..., std::get<Indices>(m_vars)...);
+		}
+
 		mutable std::remove_const_t<FunctorType> m_functor;
+		std::tuple<VarTypes...> m_vars;
 	};
 
 	template <typename ReturnType, typename... ParamTypes, typename... VarTypes>
-	class StaticDelegateInstance<ReturnType(ParamTypes...), VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...), VarTypes...>
+	class StaticDelegateInstance<ReturnType(ParamTypes...), VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...)>
 	{
-		using Base = DelegateInstance<ReturnType(ParamTypes...), VarTypes...>;
 		using FnPtr = ReturnType(*)(ParamTypes..., VarTypes...);
 
 
 	public:
 		template <typename... InVarTypes>
 		explicit StaticDelegateInstance(FnPtr functionPtr, InVarTypes&&... vars)
-			:Base(std::forward(vars)...)
-			, m_staticFunctionPtr(functionPtr)
+			: m_staticFunctionPtr(functionPtr)
+			, m_vars(std::forward<InVarTypes>(vars)...)
 		{
 			VT_ASSERT(m_staticFunctionPtr != nullptr);
 		}
@@ -111,14 +116,14 @@ namespace Volt
 		{
 			VT_ASSERT(m_staticFunctionPtr != nullptr);
 
-			return m_staticFunctionPtr(std::forward<ParamTypes>(params)...);
+			return ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 		}
 
 		bool ExecuteIfSafe(ParamTypes... params) const override final
 		{
 			VT_ASSERT(m_staticFunctionPtr != nullptr);
 
-			m_staticFunctionPtr(std::forward<ParamTypes>(params)...);
+			ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 
 			return true;
 		}
@@ -128,7 +133,14 @@ namespace Volt
 			return new StaticDelegateInstance(*this);
 		}
 	private:
+		template<size_t... Indices>
+		ReturnType ExecuteImpl(std::index_sequence<Indices...>, ParamTypes... params) const
+		{
+			return m_staticFunctionPtr(std::forward<ParamTypes>(params)..., std::get<Indices>(m_vars)...);
+		}
+
 		FnPtr m_staticFunctionPtr;
+		std::tuple<VarTypes...> m_vars;
 	};
 
 
@@ -148,17 +160,17 @@ namespace Volt
 	};
 
 	template <bool Const, class UserClass, typename ReturnType, typename... ParamTypes, typename... VarTypes >
-	class RawFunctionDelegateInstance<Const, UserClass, ReturnType(ParamTypes...), VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...), VarTypes...>
+	class RawFunctionDelegateInstance<Const, UserClass, ReturnType(ParamTypes...), VarTypes...> : public DelegateInstance<ReturnType(ParamTypes...)>
 	{
-		using Base = DelegateInstance<ReturnType(ParamTypes...), VarTypes...>;
 		using FnPtr = typename MemFnPtrType<Const, UserClass, ReturnType(ParamTypes..., VarTypes...)>::Type;
+		using UserClassPtr = std::conditional_t<Const, const UserClass*, UserClass*>;
 
 	public:
 		template <typename... InVarTypes>
-		explicit RawFunctionDelegateInstance(UserClass* userObject, FnPtr functionPtr,InVarTypes&&... vars)
-			:Base(std::forward(vars)...)
-			, m_userObject(userObject)
+		explicit RawFunctionDelegateInstance(UserClassPtr userObject, FnPtr functionPtr, InVarTypes&&... vars)
+			: m_userObject(userObject)
 			, m_functionPtr(functionPtr)
+			, m_vars(std::forward<InVarTypes>(vars)...)
 		{
 			VT_ASSERT(userObject != nullptr && functionPtr != nullptr);
 		}
@@ -171,18 +183,12 @@ namespace Volt
 
 		ReturnType Execute(ParamTypes... params) const override final
 		{
-			using MutableUserClass = std::remove_const_t<UserClass>;
-
-			MutableUserClass* mutableUserObject = const_cast<MutableUserClass*>(m_userObject);
-			return ((*mutableUserObject).*m_functionPtr)(std::forward<ParamTypes>(params)...);
+			return ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 		}
 
 		bool ExecuteIfSafe(ParamTypes...params) const override final
 		{
-			using MutableUserClass = std::remove_const_t<UserClass>;
-
-			MutableUserClass* mutableUserObject = const_cast<MutableUserClass*>(m_userObject);
-			((*mutableUserObject).*m_functionPtr)(std::forward<ParamTypes>(params)...);
+			ExecuteImpl(std::make_index_sequence<sizeof...(VarTypes)>{}, std::forward<ParamTypes>(params)...);
 			return true;
 		}
 
@@ -191,8 +197,17 @@ namespace Volt
 			return new RawFunctionDelegateInstance(*this);
 		}
 	private:
-		UserClass* m_userObject;
+		template<size_t... Indices>
+		ReturnType ExecuteImpl(std::index_sequence<Indices...>, ParamTypes... params) const
+		{
+			using MutableUserClass = std::remove_const_t<UserClass>;
 
+			MutableUserClass* mutableUserObject = const_cast<MutableUserClass*>(m_userObject);
+			return ((*mutableUserObject).*m_functionPtr)(std::forward<ParamTypes>(params)..., std::get<Indices>(m_vars)...);
+		}
+
+		UserClassPtr m_userObject;
 		FnPtr m_functionPtr;
+		std::tuple<VarTypes...> m_vars;
 	};
 }

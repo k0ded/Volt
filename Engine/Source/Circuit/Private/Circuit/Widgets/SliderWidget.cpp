@@ -43,7 +43,7 @@ namespace Circuit
 
 	void SliderWidget::OnPaint(CircuitPainter& painter)
 	{
-		const float sliderWidth = painter.GetAllotedSize().x;
+		const float sliderWidth = painter.GetAllottedSize().x;
 		const float leftRectWidth = sliderWidth * GetValueNormalized();
 
 		const CircuitColor unfilledColor = 0x555555ff;

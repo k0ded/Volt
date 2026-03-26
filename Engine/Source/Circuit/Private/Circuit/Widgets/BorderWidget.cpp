@@ -20,15 +20,10 @@ void Circuit::BorderWidget::Build(const Arguments& args)
 	}
 }
 
-glm::vec2 Circuit::BorderWidget::GetDesiredSize()
-{
-	return { -1, -1 };
-}
-
 void Circuit::BorderWidget::OnPaint(CircuitPainter& painter)
 {
-	const glm::vec2 size = painter.GetAllotedSize();
-	painter.AddRect(0, 0, size.x, size.y, m_backgroundColor);
+	const glm::vec2 size = painter.GetAllottedSize();
+	painter.AddRect(0, 0, size.x, size.y, m_backgroundColor.Get());
 
 	if (m_content)
 	{

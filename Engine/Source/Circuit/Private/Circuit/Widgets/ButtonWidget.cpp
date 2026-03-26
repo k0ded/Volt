@@ -75,15 +75,15 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	{
 		buttonColor = &hoveredColor;
 	}
-	painter.AddRect(0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y, *buttonColor);
+	painter.AddRect(0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y, *buttonColor);
 
 	if (m_content)
 	{
-		painter.AddWidget(m_content, 0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y);
+		painter.AddWidget(m_content, 0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y);
 	}
 	else if (m_fontAsset.IsValid())
 	{
-		painter.AddText(0, 0, m_text.Get(), m_fontAsset, painter.GetAllotedSize().x, 0xff0000ff, 50.f);
+		painter.AddText(0, 0, m_text.Get(), m_fontAsset, painter.GetAllottedSize().x, 0xff0000ff, 50.f);
 	}
 }
 

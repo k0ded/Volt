@@ -21,7 +21,7 @@ namespace Circuit
 	{
 		for (Ref<Widget> childWidget : m_childWidgets)
 		{
-			painter.AddWidget(childWidget, { 0,0 }, painter.GetAllotedSize());
+			painter.AddWidget(childWidget, { 0,0 }, painter.GetAllottedSize());
 		}
 	}
 

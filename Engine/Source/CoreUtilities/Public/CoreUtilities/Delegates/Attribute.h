@@ -59,9 +59,15 @@ namespace Volt
 		}
 
 		template <typename UserClass, typename... RawFnParamTypes>
-		void BindRaw(const UserClass* userObject, Getter::template ConstMemberFnPtr<UserClass> func, RawFnParamTypes&&... params)
+		void BindRaw(const UserClass* userObject, Getter::template ConstMemberFnPtr<UserClass, RawFnParamTypes...> func, RawFnParamTypes&&... params)
 		{
-			m_getter.BindRaw(userObject, func, params);
+			m_getter.BindRaw(userObject, func, std::forward<RawFnParamTypes>(params)...);
+		}
+
+		template <typename UserClass, typename... RawFnParamTypes>
+		void BindRaw(const UserClass* userObject, typename Getter::template MemberFnPtr<UserClass, RawFnParamTypes...> func, RawFnParamTypes&&... params)
+		{
+			static_assert(false, "Attribute::BindRaw: The bound member function must be const-qualified. Add 'const' to the member function signature.");
 		}
 
 	public:
@@ -95,6 +101,13 @@ namespace Volt
 		static Attribute<T> CreateRaw(const UserClass* userObject, Getter::template ConstMemberFnPtr<UserClass> func, RawFnParamTypes&&... params)
 		{
 			return Attribute<T>(Getter::CreateRaw(userObject, func, std::forward<RawFnParamTypes>(params)...));
+		}
+
+		template <typename UserClass, typename... RawFnParamTypes>
+		static Attribute<T> CreateRaw(const UserClass* userObject, typename Getter::template MemberFnPtr<UserClass> func, RawFnParamTypes&&... params)
+		{
+			static_assert(false, "Attribute::CreateRaw: The bound member function must be const-qualified. Add 'const' to the member function signature.");
+			return Attribute<T>();
 		}
 
 	private:

@@ -1,0 +1,259 @@
+#pragma once
+
+#include "Circuit/Widgets/CompoundWidget.h"
+#include "Circuit/Widgets/BorderWidget.h"
+#include "Circuit/Widgets/TextWidget.h"
+#include "Circuit/CircuitPainter.h"
+#include "Circuit/WidgetInteractionData.h"
+
+#include <CoreUtilities/Containers/Vector.h>
+
+#include <InputModule/InputCodes.h>
+
+#include <unordered_set>
+
+namespace Circuit
+{
+	DECLARE_DELEGATE_OneParam(OnListRowInteraction, const WidgetInteractionData&);
+	template<typename ItemType>
+	class IListViewRow : public CompoundWidget
+	{
+	public:
+		virtual ~IListViewRow() = default;
+
+		CIRCUIT_BEGIN_ARGS(IListViewRow)
+			:_Content(nullptr)
+
+		{};
+
+		CIRCUIT_ARGUMENT(Ref<Widget>, Content);
+
+		CIRCUIT_END_ARGS();
+
+		void Build(const Arguments& args)
+		{
+			if (args._Content)
+			{
+				Ref<BorderWidget> border = CreateWidget(BorderWidget)
+					.Padding(2.f)
+					.Content(args._Content)
+					.BackgroundColor_Raw(this, &IListViewRow<ItemType>::GetBackgroundColor);
+				AddChildWidget(border);
+			}
+		}
+
+		virtual void OnBeginHover(const WidgetInteractionData& interactionData) override
+		{
+			m_isHovered = true;
+		}
+		virtual void OnEndHover(const WidgetInteractionData& interactionData) override
+		{
+			m_isHovered = false;
+			m_isPressed = false;
+		}
+
+		virtual void OnPressed(const WidgetInteractionData& interactionData) override
+		{
+			m_isPressed = true;
+			m_onPressedRow.ExecuteIfBound(interactionData);
+		}
+		virtual void OnReleased(const WidgetInteractionData& interactionData) override
+		{
+			m_isPressed = false;
+			m_onReleasedRow.ExecuteIfBound(interactionData);
+		}
+
+
+		void SetColorAttribute(Volt::Attribute<CircuitColor> color)
+		{
+			m_color = color;
+		}
+		void SetHoveredColorAttribute(Volt::Attribute<CircuitColor> hoveredColor)
+		{
+			m_hoveredColor = hoveredColor;
+		}
+		void SetPressedColorAttribute(Volt::Attribute<CircuitColor> pressedColor)
+		{
+			m_pressedColor = pressedColor;
+		}
+
+		OnListRowInteraction& GetOnRowPressedDelegate()
+		{
+			return m_onPressedRow;
+		}
+		OnListRowInteraction& GetOnRowReleasedDelegate()
+		{
+			return m_onReleasedRow;
+		}
+
+	private:
+		CircuitColor GetBackgroundColor() const
+		{
+			if (m_isPressed)
+			{
+				return m_pressedColor.Get();
+			}
+
+			if (m_isHovered)
+			{
+				return m_hoveredColor.Get();
+			}
+
+			return m_color.Get();
+		}
+
+		OnListRowInteraction m_onPressedRow;
+		OnListRowInteraction m_onReleasedRow;
+
+		Volt::Attribute<CircuitColor> m_color = CircuitColor(0x555555ff);
+		Volt::Attribute<CircuitColor> m_hoveredColor = CircuitColor(0xaa5555ff);
+		Volt::Attribute<CircuitColor> m_pressedColor = CircuitColor(0x5555aaff);
+
+		bool m_isHovered = false;
+		bool m_isPressed = false;
+	};
+
+	template<typename ItemType>
+	class ListViewWidget : public CompoundWidget
+	{
+	public:
+		DECLARE_DELEGATE_RetVal_OneParam(Ref<IListViewRow<ItemType>>, OnGenerateRowDelegate, ItemType&);
+
+		CIRCUIT_BEGIN_ARGS(ListViewWidget)
+			: _ItemsSource(nullptr)
+		{};
+
+		CIRCUIT_ARGUMENT(Vector<ItemType>*, ItemsSource);
+		CIRCUIT_EVENT(OnGenerateRowDelegate, OnGenerateRow);
+
+		CIRCUIT_END_ARGS();
+
+		void Build(const Arguments& args)
+		{
+			m_itemsSource = args._ItemsSource;
+			m_onGenerateRow = args._OnGenerateRow;
+			RegenerateRows();
+		}
+
+		virtual glm::vec2 GetDesiredSize() override
+		{
+			return { -1, -1 };
+		}
+
+		virtual void OnPaint(CircuitPainter& painter) override
+		{
+			if (!m_itemsSource || !m_onGenerateRow.IsBound())
+			{
+				return;
+			}
+
+			if (m_rowWidgets.size() != m_itemsSource->size())
+			{
+				RegenerateRows();
+			}
+
+			const glm::vec2 allotedSize = painter.GetAllottedSize();
+			const float rowHeight = allotedSize.y / static_cast<float>(m_rowWidgets.size());
+			float currentOffset = 0.f;
+
+			for (size_t i = 0; i < m_rowWidgets.size(); i++)
+			{
+				if (m_rowWidgets[i])
+				{
+					const glm::vec2 desiredSize = m_rowWidgets[i]->GetDesiredSize();
+					const float height = desiredSize.y > 0.f ? desiredSize.y : rowHeight;
+
+					painter.AddWidget(m_rowWidgets[i], 0.f, currentOffset, allotedSize.x, height);
+					currentOffset += height;
+				}
+			}
+		}
+
+		virtual bool IsHittestInvisible() const override { return true; }
+
+		void RegenerateRows()
+		{
+			m_rowWidgets.clear();
+
+			if (!m_itemsSource || !m_onGenerateRow.IsBound())
+			{
+				return;
+			}
+
+			for (size_t i = 0; i < m_itemsSource->size(); i++)
+			{
+				Ref<IListViewRow<ItemType>> rowWidget = m_onGenerateRow.Execute((*m_itemsSource)[i]);
+
+				if (rowWidget)
+				{
+					Volt::Attribute<CircuitColor> colorAttribute;
+					colorAttribute.BindRaw(this, &ListViewWidget::GetRowColor, rowWidget);
+					rowWidget->SetColorAttribute(colorAttribute);
+
+					Volt::Attribute<CircuitColor> hoveredColorAttribute;
+					hoveredColorAttribute.BindRaw(this, &ListViewWidget::GetRowHoveredColor, rowWidget);
+					rowWidget->SetHoveredColorAttribute(hoveredColorAttribute);
+
+					Volt::Attribute<CircuitColor> pressedColorAttribute;
+					pressedColorAttribute.BindRaw(this, &ListViewWidget::GetRowPressedColor, rowWidget);
+					rowWidget->SetPressedColorAttribute(pressedColorAttribute);
+
+					rowWidget->GetOnRowReleasedDelegate().BindRaw(this, &ListViewWidget::RowClicked, rowWidget);
+
+					m_rowWidgets.push_back(rowWidget);
+					AddChildWidget(rowWidget);
+				}
+			}
+		}
+
+		CircuitColor GetRowColor(Ref<IListViewRow<ItemType>> row) const
+		{
+			if (m_selectedRows.contains(row))
+			{
+				return 0x556666ff;
+			}
+
+			return 0x555555ff;
+		}
+
+		CircuitColor GetRowHoveredColor(Ref<IListViewRow<ItemType>> row) const
+		{
+			if (m_selectedRows.contains(row))
+			{
+				return 0x667777ff;
+			}
+
+			return 0x666666ff;
+		}
+
+		CircuitColor GetRowPressedColor(Ref<IListViewRow<ItemType>> row) const
+		{
+			if (m_selectedRows.contains(row))
+			{
+				return 0x445555ff;
+			}
+
+			return 0x444444ff;
+		}
+
+	private:
+		void RowClicked(const WidgetInteractionData& interactionData, Ref<IListViewRow<ItemType>> row)
+		{
+			if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
+			{
+				return;
+			}
+
+			if (!m_selectedRows.contains(row))
+			{
+				m_selectedRows.clear();
+				m_selectedRows.insert(row);
+			}
+		}
+
+		std::unordered_set<Ref<IListViewRow<ItemType>>> m_selectedRows;
+		Vector<ItemType>* m_itemsSource = nullptr;
+		OnGenerateRowDelegate m_onGenerateRow;
+		Vector<Ref<IListViewRow<ItemType>>> m_rowWidgets;
+	};
+}

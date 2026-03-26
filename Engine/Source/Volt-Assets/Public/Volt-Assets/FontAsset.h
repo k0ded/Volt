@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	class FontAsset : public Asset
+	class VTASSETS_API FontAsset : public Asset
 	{
 	public:
 		FontAsset() = default;
@@ -24,6 +24,8 @@ namespace Volt
 		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
 		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
+
+		glm::vec2 CalcTextSize(std::string_view string, float size);
 
 	private:
 		friend class FontSourceImporter;
