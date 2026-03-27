@@ -4,6 +4,8 @@
 #include "CoreUtilities/Filesystem/PathHelpers.h"
 #include "CoreUtilities/Containers/Vector.h"
 
+#include <filesystem>
+
 namespace Filesystem
 {
 	Path::Path()

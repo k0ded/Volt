@@ -4,6 +4,8 @@
 #include "CoreUtilities/Filesystem/Path.h"
 #include "CoreUtilities/Filesystem/PathHelpers.h"
 
+#include <filesystem>
+
 namespace Filesystem
 {
 	PathView::PathView(const WStringView pathView)
