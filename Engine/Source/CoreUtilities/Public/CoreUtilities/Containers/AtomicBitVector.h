@@ -39,9 +39,9 @@ public:
 		m_size = numBits;
 	}
 
-	bool IsBitSet(const size_t index, std::memory_order memoryOrder) const
+	bool Test(const size_t index, std::memory_order memoryOrder) const
  	{
-		VT_ENSURE(index < m_size);
+		VT_ASSERT(index < m_size);
 
 		const size_t wordIndex = index / IndexTypeBitCount;
 		const size_t bitIndex = index % IndexTypeBitCount;
@@ -51,9 +51,9 @@ public:
 		return bitmask & (IndexType(1) << bitIndex);
 	}
 
-	void SetBit(const size_t index, bool value, std::memory_order memoryOrder)
+	IndexType SetBit(const size_t index, bool value, std::memory_order memoryOrder)
 	{
-		VT_ENSURE(index < m_size);
+		VT_ASSERT(index < m_size);
 
 		const size_t wordIndex = index / IndexTypeBitCount;
 		const size_t bitIndex = index % IndexTypeBitCount;
@@ -62,11 +62,11 @@ public:
 
 		if (value)
 		{
-			m_bitArray[wordIndex].atomic.fetch_or(bitmask, memoryOrder);
+			return m_bitArray[wordIndex].atomic.fetch_or(bitmask, memoryOrder);
 		}
 		else
 		{
-			m_bitArray[wordIndex].atomic.fetch_and(~bitmask, memoryOrder);
+			return m_bitArray[wordIndex].atomic.fetch_and(~bitmask, memoryOrder);
 		}
 	}
 

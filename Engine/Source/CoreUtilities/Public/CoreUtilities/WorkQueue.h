@@ -62,7 +62,7 @@ public:
 		void* ptr = m_storagePtr + pushIndex * sizeof(DataType);
 		new (ptr) DataType(std::forward<Args>(args)...);
 
-		[[maybe_unused]] bool priorBitState = m_slotFullFlags.IsBitSet(pushIndex, std::memory_order::relaxed);
+		[[maybe_unused]] bool priorBitState = m_slotFullFlags.Test(pushIndex, std::memory_order::relaxed);
 		VT_ASSERT_MSG(!priorBitState, "Reserved bit is set, this is invalid!");
 
 		// Set bit to notify poppers that this slot is ready.
@@ -95,7 +95,7 @@ public:
 		outData = std::move(*dataPtr);
 		dataPtr->~DataType();
 
-		[[maybe_unused]] bool priorBitState = m_slotFullFlags.IsBitSet(popIndex, std::memory_order::relaxed);
+		[[maybe_unused]] bool priorBitState = m_slotFullFlags.Test(popIndex, std::memory_order::relaxed);
 		VT_ASSERT_MSG(priorBitState, "Reserved bit is not set, this is invalid!");
 	
 		constexpr std::memory_order order = ThisType::HasSinglePopper ? std::memory_order::relaxed : std::memory_order::release;
@@ -191,7 +191,7 @@ private:
 
 		// Make sure slot is empty
 		// Acquire: Object creation cannot be reordered above this.
-		if (m_slotFullFlags.IsBitSet(pushIndex, std::memory_order::acquire))
+		if (m_slotFullFlags.Test(pushIndex, std::memory_order::acquire))
 		{
 			return {};
 		}
@@ -226,7 +226,7 @@ private:
 			// MPMC only: Guard against popper at this index.
 			if constexpr (!ThisType::HasSinglePopper)
 			{
-				if (m_slotFullFlags.IsBitSet(pushIndex, std::memory_order::acquire))
+				if (m_slotFullFlags.Test(pushIndex, std::memory_order::acquire))
 				{
 					newStoredIndices = m_pushPopIndices.load(indexLoadOrder);
 					QueueIndices newIndices = std::bit_cast<QueueIndices>(newStoredIndices);
@@ -273,7 +273,7 @@ private:
 
 		// Make sure something is in the slot.
 		int32_t popIndex = queueIndices.unwrappedPopIndex % Capacity();
-		if (!m_slotFullFlags.IsBitSet(popIndex, std::memory_order::acquire))
+		if (!m_slotFullFlags.Test(popIndex, std::memory_order::acquire))
 		{
 			// Queue is empty.
 			return {};
@@ -304,7 +304,7 @@ private:
 
 			if constexpr (!ThisType::HasSinglePusher)
 			{
-				if (!m_slotFullFlags.IsBitSet(popIndex, std::memory_order::acquire))
+				if (!m_slotFullFlags.Test(popIndex, std::memory_order::acquire))
 				{
 					uint64_t newStoredIndices = m_pushPopIndices.load(indexLoadOrder);
 					QueueIndices newIndices = std::bit_cast<QueueIndices>(newStoredIndices);

@@ -5,6 +5,8 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Utility/GPUCrashTracker.h>
 
+#include <CoreUtilities/Containers/Array.h>
+
 struct VkDevice_T;
 
 namespace tracy

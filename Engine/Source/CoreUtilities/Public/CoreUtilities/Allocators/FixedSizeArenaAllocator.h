@@ -148,7 +148,7 @@ public:
 
 		for (size_t i = 0; i < numMaxItems; i++)
 		{
-			if (m_allocatedEntriesBitmask.IsBitSet(i, std::memory_order::relaxed))
+			if (m_allocatedEntriesBitmask.Test(i, std::memory_order::relaxed))
 			{
 				result.emplace_back(currentIt);
 			}
@@ -175,7 +175,7 @@ public:
 			// Find first allocation
 			for (; m_currentIndex < m_maxIndex; ++m_currentIndex)
 			{
-				if (m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed))
+				if (m_arenaAllocator->m_allocatedEntriesBitmask.Test(m_currentIndex, std::memory_order::relaxed))
 				{
 					break;
 				}
@@ -190,7 +190,7 @@ public:
 
 			for (; m_currentIndex < m_maxIndex; ++m_currentIndex)
 			{
-				if (m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed))
+				if (m_arenaAllocator->m_allocatedEntriesBitmask.Test(m_currentIndex, std::memory_order::relaxed))
 				{
 					break;
 				}
@@ -199,13 +199,13 @@ public:
 
 		VT_INLINE Type* operator->() const
 		{
-			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed));
+			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.Test(m_currentIndex, std::memory_order::relaxed));
 			return reinterpret_cast<Type*>(&m_arenaAllocator->m_dataBuffer[m_currentIndex * sizeof(Type)]);
 		}
 
 		VT_INLINE Type* operator*() const
 		{
-			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed));
+			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.Test(m_currentIndex, std::memory_order::relaxed));
 			return reinterpret_cast<Type*>(&m_arenaAllocator->m_dataBuffer[m_currentIndex * sizeof(Type)]);
 		}
 

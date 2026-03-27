@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreUtilities/Containers/Array.h"
+#include "CoreUtilities/Containers/Vector.h"
 
 #include <atomic>
 #include <cstdint>

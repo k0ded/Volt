@@ -1,233 +1,68 @@
 #pragma once
 
-#include "CoreUtilities/Allocators/FixedSizeArenaAllocator.h"
+#include "CoreUtilities/Allocators/ContainerAllocators.h"
+#include "CoreUtilities/Math/Math.h"
+
+#include <cstdint>
 
 template<typename Type, uint64_t PageSize, typename SecondaryAllocator = DefaultHeapAllocator>
 class PagedAtomicArenaAllocator
 {
 public:
 	PagedAtomicArenaAllocator() = default;
+	~PagedAtomicArenaAllocator();
 
-	~PagedAtomicArenaAllocator()
-	{
-		Release();
-	}
+	PagedAtomicArenaAllocator(const PagedAtomicArenaAllocator& other) = delete;
+	PagedAtomicArenaAllocator& operator=(const PagedAtomicArenaAllocator& other) = delete;
 
-	PagedAtomicArenaAllocator(PagedAtomicArenaAllocator&& other) noexcept
-	{
-		m_allocator = std::move(other.m_allocator);
-		m_basePage.store(other.m_basePage);
-
-		other.m_basePage = nullptr;
-	}
-
-	PagedAtomicArenaAllocator& operator=(PagedAtomicArenaAllocator&& other) noexcept
-	{
-		m_allocator = std::move(other.m_allocator);
-		m_basePage.store(other.m_basePage);
-
-		other.m_basePage = nullptr;
-		return *this;
-	}
-
-	void ReservePages(uint32_t numPages)
-	{
-		PageHeader* lastPage = nullptr;
-
-		uint32_t numPagesToAllocate = numPages;
-
-		// If there are no pages allocated yet, we allocate the base page
-		if (!m_basePage)
-		{
-			m_basePage = AllocatePage();
-			lastPage = m_basePage;
-
-			// Remove one because we have allocated the base page.
-			numPagesToAllocate -= 1;
-		}
-		// Otherwise we count the number of pages currently allocated,
-		// to figure out how many we need to allocate.
-		else
-		{
-			uint32_t numCurrentPages = GetNumAllocatedPages();
-			numPagesToAllocate = numCurrentPages >= numPagesToAllocate ? 0 : numPagesToAllocate - numCurrentPages;
-		}
-
-		VT_ENSURE(lastPage->next == nullptr);
-
-		// Allocate the missing pages (if there are any)
-		for (uint32_t i = 0; i < numPagesToAllocate; ++i)
-		{
-			lastPage->next = AllocatePage();
-			lastPage->next.load()->prev = lastPage;
-			lastPage = lastPage->next;
-		}
-	}
+	PagedAtomicArenaAllocator(PagedAtomicArenaAllocator&& other) noexcept;
+	PagedAtomicArenaAllocator& operator=(PagedAtomicArenaAllocator&& other) noexcept;
 
 	template<typename... Args>
-	Type* Allocate(Args&&... args)
-	{
-		PageHeader* NullHeader = nullptr;
+	Type* Allocate(Args&&... args);
+	void Free(Type* allocation);
 
-		if (!m_basePage)
-		{
-			// No base page has been allocated, try to allocate one and store
-			// in the pointer.
-			PageHeader* newPage = AllocatePage();
-			if (!m_basePage.compare_exchange_strong(NullHeader, newPage, std::memory_order::release))
-			{
-				// Another thread already allocated it, free the page again.
-				FreePage(newPage);
-			}
-		}
-
-		PageHeader* currentPage = m_basePage.load(std::memory_order::acquire);
-
-		Type* allocation = nullptr;
-
-		while (true)
-		{
-			NullHeader = nullptr;
-
-			if (allocation = currentPage->TryAllocate(std::forward<Args>(args)...); allocation != nullptr)
-			{
-				break;
-			}
-			else
-			{
-				if (currentPage->next == nullptr)
-				{
-					// Try to allocate a new page
-					PageHeader* newPage = AllocatePage();
-
-					// Ensure previous is set before swap
-					newPage->prev = currentPage;
-
-					if (!currentPage->next.compare_exchange_strong(NullHeader, newPage, std::memory_order::release))
-					{
-						// Another thread already allocated it, free the page again.
-						newPage->prev = nullptr;
-						FreePage(newPage);
-					}
-				}
-
-				currentPage = currentPage->next.load(std::memory_order::acquire);
-			}
-		}
-
-		return allocation;
-	}
-
-	void Free(Type* allocation)
-	{
-		PageHeader* currentPage = m_basePage.load(std::memory_order::acquire);
-		while (currentPage != nullptr)
-		{
-			if (currentPage->arena.IsPointerWithinArena(allocation))
-			{
-				currentPage->arena.Free(allocation);
-				break;
-			}
-
-			currentPage = currentPage->next.load(std::memory_order::acquire);
-		}
-	}
-
-	bool IsPointerWithinArena(Type* allocation) const
-	{
-		PageHeader* currentPage = m_basePage;
-		while (currentPage != nullptr)
-		{
-			if (currentPage->arena.IsPointerWithinArena(allocation))
-			{
-				return true;
-			}
-
-			currentPage = currentPage->next;
-		}
-
-		return false;
-	}
-
-	uint32_t GetNumAllocatedPages() const
-	{
-		if (m_basePage == nullptr)
-		{
-			return 0;
-		}
-
-		uint32_t numCurrentPages = 1;
-		PageHeader* currentPage = m_basePage;
-		while (currentPage->next != nullptr)
-		{
-			numCurrentPages++;
-			currentPage = currentPage->next;
-		}
-
-		return numCurrentPages;
-	}
-
-	void Release()
-	{
-		PageHeader* currentPage = m_basePage;
-
-		// No pages have been allocated.
-		if (currentPage == nullptr)
-		{
-			return;
-		}
-
-		// Find the last page.
-		while (currentPage->next != nullptr)
-		{
-			currentPage = currentPage->next;
-		}
-
-		// Walk backwards and free the pages along the ways
-		while (currentPage->prev != nullptr)
-		{
-			PageHeader* tempPage = currentPage;
-			currentPage = currentPage->prev;
-
-			FreePage(tempPage);
-		}
-
-		// Finally free the base page.
-		FreePage(m_basePage);
-	}
+	void ReservePages(uint32_t numPages);
+	uint64_t GetNumAllocatedPages() const;
 
 private:
-	struct PageHeader
+	struct SimpleBitset
 	{
-		std::atomic<PageHeader*> next = nullptr;
-		PageHeader* prev = nullptr;
-	
-		FixedSizeArenaAllocator<Type, SecondaryAllocator> arena;
+		using BitmaskType = uint64_t;
 
-		template<typename... Args>
-		Type* TryAllocate(Args&&... args)
-		{
-			return arena.Allocate(std::forward<Args>(args)...);
-		}
+		inline static constexpr uint64_t NumBits = std::numeric_limits<BitmaskType>::digits;
+		inline static constexpr uint64_t NumBitmasks = Math::DivideRoundUp(PageSize, NumBits);
+
+		bool TrySetBit(uint64_t index);
+		bool Test(uint64_t index);
+		void ResetBit(uint64_t index);
+
+		std::atomic<BitmaskType> bitset[NumBitmasks]{};
 	};
 
-	PageHeader* AllocatePage()
+	struct Page
 	{
-		uint8_t* newPageDst = reinterpret_cast<uint8_t*>(m_allocator.Allocate(sizeof(PageHeader), 0));
-		PageHeader* newPage = new(newPageDst) PageHeader();
+		template<typename... Args>
+		Type* TryAllocate(Args&&... args);
+		void Free(Type* allocation);
+		bool IsPointerWithinPage(Type* allocation);
 
-		newPage->arena.Reserve(PageSize);
+		alignas(alignof(Type)) uint8_t data[PageSize * sizeof(Type)];
+		SimpleBitset bitset;
 
-		return newPage;
-	}
+		std::atomic<Page*> next = nullptr;
+		std::atomic<uint64_t> nextIndex = 0;
+	};
 
-	void FreePage(PageHeader* page)
-	{
-		page->~PageHeader();
-		m_allocator.Free(page);
-	}
+	void Release();
 
-	std::atomic<PageHeader*> m_basePage = nullptr;
+	Page* AllocatePage();
+	void FreePage(Page* page);
+	Page* GetOrAllocateBasePage();
+	Page* GetOrAllocateNextPage(Page* current);
+
+	std::atomic<Page*> m_basePage = nullptr;
+
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
 
 public:
@@ -235,53 +70,53 @@ public:
 	{
 	public:
 		Iterator()
-			: m_arenaAllocator(nullptr)
+			: m_allocator(nullptr),
+			m_currentPage(nullptr)
 		{}
 
-		Iterator(const PagedAtomicArenaAllocator& arenaAllocator)
-			: m_arenaAllocator(&arenaAllocator)
+		Iterator(const PagedAtomicArenaAllocator& allocator)
+			: m_allocator(&allocator),
+			m_currentPage(nullptr)
 		{
-			m_currentPage = m_arenaAllocator->m_basePage;
-			if (m_currentPage)
+			// Find first allocation
+			m_currentPage = m_allocator->m_basePage.load(std::memory_order::acquire);
+			if (m_currentPage != nullptr)
 			{
-				m_iterator = FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator(m_currentPage->arena);
+				Advance();
 			}
 		}
 
-		VT_INLINE void operator++()
+		VT_INLINE operator++()
 		{
-			++m_iterator;
-
-			// Iterator is invalid, move to the next page
-			if (!m_iterator)
-			{
-				m_currentPage = m_currentPage->next;
-
-				if (m_currentPage)
-				{
-					m_iterator = FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator(m_currentPage->arena);
-				}
-			}
+			Advance();
 		}
 
 		VT_INLINE Type* operator->() const
 		{
-			return *m_iterator;
+			VT_ASSERT(m_currentPage != nullptr && m_currentIndex < PageSize);
+			Type* value = std::launder(reinterpret_cast<Type*>(&m_currentPage->data[sizeof(Type) * m_currentIndex]));
+			return value;
 		}
 
 		VT_INLINE Type* operator*() const
 		{
-			return *m_iterator;
+			VT_ASSERT(m_currentPage != nullptr && m_currentIndex < PageSize);
+			Type* value = std::launder(reinterpret_cast<Type*>(&m_currentPage->data[sizeof(Type) * m_currentIndex]));
+			return value;
 		}
 
 		VT_INLINE explicit operator bool() const
 		{
-			return m_arenaAllocator != nullptr && m_iterator;
+			return m_allocator != nullptr && m_currentPage != nullptr;
 		}
 
 	private:
-		FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator m_iterator;
-		PageHeader* m_currentPage = nullptr;
-		const PagedAtomicArenaAllocator* m_arenaAllocator;
+		void Advance();
+
+		Page* m_currentPage;
+		const PagedAtomicArenaAllocator* m_allocator;
+		uint64_t m_currentIndex = 0;
 	};
 };
+
+#include "CoreUtilities/Allocators/PagedAtomicArenaAllocator.inl"
