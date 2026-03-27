@@ -5,6 +5,8 @@
 #include <Volt-Assets/FontAsset.h>
 #include <AssetSystem/AssetReference.h>
 
+#include <CoreUtilities/String/VoltString.h>
+
 namespace Circuit
 {
     class CIRCUIT_API TextWidget : public Widget
@@ -18,7 +20,7 @@ namespace Circuit
             _Color(0xffffffff)
         {
         };
-        CIRCUIT_ATTRIBUTE(std::string, Text);
+        CIRCUIT_ATTRIBUTE(String, Text);
         CIRCUIT_ATTRIBUTE(CircuitColor, Color);
         CIRCUIT_ARGUMENT(float, Size);
 
@@ -31,7 +33,7 @@ namespace Circuit
 
         virtual bool IsHittestInvisible() const { return true; };
     private:
-        Volt::Attribute<std::string> m_text;
+        Volt::Attribute<String> m_text;
         Volt::Attribute<CircuitColor> m_color;
         float m_size;
 

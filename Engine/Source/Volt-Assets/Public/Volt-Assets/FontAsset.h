@@ -25,7 +25,7 @@ namespace Volt
 		uint32_t GetVersion() const override { return 1; }
 		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
-		glm::vec2 CalcTextSize(std::string_view string, float size);
+		glm::vec2 CalcTextSize(StringView string, float size);
 
 	private:
 		friend class FontSourceImporter;

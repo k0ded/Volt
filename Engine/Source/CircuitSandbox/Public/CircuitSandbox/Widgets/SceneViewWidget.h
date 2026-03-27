@@ -14,7 +14,7 @@
 struct SceneViewTreeItem
 {
 	Volt::EntityID entityId;
-	std::string name;
+	String name;
 };
 
 class SceneViewWidget : public Circuit::CompoundWidget

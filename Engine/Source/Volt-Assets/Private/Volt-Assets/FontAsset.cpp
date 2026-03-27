@@ -6,8 +6,6 @@
 
 #include <AssetSystem/AssetFactory.h>
 
-#include <CoreUtilities/StringUtility.h>
-
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Font, FontAsset);
@@ -67,14 +65,14 @@ namespace Volt
 		archive << m_fontGeometry;
 	}
 
-	glm::vec2 FontAsset::CalcTextSize(std::string_view string, float size)
+	glm::vec2 FontAsset::CalcTextSize(StringView string, float size)
 	{
 		if (string.empty())
 		{
 			return glm::vec2(0.f);
 		}
 
-		std::u32string utf32string = ::Utility::To_UTF32(std::string(string));
+		U32String utf32string(U32String::CtorConvert(), string.data(), string.size());
 
 		const double fsScale = 1.0 / (m_metrics.ascenderY - m_metrics.descenderY);
 
