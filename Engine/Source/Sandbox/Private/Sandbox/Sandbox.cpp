@@ -70,7 +70,7 @@
 
 #include <SubSystem/SubSystemManager.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <WindowModule/Events/WindowEvents.h>

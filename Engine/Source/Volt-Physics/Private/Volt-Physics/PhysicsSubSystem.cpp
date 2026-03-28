@@ -3,7 +3,7 @@
 #include "Volt-Physics/PhysicsSubSystem.h"
 
 #include <Volt-FileSystem/Filesystem.h>
-#include <Volt-Core/DynamicLibraryManager.h>
+#include <CoreModule/DynamicLibraryManager.h>
 
 #include <PhysicsInterface/PhysicsLayerManager.h>
 #include <CoreUtilities/DynamicLibraryHelpers.h>
@@ -51,6 +51,11 @@ namespace Volt
 	PhysicsCore* PhysicsSubSystem::GetPhysicsCore() const
 	{
 		return m_physicsCore;
+	}
+
+	void PhysicsSubSystem::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<DynamicLibraryManager>();
 	}
 
 	bool PhysicsSubSystem::LoadPhysicsInterface()

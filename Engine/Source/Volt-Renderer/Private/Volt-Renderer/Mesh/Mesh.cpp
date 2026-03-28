@@ -8,7 +8,7 @@
 #include "Volt-Renderer/BoundingStructures.h"
 #include "Volt-Renderer/Vertex.h"
 
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Algorithms.h>
 
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/Buffers/BufferUtility.h>

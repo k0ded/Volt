@@ -2,8 +2,8 @@
 
 #include <Volt-Application/ApplicationLayer.h>
 
-#include <Volt-Core/Version.h>
-#include <Volt-Core/Project/Project.h>
+#include <CoreModule/Version.h>
+#include <CoreModule/Project/Project.h>
 
 #include <EventSystem/EventListener.h>
 

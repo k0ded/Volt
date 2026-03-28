@@ -3,7 +3,7 @@
 #include "Volt-Application/Config.h"
 
 #include <Volt-ImGui/ImGuiImplementation.h>
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <EventSystem/EventListener.h>
 

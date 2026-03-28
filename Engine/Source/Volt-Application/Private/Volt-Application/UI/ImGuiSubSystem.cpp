@@ -5,7 +5,7 @@
 #include "Volt-Application/UI/UIFonts.h"
 #include "Volt-Application/BaseApplication.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 #include <Volt-ImGui/ImGuiImplementation.h>
 
 #include <RHIModule/Graphics/DeviceQueue.h>

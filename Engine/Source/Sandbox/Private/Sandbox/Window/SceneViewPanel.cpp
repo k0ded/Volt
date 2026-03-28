@@ -21,7 +21,7 @@
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-Audio/Components/AudioComponents.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-ImGui/FontAwesome.h>
 #include <Volt-FileSystem/Filesystem.h>

@@ -23,7 +23,6 @@ namespace VoltSharpmake
             conf.AddPublicDependency<JobSystemModule>(target);
             conf.AddPublicDependency<EventSystemModule>(target);
 			conf.AddPublicDependency<WindowModule>(target);
-			conf.AddPublicDependency<VoltCore>(target);
 
 			conf.IncludePrivatePaths.Add("ThirdParty");
 

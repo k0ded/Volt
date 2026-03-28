@@ -34,8 +34,8 @@ namespace VoltSharpmake
 
             conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".dll\"" + " \"" + Path.Combine(Globals.VtProjectDirectory, "Plugins") + "\"");
 
-            conf.AddPublicDependency<VoltCore>(target);
             conf.AddPrivateDependency<LogModule>(target);
+            conf.AddPrivateDependency<CoreModule>(target);
         }
     }
 }

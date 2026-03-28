@@ -1,3 +1,4 @@
+#include "cpch.h"
 #include "CoreModule/JSON/JSONReader.h"
 
 JSONReader::JSONReader()

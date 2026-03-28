@@ -4,7 +4,7 @@
 #include "Volt-Application/BaseApplication.h"
 #include "Volt-Application/ApplicationLayerStack.h"
 
-#include <Volt-Core/MultiTimer.h>
+#include <CoreModule/MultiTimer.h>
 
 #include <EventSystem/EventListener.h>
 

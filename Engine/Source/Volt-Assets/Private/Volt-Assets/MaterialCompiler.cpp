@@ -13,7 +13,7 @@
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 #include <Volt-FileSystem/FileUtility.h>
 
 #include <AssetSystem/AssetManager.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/Version.h>
+#include <CoreModule/Version.h>
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Pointers/Ref.h>

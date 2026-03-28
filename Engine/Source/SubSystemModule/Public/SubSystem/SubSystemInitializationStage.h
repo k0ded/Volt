@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 enum class SubSystemInitializationStage : uint8_t
 {
 	PreEngine = 0,

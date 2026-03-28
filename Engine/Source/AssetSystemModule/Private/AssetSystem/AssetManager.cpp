@@ -1,7 +1,7 @@
 #include "aspch.h"
 #include "AssetManager.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <Volt-FileSystem/FileIORequest.h>
 #include <Volt-FileSystem/Filesystem.h>

@@ -15,10 +15,17 @@ namespace VoltSharpmake
         {
 			base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine/Modules";
+			conf.PrecompHeader = "cpch.h";
+			conf.PrecompSource = "cpch.cpp";
+
+			conf.SolutionFolder = "Engine/Modules";
 
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<VoltFileSystem>(target);
+
+			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<LogModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
 
 			conf.AddPublicDependency<nlohmann>(target);
 		}

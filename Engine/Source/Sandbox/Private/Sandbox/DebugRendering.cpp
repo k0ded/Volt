@@ -7,7 +7,7 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Algorithms.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 

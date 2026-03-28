@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/fwd.hpp>
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 namespace Circuit
 {

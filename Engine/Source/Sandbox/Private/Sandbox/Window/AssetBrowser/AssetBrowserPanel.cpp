@@ -31,7 +31,7 @@
 
 #include <Volt-Physics/PhysicsMaterialAsset.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-FileSystem/Filesystem.h>
 

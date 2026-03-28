@@ -13,7 +13,7 @@
 #include "Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h"
 #include "Volt-FileSystem/Iterators/DirectoryIterator.h"
 
-#include <Volt-Core/Project/Project.h>
+#include <CoreModule/Project/Project.h>
 
 namespace Volt
 {

@@ -2,8 +2,8 @@
 
 #include "Sandbox/Sandbox.h"
 
-#include <Volt-Core/Config.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Config.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-Application/Application.h>
 

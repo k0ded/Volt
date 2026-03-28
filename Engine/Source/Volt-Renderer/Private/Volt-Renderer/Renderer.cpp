@@ -5,7 +5,7 @@
 #include "Volt-Renderer/Material/RenderMaterial.h"
 #include "Volt-Renderer/ShapeLibrary.h"
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 

@@ -21,7 +21,6 @@ namespace VoltSharpmake
             conf.PrecompHeader = "vtapppch.h";
             conf.PrecompSource = "vtapppch.cpp";
 
-			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltImGui>(target);
 
 			conf.AddPublicDependency<LogModule>(target);

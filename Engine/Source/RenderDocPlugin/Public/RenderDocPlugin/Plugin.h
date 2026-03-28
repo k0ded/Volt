@@ -4,7 +4,7 @@
 
 #include <LogModule/LogCategory.h>
 #include <EventSystem/EventListener.h>
-#include <Volt-Core/Plugin/Plugin.h>
+#include <CoreModule/Plugin/Plugin.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/Pointers/Ref.h>

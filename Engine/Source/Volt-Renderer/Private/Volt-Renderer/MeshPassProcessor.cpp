@@ -5,7 +5,7 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RenderScene.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <JobSystem/JobSystem.h>
 #include <JobSystem/TaskGraph.h>

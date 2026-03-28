@@ -21,7 +21,7 @@
 #include <EventSystem/ApplicationEvents.h>
 
 // #TODO: Temporary!
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 namespace Volt
 {

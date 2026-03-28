@@ -10,8 +10,8 @@
 #include <Volt-Scene/EntityDescCustomMetadata.h>
 #include <Volt-Scene/Scene.h>
 
-#include <Volt-Core/Project/Project.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/Project.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-FileSystem/FileArchive.h>
 #include <Volt-FileSystem/Filesystem.h>

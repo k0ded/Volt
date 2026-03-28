@@ -36,7 +36,7 @@ private:
 };
 
 template<typename T>
-bool JSONReader::TryGet(StringView key, T& outValue)
+inline bool JSONReader::TryGet(StringView key, T& outValue)
 {
 	const nlohmann::json* obj = GetCurrentObject();
 	if (!obj)
@@ -65,7 +65,7 @@ bool JSONReader::TryGet(StringView key, T& outValue)
 }
 
 template<Enum T>
-bool JSONReader::TryGet(StringView key, T& outValue)
+inline bool JSONReader::TryGet(StringView key, T& outValue)
 {
 	using Underlying = std::underlying_type_t<T>;
 
@@ -80,7 +80,7 @@ bool JSONReader::TryGet(StringView key, T& outValue)
 }
 
 template<>
-bool JSONReader::TryGet(StringView key, Filesystem::Path& outValue)
+inline bool JSONReader::TryGet(StringView key, Filesystem::Path& outValue)
 {
 	String temp;
 	if (!TryGet(key, temp))
@@ -93,7 +93,7 @@ bool JSONReader::TryGet(StringView key, Filesystem::Path& outValue)
 }
 
 template<typename T>
-void JSONReader::Get(T& outValue)
+inline void JSONReader::Get(T& outValue)
 {
 	VT_ENSURE(m_isIteratingArray);
 	VT_ENSURE(m_arrayElement != nullptr);
@@ -111,7 +111,7 @@ void JSONReader::Get(T& outValue)
 }
 
 template<typename Func>
-void JSONReader::IterateArray(StringView key, Func&& func)
+inline void JSONReader::IterateArray(StringView key, Func&& func)
 {
 	const nlohmann::json* current = GetCurrentObject();
 

@@ -34,7 +34,6 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VoltRenderer>(target);
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
 			conf.AddPrivateDependency<VoltAssets>(target);
-			conf.AddPrivateDependency<VoltCore>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<VoltFileSystem>(target);
 			conf.AddPrivateDependency<imgui>(target);

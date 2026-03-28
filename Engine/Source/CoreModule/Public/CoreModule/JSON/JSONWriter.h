@@ -42,7 +42,7 @@ private:
 };
 
 template<typename T>
-void JSONWriter::AppendKeyValue(StringView key, const T& value)
+inline void JSONWriter::AppendKeyValue(StringView key, const T& value)
 {
 	nlohmann::json& obj = *Current();
 	VT_ENSURE(obj.is_object());
@@ -61,26 +61,26 @@ void JSONWriter::AppendKeyValue(StringView key, const T& value)
 }
 
 template<Enum T>
-void JSONWriter::AppendKeyValue(StringView key, const T& value)
+inline void JSONWriter::AppendKeyValue(StringView key, const T& value)
 {
 	using Underlying = std::underlying_type_t<T>;
 	AppendKeyValue(key, static_cast<Underlying>(value));
 }
 
 template<>
-void JSONWriter::AppendKeyValue(StringView key, const Filesystem::Path& value)
+inline void JSONWriter::AppendKeyValue(StringView key, const Filesystem::Path& value)
 {
 	AppendKeyValue(key, value.ToString());
 }
 
 template<>
-void JSONWriter::AppendKeyValue(StringView key, const float& value)
+inline void JSONWriter::AppendKeyValue(StringView key, const float& value)
 {
 	AppendKeyValue(key, static_cast<double>(value));
 }
 
 template<typename T>
-void JSONWriter::AppendValue(const T& value)
+inline void JSONWriter::AppendValue(const T& value)
 {
 	nlohmann::json& arr = *Current();
 	VT_ENSURE(arr.is_array());

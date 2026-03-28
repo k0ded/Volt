@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt-Core/Config.h"
+#include "CoreModule/Config.h"
 
 #include <AssetSystem/AssetType.h>
 

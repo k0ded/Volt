@@ -3,8 +3,8 @@
 #include "RenderCore/Shader/ShaderSubSystem.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
-#include <Volt-Core/ConfigManager.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/ConfigManager.h>
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>

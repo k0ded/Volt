@@ -2,7 +2,7 @@
 
 #include "RenderDocFrameCapture.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <RHIModule/RHIModule.h>
 #include <WindowModule/Events/WindowEvents.h>

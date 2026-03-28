@@ -23,6 +23,7 @@ namespace Volt
 
 		PhysicsCore* GetPhysicsCore() const;
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{DFE20F48-A2ED-411A-B02C-0A7FCF3E48B6}"_guid);
 	
 	private:

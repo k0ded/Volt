@@ -18,7 +18,7 @@
 #include <Volt-Application/UI/UIProperties.h>
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/EntityDescription.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/Plugin/Plugin.h>
+#include <CoreModule/Plugin/Plugin.h>
 
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Pointers/Unique.h>

@@ -1,3 +1,4 @@
+#include "cpch.h"
 #include "CoreModule/Configs/ConfigBuilder.h"
 
 ConfigBuilder& ConfigBuilder::Section(const String& sectionName)

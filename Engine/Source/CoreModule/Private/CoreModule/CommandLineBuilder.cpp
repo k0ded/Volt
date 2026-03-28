@@ -1,3 +1,4 @@
+#include "cpch.h"
 #include "CoreModule/CommandLineBuilder.h"
 
 #include <Volt-FileSystem/Filesystem.h>

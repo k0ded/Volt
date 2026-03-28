@@ -5,7 +5,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <SubSystem/SubSystemManager.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-ImGui/FontAwesome.h>
 

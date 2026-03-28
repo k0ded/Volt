@@ -14,7 +14,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-FileSystem/Filesystem.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <EventSystem/EventSystem.h>
 

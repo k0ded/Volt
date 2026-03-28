@@ -2,7 +2,7 @@
 #include "RenderCore/TransientResourceSystem/TransientResourceAllocator.h"
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/Swapchain.h>

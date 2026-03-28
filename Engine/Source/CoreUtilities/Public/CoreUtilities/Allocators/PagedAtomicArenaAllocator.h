@@ -86,9 +86,10 @@ public:
 			}
 		}
 
-		VT_INLINE operator++()
+		VT_INLINE Iterator& operator++()
 		{
 			Advance();
+			return *this;
 		}
 
 		VT_INLINE Type* operator->() const

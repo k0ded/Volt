@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/Plugin/Plugin.h>
+#include <CoreModule/Plugin/Plugin.h>
 
 #include <EntitySystem/ComponentReflection.h>
 #include <EntitySystem/ComponentRegistry.h>

@@ -27,8 +27,8 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<AssetSystemModule>(target);
 			conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPublicDependency<CoreModule>(target);
 
-			conf.AddPrivateDependency<VoltCore>(target);
 			conf.AddPrivateDependency<VoltFileSystem>(target);
 		}
 

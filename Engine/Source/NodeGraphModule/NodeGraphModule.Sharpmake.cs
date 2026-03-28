@@ -21,8 +21,6 @@ namespace VoltSharpmake
             conf.PrecompSource = "nodepch.cpp";
 
             conf.AddPrivateDependency<LogModule>(target);
-
-			conf.AddPrivateDependency<VoltCore>(target);
         }
     }
 }

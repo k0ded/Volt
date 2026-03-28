@@ -2,7 +2,7 @@
 #include "BaseApplication.h"
 
 #include <Volt-Platforms/Platform.h>
-#include <Volt-Core/GlobalCommandLine.h>
+#include <CoreModule/GlobalCommandLine.h>
 
 namespace Volt
 {

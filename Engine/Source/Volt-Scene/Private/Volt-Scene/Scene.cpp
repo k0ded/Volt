@@ -11,7 +11,7 @@
 
 #include <Volt-Animation/AnimationManager.h>
 
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Algorithms.h>
 
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-CoreComponents/RenderingComponents.h>

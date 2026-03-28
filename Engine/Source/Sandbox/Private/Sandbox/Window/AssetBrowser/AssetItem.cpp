@@ -17,7 +17,7 @@
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
 
 #include <Volt-FileSystem/Filesystem.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 

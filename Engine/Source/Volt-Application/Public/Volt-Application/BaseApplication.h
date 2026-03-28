@@ -2,8 +2,7 @@
 
 #include "Volt-Application/Config.h"
 
-#include <Volt-Core/Version.h>
-
+#include <CoreModule/AppVersion.h>
 #include <CoreModule/CommandLineBuilder.h>
 
 #include <WindowModule/WindowMode.h>

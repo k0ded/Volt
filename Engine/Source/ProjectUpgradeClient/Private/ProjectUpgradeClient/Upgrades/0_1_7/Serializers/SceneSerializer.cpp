@@ -11,8 +11,8 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Project/ProjectManager.h>
+#include <CoreModule/Algorithms.h>
 
 #include <Volt-FileSystem/Filesystem.h>
 

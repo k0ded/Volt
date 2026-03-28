@@ -14,8 +14,8 @@
 #include <Volt-Animation/TempAnimator.h>
 #include <Volt-Animation/Assets/Skeleton.h>
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Algorithms.h>
 
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/Entity.h>

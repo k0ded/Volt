@@ -5,7 +5,7 @@
 
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Navigation/Core/NavigationSystem.h>
 

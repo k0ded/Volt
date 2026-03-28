@@ -10,8 +10,8 @@
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 #include "RenderCore/CommandBufferPool.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Algorithms.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>

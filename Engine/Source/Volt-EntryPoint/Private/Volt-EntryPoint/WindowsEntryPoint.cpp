@@ -2,7 +2,7 @@
 #include <Volt-Application/BaseApplication.h>
 
 #include <Volt-Application/Application.h>
-#include <Volt-Core/ConfigManager.h>
+#include <CoreModule/ConfigManager.h>
 
 #include <CoreModule/CommandLineBuilder.h>
 

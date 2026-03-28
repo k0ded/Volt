@@ -2,7 +2,7 @@
 
 #include "RenderCore/Shader/PipelineStateCache.h"
 
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <CoreModule/Console/ConsoleVariableRegistry.h>
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>

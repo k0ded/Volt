@@ -4,7 +4,7 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/Material/MaterialShaderRegistry.h"
 
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Algorithms.h>
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>

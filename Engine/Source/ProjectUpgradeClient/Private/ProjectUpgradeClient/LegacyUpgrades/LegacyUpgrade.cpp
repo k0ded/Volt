@@ -7,9 +7,9 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <Volt-Core/Project/Project.h>
-#include <Volt-Core/PluginSystem/PluginRegistry.h>
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/Project.h>
+#include <CoreModule/PluginSystem/PluginRegistry.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 #include <Volt-Renderer/Mesh/Mesh.h>

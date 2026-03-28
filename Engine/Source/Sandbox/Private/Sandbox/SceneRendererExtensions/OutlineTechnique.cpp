@@ -9,7 +9,7 @@
 #include <Volt-Renderer/RenderView.h>
 #include <Volt-Renderer/RenderScene.h>
 
-#include <Volt-Core/Algorithms.h>
+#include <CoreModule/Algorithms.h>
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>

@@ -1,3 +1,4 @@
+#include "cpch.h"
 #include "CoreModule/Configs/Config.h"
 
 #include <CoreUtilities/String/StringBuilder.h>

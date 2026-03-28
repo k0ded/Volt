@@ -3,7 +3,7 @@
 #include "Volt-Application/UI/ImGuiSubSystem.h"
 #include "Volt-Application/UI/FileDialogueHelpers.h"
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 #include <Volt-FileSystem/Filesystem.h>
 
 #include <Volt-Renderer/Renderer.h>

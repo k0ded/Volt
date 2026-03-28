@@ -17,7 +17,7 @@
 #include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
-#include <Volt-Core/Project/ProjectManager.h>
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
