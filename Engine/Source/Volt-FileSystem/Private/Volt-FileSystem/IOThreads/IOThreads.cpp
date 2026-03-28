@@ -41,7 +41,7 @@ namespace Volt
 
 	void IOThreads::AllocateThreads()
 	{
-		const uint32_t numIOThreads = PlatformMisc::GetNumberOfPhysicalCores();
+		const uint32_t numIOThreads = PlatformMisc::GetNumberOfLogicalCores();
 
 		for (uint32_t i = 0; i < numIOThreads; ++i)
 		{

@@ -83,9 +83,12 @@ namespace Volt
 		queuedRequest.referencedCounter = counter;
 		queuedRequest.referencedCounter->Increment();
 
+		// Note: Ensure that the result is created before the request is queued.
+		IORequestResult<RequestType> result(counter, request);
+
 		s_instance->m_ioRequestQueue.Emplace(queuedRequest);
 		s_instance->m_wakeCondition.notify_all();
 
-		return IORequestResult<RequestType>(counter, request);
+		return result;
 	}
 }

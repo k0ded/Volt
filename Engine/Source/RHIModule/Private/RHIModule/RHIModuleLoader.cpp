@@ -7,6 +7,7 @@
 #include <EventSystem/EventSystem.h>
 
 #include <Volt-FileSystem/Filesystem.h>
+#include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/String/StringUtility.h>
@@ -102,5 +103,6 @@ namespace Volt::RHI
 	void RHIModuleLoader::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
 		outDependencies.AddDependency<EventSystem>();
+		outDependencies.AddDependency<IOThreads>();
 	}
 }

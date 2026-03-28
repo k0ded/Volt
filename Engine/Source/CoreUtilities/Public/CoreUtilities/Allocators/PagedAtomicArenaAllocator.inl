@@ -1,5 +1,7 @@
 #pragma once
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
 PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::~PagedAtomicArenaAllocator()
 {
@@ -169,6 +171,8 @@ template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= Defau
 template<typename... Args>
 Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::TryAllocate(Args&&... args)
 {
+	VT_PROFILE_FUNCTION();
+
 	const uint64_t nextSearchIndex = nextIndex.load(std::memory_order::relaxed);
 	for (uint64_t i = 0; i < PageSize; ++i)
 	{
@@ -254,7 +258,8 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Iterator::Ad
 	{
 		bool found = false;
 
-		for (uint64_t i = m_currentIndex + 1; i < PageSize; ++i)
+		const uint64_t startIndex = m_currentIndex == std::numeric_limits<uint64_t>::max() ? 0 : m_currentIndex + 1;
+		for (uint64_t i = startIndex; i < PageSize; ++i)
 		{
 			if (m_currentPage->bitset.Test(i))
 			{
@@ -271,7 +276,7 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Iterator::Ad
 		else
 		{
 			m_currentPage = m_currentPage->next.load(std::memory_order::relaxed);
-			m_currentIndex = 0;
+			m_currentIndex = std::numeric_limits<uint64_t>::max();
 		}
 	}
 }

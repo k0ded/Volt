@@ -62,7 +62,6 @@ private:
 	Page* GetOrAllocateNextPage(Page* current);
 
 	std::atomic<Page*> m_basePage = nullptr;
-
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
 
 public:
@@ -115,7 +114,7 @@ public:
 
 		Page* m_currentPage;
 		const PagedAtomicArenaAllocator* m_allocator;
-		uint64_t m_currentIndex = 0;
+		uint64_t m_currentIndex = std::numeric_limits<uint64_t>::max();
 	};
 };
 

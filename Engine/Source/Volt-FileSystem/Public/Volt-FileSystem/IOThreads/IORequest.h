@@ -59,9 +59,9 @@ namespace Volt
 		~IORequestResult();
 
 		IORequestResult(const IORequestResult&) noexcept = delete;
-		IORequestResult(IORequestResult&&) noexcept = delete;
+		IORequestResult(IORequestResult&&) noexcept;
 		IORequestResult& operator=(const IORequestResult&) noexcept = delete;
-		IORequestResult& operator=(IORequestResult&&) noexcept = delete;
+		IORequestResult& operator=(IORequestResult&&) noexcept;
 
 		ResultType& GetResult();
 		VT_INLINE IORequestResultCode GetResultCode() const 
@@ -93,6 +93,33 @@ namespace Volt
 	{
 		JobSystem::DestroyCounter(m_assignedCounter);
 		m_ioRequest->DecRef();
+	}
+
+	template<typename T>
+		requires(std::is_base_of_v<IORequest, T>)
+	IORequestResult<T>::IORequestResult(IORequestResult&& other) noexcept
+	{
+		m_ioRequest = other.m_ioRequest;
+		m_assignedCounter = other.m_assignedCounter;
+
+		other.m_ioRequest = nullptr;
+		other.m_assignedCounter = nullptr;
+	}
+
+	template<typename T>
+		requires(std::is_base_of_v<IORequest, T>)
+	IORequestResult<T>& IORequestResult<T>::operator=(IORequestResult&& other) noexcept
+	{
+		if (&other != this)
+		{
+			m_ioRequest = other.m_ioRequest;
+			m_assignedCounter = other.m_assignedCounter;
+
+			other.m_ioRequest = nullptr;
+			other.m_assignedCounter = nullptr;
+		}
+
+		return *this;
 	}
 
 	template<typename T>

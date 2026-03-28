@@ -22,16 +22,16 @@ namespace Volt
 		T* CreateTask(Args&&... args)
 		{
 			void* dataPtr = AllocateBytes(sizeof(T));
-			new (dataPtr) T(std::forward<Args>(args)...);
+			T* valuePtr = new (dataPtr) T(std::forward<Args>(args)...);
 
 			TaskDestructor& destructor = m_taskDestructors.emplace_back();
 			destructor.dataPtr = dataPtr;
 			destructor.destructor = [](void* ptr) 
 			{
-				reinterpret_cast<T*>(ptr)->~T();
+				std::launder(reinterpret_cast<T*>(ptr))->~T();
 			};
 
-			return reinterpret_cast<T*>(dataPtr);
+			return valuePtr;
 		}
 
 	private:

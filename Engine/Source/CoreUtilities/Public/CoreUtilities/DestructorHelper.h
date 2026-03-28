@@ -12,9 +12,9 @@ public:
 	template<typename ClassType>
 	static DestructorHelper Create(void* dataPtr)
 	{
-		auto destructor = [](void* ptr)
+		constexpr auto destructor = [](void* ptr)
 		{
-			(reinterpret_cast<ClassType*>(ptr))->~ClassType();
+			std::launder(reinterpret_cast<ClassType*>(ptr))->~ClassType();
 		};
 
 		return DestructorHelper(destructor, dataPtr);
