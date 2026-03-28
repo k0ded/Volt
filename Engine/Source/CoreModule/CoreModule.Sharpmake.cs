@@ -20,7 +20,7 @@ namespace VoltSharpmake
 
 			conf.SolutionFolder = "Engine/Modules";
 
-			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<PlatformsModule>(target);
 			conf.AddPrivateDependency<FileSystemModule>(target);
 
 			conf.AddPrivateDependency<SubSystemModule>(target);

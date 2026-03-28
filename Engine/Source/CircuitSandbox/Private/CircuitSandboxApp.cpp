@@ -4,7 +4,7 @@
 
 #include <Volt-Application/Application.h>
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 class CircuitSandboxApp : public Volt::Application
 {

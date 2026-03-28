@@ -1,8 +1,8 @@
 #include "FileSystemModule/FileArchive.h"
 #include "FileSystemModule/Filesystem.h"
 
-#include <Volt-Platforms/FileHandle.h>
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/FileHandle.h>
+#include <PlatformsModule/Platform.h>
 
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Profiling/Profiling.h>

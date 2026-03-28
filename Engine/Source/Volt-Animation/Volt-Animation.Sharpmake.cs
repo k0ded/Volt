@@ -26,7 +26,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<EventSystemModule>(target);
 			conf.AddPrivateDependency<EntitySystemModule>(target);
 
-			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<PlatformsModule>(target);
 		}
 
         public override void ConfigureClangCl(Configuration conf, CommonTarget target)

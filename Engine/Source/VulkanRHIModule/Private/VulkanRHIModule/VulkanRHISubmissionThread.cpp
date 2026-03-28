@@ -6,7 +6,7 @@
 #include "VulkanRHIModule/VulkanResourceCast.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 namespace Volt::RHI
 {

@@ -7,7 +7,7 @@
 
 #include <Volt-Application/Application.h>
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 #include <FileSystemModule/FileUtility.h>
 
 #include <FileSystemModule/Filesystem.h>

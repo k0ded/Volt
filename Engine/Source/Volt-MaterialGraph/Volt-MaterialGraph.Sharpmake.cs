@@ -27,7 +27,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPublicDependency<RHIModule>(target);
 
-			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<PlatformsModule>(target);
 
 			conf.AddPrivateDependency<imgui>(target);
 		}

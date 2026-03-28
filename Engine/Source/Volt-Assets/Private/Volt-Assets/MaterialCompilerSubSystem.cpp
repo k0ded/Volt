@@ -3,7 +3,7 @@
 #include "Volt-Assets/MaterialCompilerSubSystem.h"
 #include "Volt-Assets/MaterialCompiler.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 #include <FileSystemModule/FileUtility.h>
 
 #include <CoreModule/Console/ConsoleVariableRegistry.h>

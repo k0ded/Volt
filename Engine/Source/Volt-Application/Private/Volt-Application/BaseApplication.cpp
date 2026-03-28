@@ -1,7 +1,7 @@
 #include "vtapppch.h"
 #include "BaseApplication.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 #include <CoreModule/GlobalCommandLine.h>
 
 namespace Volt

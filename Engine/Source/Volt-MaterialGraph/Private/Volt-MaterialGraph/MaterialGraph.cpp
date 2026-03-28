@@ -2,7 +2,7 @@
 
 #include "Volt-MaterialGraph/MaterialGraph.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>

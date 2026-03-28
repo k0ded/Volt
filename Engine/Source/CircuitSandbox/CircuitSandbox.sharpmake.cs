@@ -29,7 +29,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
 			conf.AddPrivateDependency<VoltApplication>(target);
-            conf.AddPrivateDependency<VoltPlatforms>(target);
+            conf.AddPrivateDependency<PlatformsModule>(target);
 
 			conf.AddPrivateDependency<Circuit>(target);
 

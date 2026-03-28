@@ -2,7 +2,7 @@
 
 #include "JobSystem/JobStackAllocator.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 namespace Volt
 {

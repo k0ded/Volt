@@ -30,7 +30,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
 			conf.AddPrivateDependency<VoltRenderer>(target);
-			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<PlatformsModule>(target);
 			conf.AddPrivateDependency<VoltScene>(target);
 			conf.AddPrivateDependency<VoltAssets>(target);
 			conf.AddPrivateDependency<VoltMaterialGraph>(target);

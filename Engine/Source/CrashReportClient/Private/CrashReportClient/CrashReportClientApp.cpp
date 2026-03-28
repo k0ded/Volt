@@ -1,6 +1,6 @@
 #include "CrashReportClient/CrashReportClientLayer.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 #include <Volt-Application/UIApplication.h>
 

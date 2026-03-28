@@ -2,8 +2,8 @@
 
 #include <Volt-Application/ApplicationLayer.h>
 
-#include <Volt-Platforms/ProcessHandle.h>
-#include <Volt-Platforms/CrashContext.h>
+#include <PlatformsModule/ProcessHandle.h>
+#include <PlatformsModule/CrashContext.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>

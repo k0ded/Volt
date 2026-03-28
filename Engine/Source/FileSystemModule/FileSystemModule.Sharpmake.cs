@@ -20,7 +20,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
 
-			conf.AddPublicDependency<VoltPlatforms>(target);
+			conf.AddPublicDependency<PlatformsModule>(target);
 		}
 
 		public override void ConfigureWin64(Configuration conf, CommonTarget target)

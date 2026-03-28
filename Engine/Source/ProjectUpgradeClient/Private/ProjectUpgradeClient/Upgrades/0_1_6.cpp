@@ -8,7 +8,7 @@
 
 #include "UpgradesRegistry.h"
 
-#include "Volt-Platforms/Windows/WindowsPlatformThread.h"
+#include "PlatformsModule/Windows/WindowsPlatformThread.h"
 #include "FileSystemModule/Filesystem.h"
 #include "FileSystemModule/Iterators/RecursiveDirectoryIterator.h"
 #include "FileSystemModule/Iterators/DirectoryIterator.h"

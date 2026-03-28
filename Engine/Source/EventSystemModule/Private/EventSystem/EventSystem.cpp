@@ -3,7 +3,7 @@
 
 #include "EventSystem/EventListener.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 

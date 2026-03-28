@@ -18,7 +18,7 @@
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/CoreComponents.h>
 
-#include <Volt-Platforms/Windows/WindowsPlatformThread.h>
+#include <PlatformsModule/Windows/WindowsPlatformThread.h>
 
 #include <FileSystemModule/Filesystem.h>
 

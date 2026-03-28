@@ -4,7 +4,7 @@
 #include "JobSystem/JobFiber.h"
 #include "JobSystem/Asm/FiberContext.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Core.h>

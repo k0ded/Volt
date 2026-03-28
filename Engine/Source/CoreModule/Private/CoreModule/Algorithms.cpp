@@ -1,7 +1,7 @@
 #include "cpch.h"
 #include "CoreModule/Algorithms.h"
 
-#include <Volt-Platforms/Platform.h>
+#include <PlatformsModule/Platform.h>
 
 namespace Volt::Algo
 {
