@@ -34,14 +34,14 @@ namespace Volt::RHI
 
 		if (m_rootView.load(std::memory_order::acquire) == nullptr)
 		{
-			ViewContainer* newView = m_views.Allocate();
+			ViewContainer* newView = new ViewContainer();
 			newView->view = ImageView::Create(desc, m_image);
 			newView->hash = hash;
 
 			ViewContainer* expected = nullptr;
 			if (!m_rootView.compare_exchange_strong(expected, newView, std::memory_order::release, std::memory_order::acquire))
 			{
-				m_views.Free(newView);
+				delete newView;
 			}
 		}
 
@@ -59,14 +59,14 @@ namespace Volt::RHI
 				// Otherwise we go the the next one, or allocate a new
 				if (currentView->next.load(std::memory_order::acquire) == nullptr)
 				{
-					ViewContainer* newView = m_views.Allocate();
+					ViewContainer* newView = new ViewContainer();
 					newView->view = ImageView::Create(desc, m_image);
 					newView->hash = hash;
 
 					ViewContainer* expected = nullptr;
 					if (!currentView->next.compare_exchange_strong(expected, newView, std::memory_order::release, std::memory_order::acquire))
 					{
-						m_views.Free(newView);
+						delete newView;
 					}
 				}
 
@@ -77,6 +77,14 @@ namespace Volt::RHI
 
 	ImageViewCache::~ImageViewCache()
 	{
+		ViewContainer* current = m_rootView.load(std::memory_order::relaxed);
 
+		while (current != nullptr)
+		{
+			ViewContainer* next = current->next.load(std::memory_order::relaxed);
+			delete current;
+
+			current = next;
+		}
 	}
 }

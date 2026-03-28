@@ -163,6 +163,11 @@ PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomic
 template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
 void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::FreePage(Page* page)
 {
+	for (uint64_t bitmask : page->bitset.bitset)
+	{
+		VT_ENSURE_MSG(bitmask == 0, "Not all entries were destroyed prior to destruction!");
+	}
+
 	page->~Page();
 	m_allocator.Free(page);
 }

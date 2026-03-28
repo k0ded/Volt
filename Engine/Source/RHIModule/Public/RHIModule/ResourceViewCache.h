@@ -26,6 +26,5 @@ namespace Volt::RHI
 		RawPtr<Image> m_image;
 
 		std::atomic<ViewContainer*> m_rootView = nullptr;
-		PagedAtomicArenaAllocator<ViewContainer, 8> m_views;
 	};
 }

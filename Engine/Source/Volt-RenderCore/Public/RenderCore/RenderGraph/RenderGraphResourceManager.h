@@ -35,8 +35,12 @@ namespace Volt
 		PagedAtomicArenaAllocator<PersistantTextureResource, 512> m_persistantTextureResources;
 		PagedAtomicArenaAllocator<PersistantUniformBufferResource, 512> m_persistantUniformBufferResources;
 
-		RGVector<TransientBufferResource*> m_allocatedBuffers;
-		RGVector<TransientTextureResource*> m_allocatedTextures;
-		RGVector<TransientUniformBufferResource*> m_allocatedUniformBuffers;
+		RGVector<TransientBufferResource*> m_transientBuffers;
+		RGVector<TransientTextureResource*> m_transientTextures;
+		RGVector<TransientUniformBufferResource*> m_transientUniformBuffers;
+
+		RGVector<PersistantBufferResource*> m_persistantBuffers;
+		RGVector<PersistantTextureResource*> m_persistantTextures;
+		RGVector<PersistantUniformBufferResource*> m_persistantUniformBuffers;
 	};
 }

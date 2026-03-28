@@ -9,7 +9,7 @@ namespace Volt
 	{
 	public:
 		PersistantBufferResource(IntRef<RHI::Buffer> buffer);
-		~PersistantBufferResource() override = default;
+		~PersistantBufferResource() override;
 
 		VT_INLINE IntRef<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
 		VT_INLINE IntRef<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }

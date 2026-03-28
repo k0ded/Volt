@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
+#include "CoreUtilities/Containers/Array.h"
 #include "CoreUtilities/Math/Math.h"
 
 #include <cstdint>
@@ -37,7 +38,7 @@ private:
 		bool Test(uint64_t index);
 		void ResetBit(uint64_t index);
 
-		std::atomic<BitmaskType> bitset[NumBitmasks]{};
+		Array<std::atomic<BitmaskType>, NumBitmasks> bitset{};
 	};
 
 	struct Page
