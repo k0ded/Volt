@@ -4,7 +4,7 @@
 #include <Volt-Animation/Assets/Animation.h>
 #undef private
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <AssetSystem/AssetManager.h>
 

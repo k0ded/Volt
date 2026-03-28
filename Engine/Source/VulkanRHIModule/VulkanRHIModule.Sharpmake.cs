@@ -36,7 +36,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<JobSystemModule>(target);
 
 			conf.AddPrivateDependency<VoltPlatforms>(target);
-			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<FileSystemModule>(target);
 
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Include");
 			if (vulkanSDKPath != null)

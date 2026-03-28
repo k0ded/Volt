@@ -4,18 +4,18 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class VoltFileSystem : CommonVoltDllProject
+    public class FileSystemModule : CommonVoltDllProject
 	{
-        public VoltFileSystem() : base()
+        public FileSystemModule() : base()
         {
-            Name = "Volt-FileSystem";
+            Name = "FileSystemModule";
 		}
 
         public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
 			base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);

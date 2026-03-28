@@ -3,7 +3,7 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
-#include <Volt-FileSystem/FileUtility.h>
+#include <FileSystemModule/FileUtility.h>
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Graphics/GraphicsContext.h>

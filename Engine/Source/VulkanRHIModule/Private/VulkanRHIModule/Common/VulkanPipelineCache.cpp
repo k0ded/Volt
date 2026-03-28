@@ -3,10 +3,10 @@
 #include "VulkanRHIModule/Common/VulkanPipelineCache.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 
-#include <Volt-FileSystem/FileIORequest.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <FileSystemModule/FileIORequest.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
-#include <Volt-FileSystem/FileArchive.h>
+#include <FileSystemModule/FileArchive.h>
 
 #include <vulkan/vulkan.h>
 

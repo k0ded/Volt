@@ -1,12 +1,12 @@
 #include "cpch.h"
 #include "CoreModule/PluginSystem/PluginRegistry.h"
 
-#include <Volt-FileSystem/FileUtility.h>
+#include <FileSystemModule/FileUtility.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/Iterators/RecursiveDirectoryIterator.h>
 
 #include <CoreModule/JSON/JSONReader.h>
 

@@ -4,8 +4,8 @@
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
 #include "Volt-Assets/FontAsset.h"
 
-#include <Volt-FileSystem/IOThreads/IORequest.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <FileSystemModule/IOThreads/IORequest.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <AssetSystem/AssetManager.h>
 

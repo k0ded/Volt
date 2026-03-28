@@ -4,11 +4,11 @@
 #include "RHIModule/Graphics/GraphicsContext.h"
 #include "RHIModule/Utility/HashUtility.h"
 
-#include <Volt-FileSystem/FileArchive.h>
+#include <FileSystemModule/FileArchive.h>
 
-#include <Volt-FileSystem/FileIORequest.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/FileIORequest.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Time/TimeUtility.h>

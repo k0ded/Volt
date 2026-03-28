@@ -25,7 +25,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<RHIModule>(target);
             conf.AddPublicDependency<JobSystemModule>(target);
 
-			conf.AddPublicDependency<VoltFileSystem>(target);
+			conf.AddPublicDependency<FileSystemModule>(target);
 			conf.AddPublicDependency<AssetSystemModule>(target);
         }
 

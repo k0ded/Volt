@@ -20,7 +20,7 @@
 
 #include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <CoreUtilities/Containers/Map.h>
 

@@ -41,9 +41,9 @@
 #include <Volt-MaterialGraph/Nodes/Normal/NormalStrengthNode.h>
 #include <Volt-MaterialGraph/Nodes/ConversionNodes.h>
 
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
-#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/Iterators/DirectoryIterator.h>
+#include <FileSystemModule/Iterators/RecursiveDirectoryIterator.h>
 
 #include <AssetSystem/SourceAssetManager.h>
 

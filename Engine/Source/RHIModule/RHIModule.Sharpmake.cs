@@ -29,7 +29,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<EventSystemModule>(target);
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
-			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<FileSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
 
 			//conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");

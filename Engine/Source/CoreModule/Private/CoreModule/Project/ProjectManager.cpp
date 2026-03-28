@@ -5,10 +5,10 @@
 #include "CoreModule/AppVersion.h"
 #include "CoreModule/GlobalCommandLine.h"
 
-#include <Volt-FileSystem/FileUtility.h>
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <FileSystemModule/FileUtility.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/Iterators/DirectoryIterator.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <SubSystem/SubSystemManager.h>
 

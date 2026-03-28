@@ -30,7 +30,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<CoreModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
 
-			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<FileSystemModule>(target);
         }
     }
 }

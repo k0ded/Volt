@@ -10,7 +10,7 @@
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-MaterialGraph/Nodes/PBROutputNode.h>

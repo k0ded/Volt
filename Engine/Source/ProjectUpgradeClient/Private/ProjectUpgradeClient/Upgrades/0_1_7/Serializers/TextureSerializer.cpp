@@ -5,7 +5,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <RenderCore/CommandBufferPool.h>
 

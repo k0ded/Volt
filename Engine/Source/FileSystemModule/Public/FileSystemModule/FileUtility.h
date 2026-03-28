@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt-FileSystem/Config.h"
+#include "FileSystemModule/Config.h"
 
 #include <CoreUtilities/Filesystem/Path.h>
 

@@ -13,9 +13,9 @@
 #include <CoreModule/Project/Project.h>
 #include <CoreModule/Project/ProjectManager.h>
 
-#include <Volt-FileSystem/FileArchive.h>
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
+#include <FileSystemModule/FileArchive.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/Iterators/RecursiveDirectoryIterator.h>
 
 #include <AssetSystem/AssetMetadata.h>
 #include <AssetSystem/AssetFactory.h>

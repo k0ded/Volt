@@ -6,7 +6,7 @@
 #include "Sandbox/Window/AssetBrowser/AssetCommon.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt-FileSystem/Iterators/DirectoryIterator.h>
+#include <FileSystemModule/Iterators/DirectoryIterator.h>
 
 #include <AssetSystem/AssetManager.h>
 

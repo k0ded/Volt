@@ -13,7 +13,7 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 #include <CoreModule/Project/ProjectManager.h>
 
 #include <EventSystem/EventSystem.h>

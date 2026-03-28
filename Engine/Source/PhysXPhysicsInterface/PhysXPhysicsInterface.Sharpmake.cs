@@ -21,7 +21,7 @@ namespace VoltSharpmake
             conf.PrecompSource = "pxpch.cpp";
 
 			conf.AddPrivateDependency<PhysX>(target);
-			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<FileSystemModule>(target);
 
 			conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<PhysicsInterface>(target);

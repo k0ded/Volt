@@ -10,7 +10,7 @@
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 

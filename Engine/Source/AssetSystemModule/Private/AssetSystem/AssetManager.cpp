@@ -3,9 +3,9 @@
 
 #include <CoreModule/Console/ConsoleVariableRegistry.h>
 
-#include <Volt-FileSystem/FileIORequest.h>
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <FileSystemModule/FileIORequest.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <JobSystem/JobSystem.h>
 

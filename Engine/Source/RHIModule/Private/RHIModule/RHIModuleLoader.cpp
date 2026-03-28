@@ -6,8 +6,8 @@
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
 
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/IOThreads/IOThreads.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/String/StringUtility.h>

@@ -4,8 +4,8 @@
 #include "CoreModule/Console/ConsoleVariableRegistry.h"
 #include "CoreModule/Configs/ConfigParser.h"
 
-#include <Volt-FileSystem/FileUtility.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/FileUtility.h>
+#include <FileSystemModule/Filesystem.h>
 
 VT_DEFINE_LOG_CATEGORY(LogConfigManager);
 

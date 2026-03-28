@@ -9,9 +9,9 @@
 #include "UpgradesRegistry.h"
 
 #include "Volt-Platforms/Windows/WindowsPlatformThread.h"
-#include "Volt-FileSystem/Filesystem.h"
-#include "Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h"
-#include "Volt-FileSystem/Iterators/DirectoryIterator.h"
+#include "FileSystemModule/Filesystem.h"
+#include "FileSystemModule/Iterators/RecursiveDirectoryIterator.h"
+#include "FileSystemModule/Iterators/DirectoryIterator.h"
 
 #include <CoreModule/Project/Project.h>
 

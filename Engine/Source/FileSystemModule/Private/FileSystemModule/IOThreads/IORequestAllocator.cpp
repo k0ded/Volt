@@ -1,5 +1,5 @@
-#include "Volt-FileSystem/IOThreads/IORequestAllocator.h"
-#include "Volt-FileSystem/IOThreads/IORequest.h"
+#include "FileSystemModule/IOThreads/IORequestAllocator.h"
+#include "FileSystemModule/IOThreads/IORequest.h"
 
 namespace Volt
 {

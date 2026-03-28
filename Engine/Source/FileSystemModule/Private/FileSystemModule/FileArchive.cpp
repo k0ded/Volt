@@ -1,5 +1,5 @@
-#include "Volt-FileSystem/FileArchive.h"
-#include "Volt-FileSystem/Filesystem.h"
+#include "FileSystemModule/FileArchive.h"
+#include "FileSystemModule/Filesystem.h"
 
 #include <Volt-Platforms/FileHandle.h>
 #include <Volt-Platforms/Platform.h>

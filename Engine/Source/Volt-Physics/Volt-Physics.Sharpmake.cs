@@ -29,7 +29,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<SubSystemModule>(target);
 			conf.AddPublicDependency<CoreModule>(target);
 
-			conf.AddPrivateDependency<VoltFileSystem>(target);
+			conf.AddPrivateDependency<FileSystemModule>(target);
 		}
 
         public override void ConfigureClangCl(Configuration conf, CommonTarget target)

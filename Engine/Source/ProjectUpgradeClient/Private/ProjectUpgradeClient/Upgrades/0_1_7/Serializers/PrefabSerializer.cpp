@@ -10,7 +10,7 @@
 #undef private
 #include <Volt-Scene/Scene.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <AssetSystem/AssetManager.h>
 

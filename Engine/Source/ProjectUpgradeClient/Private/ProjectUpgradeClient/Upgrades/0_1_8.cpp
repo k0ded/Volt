@@ -4,9 +4,9 @@
 #include <Volt-Scene/EntityDescription.h>
 #include <Volt-Scene/EntityDescCustomMetadata.h>
 
-#include <Volt-FileSystem/FileArchive.h>
-#include <Volt-FileSystem/Filesystem.h>
-#include <Volt-FileSystem/Iterators/RecursiveDirectoryIterator.h>
+#include <FileSystemModule/FileArchive.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/Iterators/RecursiveDirectoryIterator.h>
 
 #include <CoreModule/Project/Project.h>
 #include <JobSystem/TaskGraph.h>

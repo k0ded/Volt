@@ -10,7 +10,7 @@
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-Renderer/Material/RenderMaterial.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <AssetSystem/AssetManager.h>
 

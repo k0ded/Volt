@@ -14,7 +14,7 @@
 #include <CoreModule/Project/ProjectManager.h>
 #include <CoreModule/Algorithms.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>

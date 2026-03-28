@@ -4,7 +4,7 @@
 #include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <CoreModule/Project/ProjectManager.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <Volt-Renderer/Renderer.h>
 

@@ -5,7 +5,7 @@
 #include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <Volt-Renderer/Renderer.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>

@@ -7,7 +7,7 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsControllerActor.h"
 #include "PhysXPhysicsInterface/PhysXDebugger.h"
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <PhysX/PxPhysicsAPI.h>
 

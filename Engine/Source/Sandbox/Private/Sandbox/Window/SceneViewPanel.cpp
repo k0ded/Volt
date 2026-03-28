@@ -24,7 +24,7 @@
 #include <CoreModule/Project/ProjectManager.h>
 
 #include <Volt-ImGui/FontAwesome.h>
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>

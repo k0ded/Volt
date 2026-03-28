@@ -2,7 +2,7 @@
 
 #include "Sandbox/EditorAssetManager.h"
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 VT_DEFINE_LOG_CATEGORY(LogEditorAssetSystem);
 

@@ -8,7 +8,7 @@
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
-#include <Volt-FileSystem/Filesystem.h>
+#include <FileSystemModule/Filesystem.h>
 
 namespace Volt
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Volt-FileSystem/IOThreads/IORequest.h"
-#include "Volt-FileSystem/FileArchive.h"
+#include "FileSystemModule/IOThreads/IORequest.h"
+#include "FileSystemModule/FileArchive.h"
 
 namespace Volt
 {
