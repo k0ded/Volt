@@ -48,7 +48,6 @@ namespace Volt
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
-		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
 
 		Application& m_application;
 	};
@@ -84,7 +83,6 @@ namespace Volt
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
-		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
 
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;

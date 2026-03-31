@@ -42,15 +42,15 @@ void TestingLayer::OnAttach()
 	RegisterListener<Volt::WindowResizeEvent>(VT_BIND_EVENT_FN(TestingLayer::OnWindowResizeEvent));
 	RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(TestingLayer::OnImGuiUpdateEvent));
 
-	m_scene = Scene::CreateDefaultScene("Test");
-
-	SceneRendererCreateInfo createInfo{};
-	createInfo.renderScene = m_scene->GetRenderScene();
-	createInfo.drawDebug = true;
-	
-	m_sceneRenderer = CreateRef<SceneRenderer>(createInfo);
-
-	m_camera = CreateRef<Camera>(glm::radians(60.f), 16.f / 9.f, 0.1f, 100000.f);
+	//m_scene = Scene::CreateDefaultScene("Test");
+	//
+	//SceneRendererCreateInfo createInfo{};
+	//createInfo.renderScene = m_scene->GetRenderScene();
+	//createInfo.drawDebug = true;
+	//
+	//m_sceneRenderer = CreateRef<SceneRenderer>(createInfo);
+	//
+	//m_camera = CreateRef<Camera>(glm::radians(60.f), 16.f / 9.f, 0.1f, 100000.f);
 }
 
 void TestingLayer::OnDetach()

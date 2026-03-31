@@ -14,6 +14,7 @@
 
 #include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManagerSubSystem.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -302,6 +303,11 @@ namespace Volt
 				VT_LOGC(Trace, LogStreamingManager, "Invalidated instance with ID {} linked to entity {} and environment texture {}", instanceId, streamingInstance.entityId, streamingInstance.environmentTextureHandle);
 			}
 		}
+	}
+
+	void StreamingManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<AssetManagerSubSystem>();
 	}
 
 	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance)

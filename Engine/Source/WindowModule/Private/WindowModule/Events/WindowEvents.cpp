@@ -8,9 +8,4 @@ namespace Volt
 	{
 		return FormatString("WindowResizeEvent: {}, {}", m_width, m_height);
 	}
-
-	String ViewportResizeEvent::ToString() const
-	{
-		return FormatString("ViewportResizeEvent: {}, {}", m_width, m_height);
-	}
 }

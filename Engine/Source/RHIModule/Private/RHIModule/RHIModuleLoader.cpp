@@ -9,6 +9,9 @@
 #include <FileSystemModule/Filesystem.h>
 #include <FileSystemModule/IOThreads/IOThreads.h>
 
+#include <CoreModule/GlobalCommandLine.h>
+#include <CoreModule/Project/ProjectManager.h>
+
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/String/StringUtility.h>
 
@@ -69,6 +72,35 @@ namespace Volt::RHI
 		m_graphicsContext = RHI::GraphicsContext::Create(createInfo);
 	}
 
+	void RHIModuleLoader::Initialize()
+	{
+		RHI::RHICallbackInfo callbackInfo{};
+
+		RHI::RHIConfig rhiConfig;
+		rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		rhiConfig.enableDebugLayer = false;
+		rhiConfig.pipelineCacheFilepath = ProjectManager::GetProjectDirectory() / "Generated" / "PipelineCache.bin";
+
+		const CommandLineBuilder& commandLineBuilder = GlobalCommandLine::Get();
+
+		if (commandLineBuilder.IsArgDefined("vulkan"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		}
+		
+		if (commandLineBuilder.IsArgDefined("d3d12"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::D3D12;
+		}
+
+		if (commandLineBuilder.IsArgDefined("rhidebuglayer"))
+		{
+			rhiConfig.enableDebugLayer = true;
+		}
+
+		LoadRHI(rhiConfig, callbackInfo);
+	}
+
 	void RHIModuleLoader::Shutdown()
 	{
 		if (m_rhiModuleHandle && m_rhiModule)
@@ -104,5 +136,6 @@ namespace Volt::RHI
 	{
 		outDependencies.AddDependency<EventSystem>();
 		outDependencies.AddDependency<IOThreads>();
+		outDependencies.AddDependency<ProjectManager>();
 	}
 }

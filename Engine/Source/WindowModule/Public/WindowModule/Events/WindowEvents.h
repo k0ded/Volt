@@ -24,28 +24,6 @@ namespace Volt
 		Window& m_window;
 	};
 
-	class WINDOWMODULE_API WindowBeginFrameEvent : public WindowEvent
-	{
-	public:
-		WindowBeginFrameEvent(Window& window)
-			: WindowEvent(window)
-		{}
-
-		EVENT_CLASS(WindowBeginFrameEvent, "{AF873F34-6F2D-41AF-B85D-E15D6EEC5F5A}"_guid);
-	};
-
-	class WINDOWMODULE_API WindowPresentFrameEvent : public WindowEvent
-	{
-	public:
-		WindowPresentFrameEvent(Window& window)
-			: WindowEvent(window)
-		{
-		}
-
-		EVENT_CLASS(WindowPresentFrameEvent, "{B08F5791-DABA-4AB8-9FFB-66F0CF29DAFA}"_guid);
-
-	};
-
 	class WINDOWMODULE_API WindowResizeEvent : public WindowEvent
 	{
 	public:
@@ -68,30 +46,6 @@ namespace Volt
 		String ToString() const override;
 
 		EVENT_CLASS(WindowResizeEvent, "{E045B613-AE06-41C9-8759-90B7E23AEED1}"_guid);
-
-	private:
-		uint32_t m_width;
-		uint32_t m_height;
-		uint32_t m_x;
-		uint32_t m_y;
-	};
-
-	class WINDOWMODULE_API ViewportResizeEvent : public WindowEvent
-	{
-	public:
-		ViewportResizeEvent(Window& window, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-			: WindowEvent(window), m_width(width), m_height(height), m_x(x), m_y(y)
-		{
-		}
-		//Getting
-		inline const uint32_t GetWidth() const { return m_width; }
-		inline const uint32_t GetHeight() const { return m_height; }
-		inline const uint32_t GetX() const { return m_x; }
-		inline const uint32_t GetY() const { return m_y; }
-
-		String ToString() const override;
-
-		EVENT_CLASS(ViewportResizeEvent, "{CF62FE90-790A-4733-B091-6E708E80EAD7}"_guid);
 
 	private:
 		uint32_t m_width;

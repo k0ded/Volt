@@ -4,7 +4,6 @@
 #include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <CoreModule/Project/ProjectManager.h>
-#include <FileSystemModule/Filesystem.h>
 
 #include <Volt-Renderer/Renderer.h>
 
@@ -19,7 +18,6 @@
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
 
-#include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 
 #include <RHIModule/FrameCapture.h>
@@ -35,7 +33,6 @@ namespace Volt
 		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnAppUpdateEvent));
 		RegisterListener<WindowCloseEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowCloseEvent));
 		RegisterListener<WindowResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowResizeEvent));
-		RegisterListener<ViewportResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnViewportResizeEvent));
 	}
 
 	bool ApplicationEventListener::OnAppUpdateEvent(AppUpdateEvent& e)
@@ -53,37 +50,19 @@ namespace Volt
 		return m_application.OnWindowResizeEvent(e);
 	}
 
-	bool ApplicationEventListener::OnViewportResizeEvent(ViewportResizeEvent& e)
-	{
-		return m_application.OnViewportResizeEvent(e);
-	}
-
 	Application::Application(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		{
-			Filesystem::Path workingDir;
-			if (commandLineBuilder.IsArgDefined("workingdir"))
-			{
-				workingDir = commandLineBuilder.GetArgValue("workingdir");
-			}
-
-			Filesystem::InitializeWorkingDirectory(IsRuntime(), workingDir, commandLineBuilder.GetExecutableFilepath());
-		}
-
 		FileDialogueHelpers::Initialize();
 
 		m_subSystemManager = CreateUnique<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
-		Log::Get().EnableLogging(IsLoggingEnabled());
 
 		CreateGraphicsContext(commandLineBuilder);
 
 		m_sourceAssetManager = CreateUnique<SourceAssetManager>();
-		// #TODO_AssetSystem: Move to a sub system.
-		g_assetManager = CreateUnique<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 		{
@@ -151,7 +130,6 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_sourceAssetManager = nullptr;
-		g_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();
 
@@ -389,12 +367,6 @@ namespace Volt
 			}
 		}*/
 
-		return false;
-	}
-
-	bool Application::OnViewportResizeEvent(class ViewportResizeEvent& e)
-	{
-		WindowManager::Get().GetMainWindow().SetViewportSize(e.GetWidth(), e.GetHeight());
 		return false;
 	}
 }

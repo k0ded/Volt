@@ -85,11 +85,11 @@ namespace Volt
 			case InputCode::Numpad_7: return ImGuiKey_Keypad7;
 			case InputCode::Numpad_8: return ImGuiKey_Keypad8;
 			case InputCode::Numpad_9: return ImGuiKey_Keypad9;
-			case InputCode::Decimal: return ImGuiKey_KeypadDecimal;
-			case InputCode::Divide: return ImGuiKey_KeypadDivide;
-			case InputCode::Multiply: return ImGuiKey_KeypadMultiply;
-			case InputCode::Subtract: return ImGuiKey_KeypadSubtract;
-			case InputCode::Add: return ImGuiKey_KeypadAdd;
+			case InputCode::Numpad_Decimal: return ImGuiKey_KeypadDecimal;
+			case InputCode::Numpad_Divide: return ImGuiKey_KeypadDivide;
+			case InputCode::Numpad_Multiply: return ImGuiKey_KeypadMultiply;
+			case InputCode::Numpad_Subtract: return ImGuiKey_KeypadSubtract;
+			case InputCode::Numpad_Add: return ImGuiKey_KeypadAdd;
 			case InputCode::Enter: return ImGuiKey_KeypadEnter;
 			case InputCode::Numpad_Equal: return ImGuiKey_KeypadEqual;
 			case InputCode::LeftShift: return ImGuiKey_LeftShift;

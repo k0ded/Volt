@@ -294,7 +294,7 @@ namespace Volt
 		VT_ENSURE_MSG(RHI::Utility::IsDepthFormat(desc.format) ? (desc.usage != RHI::ImageUsage::AttachmentStorage && desc.usage != RHI::ImageUsage::Storage) : true, 
 			"A texture with a depth format may not be used for UAV access!");
 
-		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get());
+		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get(), false);
 		m_resources.emplace_back(texture);
 
 		return texture;
@@ -1659,7 +1659,7 @@ namespace Volt
 		desc.debugName = imageDesc.debugName;
 		desc.isCubeMap = imageDesc.isCubeMap;
 
-		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get());
+		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get(), true);
 		textureResource->m_isExternal = true;
 
 		// We will assure that external textures has been produced.
@@ -1842,6 +1842,8 @@ namespace Volt
 	JobCounterRef RenderGraph::ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter)
 	{
 		VT_PROFILE_FUNCTION();
+
+		VT_ENSURE_MSG(m_isCompiled, "RenderGraph must be compiled before it can be executed!");
 
 		if (m_renderPasses.empty())
 		{

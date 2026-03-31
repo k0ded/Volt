@@ -62,6 +62,7 @@ namespace Volt::RHI
 
 		void CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync);
 		void CreateSyncObjects();
+		void CreateWindowSurface(void* platformWindow, void* platformInstance);
 
 		void GetNextFrameIndex();
 

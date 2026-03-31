@@ -31,7 +31,6 @@ namespace Volt
 		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnAppUpdateEvent));
 		RegisterListener<WindowCloseEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnWindowCloseEvent));
 		RegisterListener<WindowResizeEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnWindowResizeEvent));
-		RegisterListener<ViewportResizeEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnViewportResizeEvent));
 	}
 
 	bool UIApplicationEventListener::OnAppUpdateEvent(AppUpdateEvent& e)
@@ -49,24 +48,9 @@ namespace Volt
 		return m_application.OnWindowResizeEvent(e);
 	}
 
-	bool UIApplicationEventListener::OnViewportResizeEvent(ViewportResizeEvent& e)
-	{
-		return m_application.OnViewportResizeEvent(e);
-	}
-
 	UIApplication::UIApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		{
-			Filesystem::Path workingDir;
-			if (commandLineBuilder.IsArgDefined("workingdir"))
-			{
-				workingDir = commandLineBuilder.GetArgValue("workingdir");
-			}
-
-			Filesystem::InitializeWorkingDirectory(IsRuntime(), workingDir, commandLineBuilder.GetExecutableFilepath());
-		}
-
 		FileDialogueHelpers::Initialize();
 
 		m_subSystemManager = CreateUnique<SubSystemManager>(SubSystemInclusionLevel::Minimal);
@@ -78,7 +62,6 @@ namespace Volt
 
 		// #TODO: Temporary
 		m_sourceAssetManager = CreateUnique<SourceAssetManager>();
-		g_assetManager = CreateUnique<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 		{
@@ -313,11 +296,4 @@ namespace Volt
 		}
 		return false;
 	}
-
-	bool UIApplication::OnViewportResizeEvent(class ViewportResizeEvent& e)
-	{
-		WindowManager::Get().GetMainWindow().SetViewportSize(e.GetWidth(), e.GetHeight());
-		return false;
-	}
-	
 }

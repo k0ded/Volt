@@ -3,6 +3,7 @@
 
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Common/VulkanFunctions.h"
 
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
@@ -133,11 +134,13 @@ namespace Volt::RHI
 	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
 		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync), m_width(createInfo.width), m_height(createInfo.height)
 	{
-		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
+		//auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
 
-		VkInstance instance = vulkanContext->GetHandle<VkInstance>();
-		VT_VK_CHECK(glfwCreateWindowSurface(instance, reinterpret_cast<GLFWwindow*>(createInfo.platformWindow), nullptr, &m_surface));
+		//VkInstance instance = vulkanContext->GetHandle<VkInstance>();
+		//VT_VK_CHECK(glfwCreateWindowSurface(instance, reinterpret_cast<GLFWwindow*>(createInfo.platformWindow), nullptr, &m_surface));
+
+		CreateWindowSurface(createInfo.platformWindow, createInfo.platformHandle);
 
 		const auto& queueFamilies = vulkanPhysicalDevice.GetQueueFamilies();
 
@@ -550,5 +553,21 @@ namespace Volt::RHI
 	void VulkanSwapchain::GetNextFrameIndex()
 	{
 		m_currentFrameIndex = (m_currentFrameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
+	}
+
+	void VulkanSwapchain::CreateWindowSurface(void* platformWindow, void* platformInstance)
+	{
+#ifdef VT_PLATFORM_WINDOWS
+		VkWin32SurfaceCreateInfoKHR createInfo;
+		createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		createInfo.pNext = nullptr;
+		createInfo.hinstance = static_cast<HINSTANCE>(platformInstance);
+		createInfo.hwnd = static_cast<HWND>(platformWindow);
+
+		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
+		VkInstance instance = vulkanContext->GetHandle<VkInstance>();
+
+		vkCreateWin32SurfaceKHR(instance, &createInfo, VT_VULKAN_ALLOCATOR, &m_surface);
+#endif
 	}
 }

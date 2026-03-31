@@ -33,7 +33,6 @@ namespace Volt
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
-		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
 
 		UIApplication& m_application;
 	};
@@ -65,7 +64,6 @@ namespace Volt
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
-		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
 
 		const ApplicationCreationInfo m_info;
 

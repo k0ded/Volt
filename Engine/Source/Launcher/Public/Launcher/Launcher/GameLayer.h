@@ -1,9 +1,18 @@
 #pragma once
 
+#include <Volt-Scene/Scene.h>
+#include <Volt-Renderer/Camera/Camera.h>
+
 #include <Volt-Application/ApplicationLayer.h>
+
+#include <WindowModule/WindowHandle.h>
+
+#include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
+
+#include <CoreUtilities/Pointers/Ref.h>
 
 namespace Volt
 {
@@ -12,7 +21,8 @@ namespace Volt
 	struct SceneRendererSettings;
 
 	class AppRenderEvent;
-	class WindowResizeEvent;
+	class WindowResizeEvent_New;
+	class WindowRenderEvent_New;
 
 	class OnSceneLoadedEvent;
 }
@@ -20,7 +30,7 @@ namespace Volt
 class GameLayer : public Volt::ApplicationLayer, public Volt::EventListener
 {
 public:
-	GameLayer() = default;
+	GameLayer(Volt::WindowHandle window);
 	~GameLayer() override = default;
 
 	void OnAttach() override;
@@ -29,5 +39,12 @@ public:
 private:
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
-	bool OnWindowResizeEvent(Volt::WindowResizeEvent& e);
+	bool OnWindowResizeEvent(Volt::WindowResizeEvent_New& e);
+	bool OnWindowRenderEvent(Volt::WindowRenderEvent_New& e);
+
+	AssetReference<Volt::Scene> m_scene;
+	Ref<Volt::SceneRenderer> m_sceneRenderer;
+	Ref<Volt::Camera> m_camera;
+	
+	Volt::WindowHandle m_window;
 };

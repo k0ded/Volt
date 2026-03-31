@@ -55,16 +55,13 @@ namespace Volt
 		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo),
 		m_meshPassProcessorRegistry(createInfo.renderScene.GetRaw())
 	{
+		m_resizeWidth = createInfo.initialResolution.x;
+		m_resizeHeight = createInfo.initialResolution.y;
+		m_width = createInfo.initialResolution.x;
+		m_height = createInfo.initialResolution.y;
+
 		CreateMainRenderTarget(createInfo.initialResolution.x, createInfo.initialResolution.y);
 
-		RHI::ImageDesc spec{};
-		spec.width = 1;
-		spec.height = 1;
-		spec.usage = RHI::ImageUsage::Storage;
-		spec.format = RHI::PixelFormat::R16_SFLOAT;
-		spec.debugName = "AutoExposure.AverageLuminance";
-
-		m_averageLuminanceImage = RHI::Image::Create(spec);
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	
 		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));

@@ -20,6 +20,7 @@ namespace Volt
 		float m_timestep;
 	};
 
+	// #Deprecate
 	class AppTickEvent : public Event
 	{
 	public:
@@ -97,6 +98,7 @@ namespace Volt
 		float m_timestep;
 	};
 
+	// #Deprecate
 	class AppBeginFrameEvent : public Event
 	{
 	public:
@@ -106,6 +108,7 @@ namespace Volt
 		EVENT_CLASS(AppBeginFrameEvent, "{E7899035-D479-4F85-A101-F7396EC89A61}"_guid);
 	};
 
+	// #Deprecate
 	class AppPresentFrameEvent : public Event
 	{
 	public:

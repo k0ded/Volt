@@ -9,6 +9,7 @@
 #include <CoreUtilities/VoltGUID.h>
 
 class SubSystem;
+
 class SUBSYSTEMMODULE_API SubSystemManager
 {
 public:

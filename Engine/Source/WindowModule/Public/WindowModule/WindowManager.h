@@ -2,6 +2,7 @@
 
 #include "WindowModule/WindowHandle.h"
 #include "WindowModule/WindowProperties.h"
+#include "WindowModule/Window_New.h"
 
 #include "WindowModule/Config.h"
 

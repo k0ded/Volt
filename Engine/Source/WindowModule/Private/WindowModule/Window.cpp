@@ -446,8 +446,6 @@ namespace Volt
 
 	void Window::BeginFrame()
 	{
-		WindowBeginFrameEvent beginFrameEvent(*this);
-		EventSystem::DispatchEvent(beginFrameEvent);
 		m_swapchain->BeginFrame();
 
 		m_frameHasStarted = true;
@@ -464,9 +462,6 @@ namespace Volt
 		if (m_frameHasStarted)
 		{
 			m_swapchain->Present();
-
-			WindowPresentFrameEvent presentFrameEvent(*this);
-			EventSystem::DispatchEvent(presentFrameEvent);
 		}
 
 		m_frameHasStarted = false;

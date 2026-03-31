@@ -26,9 +26,12 @@
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/RHIFeatures.h>
+#include <RHIModule/RHIModule.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
+
+#include <AssetSystem/AssetManagerSubSystem.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
@@ -137,6 +140,7 @@ namespace Volt
 		m_transientResourceAllocator = CreateUnique<TransientResourceAllocator>();
 
 		CreateDefaultResources();
+		CreateBlueNoise();
 	}
 
 	void Renderer::CreateBlueNoise()
@@ -444,5 +448,6 @@ namespace Volt
 	void Renderer::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
 		outDependencies.AddDependency<ShaderSubSystem>();
+		outDependencies.AddDependency<AssetManagerSubSystem>();
 	}
 }

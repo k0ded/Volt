@@ -140,6 +140,7 @@ namespace Volt
 		VT_INLINE static StreamingManager& Get() { VT_ENSURE(s_instance); return *s_instance; }
 		VT_INLINE static bool IsValid() { return s_instance != nullptr; }
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{B8DF0EF0-A0CC-453D-A4AF-9C8D156F332E}"_guid);
 
 	private:

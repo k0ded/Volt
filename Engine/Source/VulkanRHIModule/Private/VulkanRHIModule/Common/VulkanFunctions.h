@@ -2,10 +2,19 @@
 
 #include <vulkan/vulkan.h>
 
+#ifdef VT_PLATFORM_WINDOWS
+#include <CoreUtilities/Platform/Windows/VoltWindows.h>
+#include <vulkan/vulkan_win32.h>
+#endif
+
 #define VT_GET_VULKAN_FUNCTION(functionName) functionName = (PFN_ ## functionName)vkGetInstanceProcAddr(instance, #functionName)
 
 namespace Volt::RHI
 {
+#ifdef VT_PLATFORM_WINDOWS
+	inline PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
+#endif
+
 	inline PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
 	inline PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
 	inline PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT;
@@ -43,6 +52,10 @@ namespace Volt::RHI
 
 	inline static void LoadVulkanFunctions(VkInstance instance)
 	{
+#ifdef VT_PLATFORM_WINDOWS
+		VT_GET_VULKAN_FUNCTION(vkCreateWin32SurfaceKHR);
+#endif
+
 		VT_GET_VULKAN_FUNCTION(vkSetDebugUtilsObjectNameEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdEndDebugUtilsLabelEXT);

@@ -207,7 +207,7 @@ namespace Volt::RHI
 	bool ShaderBindingMap::IsResourceSet(ShaderStage shaderStage, ShaderRegisterType registerType, uint32_t bindingIndex) const
 	{
 		const uint32_t bindingsIndex = m_activeShaderStagesBitArray.Rank(GetShaderStageIndex(shaderStage));
-		return m_resourceBindings[bindingsIndex].resourceIsSet[static_cast<size_t>(registerType)].IsBitSet(bindingIndex);
+		return m_resourceBindings[bindingsIndex].resourceIsSet[static_cast<size_t>(registerType)].Test(bindingIndex);
 	}
 
 	void ShaderBindingMap::MarkResourceAsSet(ShaderStage shaderStage, ShaderRegisterType registerType, uint32_t bindingIndex)

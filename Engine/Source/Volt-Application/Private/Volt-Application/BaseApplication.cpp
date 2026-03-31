@@ -1,6 +1,8 @@
 #include "vtapppch.h"
 #include "BaseApplication.h"
 
+#include <FileSystemModule/Filesystem.h>
+
 #include <PlatformsModule/Platform.h>
 #include <CoreModule/GlobalCommandLine.h>
 
@@ -14,10 +16,24 @@ namespace Volt
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
 
-		GlobalCommandLine::Initialize(commandLineBuilder);
+		// Enable / Disable logging.
+		Log::Get().EnableLogging(IsLoggingEnabled());
 
+		GlobalCommandLine::Initialize(commandLineBuilder);
 		PlatformThread::Initialize();
+
+		// Setup working directory.
+		{
+			Filesystem::Path workingDir;
+			if (commandLineBuilder.IsArgDefined("workingdir"))
+			{
+				workingDir = commandLineBuilder.GetArgValue("workingdir");
+			}
+
+			Filesystem::InitializeWorkingDirectory(IsRuntime(), workingDir, commandLineBuilder.GetExecutableFilepath());
+		}
 	}
+
 	BaseApplication::~BaseApplication()
 	{
 		PlatformThread::Shutdown();

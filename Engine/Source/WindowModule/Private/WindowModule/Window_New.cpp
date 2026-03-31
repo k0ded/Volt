@@ -8,11 +8,10 @@
 
 namespace Volt
 {
-	Unique<Window_New> Window_New::Create(const WindowInitializer& initializer)
+	Unique<Window_New> Window_New::Create(const WindowInitializer& initializer, WindowHandle handle)
 	{
 #if VT_PLATFORM_WINDOWS
-		//return CreateUnique<WindowsWindow>(initializer);
-		return nullptr;
+		return CreateUnique<WindowsWindow>(initializer, handle);
 #endif
 	}
 }

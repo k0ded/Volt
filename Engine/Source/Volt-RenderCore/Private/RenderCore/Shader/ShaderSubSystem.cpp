@@ -9,6 +9,7 @@
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Shader/Shader.h>
+#include <RHIModule/RHIModule.h>
 
 #include <JobSystem/TaskGraph.h>
 

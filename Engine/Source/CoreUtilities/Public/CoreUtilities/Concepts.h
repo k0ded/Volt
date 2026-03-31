@@ -51,8 +51,8 @@ concept Enum = std::is_enum_v<T>;
 template<typename T>
 concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
 
-template<typename T, typename U>
-concept IsDerivedFrom = std::is_base_of_v<U, T>;
+template<typename Derived, typename Base>
+concept IsDerivedFrom = std::is_base_of_v<Base, Derived>;
 
 template<typename T, typename U>
 concept IsParentOf = std::is_base_of_v<T, U>;

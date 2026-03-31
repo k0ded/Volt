@@ -147,7 +147,6 @@ namespace Volt
 
 		IntRef<RHI::Image> m_outputImage;
 		IntRef<RHI::Image> m_previousColorImage;
-		IntRef<RHI::Image> m_averageLuminanceImage;
 
 		Ref<Mesh> m_skyboxMesh;
 
@@ -157,7 +156,7 @@ namespace Volt
 		uint32_t m_height = 720;
 
 		uint32_t m_resizeWidth = 1280;
-		uint32_t m_resizeHeight = 1280;
+		uint32_t m_resizeHeight = 720;
 			
 		uint32_t m_frameIndex = 0;
 

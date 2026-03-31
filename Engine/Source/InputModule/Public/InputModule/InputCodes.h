@@ -47,11 +47,11 @@ namespace Volt
 		Key_9,
 
 		// Punctuation and symbols
-		Apostrophe,
+		Apostrophe, // #TODO: Remove
 		Comma,
 		Minus,
 		Period,
-		Slash,
+		Slash, // #TODO: Remove
 		Semicolon,
 		Equal,
 		LeftBracket,
@@ -135,12 +135,13 @@ namespace Volt
 		Numpad_7,
 		Numpad_8,
 		Numpad_9,
-		Decimal,
-		Divide,
-		Multiply,
-		Subtract,
-		Add,
+		Numpad_Decimal,
+		Numpad_Divide,
+		Numpad_Multiply,
+		Numpad_Subtract,
+		Numpad_Add,
 		Numpad_Equal,
+		Numpad_Enter,
 
 		// Mouse buttons
 		Mouse_LB,

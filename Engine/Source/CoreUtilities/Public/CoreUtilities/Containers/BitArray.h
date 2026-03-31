@@ -14,7 +14,7 @@ public:
 
 	BitArray() noexcept
 	{
-		memset(m_data.data(), 0, sizeof(value_type) * m_data.size());
+		Reset();
 	}
 
 	void SetBit(index_type index, bool value)
@@ -34,7 +34,7 @@ public:
 		}
 	}
 
-	bool IsBitSet(index_type index) const
+	bool Test(index_type index) const
 	{
 		VT_ASSERT(index < NumMaxItems);
 
@@ -65,6 +65,11 @@ public:
 
 			return numTotalBits;
 		}
+	}
+
+	void Reset()
+	{
+		memset(m_data.data(), 0, sizeof(value_type) * m_data.size());
 	}
 
 private:

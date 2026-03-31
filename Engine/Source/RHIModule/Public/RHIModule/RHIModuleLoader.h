@@ -38,6 +38,7 @@ namespace Volt::RHI
 	public:
 		RHIModuleLoader();
 
+		void Initialize() override;
 		void Shutdown() override;
 		void LoadRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
 

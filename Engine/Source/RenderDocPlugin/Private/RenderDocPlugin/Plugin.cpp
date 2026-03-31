@@ -70,6 +70,7 @@ void RenderDocEventListener::RegisterListeners(Ref<RenderDocFrameCapture> frameC
 {
 	m_frameCapture = frameCapture;
 
+#if 0
 	RegisterListener<Volt::WindowBeginFrameEvent>([&](Volt::WindowBeginFrameEvent& e) 
 	{
 		if (s_rdcCaptureFrame.GetValue() && m_frameCapture)
@@ -102,4 +103,5 @@ void RenderDocEventListener::RegisterListeners(Ref<RenderDocFrameCapture> frameC
 
 		return false;
 	});
+#endif
 }
