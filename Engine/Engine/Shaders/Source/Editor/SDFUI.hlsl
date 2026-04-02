@@ -193,12 +193,13 @@ StructuredBuffer<UICommand> Commands;
 uint CommandCount;
 uint2 RenderSize;
 
-float ScreenPxRange(float2 msdfSize, float2 screenSize)
+float ScreenPxRange(float2 msdfSize, float2 texCoords)
 {
 	const float pxRange = 2.f;
 	float2 unitRange = pxRange / msdfSize;
-	
-	return max(0.5f * dot(unitRange, screenSize), 1.f);
+	float2 screenTexSize = 1.f / fwidth(texCoords);
+
+	return max(0.5f * dot(unitRange, screenTexSize), 1.f);
 }
 
 float SDF_TextMedian(float r, float g, float b)
@@ -276,7 +277,7 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				float4 fgColor = color;
 				
 				float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
-				float screenPxDistance = ScreenPxRange(command.dimensions, RenderSize) * (sd - 0.5f);
+				float screenPxDistance = ScreenPxRange(command.dimensions, textTexUv) * (sd - 0.5f);
 				float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
 				
 				resultColor = lerp(resultColor, fgColor.rgb * fgColor.a, opacity);
