@@ -20,6 +20,7 @@ namespace Volt
 		void Present() override;
 
 		void Close() override;
+		void Render() override;
 
 		void SetTitle(const WString& title) override;
 
@@ -45,6 +46,11 @@ namespace Volt
 
 		WindowInputManager& GetInputManager() override;
 		const RHI::Swapchain& GetSwapchain() const override;
+
+		OnWindowClosed& GetOnWindowClosed() override;
+		OnWindowRepaint& GetOnWindowRepaint() override;
+		OnWindowRender& GetOnWindowRender() override;
+		OnWindowResize& GetOnWindowResize() override;
 
 		IsHoveringTitlebar& GetIsHoveringTitlebar() override;
 		IsHoveringMaximizeButton& GetIsHoveringMaximizeButton() override;
@@ -80,6 +86,11 @@ namespace Volt
 
 		IsHoveringTitlebar m_isHoveringTitlebar;
 		IsHoveringMaximizeButton m_isHoveringMaximizeButton;
+
+		OnWindowClosed m_onWindowClosed;
+		OnWindowRepaint m_onWindowRepaint;
+		OnWindowRender m_onWindowRender;
+		OnWindowResize m_onWindowResize;
 
 		WindowsWindowInputManager m_inputManager;
 		PlatformWindowHandle m_nativeHandle;

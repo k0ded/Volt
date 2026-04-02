@@ -48,10 +48,6 @@ namespace Circuit
 		CIRCUIT_API inline static Unique<CircuitManager> s_Instance = nullptr;
 
 		void Init();
-		void RegisterEventListeners();
-
-		bool OnRenderEvent(Volt::WindowRenderEvent_New& e);
-		bool OnWindowClosed(Volt::WindowCloseEvent_New& e);
 
 		static int32_t TestingStaticDelegates(float aParameter);
 		int32_t TestingRawDelegates(float aParameter);

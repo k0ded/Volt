@@ -9,6 +9,8 @@
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
+
 namespace Volt
 {
 	struct WindowInitializer;
@@ -17,6 +19,8 @@ namespace Volt
 	class WindowManager_New : public SubSystem
 	{
 	public:
+		DECLARE_MULTICAST_DELEGATE(OnAnyWindowRepaint);
+
 		WindowManager_New();
 		~WindowManager_New() override;
 
@@ -27,6 +31,7 @@ namespace Volt
 		WINDOWMODULE_API void DestroyWindow(WindowHandle handle);
 
 		WINDOWMODULE_API Window_New& GetWindow(WindowHandle handle);
+		WINDOWMODULE_API OnAnyWindowRepaint& GetOnAnyWindowRepaint();
 
 		WINDOWMODULE_API void ProcessMessages();
 		WINDOWMODULE_API void BeginFrame();
@@ -44,5 +49,6 @@ namespace Volt
 		inline static WindowManager_New* s_instance = nullptr;
 
 		Map<WindowHandle, Unique<Window_New>> m_windows;
+		OnAnyWindowRepaint m_onAnyWindowRepaint;
 	};
 }

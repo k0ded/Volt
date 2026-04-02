@@ -1,7 +1,6 @@
 #include "windowpch.h"
 
 #include "WindowModule/Platform/WindowsWindow.h"
-#include "WindowModule/Events/WindowEvents_New.h"
 
 #include <EventSystem/EventSystem.h>
 
@@ -330,10 +329,12 @@ namespace Volt
 
 	void WindowsWindow::Close()
 	{
-		// #TODO_Ivar:	Should be queued instead of dispatched directly, and
-		//				handled at the end of the frame.
-		WindowCloseEvent_New closeEvent{ *this };
-		EventSystem::DispatchEvent(closeEvent);
+		m_onWindowClosed.Broadcast(*this);
+	}
+
+	void WindowsWindow::Render()
+	{
+		m_onWindowRender.Broadcast(*this);
 	}
 
 	void WindowsWindow::SetTitle(const WString& title)
@@ -454,6 +455,26 @@ namespace Volt
 		return *m_swapchain;
 	}
 
+	Window_New::OnWindowClosed& WindowsWindow::GetOnWindowClosed()
+	{
+		return m_onWindowClosed;
+	}
+
+	Window_New::OnWindowRepaint& WindowsWindow::GetOnWindowRepaint()
+	{
+		return m_onWindowRepaint;
+	}
+
+	Window_New::OnWindowRender& WindowsWindow::GetOnWindowRender()
+	{
+		return m_onWindowRender;
+	}
+
+	Window_New::OnWindowResize& WindowsWindow::GetOnWindowResize()
+	{
+		return m_onWindowResize;
+	}
+
 	Window_New::IsHoveringTitlebar& WindowsWindow::GetIsHoveringTitlebar()
 	{
 		return m_isHoveringTitlebar;
@@ -563,9 +584,7 @@ namespace Volt
 				if (m_swapchain)
 				{
 					m_swapchain->Resize(x, y, m_enableVSync);
-
-					WindowResizeEvent_New resizeEvent{ *this, x, y };
-					EventSystem::DispatchEvent(resizeEvent);
+					m_onWindowResize.Broadcast(*this, x, y);
 				}
 
 				break;
@@ -573,8 +592,7 @@ namespace Volt
 
 			case WM_PAINT:
 			{
-				WindowRepaintEvent repaintEvent{ *this };
-				EventSystem::DispatchEvent(repaintEvent);
+				m_onWindowRepaint.Broadcast(*this);
 
 				break;
 			}

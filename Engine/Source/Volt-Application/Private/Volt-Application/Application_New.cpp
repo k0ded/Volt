@@ -2,7 +2,6 @@
 
 #include "Volt-Application/Application_New.h"
 
-#include <WindowModule/Events/WindowEvents_New.h>
 #include <WindowModule/WindowManager_New.h>
 
 #include <JobSystem/JobSystem.h>
@@ -16,12 +15,6 @@ namespace Volt
 	ApplicationEventListener::ApplicationEventListener(Application_New& application)
 		: m_application(application)
 	{
-		RegisterListener<WindowRepaintEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowRepaintEvent));
-	}
-
-	bool ApplicationEventListener::OnWindowRepaintEvent(class WindowRepaintEvent& e)
-	{
-		return m_application.OnWindowRepaintEvent(e);
 	}
 
 	Application_New::Application_New(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
@@ -35,6 +28,7 @@ namespace Volt
 		
 		// Get the window manager
 		m_windowManager = m_subSystemManager->GetSubSystem<WindowManager_New>();
+		m_windowManager->GetOnAnyWindowRepaint().AddRaw(this, &Application_New::OnAnyWindowRepaint);
 
 		// Create the application event listener.
 		m_eventListener = CreateUnique<ApplicationEventListener>(*this);
@@ -102,14 +96,6 @@ namespace Volt
 	void Application_New::LaunchMainWindow()
 	{}
 
-	bool Application_New::OnWindowRepaintEvent(class WindowRepaintEvent& e)
-	{
-		EngineLoop();
-		m_windowManager->RepaintWindow(e.GetWindow());
-
-		return false;
-	}
-
 	void Application_New::RenderApplication()
 	{
 		VT_PROFILE_SCOPE("Application::Render");
@@ -143,5 +129,10 @@ namespace Volt
 			AppPostFrameUpdateEvent postFrameEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(postFrameEvent);
 		}
+	}
+
+	void Application_New::OnAnyWindowRepaint()
+	{
+		EngineLoop();
 	}
 }

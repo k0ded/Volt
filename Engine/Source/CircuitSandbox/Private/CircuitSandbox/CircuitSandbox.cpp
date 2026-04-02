@@ -11,6 +11,7 @@
 #include <WindowModule/Window_New.h>
 
 #include <Circuit/CircuitManager.h>
+#include <Circuit/Window/CircuitWindow.h>
 #include <Circuit/Widgets/SliderWidget.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
@@ -71,7 +72,19 @@ void CircuitSandbox::OnAttach()
 		CreateWidget(AssetBrowserWidget),
 		300.f
 		);
-		Circuit::CircuitManager::Get().CreateWindow(rootLayout);
+
+		Weak<Circuit::CircuitWindow> mainWindow = Circuit::CircuitManager::Get().CreateWindow(rootLayout);
+
+		if (!mainWindow.IsExpired())
+		{
+			Volt::WindowHandle windowHandle = mainWindow.Lock()->GetWindowHandle();
+			Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
+
+			window.GetOnWindowClosed().AddLambda([](Volt::Window_New&) 
+			{
+				Volt::BaseApplication::Get().Quit();
+			});
+		}
 	}
 
 	constexpr float fov = glm::radians(60.f);
@@ -117,15 +130,6 @@ bool CircuitSandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 		m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
 	}
 
-	return false;
-}
-
-bool CircuitSandbox::OnWindowCloseEvent(Volt::WindowCloseEvent_New& e)
-{
-	if (e.GetWindow().GetHandle() == m_window)
-	{
-		Volt::BaseApplication::Get().Quit();
-	}
 	return false;
 }
 

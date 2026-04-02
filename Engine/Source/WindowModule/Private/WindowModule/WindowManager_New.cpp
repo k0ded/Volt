@@ -3,7 +3,6 @@
 #include "WindowModule/WindowManager_New.h"
 #include "WindowModule/Window_New.h"
 #include "WindowModule/WindowLogCategory.h"
-#include "WindowModule/Events/WindowEvents_New.h"
 
 #include <EventSystem/EventSystem.h>
 
@@ -29,6 +28,12 @@ namespace Volt
 		WindowHandle newHandle{};
 		Unique<Window_New> newWindow = Window_New::Create(initializer, newHandle);
 
+		newWindow->GetOnWindowRepaint().AddLambda([this](Window_New& window)
+		{
+			m_onAnyWindowRepaint.Broadcast();
+			RepaintWindow(window);
+		});
+
 		m_windows[newHandle] = std::move(newWindow);
 		return newHandle;
 	}
@@ -51,6 +56,11 @@ namespace Volt
 		return *m_windows.at(handle);
 	}
 
+	WindowManager_New::OnAnyWindowRepaint& WindowManager_New::GetOnAnyWindowRepaint()
+	{
+		return m_onAnyWindowRepaint;
+	}
+
 	void WindowManager_New::ProcessMessages()
 	{
 		for (const auto& [handle, window] : m_windows)
@@ -71,8 +81,7 @@ namespace Volt
 	{
 		for (const auto& [handle, window] : m_windows)
 		{
-			WindowRenderEvent_New renderEvent{ *window };
-			EventSystem::DispatchEvent(renderEvent);
+			window->Render();
 		}
 	}
 
@@ -87,10 +96,7 @@ namespace Volt
 	void WindowManager_New::RepaintWindow(Window_New& window)
 	{
 		window.BeginFrame();
-		
-		WindowRenderEvent_New renderEvent{ window };
-		EventSystem::DispatchEvent(renderEvent);
-
+		window.Render();
 		window.Present();
 	}
 

@@ -16,8 +16,6 @@
 #include <WindowModule/Window_New.h>
 #include <WindowModule/WindowInputManager.h>
 
-#include <WindowModule/Events/WindowEvents_New.h>
-
 #include <CoreUtilities/Delegates/Delegate.h>
 
 #include <LogModule/Log.h>
@@ -48,38 +46,9 @@ namespace Circuit
 	void CircuitManager::Init()
 	{
 		VT_PROFILE_FUNCTION();
-		RegisterEventListeners();
 
 		InputHandler = CreateUnique<CircuitInputHandler>();
 		InputHandler->Init();
-	}
-
-	void CircuitManager::RegisterEventListeners()
-	{
-		RegisterListener<Volt::WindowRenderEvent_New>(VT_BIND_EVENT_FN(CircuitManager::OnRenderEvent));
-	}
-
-	bool CircuitManager::OnRenderEvent(Volt::WindowRenderEvent_New& e)
-	{
-		Volt::WindowHandle windowHandle = e.GetWindow().GetHandle();
-
-		if (m_windows.contains(windowHandle))
-		{
-			m_windows.at(windowHandle)->OnRender();
-			return true;
-		}
-
-		return false;
-	}
-
-	bool CircuitManager::OnWindowClosed(Volt::WindowCloseEvent_New& e)
-	{
-		Volt::WindowHandle handle = e.GetWindow().GetHandle();
-		if (m_windows.contains(handle))
-		{
-
-		}
-		return false;
 	}
 
 	int32_t CircuitManager::TestingStaticDelegates(float aParameter)
@@ -155,6 +124,17 @@ namespace Circuit
 			}
 		})
 		);
+
+		// Register callbacks
+		window.GetOnWindowRender().AddLambda([circuitWindow](Volt::Window_New& windowObject)
+		{
+			circuitWindow->OnRender();
+		});
+
+		window.GetOnWindowClosed().AddLambda([](Volt::Window_New& windowObject) 
+		{
+
+		});
 
 		return circuitWindow;
 	}

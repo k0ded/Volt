@@ -43,6 +43,11 @@ namespace Volt
 		DECLARE_DELEGATE_RetVal_TwoParams(bool, IsHoveringTitlebar, int32_t, int32_t);
 		DECLARE_DELEGATE_RetVal_TwoParams(bool, IsHoveringMaximizeButton, int32_t, int32_t);
 
+		DECLARE_MULTICAST_DELEGATE_OneParam(OnWindowClosed, Window_New&);
+		DECLARE_MULTICAST_DELEGATE_OneParam(OnWindowRepaint, Window_New&);
+		DECLARE_MULTICAST_DELEGATE_OneParam(OnWindowRender, Window_New&);
+		DECLARE_MULTICAST_DELEGATE_ThreeParams(OnWindowResize, Window_New&, uint32_t, uint32_t);
+
 		virtual ~Window_New() = default;
 
 		virtual void ProcessMessages() = 0;
@@ -50,6 +55,7 @@ namespace Volt
 		virtual void Present() = 0;
 
 		virtual void Close() = 0;
+		virtual void Render() = 0;
 
 		virtual void SetTitle(const WString& title) = 0;
 
@@ -75,6 +81,11 @@ namespace Volt
 
 		virtual WindowInputManager& GetInputManager() = 0;
 		virtual const RHI::Swapchain& GetSwapchain() const = 0;
+
+		virtual OnWindowClosed& GetOnWindowClosed() = 0;
+		virtual OnWindowRepaint& GetOnWindowRepaint() = 0;
+		virtual OnWindowRender& GetOnWindowRender() = 0;
+		virtual OnWindowResize& GetOnWindowResize() = 0;
 
 		// These are used if a window is not decorated.
 		virtual IsHoveringTitlebar& GetIsHoveringTitlebar() = 0;

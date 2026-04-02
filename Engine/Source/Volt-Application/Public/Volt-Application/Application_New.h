@@ -22,8 +22,6 @@ namespace Volt
 		ApplicationEventListener(Application_New& application);
 
 	private:
-		bool OnWindowRepaintEvent(class WindowRepaintEvent& e);
-	
 		Application_New& m_application;
 	};
 
@@ -47,10 +45,9 @@ namespace Volt
 	private:
 		friend class ApplicationEventListener;
 
-		bool OnWindowRepaintEvent(class WindowRepaintEvent& e);
-
 		void RenderApplication();
 		void EngineLoop();
+		void OnAnyWindowRepaint();
 
 		Unique<SubSystemManager> m_subSystemManager;
 		Unique<ApplicationEventListener> m_eventListener;
