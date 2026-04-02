@@ -406,8 +406,6 @@ namespace Volt
 
 	bool WindowsPlatformFileSystem::Exists(const Filesystem::Path& filepath)
 	{
-		Filesystem::Path temp = GetWorkingDirectory();
-
 		DWORD fileAttribs = ::GetFileAttributes(filepath.CStr());
 		
 		if (fileAttribs == INVALID_FILE_ATTRIBUTES)
