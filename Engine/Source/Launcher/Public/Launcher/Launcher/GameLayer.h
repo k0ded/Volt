@@ -21,9 +21,7 @@ namespace Volt
 	struct SceneRendererSettings;
 
 	class AppRenderEvent;
-	class WindowResizeEvent_New;
-	class WindowRenderEvent_New;
-	class WindowCloseEvent_New;
+	class Window_New;
 
 	class OnSceneLoadedEvent;
 }
@@ -40,9 +38,8 @@ public:
 private:
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
-	bool OnWindowResizeEvent(Volt::WindowResizeEvent_New& e);
-	bool OnWindowRenderEvent(Volt::WindowRenderEvent_New& e);
-	bool OnWindowCloseEvent(Volt::WindowCloseEvent_New& e);
+
+	void RenderWindow(Volt::Window_New& window);
 
 	AssetReference<Volt::Scene> m_scene;
 	Ref<Volt::SceneRenderer> m_sceneRenderer;

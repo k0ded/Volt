@@ -11,7 +11,6 @@
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 
-#include <WindowModule/Events/WindowEvents_New.h>
 #include <WindowModule/WindowManager_New.h>
 #include <WindowModule/Window_New.h>
 
@@ -27,11 +26,24 @@ void GameLayer::OnAttach()
 {
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(GameLayer::OnUpdateEvent));
 	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(GameLayer::OnRenderEvent));
-	RegisterListener<Volt::WindowResizeEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowResizeEvent));
-	RegisterListener<Volt::WindowRenderEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowRenderEvent));
-	RegisterListener<Volt::WindowCloseEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowCloseEvent));
 
 	Window_New& window = WindowManager_New::Get().GetWindow(m_window);
+
+	window.GetOnWindowClosed().AddLambda([windowHandle = m_window](Window_New&) 
+	{
+		WindowManager_New::Get().DestroyWindow(windowHandle);
+		BaseApplication::Get().Quit();
+	});
+
+	window.GetOnWindowResize().AddLambda([this](Window_New&, uint32_t width, uint32_t height) 
+	{
+		if (m_sceneRenderer)
+		{
+			m_sceneRenderer->Resize(width, height);
+		}
+	});
+
+	window.GetOnWindowRender().AddRaw(this, &GameLayer::RenderWindow);
 
 	m_scene = Scene::CreateDefaultScene("Test");
 	
@@ -62,20 +74,9 @@ bool GameLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 	return false;
 }
 
-bool GameLayer::OnWindowResizeEvent(Volt::WindowResizeEvent_New& e)
+void GameLayer::RenderWindow(Volt::Window_New& window)
 {
-	m_sceneRenderer->Resize(e.GetWidth(), e.GetHeight());
-	return false;
-}
-
-bool GameLayer::OnWindowRenderEvent(Volt::WindowRenderEvent_New& e)
-{
-	if (e.GetWindow().GetHandle() != m_window)
-	{
-		return false;
-	}
-
-	const RHI::Swapchain& swapchain = e.GetWindow().GetSwapchain();
+	const RHI::Swapchain& swapchain = window.GetSwapchain();
 
 	RenderGraph renderGraph;
 
@@ -111,17 +112,4 @@ bool GameLayer::OnWindowRenderEvent(Volt::WindowRenderEvent_New& e)
 
 	renderGraph.Compile();
 	renderGraph.Execute();
-
-	return true;
-}
-
-bool GameLayer::OnWindowCloseEvent(Volt::WindowCloseEvent_New& e)
-{
-	if (e.GetWindow().GetHandle() == m_window)
-	{
-		WindowManager_New::Get().DestroyWindow(m_window);
-		BaseApplication::Get().Quit();
-	}
-
-	return false;
 }

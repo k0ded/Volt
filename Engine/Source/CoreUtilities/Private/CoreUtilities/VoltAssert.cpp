@@ -1,6 +1,9 @@
 #include "cupch.h"
 #include "VoltAssert.h"
 
+#include "CoreUtilities/String/VoltString.h"
+#include "CoreUtilities/String/StringFormat.h"
+
 #ifdef VT_PLATFORM_WINDOWS
 	#if defined(_MSC_VER)
 		#include <crtdbg.h>
@@ -9,66 +12,76 @@
 #include "CoreUtilities/Platform/Windows/VoltWindows.h"
 #endif
 
-void AssertionFailure(const char* expression)
+void AssertionFailure(const char* expression, int32_t line, const char* file)
 {
 #if defined(VT_ENABLE_ASSERTS) || defined(VT_ENABLE_ENSURES)
-#ifdef VT_PLATFORM_WINDOWS
-	printf("ASSERTION FAILURE: %s\n", expression);
-	if (::IsDebuggerPresent())
+	String tempString = FormatString("ASSERTION FAILURE: {} in {} at line {}\n", expression, file, line);
+	printf("%s", tempString.c_str());
+
+	if (IsDebuggerAttached())
 	{
-		OutputDebugStringA(expression);
+		OutputToDebugConsole(tempString.c_str());
 	}
-#else	
-	printf("%s\n", expression);
-#endif
-#elif VT_ENABLE_ENSURES
+#else
 	VT_UNUSED(expression);
+	VT_UNUSED(line);
+	VT_UNUSED(file);
 #endif
-
-	VT_DEBUGBREAK();
-
-#ifdef VT_PLATFORM_WINDOWS
-	if (!::IsDebuggerPresent())
-#endif
-	{
-		std::exit(1);
-	}
 }
 
-void AssertionFailure(StringView expression)
+void AssertionFailure(StringView expression, int32_t line, const char* file)
 {
-	AssertionFailure(expression.data());
+	AssertionFailure(expression.data(), line, file);
 }
 
-bool CheckExpression(bool expression, const char* str)
+bool CheckExpression(bool expression, const char* str, int32_t line, const char* file)
 {
 	if (!expression)
 	{
 #if defined(VT_ENABLE_CHECKS)
-#ifdef VT_PLATFORM_WINDOWS
-		printf("CHECK FAILURE: %s\n", str);
-		if (::IsDebuggerPresent())
+		String tempString = FormatString("CHECK FAILURE: {} in {} at line {}\n", expression, file, line);
+		printf("%s", tempString.c_str());
+
+		if (IsDebuggerAttached())
 		{
-			OutputDebugStringA(str);
+			OutputToDebugConsole(tempString.c_str());
 		}
-#else	
-		printf("%s\n", str);
-#endif
 #else
+		VT_UNUSED(expression);
 		VT_UNUSED(str);
+		VT_UNUSED(line);
+		VT_UNUSED(file);
 #endif
-#ifdef VT_PLATFORM_WINDOWS
-		if (::IsDebuggerPresent())
-#endif
-		{
-			VT_DEBUGBREAK();
-		}
 	}
 
 	return expression;
 }
 
-bool CheckExpression(bool expression, StringView str)
+bool CheckExpression(bool expression, StringView str, int32_t line, const char* file)
 {
-	return CheckExpression(expression, str.data());
+	return CheckExpression(expression, str.data(), line, file);
+}
+
+bool IsDebuggerAttached()
+{
+#ifdef VT_PLATFORM_WINDOWS
+	return ::IsDebuggerPresent();
+#else
+	return false;
+#endif
+}
+
+void OutputToDebugConsole(const char* str)
+{
+#ifdef VT_PLATFORM_WINDOWS
+	OutputDebugStringA(str);
+#endif
+}
+
+void ExitProgram()
+{
+	if (!IsDebuggerAttached())
+	{
+		std::exit(1);
+	}
 }
