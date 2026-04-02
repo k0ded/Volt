@@ -9,6 +9,9 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+VT_DECLARE_LOG_CATEGORY(LogWindowsWindow, LogVerbosity::Trace);
+VT_DEFINE_LOG_CATEGORY(LogWindowsWindow);
+
 // Since they are defined in WindowsX.h, and we don't need the entire header,
 // we'll define them here.
 #ifndef GET_X_PARAM
@@ -228,6 +231,37 @@ private:
 };
 #endif
 
+void CheckResults(BOOL result, const char* expr)
+{
+	if (result)
+	{
+		return;
+	}
+
+	DWORD errorMessageId = GetLastError();
+
+	if (errorMessageId == 0)
+	{
+		return;
+	}
+
+	LPSTR messageBuffer = nullptr;
+	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+								 NULL, errorMessageId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+	String message(messageBuffer, size);
+	LocalFree(messageBuffer);
+
+	VT_LOGC(Error, LogWindowsWindow, "{} failed with error {}!", expr, message);
+}
+
+void CheckResults(HRESULT result, const char* expr)
+{
+	CheckResults(!FAILED(result), expr);
+}
+
+#define VT_WIN_CHECK(expr) CheckResults(expr, #expr)
+
 namespace Volt
 {
 	WindowsWindow::WindowsWindow(const WindowInitializer& initializer, WindowHandle handle)
@@ -346,15 +380,13 @@ namespace Volt
 	void WindowsWindow::SetPositionX(int32_t xPos)
 	{
 		m_posX = xPos;
-		VT_MAYBE_UNUSED BOOL result = SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, xPos, m_posY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-		VT_ASSERT(result == TRUE);
+		VT_WIN_CHECK(SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, xPos, m_posY, 0, 0, SWP_NOSIZE | SWP_NOZORDER));
 	}
 	
 	void WindowsWindow::SetPositionY(int32_t yPos)
 	{
 		m_posY = yPos;
-		VT_MAYBE_UNUSED BOOL result = SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, m_posX, yPos, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-		VT_ASSERT(result == TRUE);
+		VT_WIN_CHECK(SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, m_posX, yPos, 0, 0, SWP_NOSIZE | SWP_NOZORDER));
 	}
 
 	const WString& WindowsWindow::GetTitle() const
@@ -417,8 +449,7 @@ namespace Volt
 		WINDOWPLACEMENT windowPlacement{};
 		windowPlacement.length = sizeof(WINDOWPLACEMENT);
 
-		VT_MAYBE_UNUSED BOOL result = GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement);
-		VT_CHECK(result == TRUE);
+		VT_WIN_CHECK(GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement));
 
 		return windowPlacement.showCmd == SW_MAXIMIZE;
 	}
@@ -433,8 +464,7 @@ namespace Volt
 		WINDOWPLACEMENT windowPlacement{};
 		windowPlacement.length = sizeof(WINDOWPLACEMENT);
 
-		VT_MAYBE_UNUSED BOOL result = GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement);
-		VT_CHECK(result == TRUE);
+		VT_WIN_CHECK(GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement));
 
 		return windowPlacement.showCmd == SW_MINIMIZE;
 	}

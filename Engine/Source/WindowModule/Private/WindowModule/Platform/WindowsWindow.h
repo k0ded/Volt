@@ -93,7 +93,7 @@ namespace Volt
 		OnWindowResize m_onWindowResize;
 
 		WindowsWindowInputManager m_inputManager;
-		PlatformWindowHandle m_nativeHandle;
+		PlatformWindowHandle m_nativeHandle = nullptr;
 
 		IntRef<RHI::Swapchain> m_swapchain;
 
