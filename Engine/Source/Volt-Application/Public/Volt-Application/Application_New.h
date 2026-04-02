@@ -50,6 +50,7 @@ namespace Volt
 		bool OnWindowRepaintEvent(class WindowRepaintEvent& e);
 
 		void RenderApplication();
+		void EngineLoop();
 
 		Unique<SubSystemManager> m_subSystemManager;
 		Unique<ApplicationEventListener> m_eventListener;

@@ -8,7 +8,7 @@ bool g_useCrashHandling = true;
 Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationCreationInfo info{};
-	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
+	info.iconPath = "Editor/Textures/Icons/icon_volt.ico";
 	info.useVSync = true;
 	info.enableImGui = false;
 	info.useTitlebar = true;
@@ -26,6 +26,7 @@ LauncherApp::LauncherApp(const Volt::ApplicationCreationInfo& appInfo, const Vol
 {
 	Volt::WindowInitializer windowInitializer{};
 	windowInitializer.title = WString(WString::CtorConvert(), appInfo.title);
+	windowInitializer.iconFilepath = appInfo.iconPath;
 	windowInitializer.initialWidth = appInfo.width;
 	windowInitializer.initialHeight = appInfo.height;
 	windowInitializer.initialPosX = 0;

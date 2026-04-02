@@ -5,6 +5,8 @@
 
 #include <EventSystem/EventSystem.h>
 
+#include <FileSystemModule/Filesystem.h>
+
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -282,6 +284,15 @@ namespace Volt
 			this
 		);
 
+		if (Filesystem::Exists(initializer.iconFilepath))
+		{
+			HICON iconSmall = (HICON)LoadImageW(WindowClass::GetInstance(), initializer.iconFilepath.CStr(), IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+			HICON iconLarge = (HICON)LoadImageW(WindowClass::GetInstance(), initializer.iconFilepath.CStr(), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+
+			SendMessageW(static_cast<HWND>(m_nativeHandle), WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
+			SendMessageW(static_cast<HWND>(m_nativeHandle), WM_SETICON, ICON_BIG, (LPARAM)iconLarge);
+		}
+
 		CreateSwapchain();
 
 		ShowWindow(static_cast<HWND>(m_nativeHandle), SW_SHOWDEFAULT);
@@ -468,6 +479,7 @@ namespace Volt
 		static WindowClass instance;
 		return instance;
 	}
+
 	WindowsWindow::WindowClass::WindowClass() noexcept
 	{
 		if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
@@ -485,7 +497,7 @@ namespace Volt
 		windowClass.cbWndExtra = 0;
 		windowClass.hInstance = m_instance;
 		windowClass.hIcon = nullptr;
-		windowClass.hCursor = nullptr;
+		windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 		windowClass.hbrBackground = nullptr;
 		windowClass.lpszMenuName = nullptr;
 		windowClass.lpszClassName = m_className;

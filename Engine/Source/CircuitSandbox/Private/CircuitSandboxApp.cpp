@@ -10,7 +10,7 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 {
 	Volt::ApplicationCreationInfo info{};
 	info.title = "Circuit Sandbox";
-	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
+	info.iconPath = "Editor/Textures/Icons/icon_volt.ico";
 	info.useVSync = true;
 	info.enableImGui = false;
 	info.useTitlebar = true;

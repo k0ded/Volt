@@ -65,26 +65,7 @@ namespace Volt
 
 			m_windowManager->ProcessMessages();
 
-			{
-				AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
-				EventSystem::DispatchEvent(tickEvent);
-			}
-
-			{
-				VT_PROFILE_SCOPE("Application::Update");
-
-				AppUpdateEvent updateEvent(m_currentDeltaTime);
-				EventSystem::DispatchEvent(updateEvent);
-			}
-
-			RenderApplication();
-
-			{
-				VT_PROFILE_SCOPE("Application::PostFrame");
-
-				AppPostFrameUpdateEvent postFrameEvent(m_currentDeltaTime);
-				EventSystem::DispatchEvent(postFrameEvent);
-			}
+			EngineLoop();
 
 			m_windowManager->BeginFrame();
 			m_windowManager->Render(m_currentDeltaTime);
@@ -123,7 +104,7 @@ namespace Volt
 
 	bool Application_New::OnWindowRepaintEvent(class WindowRepaintEvent& e)
 	{
-		RenderApplication();
+		EngineLoop();
 		m_windowManager->RepaintWindow(e.GetWindow());
 
 		return false;
@@ -138,5 +119,29 @@ namespace Volt
 
 		AppRenderEvent renderEvent(m_currentDeltaTime);
 		EventSystem::DispatchEvent(renderEvent);
+	}
+
+	void Application_New::EngineLoop()
+	{
+		{
+			AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
+			EventSystem::DispatchEvent(tickEvent);
+		}
+
+		{
+			VT_PROFILE_SCOPE("Application::Update");
+
+			AppUpdateEvent updateEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(updateEvent);
+		}
+
+		RenderApplication();
+
+		{
+			VT_PROFILE_SCOPE("Application::PostFrame");
+
+			AppPostFrameUpdateEvent postFrameEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(postFrameEvent);
+		}
 	}
 }

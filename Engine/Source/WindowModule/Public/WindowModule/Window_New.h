@@ -5,6 +5,7 @@
 
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/String/VoltString.h>
+#include <CoreUtilities/Filesystem/Path.h>
 
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
@@ -24,6 +25,7 @@ namespace Volt
 	struct WindowInitializer
 	{
 		WString title;
+		Filesystem::Path iconFilepath;
 
 		uint32_t initialWidth = 1280;
 		uint32_t initialHeight = 720;
