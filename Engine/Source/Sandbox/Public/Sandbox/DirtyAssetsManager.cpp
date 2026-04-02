@@ -7,6 +7,7 @@
 #include "Sandbox/EditorAssetManager.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManagerSubSystem.h>
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
@@ -22,6 +23,7 @@ DirtyAssetsManager* DirtyAssetsManager::s_instance = nullptr;
 void DirtyAssetsManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 {
 	outDependencies.AddDependency<ModalSystem>();
+	outDependencies.AddDependency<Volt::AssetManagerSubSystem>();
 }
 
 DirtyAssetsManager& DirtyAssetsManager::Get()

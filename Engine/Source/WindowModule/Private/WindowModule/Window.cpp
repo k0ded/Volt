@@ -149,7 +149,8 @@ namespace Volt
 			RHI::SwapchainCreateInfo createInfo{};
 			createInfo.width = m_data.width;
 			createInfo.height = m_data.height;
-			createInfo.platformWindow = m_window;
+			createInfo.platformWindow = glfwGetWin32Window(m_window);
+			createInfo.platformHandle = GetModuleHandle(nullptr);
 			createInfo.useHDRIfAvailable = !m_data.forceSDR;
 			createInfo.enableVSync = m_data.vsync;
 

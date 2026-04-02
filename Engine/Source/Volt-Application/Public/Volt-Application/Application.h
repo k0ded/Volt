@@ -34,7 +34,6 @@ namespace Volt
 	namespace RHI
 	{
 		class ImGuiImplementation;
-		class RHIModuleLoader;
 	}
 
 	class Application;
@@ -77,7 +76,6 @@ namespace Volt
 		friend class ApplicationEventListener;
 
 		void MainUpdate();
-		void CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder);
 		void SetupFrameCapture();
 
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
@@ -96,7 +94,6 @@ namespace Volt
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;
-		RHI::RHIModuleLoader* m_rhiModuleLoader = nullptr;
 
 		bool m_skipPresentThisFrame = false;
 		bool m_isRunning = false;

@@ -1108,9 +1108,6 @@ void ViewportPanel::Resize(const glm::vec2& viewportSize)
 	m_editorScene->SetRenderSize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
 	m_editorCameraController->UpdateProjection((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-
-	Volt::ViewportResizeEvent resizeEvent{ Volt::WindowManager::Get().GetMainWindow(), (uint32_t)m_perspectiveBounds[0].x, (uint32_t)m_perspectiveBounds[0].y, (uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y };
-	Volt::EventSystem::DispatchEvent(resizeEvent);
 }
 
 glm::vec2 ViewportPanel::GetViewportLocalPosition(const ImVec2& mousePos)

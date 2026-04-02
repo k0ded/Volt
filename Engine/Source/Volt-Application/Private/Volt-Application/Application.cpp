@@ -58,10 +58,6 @@ namespace Volt
 		m_subSystemManager = CreateUnique<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
-		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
-
-		CreateGraphicsContext(commandLineBuilder);
-
 		m_sourceAssetManager = CreateUnique<SourceAssetManager>();
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
@@ -233,12 +229,18 @@ namespace Volt
 	void Application::MainUpdate()
 	{
 		m_isProcessingFrame = true;
-		WindowManager::Get().BeginFrame();
 
 		AppBeginFrameEvent appBeginFrameEvent{};
 		EventSystem::DispatchEvent(appBeginFrameEvent);
 
 		Tick();
+
+		{
+			VT_PROFILE_SCOPE("Application::Update");
+
+			AppUpdateEvent updateEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(updateEvent);
+		}
 
 		{
 			VT_PROFILE_SCOPE("Application::Render");
@@ -251,16 +253,11 @@ namespace Volt
 		}
 
 		{
-			VT_PROFILE_SCOPE("Application::Update");
-
-			AppUpdateEvent updateEvent(m_currentDeltaTime);
-			EventSystem::DispatchEvent(updateEvent);
-		}
-
-		{
 			//VT_PROFILE_SCOPE("Application::UpdateAudio");
 			//Amp::WWiseEngine::Get().Update();
 		}
+
+		WindowManager::Get().BeginFrame();
 
 		if (m_appCreateInfo.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
 		{
@@ -296,38 +293,6 @@ namespace Volt
 		m_skipPresentThisFrame = false;
 
 		m_frameTimer.Accumulate();
-	}
-
-	void Application::CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder)
-	{
-		RHI::RHICallbackInfo callbackInfo{};
-		callbackInfo.requestCloseEventCallback = []()
-		{
-			WindowCloseEvent closeEvent{ WindowManager::Get().GetMainWindow() };
-			EventSystem::DispatchEvent(closeEvent);
-		};
-
-		RHI::RHIConfig rhiConfig;
-		rhiConfig.api = RHI::GraphicsAPI::Vulkan;
-		rhiConfig.enableDebugLayer = false;
-		rhiConfig.pipelineCacheFilepath = ProjectManager::GetProjectDirectory() / "Generated" / "PipelineCache.bin";
-
-		if (commandLineBuilder.IsArgDefined("vulkan"))
-		{
-			rhiConfig.api = RHI::GraphicsAPI::Vulkan;
-		}
-
-		if (commandLineBuilder.IsArgDefined("d3d12"))
-		{
-			rhiConfig.api = RHI::GraphicsAPI::D3D12;
-		}
-
-		if (commandLineBuilder.IsArgDefined("rhidebuglayer"))
-		{
-			rhiConfig.enableDebugLayer = true;
-		}
-
-		m_rhiModuleLoader->LoadRHI(rhiConfig, callbackInfo);
 	}
 
 	void Application::SetupFrameCapture()

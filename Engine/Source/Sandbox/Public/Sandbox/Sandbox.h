@@ -115,7 +115,6 @@ private:
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
-	bool OnViewportResizeEvent(Volt::ViewportResizeEvent& e);
 	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
 
 	void CreateWatches();
