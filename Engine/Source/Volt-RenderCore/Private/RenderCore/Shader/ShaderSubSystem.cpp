@@ -3,7 +3,7 @@
 #include "RenderCore/Shader/ShaderSubSystem.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 #include <CoreModule/ConfigManager.h>
 
 #include <RHIModule/Shader/ShaderCompiler.h>

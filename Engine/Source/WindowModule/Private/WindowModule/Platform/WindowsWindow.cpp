@@ -8,6 +8,16 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+// Since they are defined in WindowsX.h, and we don't need the entire header,
+// we'll define them here.
+#ifndef GET_X_PARAM
+	#define GET_X_PARAM(lp) ((int)(short)LOWORD(lp))
+#endif
+
+#ifndef GET_Y_PARAM
+	#define GET_Y_PARAM(lp) ((int)(short)HIWORD(lp))
+#endif
+
 #define LOG_WM 0
 #if LOG_WM
 
@@ -229,25 +239,44 @@ namespace Volt
 		m_posX = initializer.initialPosX;
 		m_posY = initializer.initialPosY;
 		m_enableVSync = initializer.enableVSync;
+		m_isDecorated = initializer.createAsDecorated;
 
-		constexpr DWORD WindowStyle = WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_SYSMENU;
+		DWORD windowStyle =
+			WS_THICKFRAME |		// Required for resizable window
+			WS_SYSMENU |		// Support for snapping via Win + -> and Win + <-
+			WS_MAXIMIZEBOX |	// Support for maximizing via mouse dragging to top of screen
+			WS_MINIMIZEBOX;		// Support for minimizing via clicking the taskbar icon.
 
-		RECT windowRect;
-		windowRect.left = 100;
-		windowRect.right = m_width + windowRect.left;
-		windowRect.top = 100;
-		windowRect.bottom = m_height + windowRect.top;
+		if (initializer.createAsDecorated)
+		{
+			windowStyle |= WS_CAPTION;
+		}
 
-		AdjustWindowRect(&windowRect, WindowStyle, FALSE);
+		uint32_t width = initializer.initialWidth;
+		uint32_t height = initializer.initialHeight;
+
+		if (initializer.createAsDecorated)
+		{
+			RECT windowRect;
+			windowRect.left = 100;
+			windowRect.right = m_width + windowRect.left;
+			windowRect.top = 100;
+			windowRect.bottom = m_height + windowRect.top;
+
+			AdjustWindowRect(&windowRect, windowStyle, FALSE);
+
+			width = windowRect.right - windowRect.left;
+			height = windowRect.bottom - windowRect.top;
+		}
 
 		// Create window
 		m_nativeHandle = CreateWindowExW(
-			0,
+			WS_EX_APPWINDOW,
 			WindowClass::GetName(),
 			m_title.c_str(),
-			WindowStyle,
+			windowStyle,
 			m_posX, m_posY,
-			windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
+			width, height,
 			nullptr, nullptr,
 			GetModuleHandle(NULL),
 			this
@@ -288,20 +317,28 @@ namespace Volt
 		m_swapchain->Present();
 	}
 
+	void WindowsWindow::Close()
+	{
+		// #TODO_Ivar:	Should be queued instead of dispatched directly, and
+		//				handled at the end of the frame.
+		WindowCloseEvent_New closeEvent{ *this };
+		EventSystem::DispatchEvent(closeEvent);
+	}
+
 	void WindowsWindow::SetTitle(const WString& title)
 	{
 		m_title = title;
 		VT_CHECK(SetWindowTextW(static_cast<HWND>(m_nativeHandle), m_title.c_str()));
 	}
 	
-	void WindowsWindow::SetXPosition(int32_t xPos)
+	void WindowsWindow::SetPositionX(int32_t xPos)
 	{
 		m_posX = xPos;
 		VT_MAYBE_UNUSED BOOL result = SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, xPos, m_posY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 		VT_ASSERT(result == TRUE);
 	}
 	
-	void WindowsWindow::SetYPosition(int32_t yPos)
+	void WindowsWindow::SetPositionY(int32_t yPos)
 	{
 		m_posY = yPos;
 		VT_MAYBE_UNUSED BOOL result = SetWindowPos(static_cast<HWND>(m_nativeHandle), nullptr, m_posX, yPos, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
@@ -313,13 +350,23 @@ namespace Volt
 		return m_title;
 	}
 
-	int32_t WindowsWindow::GetWidth() const
+	uint32_t WindowsWindow::GetWidth() const
 	{
 		return m_width;
 	}
-	int32_t WindowsWindow::GetHeight() const
+	uint32_t WindowsWindow::GetHeight() const
 	{
 		return m_height;
+	}
+
+	int32_t WindowsWindow::GetPositionX() const
+	{
+		return m_posX;
+	}
+
+	int32_t WindowsWindow::GetPositionY() const
+	{
+		return m_posY;
 	}
 	
 	WindowHandle WindowsWindow::GetHandle() const
@@ -350,22 +397,32 @@ namespace Volt
 	
 	bool WindowsWindow::IsMaximized() const
 	{
-		WINDOWPLACEMENT windowPlacement;
+		if (m_nativeHandle == nullptr)
+		{
+			return false;
+		}
+
+		WINDOWPLACEMENT windowPlacement{};
 		windowPlacement.length = sizeof(WINDOWPLACEMENT);
 
 		VT_MAYBE_UNUSED BOOL result = GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement);
-		VT_ASSERT(result == TRUE);
+		VT_CHECK(result == TRUE);
 
 		return windowPlacement.showCmd == SW_MAXIMIZE;
 	}
 	
 	bool WindowsWindow::IsMinimized() const
 	{
-		WINDOWPLACEMENT windowPlacement;
+		if (m_nativeHandle == nullptr)
+		{
+			return false;
+		}
+
+		WINDOWPLACEMENT windowPlacement{};
 		windowPlacement.length = sizeof(WINDOWPLACEMENT);
 
 		VT_MAYBE_UNUSED BOOL result = GetWindowPlacement(static_cast<HWND>(m_nativeHandle), &windowPlacement);
-		VT_ASSERT(result == TRUE);
+		VT_CHECK(result == TRUE);
 
 		return windowPlacement.showCmd == SW_MINIMIZE;
 	}
@@ -384,6 +441,62 @@ namespace Volt
 	const RHI::Swapchain& WindowsWindow::GetSwapchain() const
 	{
 		return *m_swapchain;
+	}
+
+	Window_New::IsHoveringTitlebar& WindowsWindow::GetIsHoveringTitlebar()
+	{
+		return m_isHoveringTitlebar;
+	}
+
+	Window_New::IsHoveringMaximizeButton& WindowsWindow::GetIsHoveringMaximizeButton()
+	{
+		return m_isHoveringMaximizeButton;
+	}
+
+	const wchar_t* WindowsWindow::WindowClass::GetName() noexcept
+	{
+		return Get().m_className;
+	}
+	
+	HINSTANCE WindowsWindow::WindowClass::GetInstance() noexcept
+	{
+		return Get().m_instance;
+	}
+	
+	WindowsWindow::WindowClass& WindowsWindow::WindowClass::Get()
+	{
+		static WindowClass instance;
+		return instance;
+	}
+	WindowsWindow::WindowClass::WindowClass() noexcept
+	{
+		if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+		{
+			VT_LOG(Warning, "Failed to set DPI awareness!");
+		}
+
+		m_instance = GetModuleHandle(nullptr);
+		
+		WNDCLASSEXW windowClass{ 0 };
+		windowClass.cbSize = sizeof(WNDCLASSEXW);
+		windowClass.style = CS_CLASSDC | CS_HREDRAW | CS_VREDRAW;
+		windowClass.lpfnWndProc = HandleMsgSetup;
+		windowClass.cbClsExtra = 0;
+		windowClass.cbWndExtra = 0;
+		windowClass.hInstance = m_instance;
+		windowClass.hIcon = nullptr;
+		windowClass.hCursor = nullptr;
+		windowClass.hbrBackground = nullptr;
+		windowClass.lpszMenuName = nullptr;
+		windowClass.lpszClassName = m_className;
+		windowClass.hIconSm = nullptr;
+
+		RegisterClassExW(&windowClass);
+	}
+
+	WindowsWindow::WindowClass::~WindowClass()
+	{
+		UnregisterClassW(GetName(), m_instance);
 	}
 
 	LRESULT WindowsWindow::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -421,8 +534,7 @@ namespace Volt
 		{
 			case WM_CLOSE:
 			{
-				WindowCloseEvent_New closeEvent{ *this };
-				EventSystem::DispatchEvent(closeEvent);
+				Close();
 				return 0;
 			}
 
@@ -431,18 +543,159 @@ namespace Volt
 				UINT x = LOWORD(lParam);
 				UINT y = HIWORD(lParam);
 				
-				m_swapchain->Resize(x, y, m_enableVSync);
-				
-				WindowResizeEvent_New resizeEvent{ *this, x, y };
-				EventSystem::DispatchEvent(resizeEvent);
+				m_width = x;
+				m_height = y;
 
+				// This message might be called before the swapchain has been created (inside the CreateWindowW call)
+				// Only send an event and resize the swapchain if it exists.
+				if (m_swapchain)
+				{
+					m_swapchain->Resize(x, y, m_enableVSync);
+
+					WindowResizeEvent_New resizeEvent{ *this, x, y };
+					EventSystem::DispatchEvent(resizeEvent);
+				}
+
+				break;
+			}
+
+			case WM_PAINT:
+			{
 				WindowRepaintEvent repaintEvent{ *this };
 				EventSystem::DispatchEvent(repaintEvent);
+
+				break;
+			}
+
+			case WM_MOVE:
+			{
+				INT x = GET_X_PARAM(lParam);
+				INT y = GET_Y_PARAM(lParam);
+
+				m_posX = x;
+				m_posY = y;
+				break;
+			}
+
+			case WM_SETCURSOR:
+			{
+				// Set default cursor
+				SetCursor(LoadCursor(NULL, IDC_ARROW));
 				break;
 			}
 		}
 
 		m_inputManager.HandleMessage(hWnd, msg, wParam, lParam);
+
+		if (!m_isDecorated)
+		{
+			return HandleUndecoratedWindowMessages(hWnd, msg, wParam, lParam);
+		}
+		else
+		{
+			return DefWindowProc(hWnd, msg, wParam, lParam);
+		}
+	}
+
+	LRESULT WindowsWindow::HandleUndecoratedWindowMessages(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	{
+		switch (msg)
+		{
+			// When wParam is true and the return value is zero, the application uses the
+			// entire window as the client area, effectively removing the standard frame.
+			case WM_NCCALCSIZE:
+			{
+				if (!wParam)
+				{
+					break;
+				}
+
+				UINT dpi = GetDpiForWindow(hWnd);
+
+				int32_t frameX = GetSystemMetricsForDpi(SM_CXFRAME, dpi);
+				int32_t frameY = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+				int32_t padding = GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+
+				NCCALCSIZE_PARAMS* params = (NCCALCSIZE_PARAMS*)lParam;
+				RECT* requestedClientRect = params->rgrc;
+
+				requestedClientRect->right -= frameX + padding;
+				requestedClientRect->left += frameX + padding;
+				requestedClientRect->bottom -= frameY + padding;
+
+				if (IsMaximized())
+				{
+					requestedClientRect->top += frameY + padding;
+				}
+
+				return 0;
+			}
+
+			// On create, inform the window that it needs to redraw.
+			// This is to ensure the frame is removed.
+			case WM_CREATE:
+			{
+				SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+				break;
+			}
+
+			case WM_NCHITTEST:
+			{
+				// Let the default procedure handle the resizing areas.
+				LRESULT hit = DefWindowProc(hWnd, msg, wParam, lParam);
+				switch (hit)
+				{
+					case HTNOWHERE:
+					case HTRIGHT:
+					case HTLEFT:
+					case HTTOPLEFT:
+					case HTTOP:
+					case HTTOPRIGHT:
+					case HTBOTTOMRIGHT:
+					case HTBOTTOM:
+					case HTBOTTOMLEFT:
+					{
+						return hit;
+					}
+				}
+
+				POINT cursorPoint = { 0 };
+				cursorPoint.x = GET_X_PARAM(lParam);
+				cursorPoint.y = GET_Y_PARAM(lParam);
+				ScreenToClient(hWnd, &cursorPoint);
+
+				if (m_isHoveringMaximizeButton.IsBound())
+				{
+					if (m_isHoveringMaximizeButton.Execute(cursorPoint.x, cursorPoint.y))
+					{
+						return HTMAXBUTTON;
+					}
+				}
+
+				// Handle the top hit area
+				{
+					UINT dpi = GetDpiForWindow(hWnd);
+					int32_t frameY = GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+					int32_t padding = GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+				
+					if (!IsMaximized() &&
+						cursorPoint.y > 0 && cursorPoint.y < frameY + padding)
+					{
+						return HTTOP;
+					}
+				}
+
+				if (m_isHoveringTitlebar.IsBound())
+				{
+					if (m_isHoveringTitlebar.Execute(cursorPoint.x, cursorPoint.y))
+					{
+						return HTCAPTION;
+					}
+				}
+
+				return HTCLIENT;
+			}
+		}
 
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
@@ -462,45 +715,4 @@ namespace Volt
 		m_swapchain = RHI::Swapchain::Create(createInfo);
 	}
 
-	WindowsWindow::WindowClass::WindowClass() noexcept
-	{
-		m_instance = GetModuleHandle(nullptr);
-		
-		WNDCLASSEXW windowClass{ 0 };
-		windowClass.cbSize = sizeof(WNDCLASSEXW);
-		windowClass.style = CS_CLASSDC;
-		windowClass.lpfnWndProc = HandleMsgSetup;
-		windowClass.cbClsExtra = 0;
-		windowClass.cbWndExtra = 0;
-		windowClass.hInstance = m_instance;
-		windowClass.hIcon = nullptr;
-		windowClass.hCursor = nullptr;
-		windowClass.hbrBackground = nullptr;
-		windowClass.lpszMenuName = nullptr;
-		windowClass.lpszClassName = m_className;
-		windowClass.hIconSm = nullptr;
-
-		RegisterClassExW(&windowClass);
-	}
-
-	WindowsWindow::WindowClass::~WindowClass()
-	{
-		UnregisterClassW(GetName(), m_instance);
-	}
-
-	const wchar_t* WindowsWindow::WindowClass::GetName() noexcept
-	{
-		return Get().m_className;
-	}
-	
-	HINSTANCE WindowsWindow::WindowClass::GetInstance() noexcept
-	{
-		return Get().m_instance;
-	}
-	
-	WindowsWindow::WindowClass& WindowsWindow::WindowClass::Get()
-	{
-		static WindowClass instance;
-		return instance;
-	}
 }

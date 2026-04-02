@@ -34,6 +34,9 @@ public:
 	VTCOREUTIL_API StringBuilder& operator<<(const String& value);
 	VTCOREUTIL_API StringBuilder& operator<<(const StringView value);
 
+	VTCOREUTIL_API StringBuilder& operator<<(const char* str);
+	VTCOREUTIL_API StringBuilder& operator<<(const wchar_t* wstr);
+
 private:
 	String m_string;
 };

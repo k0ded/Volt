@@ -50,6 +50,7 @@ namespace Volt::RHI
 		bool IsHDREnabled() const override;
 
 		inline VkImage_T* GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).image; }
+		inline VkSemaphore_T* GetAquireSemaphore() const { return m_perFrameInFlightData[m_currentFrameIndex].presentSemaphore; }
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -62,7 +63,11 @@ namespace Volt::RHI
 
 		void CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync);
 		void CreateSyncObjects();
+		void CreateRenderSemaphores();
 		void CreateWindowSurface(void* platformWindow, void* platformInstance);
+		void CreateSwapchainImage(uint32_t imageIndex);
+
+		void ReleaseRenderSemaphores();
 
 		void GetNextFrameIndex();
 
@@ -99,6 +104,9 @@ namespace Volt::RHI
 
 			Extent2D minImageExtent{};
 			Extent2D maxImageExtent{};
+			Extent2D currentExtent{};
+
+			uint32_t compositeAlphaFlags = 0;
 
 			Vector<PresentMode> presentModes{};
 			Vector<SurfaceFormat> surfaceFormats{};

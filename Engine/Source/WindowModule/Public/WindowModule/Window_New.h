@@ -6,6 +6,8 @@
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/String/VoltString.h>
 
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
+
 #include <cstdint>
 
 namespace Volt
@@ -23,33 +25,41 @@ namespace Volt
 	{
 		WString title;
 
-		int32_t initialWidth;
-		int32_t initialHeight;
+		uint32_t initialWidth = 1280;
+		uint32_t initialHeight = 720;
 		
-		int32_t initialPosX;
-		int32_t initialPosY;
+		int32_t initialPosX = 0;
+		int32_t initialPosY = 0;
 
-		bool enableVSync;
+		bool enableVSync : 1 = true;
+		bool createAsDecorated : 1 = false;
 	};
 
 	class Window_New
 	{
 	public:
+		DECLARE_DELEGATE_RetVal_TwoParams(bool, IsHoveringTitlebar, int32_t, int32_t);
+		DECLARE_DELEGATE_RetVal_TwoParams(bool, IsHoveringMaximizeButton, int32_t, int32_t);
+
 		virtual ~Window_New() = default;
 
 		virtual void ProcessMessages() = 0;
 		virtual void BeginFrame() = 0;
 		virtual void Present() = 0;
 
+		virtual void Close() = 0;
+
 		virtual void SetTitle(const WString& title) = 0;
 
-		virtual void SetXPosition(int32_t xPos) = 0;
-		virtual void SetYPosition(int32_t yPos) = 0;
+		virtual void SetPositionX(int32_t xPos) = 0;
+		virtual void SetPositionY(int32_t yPos) = 0;
 
 		virtual const WString& GetTitle() const = 0;
 
-		virtual int32_t GetWidth() const = 0;
-		virtual int32_t GetHeight() const = 0;
+		virtual uint32_t GetWidth() const = 0;
+		virtual uint32_t GetHeight() const = 0;
+		virtual int32_t GetPositionX() const = 0;
+		virtual int32_t GetPositionY() const = 0;
 		virtual WindowHandle GetHandle() const = 0;
 
 		virtual void Maximize() = 0;
@@ -63,6 +73,10 @@ namespace Volt
 
 		virtual WindowInputManager& GetInputManager() = 0;
 		virtual const RHI::Swapchain& GetSwapchain() const = 0;
+
+		// These are used if a window is not decorated.
+		virtual IsHoveringTitlebar& GetIsHoveringTitlebar() = 0;
+		virtual IsHoveringMaximizeButton& GetIsHoveringMaximizeButton() = 0;
 
 		WINDOWMODULE_API static Unique<Window_New> Create(const WindowInitializer& initializer, WindowHandle handle);
 	};

@@ -22,6 +22,7 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<SubSystemModule>(target);
 			conf.AddPrivateDependency<PlatformsModule>(target);
+			conf.AddPrivateDependency<LogModule>(target);
         }
     }
 }

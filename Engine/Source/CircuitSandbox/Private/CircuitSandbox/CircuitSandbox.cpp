@@ -7,14 +7,8 @@
 #include "CircuitSandbox/Widgets/InspectorWidget.h"
 
 #include <InputModule/Input.h>
-#include <InputModule/InputCodes.h>
-#include <InputModule/Events/KeyboardEvents.h>
-
-#include <SubSystem/SubSystemManager.h>
-
-#include <WindowModule/Events/WindowEvents.h>
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Window.h>
+#include <WindowModule/WindowManager_New.h>
+#include <WindowModule/Window_New.h>
 
 #include <Circuit/CircuitManager.h>
 #include <Circuit/Widgets/SliderWidget.h>
@@ -42,7 +36,6 @@ void CircuitSandbox::RegisterEventListeners()
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(CircuitSandbox::OnUpdateEvent), isInitializedPred);
 	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(CircuitSandbox::OnRenderEvent), isInitializedPred);
-	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(CircuitSandbox::OnKeyPressedEvent), isInitializedPred);
 }
 
 
@@ -50,9 +43,18 @@ void CircuitSandbox::OnAttach()
 {
 	RegisterEventListeners();
 
-	//Volt::WindowManager::Get().GetMainWindow().Maximize();
+	// Create main window
+	{
+		Volt::WindowInitializer windowInitializer{};
+		windowInitializer.initialWidth = 1600;
+		windowInitializer.initialHeight = 900;
+		windowInitializer.initialPosX = 0;
+		windowInitializer.initialPosY = 0;
+		windowInitializer.enableVSync = true;
+		windowInitializer.createAsDecorated = false;
 
-
+		m_window = Volt::WindowManager_New::Get().CreateWindow(windowInitializer);
+	}
 
 	m_editorScene = Volt::Scene::CreateDefaultScene("New Scene", true);
 	SetupNewSceneData();
@@ -78,7 +80,7 @@ void CircuitSandbox::OnAttach()
 	300.f
 	);
 
-	Circuit::CircuitManager::Initialize(rootLayout);
+	Circuit::CircuitManager::Initialize(rootLayout, m_window);
 
 	constexpr float fov = glm::radians(60.f);
 	constexpr float nearPlane = 1.f;
@@ -90,8 +92,6 @@ void CircuitSandbox::OnAttach()
 	const float focalDistance = glm::distance(startPosition, { 0,0,0 });
 	const glm::vec3 pos = -1.f * m_camera->GetForward() * focalDistance;
 	m_camera->SetPosition(pos);
-
-
 
 	m_isInitialized = true;
 }
@@ -124,13 +124,6 @@ bool CircuitSandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 	{
 		m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
 	}
-
-
-	return false;
-}
-
-bool CircuitSandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
-{
 
 	return false;
 }

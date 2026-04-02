@@ -23,7 +23,7 @@ namespace Volt
 
 	class RenderGraph;
 	class RenderGraphBlackboard;
-	class Window;
+	class Window_New;
 }
 
 namespace Circuit
@@ -40,7 +40,7 @@ namespace Circuit
 		void AddCircuitPrimitivesPass(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard);
 
 		Circuit::CircuitWindow& m_targetCircuitWindow;
-		Volt::Window& m_targetWindow;
+		Volt::Window_New& m_targetWindow;
 
 		uint32_t m_width;
 		uint32_t m_height;

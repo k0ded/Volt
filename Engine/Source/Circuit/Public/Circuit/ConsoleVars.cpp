@@ -1,6 +1,6 @@
 #include "circuitpch.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 namespace Circuit
 {

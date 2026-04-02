@@ -2,6 +2,8 @@
 
 #include <Volt-Application/ApplicationLayer.h>
 
+#include <WindowModule/WindowHandle.h>
+
 #include <EventSystem/EventListener.h>
 
 #include <AssetSystem/AssetReference.h>
@@ -36,7 +38,6 @@ private:
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
-	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	
 	bool m_isInitialized = false;
 
@@ -49,6 +50,7 @@ private:
 
 	AssetReference<Volt::Scene> m_editorScene;
 	Ref<Volt::Camera> m_camera;
+	Volt::WindowHandle m_window;
 	//end temp
 
 

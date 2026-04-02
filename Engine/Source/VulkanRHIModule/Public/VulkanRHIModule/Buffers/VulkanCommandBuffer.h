@@ -14,6 +14,7 @@ struct VkFence_T;
 
 struct VkQueryPool_T;
 struct VkPipelineLayout_T;
+struct VkSemaphore_T;
 
 namespace Volt::RHI
 {
@@ -150,6 +151,9 @@ namespace Volt::RHI
 		RawPtr<ComputePipeline> m_activeComputePipeline;
 		RawPtr<RayTracingPipeline> m_activeRayTracingPipeline;
 		IntRef<Fence> m_submissionFence;
+
+		// Semaphores that should be waited on when this command buffer is executed.
+		InlineVector<VkSemaphore_T*, 1> m_waitSemaphores;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;

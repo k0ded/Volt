@@ -23,6 +23,7 @@ namespace Volt
 	class AppRenderEvent;
 	class WindowResizeEvent_New;
 	class WindowRenderEvent_New;
+	class WindowCloseEvent_New;
 
 	class OnSceneLoadedEvent;
 }
@@ -41,6 +42,7 @@ private:
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnWindowResizeEvent(Volt::WindowResizeEvent_New& e);
 	bool OnWindowRenderEvent(Volt::WindowRenderEvent_New& e);
+	bool OnWindowCloseEvent(Volt::WindowCloseEvent_New& e);
 
 	AssetReference<Volt::Scene> m_scene;
 	Ref<Volt::SceneRenderer> m_sceneRenderer;

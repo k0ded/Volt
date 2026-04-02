@@ -245,6 +245,7 @@ namespace Volt::RHI
 		m_desc.usage = ImageUsage::Attachment;
 		
 		m_swapchainImageData.image = vulkanSwapchain.GetImageAtIndex(specification.imageIndex);
+		m_swapchainImageData.swapchain = specification.swapchain;
 	}
 
 	void VulkanImage::TransitionToLayout(ImageLayout targetLayout)

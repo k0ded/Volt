@@ -1,7 +1,8 @@
 #include "Launcher/GameLayer.h"
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/SceneEvents.h>
+
+#include <Volt-Application/BaseApplication.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
 
@@ -10,14 +11,9 @@
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 
-#include <CoreModule/Project/ProjectManager.h>
-
-#include <Navigation/Core/NavigationSystem.h>
-
 #include <WindowModule/Events/WindowEvents_New.h>
 #include <WindowModule/WindowManager_New.h>
 #include <WindowModule/Window_New.h>
-#include <EventSystem/EventSystem.h>
 
 using namespace Volt;
 
@@ -33,6 +29,7 @@ void GameLayer::OnAttach()
 	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(GameLayer::OnRenderEvent));
 	RegisterListener<Volt::WindowResizeEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowResizeEvent));
 	RegisterListener<Volt::WindowRenderEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowRenderEvent));
+	RegisterListener<Volt::WindowCloseEvent_New>(VT_BIND_EVENT_FN(GameLayer::OnWindowCloseEvent));
 
 	Window_New& window = WindowManager_New::Get().GetWindow(m_window);
 
@@ -116,4 +113,15 @@ bool GameLayer::OnWindowRenderEvent(Volt::WindowRenderEvent_New& e)
 	renderGraph.Execute();
 
 	return true;
+}
+
+bool GameLayer::OnWindowCloseEvent(Volt::WindowCloseEvent_New& e)
+{
+	if (e.GetWindow().GetHandle() == m_window)
+	{
+		WindowManager_New::Get().DestroyWindow(m_window);
+		BaseApplication::Get().Quit();
+	}
+
+	return false;
 }

@@ -6,10 +6,17 @@
 #include <PlatformsModule/Platform.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(EventSystem, Minimal, PreEngine);
+
+	static ConsoleVariable<int32_t> g_eventSystemLogAllEvents(
+		"es.LogAllEvents",
+		0,
+		"Whether or not to log all events that pass through the EventSystem."
+	);
 
 	EventSystem::EventSystem()
 	{
@@ -138,6 +145,11 @@ namespace Volt
 		{
 			std::unique_lock<std::shared_mutex> lock(s_instance->m_dispatchSetMutex);
 			m_dispatchSet.insert(eventGUID);
+		}
+
+		if (g_eventSystemLogAllEvents.GetValue())
+		{
+			VT_LOGC(Trace, LogEventSystem, "Dispatched event: {}", e.ToString());
 		}
 
 		//do event dispatch

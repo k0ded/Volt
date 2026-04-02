@@ -27,8 +27,8 @@
 #include <Circuit/Window/CircuitWindow.h>
 #include <Circuit/CircuitManager.h>
 
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Window.h>
+#include <WindowModule/WindowManager_New.h>
+#include <WindowModule/Window_New.h>
 
 #include <LogModule/Log.h>
 
@@ -40,7 +40,7 @@ namespace Circuit
 {
 	Circuit::CircuitRenderer::CircuitRenderer(CircuitWindow& targetCircuitWindow, IntRef<Volt::RHI::ResourceTable> resourceTable)
 		: m_targetCircuitWindow(targetCircuitWindow), 
-		m_targetWindow(Volt::WindowManager::Get().GetWindow(targetCircuitWindow.GetWindowHandle())),
+		m_targetWindow(Volt::WindowManager_New::Get().GetWindow(targetCircuitWindow.GetWindowHandle())),
 		m_resourceTable(resourceTable)
 	{
 		m_width = 0;

@@ -1,29 +1,11 @@
 #include "csbpch.h"
 
+#include "CircuitSandboxApp.h"
 #include "CircuitSandbox/CircuitSandbox.h"
-
-#include <Volt-Application/Application.h>
 
 #include <PlatformsModule/Platform.h>
 
-class CircuitSandboxApp : public Volt::Application
-{
-public:
-	CircuitSandboxApp(const Volt::CommandLineBuilder& commandLineBuilder, const Volt::ApplicationCreationInfo& appInfo)
-		: Volt::Application(commandLineBuilder, appInfo)
-	{
-		if (commandLineBuilder.IsArgDefined("waitfordebugger"))
-		{
-			while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
-		}
-
-		CircuitSandbox* sandbox = new CircuitSandbox();
-		PushLayer(sandbox);
-	}
-};
-
 bool g_useCrashHandling = true;
-
 Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationCreationInfo info{};
@@ -36,5 +18,17 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 	info.width = 1600;
 	info.height = 900;
 
-	return new CircuitSandboxApp(commandLineBuilder, info);
+	return new CircuitSandboxApp(info, commandLineBuilder);
+}
+
+CircuitSandboxApp::CircuitSandboxApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
+	: Volt::Application_New(commandLineBuilder, appInfo)
+{
+	if (commandLineBuilder.IsArgDefined("waitfordebugger"))
+	{
+		while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
+	}
+
+	CircuitSandbox* sandbox = new CircuitSandbox();
+	PushLayer(sandbox);
 }

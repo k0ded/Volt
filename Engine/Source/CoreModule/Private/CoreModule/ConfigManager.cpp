@@ -1,11 +1,12 @@
 #include "cpch.h"
 #include "CoreModule/ConfigManager.h"
 #include "CoreModule/Project/ProjectManager.h"
-#include "CoreModule/Console/ConsoleVariableRegistry.h"
 #include "CoreModule/Configs/ConfigParser.h"
 
 #include <FileSystemModule/FileUtility.h>
 #include <FileSystemModule/Filesystem.h>
+
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 VT_DEFINE_LOG_CATEGORY(LogConfigManager);
 

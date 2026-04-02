@@ -12,7 +12,7 @@
 
 namespace Volt
 {
-	class WindowRenderEvent;
+	class WindowRenderEvent_New;
 
 	class Window;
 }
@@ -31,7 +31,7 @@ namespace Circuit
 		~CircuitManager() = default;
 
 		CIRCUIT_API static CircuitManager& Get();
-		CIRCUIT_API static void Initialize(Ref<Widget> mainWindowWidget);
+		CIRCUIT_API static void Initialize(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle);
 		CIRCUIT_API static void Shutdown();
 
 		CIRCUIT_API void Update();
@@ -42,10 +42,10 @@ namespace Circuit
 	private:
 		CIRCUIT_API inline static Unique<CircuitManager> s_Instance = nullptr;
 
-		void Init(Ref<Widget> mainWindowWidget);
+		void Init(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle);
 		void RegisterEventListeners();
 
-		bool OnRenderEvent(Volt::WindowRenderEvent& e);
+		bool OnRenderEvent(Volt::WindowRenderEvent_New& e);
 
 		void RegisterWindow(Volt::WindowHandle handle);
 

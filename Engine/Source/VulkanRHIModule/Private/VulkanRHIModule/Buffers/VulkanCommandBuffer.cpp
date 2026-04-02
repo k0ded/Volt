@@ -18,10 +18,8 @@
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
 
-#include "VulkanRHIModule/Images/VulkanImage.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 #include "VulkanRHIModule/Images/VulkanImageView.h"
-#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
@@ -33,17 +31,12 @@
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
-#include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
-#include <RHIModule/Memory/Allocation.h>
-
 #include <RHIModule/Shader/ShaderCommon.h>
 
-#include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/RHIModule.h>
@@ -198,7 +191,7 @@ namespace Volt::RHI
 
 			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::RenderTarget))
 			{
-				result |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+				result |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 			}
 
 			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::ShaderWrite))
@@ -351,6 +344,8 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::Begin(bool oneTimeSubmit)
 	{
 		VT_PROFILE_FUNCTION();
+
+		m_waitSemaphores.clear();
 
 		auto device = GraphicsContext::GetDevice();
 
@@ -802,8 +797,21 @@ namespace Volt::RHI
 					break;
 
 				case BarrierType::Image:
+				{
 					AddImageBarrier(resourceBarrier.imageBarrier(), imageBarriers.emplace_back());
+
+					Image& image = resourceBarrier.imageBarrier().resource->AsRef<Image>();
+					if (image.IsSwapchainImage())
+					{
+						// Since only non transient images can be swapchain images, this is a safe cast to do.
+						VulkanImage& vulkanImage = image.AsRef<VulkanImage>();
+						VulkanSwapchain& swapchain = vulkanImage.m_swapchainImageData.swapchain->AsRef<VulkanSwapchain>();
+					
+						m_waitSemaphores.emplace_back(swapchain.GetAquireSemaphore());
+					}
+
 					break;
+				}
 			}
 		}
 

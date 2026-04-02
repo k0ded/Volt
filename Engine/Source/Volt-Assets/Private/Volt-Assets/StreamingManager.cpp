@@ -5,7 +5,7 @@
 #include "Volt-Assets/MaterialAsset.h"
 #include "Volt-Assets/MaterialCompilerSubSystem.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <Volt-Renderer/RenderScene/ScenePrimitiveData.h>
 #include <Volt-Renderer/Renderer.h>

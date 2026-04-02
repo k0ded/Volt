@@ -10,7 +10,6 @@
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 #include "RenderCore/CommandBufferPool.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
 #include <CoreModule/Algorithms.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
@@ -33,6 +32,7 @@
 #include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/MemoryUtility.h>
 #include <CoreUtilities/PagedRangeAllocator.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 /*
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
@@ -95,7 +95,8 @@ namespace Volt
 	static ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
 		"r.RenderGraph.ForceSingleThreadedExecution",
 		0,
-		"Whether or not to force single threaded execution of the RenderGraph.");
+		"Whether or not to force single threaded execution of the RenderGraph."
+	);
 
 	static ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
 		"r.RenderGraph.ForceFullBarriersBetweenPasses",

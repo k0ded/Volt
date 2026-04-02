@@ -3,7 +3,7 @@
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetRegistry.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <CoreUtilities/Math/Hash.h>
 

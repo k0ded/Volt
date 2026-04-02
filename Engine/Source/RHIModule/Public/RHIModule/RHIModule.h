@@ -52,6 +52,7 @@ namespace Volt::RHI
 
 	class Event;
 	class Fence;
+	class Semaphore;
 
 	class ImGuiImplementation;
 	class ResourceStateTracker;
@@ -128,6 +129,7 @@ namespace Volt::RHI
 		virtual IntRef<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 
 		virtual IntRef<Fence> CreateFence() const = 0;
+		virtual IntRef<Semaphore> CreateSemaphore() const = 0;
 
 		virtual IntRef<ResourceTable> CreateResourceTable() const = 0;
 

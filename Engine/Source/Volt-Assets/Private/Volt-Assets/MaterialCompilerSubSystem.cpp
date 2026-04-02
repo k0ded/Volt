@@ -6,7 +6,7 @@
 #include <PlatformsModule/Platform.h>
 #include <FileSystemModule/FileUtility.h>
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 #include <CoreModule/Project/ProjectManager.h>
 
 #include <JobSystem/JobSystem.h>

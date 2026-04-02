@@ -19,15 +19,19 @@ namespace Volt
 		void BeginFrame() override;
 		void Present() override;
 
+		void Close() override;
+
 		void SetTitle(const WString& title) override;
 
-		void SetXPosition(int32_t xPos) override;
-		void SetYPosition(int32_t yPos) override;
+		void SetPositionX(int32_t xPos) override;
+		void SetPositionY(int32_t yPos) override;
 
 		const WString& GetTitle() const override;
 
-		int32_t GetWidth() const override;
-		int32_t GetHeight() const override;
+		uint32_t GetWidth() const override;
+		uint32_t GetHeight() const override;
+		int32_t GetPositionX() const override;
+		int32_t GetPositionY() const override;
 		WindowHandle GetHandle() const override;
 
 		void Maximize() override;
@@ -41,6 +45,9 @@ namespace Volt
 
 		WindowInputManager& GetInputManager() override;
 		const RHI::Swapchain& GetSwapchain() const override;
+
+		IsHoveringTitlebar& GetIsHoveringTitlebar() override;
+		IsHoveringMaximizeButton& GetIsHoveringMaximizeButton() override;
 
 	private:
 		// The shared Windows window 'class' which describes
@@ -67,7 +74,12 @@ namespace Volt
 		static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
+		LRESULT HandleUndecoratedWindowMessages(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
 		void CreateSwapchain();
+
+		IsHoveringTitlebar m_isHoveringTitlebar;
+		IsHoveringMaximizeButton m_isHoveringMaximizeButton;
 
 		WindowsWindowInputManager m_inputManager;
 		PlatformWindowHandle m_nativeHandle;
@@ -81,9 +93,10 @@ namespace Volt
 		int32_t m_posX;
 		int32_t m_posY;
 
-		int32_t m_width;
-		int32_t m_height;
+		uint32_t m_width;
+		uint32_t m_height;
 
-		bool m_enableVSync;
+		bool m_enableVSync : 1;
+		bool m_isDecorated : 1;
 	};
 }

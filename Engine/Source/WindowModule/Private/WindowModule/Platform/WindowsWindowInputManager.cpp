@@ -312,7 +312,7 @@ namespace Volt
 			{
 				POINTS pt = MAKEPOINTS(lParam);
 
-				if (pt.x >= 0 && pt.x < m_ownerWindow->GetWidth() && pt.y >= 0 && pt.y < m_ownerWindow->GetHeight())
+				if (pt.x >= 0 && pt.x < static_cast<int32_t>(m_ownerWindow->GetWidth()) && pt.y >= 0 && pt.y < static_cast<int32_t>(m_ownerWindow->GetHeight()))
 				{
 					OnMouseMoved(pt.x, pt.y);
 				

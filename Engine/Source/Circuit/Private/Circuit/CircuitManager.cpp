@@ -12,9 +12,10 @@
 
 #include "Circuit/CircuitInputHandler.h"
 
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Events/WindowEvents.h>
-#include <WindowModule/Window.h>
+#include <WindowModule/WindowManager_New.h>
+#include <WindowModule/Window_New.h>
+
+#include <WindowModule/Events/WindowEvents_New.h>
 
 #include <CoreUtilities/Delegates/Delegate.h>
 
@@ -32,10 +33,10 @@ namespace Circuit
 		return *s_Instance.GetRaw();
 	}
 
-	void CircuitManager::Initialize(Ref<Widget> mainWindowWidget)
+	void CircuitManager::Initialize(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle)
 	{
 		s_Instance = CreateUnique<CircuitManager>();
-		s_Instance->Init(mainWindowWidget);
+		s_Instance->Init(mainWindowWidget, windowHandle);
 	}
 
 	void CircuitManager::Shutdown()
@@ -43,54 +44,58 @@ namespace Circuit
 		s_Instance = nullptr;
 	}
 
-	void CircuitManager::Init(Ref<Widget> mainWindowWidget)
+	void CircuitManager::Init(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle)
 	{
 		VT_PROFILE_FUNCTION();
 		RegisterEventListeners();
-		RegisterWindow(Volt::WindowManager::Get().GetMainWindowHandle());
+		RegisterWindow(windowHandle);
 
 		InputHandler = CreateUnique<CircuitInputHandler>();
 		InputHandler->Init();
 
-		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
+		m_windows[windowHandle]->SetWidget(
 			CreateWidget(WindowWidget)
 			.Content(mainWindowWidget)
-			.OnRequestClose_Lambda([]()
-		{
-			Volt::WindowCloseEvent e{ Volt::WindowManager::Get().GetMainWindow() };
-			Volt::EventSystem::DispatchEvent(e);
-		})
-
-				.OnRequestMinimize_Lambda([]()
-		{
-			Volt::WindowManager::Get().GetMainWindow().Minimize();
-		})
-
-				.OnRequestMaximize_Lambda([]()
-		{
-			Volt::Window& mainWindow = Volt::WindowManager::Get().GetMainWindow();
-			if (mainWindow.IsMaximized())
+			.OnRequestClose_Lambda([windowHandle]()
 			{
-				mainWindow.Restore();
-			}
-			else
+				Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
+				window.Close();
+			})
+
+			.OnRequestMinimize_Lambda([windowHandle]()
 			{
-				mainWindow.Maximize();
-			}
-		})
+				Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
+				window.Minimize();
+			})
+
+			.OnRequestMaximize_Lambda([windowHandle]()
+			{
+				Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
+				if (window.IsMaximized())
+				{
+					window.Restore();
+				}
+				else
+				{
+					window.Maximize();
+				}
+			})
 		);
 	}
 
 	void CircuitManager::RegisterEventListeners()
 	{
-		RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(CircuitManager::OnRenderEvent));
+		RegisterListener<Volt::WindowRenderEvent_New>(VT_BIND_EVENT_FN(CircuitManager::OnRenderEvent));
 	}
 
-	bool CircuitManager::OnRenderEvent(Volt::WindowRenderEvent& e)
+	bool CircuitManager::OnRenderEvent(Volt::WindowRenderEvent_New& e)
 	{
-		for (auto& [windowHandle, window] : m_windows)
+		Volt::WindowHandle windowHandle = e.GetWindow().GetHandle();
+
+		if (m_windows.contains(windowHandle))
 		{
-			window->OnRender();
+			m_windows.at(windowHandle)->OnRender();
+			return true;
 		}
 
 		return false;

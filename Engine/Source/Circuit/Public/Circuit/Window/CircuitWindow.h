@@ -43,9 +43,6 @@ namespace Circuit
 
 		void OnRender();
 	private:
-		void RegisterEventListeners();
-		bool OnWindowTitlebarHittestEvent(class Volt::WindowTitlebarHittestEvent& e);
-
 		const Volt::WindowHandle m_windowHandle;
 
 		Ref<CircuitRenderer> m_renderer;

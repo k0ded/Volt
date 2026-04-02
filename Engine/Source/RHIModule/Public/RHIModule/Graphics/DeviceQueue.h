@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
+#include "RHIModule/Synchronization/Semaphore.h"
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 
@@ -10,13 +11,13 @@ namespace Volt::RHI
 	class CommandBuffer;
 	class Semaphore;
 	class Fence;
-	class Fence;
 
 	struct DeviceQueueExecuteInfo
 	{
 		InlineVector<IntRef<CommandBuffer>, 1> commandBuffers;
 		InlineVector<IntRef<Fence>, 1> signalFences;
-	
+		InlineVector<IntRef<Semaphore>, 1> waitSemaphores;
+
 		IntRef<Fence> executionFence;
 	};
 

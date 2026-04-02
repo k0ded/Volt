@@ -79,6 +79,13 @@ namespace Volt
 
 			RenderApplication();
 
+			{
+				VT_PROFILE_SCOPE("Application::PostFrame");
+
+				AppPostFrameUpdateEvent postFrameEvent(m_currentDeltaTime);
+				EventSystem::DispatchEvent(postFrameEvent);
+			}
+
 			m_windowManager->BeginFrame();
 			m_windowManager->Render(m_currentDeltaTime);
 			m_windowManager->Present();

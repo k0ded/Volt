@@ -260,6 +260,14 @@ namespace Volt::RHI
 		image->SetArena(&m_transientImageArena);
 		return image;
 	}
+
+	IntRef<Semaphore> VulkanRHIModule::CreateSemaphore() const
+	{
+		IntRef<VulkanSemaphore> semaphore = IntRef<VulkanSemaphore>::AttachNoRef(m_semaphoreArena.Allocate());
+		semaphore->SetArena(&m_semaphoreArena);
+
+		return semaphore;
+	}
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

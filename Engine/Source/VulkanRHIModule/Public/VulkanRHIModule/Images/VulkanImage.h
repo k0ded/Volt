@@ -42,9 +42,13 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
+		// To give access the the SwapchainImageData
+		friend class VulkanCommandBuffer;
+
 		struct SwapchainImageData
 		{
 			VkImage_T* image = nullptr;
+			Swapchain* swapchain = nullptr;
 		};
 
 		void Invalidate(const uint32_t width, const uint32_t height, const uint32_t depth, const void* data);

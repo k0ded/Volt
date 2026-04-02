@@ -1,11 +1,9 @@
 #pragma once
 
-#include "CoreModule/Config.h"
-
-#include <CoreUtilities/Pointers/Weak.h>
-#include <CoreUtilities/String/StringUtility.h>
-
-#include <CoreUtilities/Containers/Map.h>
+#include "CoreUtilities/Config.h"
+#include "CoreUtilities/Pointers/Weak.h"
+#include "CoreUtilities/String/StringUtility.h"
+#include "CoreUtilities/Containers/Map.h"
 
 namespace Volt
 {
@@ -107,12 +105,12 @@ namespace Volt
 		template<ValidConsoleVariableType T>
 		static Weak<RegisteredConsoleVariable<T>> FindVariable(const String& variableName);
 
-		VTC_API static Weak<RegisteredConsoleVariableBase> GetVariable(const String& variableName);
-		VTC_API static bool VariableExists(const String& variableName);
+		VTCOREUTIL_API static Weak<RegisteredConsoleVariableBase> GetVariable(const String& variableName);
+		VTCOREUTIL_API static bool VariableExists(const String& variableName);
 
 		static Map<String, Ref<RegisteredConsoleVariableBase>>& GetRegisteredVariables();
 
-		VTC_API static ConsoleVariableRegistry& Get();
+		VTCOREUTIL_API static ConsoleVariableRegistry& Get();
 
 	private:
 		Map<String, Ref<RegisteredConsoleVariableBase>> m_registeredVariables;

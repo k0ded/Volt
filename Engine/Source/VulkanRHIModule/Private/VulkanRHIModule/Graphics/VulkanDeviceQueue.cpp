@@ -9,6 +9,7 @@
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Synchronization/Semaphore.h>
 #include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -69,6 +70,17 @@ namespace Volt::RHI
 		GlobalMemoryStackVector<VkSemaphoreSubmitInfo> signalSemaphoreInfos;
 		signalSemaphoreInfos.reserve(executeInfo.signalFences.size());
 
+		size_t numWaitSemaphores = executeInfo.waitSemaphores.size();
+
+		for (const auto& cmdBuffer : executeInfo.commandBuffers)
+		{
+			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
+			numWaitSemaphores += vkCmdBuffer.m_waitSemaphores.size();
+		}
+
+		GlobalMemoryStackVector<VkSemaphoreSubmitInfo> waitSemaphoreInfos;
+		waitSemaphoreInfos.reserve(numWaitSemaphores);
+
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
 		{
 			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
@@ -80,6 +92,15 @@ namespace Volt::RHI
 			info.pNext = nullptr;
 			info.deviceMask = 0;
 			info.commandBuffer = vkCmdBuffer.GetHandle<VkCommandBuffer>();
+
+			for (VkSemaphore semaphore : vkCmdBuffer.m_waitSemaphores)
+			{
+				auto& waitSemaphoreInfo = waitSemaphoreInfos.emplace_back();
+				waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+				waitSemaphoreInfo.pNext = nullptr;
+				waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_2_NONE;
+				waitSemaphoreInfo.semaphore = semaphore;
+			}
 		}
 
 		for (const auto& fence : executeInfo.signalFences)
@@ -101,12 +122,25 @@ namespace Volt::RHI
 			queueSemaphore.semaphore = m_queueSemaphore;
 		}
 
+		for (const IntRef<Semaphore>& waitSemaphore : executeInfo.waitSemaphores)
+		{
+			auto& info = waitSemaphoreInfos.emplace_back();
+			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			info.pNext = nullptr;
+			info.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+			info.semaphore = waitSemaphore->GetHandle<VkSemaphore>();
+			info.deviceIndex = 0;
+			info.value = 0;
+		}
+
 		VkSubmitInfo2 info{};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 		info.commandBufferInfoCount = static_cast<uint32_t>(vulkanCommandBuffers.size());
 		info.pCommandBufferInfos = vulkanCommandBuffers.data();
 		info.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
 		info.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
+		info.waitSemaphoreInfoCount = static_cast<uint32_t>(waitSemaphoreInfos.size());
+		info.pWaitSemaphoreInfos = waitSemaphoreInfos.data();
 		
 		// Assign the semaphore value here, to make sure the execution order is correct.
 		uint64_t submitSemaphoreValue;
@@ -173,7 +207,6 @@ namespace Volt::RHI
 		createInfo.pNext = &semaphoreTypeInfo;
 		createInfo.flags = 0;
 
-		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateSemaphore(graphicsDevice.GetHandle<VkDevice>(), &createInfo, VT_VULKAN_ALLOCATOR, &m_queueSemaphore));
 	}
 
@@ -187,13 +220,15 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE_MSG(RHIModule::GetSubmissionThread().GetSubmissionThreadId() == std::this_thread::get_id(), "Submissions may only come from the RHI Submission Thread!");
 
-		VkSemaphoreSubmitInfo waitInfo{};
-		waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-		waitInfo.pNext = nullptr;
-		waitInfo.semaphore = presentSemaphore;
-		waitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-		waitInfo.deviceIndex = 0;
-		waitInfo.value = 1;
+		GlobalMemoryStackMark memMark;
+
+		VkSemaphoreSubmitInfo presentWaitInfo{};
+		presentWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		presentWaitInfo.pNext = nullptr;
+		presentWaitInfo.semaphore = presentSemaphore;
+		presentWaitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+		presentWaitInfo.deviceIndex = 0;
+		presentWaitInfo.value = 1;
 
 		VkSemaphoreSubmitInfo signalInfo{};
 		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
@@ -214,7 +249,7 @@ namespace Volt::RHI
 		submitInfo.pNext = nullptr;
 		submitInfo.flags = 0;
 		submitInfo.waitSemaphoreInfoCount = 1;
-		submitInfo.pWaitSemaphoreInfos = &waitInfo;
+		submitInfo.pWaitSemaphoreInfos = &presentWaitInfo;
 		submitInfo.signalSemaphoreInfoCount = 1;
 		submitInfo.pSignalSemaphoreInfos = &signalInfo;
 		submitInfo.commandBufferInfoCount = 1;

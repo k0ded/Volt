@@ -8,7 +8,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 

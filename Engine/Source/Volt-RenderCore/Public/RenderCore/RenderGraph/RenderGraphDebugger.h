@@ -10,7 +10,7 @@
 #include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/Pointers/IntRef.h>
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 namespace Volt
 {

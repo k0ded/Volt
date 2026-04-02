@@ -12,7 +12,7 @@
 #include "Volt-Renderer/ShapeLibrary.h"
 #include "Volt-Renderer/SystemTextures.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>

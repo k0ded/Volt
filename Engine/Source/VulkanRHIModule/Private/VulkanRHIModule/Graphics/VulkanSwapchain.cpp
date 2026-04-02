@@ -134,11 +134,7 @@ namespace Volt::RHI
 	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
 		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync), m_width(createInfo.width), m_height(createInfo.height)
 	{
-		//auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
-
-		//VkInstance instance = vulkanContext->GetHandle<VkInstance>();
-		//VT_VK_CHECK(glfwCreateWindowSurface(instance, reinterpret_cast<GLFWwindow*>(createInfo.platformWindow), nullptr, &m_surface));
 
 		CreateWindowSurface(createInfo.platformWindow, createInfo.platformHandle);
 
@@ -184,6 +180,16 @@ namespace Volt::RHI
 		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImageIndex);
 		m_swapchainMutex.unlock();
 
+		//VT_LOGC(Trace, LogVulkanRHI, "NextImageIndex: {}", m_currentImageIndex);
+
+		if (swapchainStatus == VK_SUCCESS || swapchainStatus == VK_SUBOPTIMAL_KHR)
+		{
+			if (m_perImageData[m_currentImageIndex].imageReference == nullptr)
+			{
+				CreateSwapchainImage(m_currentImageIndex);
+			}
+		}
+
 		if (swapchainStatus == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			m_swapchainNeedsRebuild = true;
@@ -191,7 +197,7 @@ namespace Volt::RHI
 		}
 		else if (swapchainStatus != VK_SUCCESS && swapchainStatus != VK_SUBOPTIMAL_KHR)
 		{
-			throw std::runtime_error("Failed to acquire swapchain image!");
+			VT_ENSURE_NO_ENTRY();
 		}
 	}
 
@@ -245,12 +251,6 @@ namespace Volt::RHI
 
 			GetNextFrameIndex();
 		}
-
-		// Move image to undefined layout, since that's the state we get it in.
-		{
-			ResourceStateTracker& stateTracker = m_perImageData[m_currentImageIndex].imageReference->GetResourceStateTrackerMutable();
-			stateTracker.Transition(0, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
-		}
 	}
 
 	void VulkanSwapchain::Resize(const uint32_t width, const uint32_t height, bool enableVSync)
@@ -270,7 +270,10 @@ namespace Volt::RHI
 		m_VSyncEnabled = enableVSync;
 
 		QuerySwapchainCapabilities();
+		ReleaseRenderSemaphores();
+
 		CreateSwapchain(width, height, enableVSync);
+		CreateRenderSemaphores();
 	}
 
 	const uint32_t VulkanSwapchain::GetCurrentFrame() const
@@ -323,6 +326,7 @@ namespace Volt::RHI
 
 		CreateSwapchain(width, height, enableVSync);
 		CreateSyncObjects();
+		CreateRenderSemaphores();
 	}
 
 	void VulkanSwapchain::Release()
@@ -386,6 +390,26 @@ namespace Volt::RHI
 		m_capabilities.maxImageExtent.width = capabilities.maxImageExtent.width;
 		m_capabilities.maxImageExtent.height = capabilities.maxImageExtent.height;
 
+		m_capabilities.currentExtent.width = capabilities.currentExtent.width;
+		m_capabilities.currentExtent.height = capabilities.currentExtent.height;
+
+		if (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+		{
+			m_capabilities.compositeAlphaFlags = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		}
+		else if (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR)
+		{
+			m_capabilities.compositeAlphaFlags = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+		}
+		else if (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR)
+		{
+			m_capabilities.compositeAlphaFlags = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
+		}
+		else if (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR)
+		{
+			m_capabilities.compositeAlphaFlags = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+		}
+
 		uint32_t formatCount = 0;
 		VT_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->GetHandle<VkPhysicalDevice>(), m_surface, &formatCount, nullptr));
 
@@ -448,8 +472,8 @@ namespace Volt::RHI
 		}
 
 		// Make sure the requested size is within the capabilities of the swapchain
-		m_width = std::clamp(width, m_capabilities.minImageExtent.width, m_capabilities.maxImageExtent.width);
-		m_height = std::clamp(height, m_capabilities.minImageExtent.height, m_capabilities.maxImageExtent.height);
+		m_width = m_capabilities.currentExtent.width;
+		m_height = m_capabilities.currentExtent.height;
 
 		VkSwapchainKHR oldSwapchain = m_swapchain;
 
@@ -463,11 +487,13 @@ namespace Volt::RHI
 		swapchainCreateInfo.imageExtent.height = m_height;
 		swapchainCreateInfo.imageArrayLayers = 1;
 		swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-		swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		swapchainCreateInfo.compositeAlpha = static_cast<VkCompositeAlphaFlagBitsKHR>(m_capabilities.compositeAlphaFlags);
 		swapchainCreateInfo.presentMode = presentMode;
 		swapchainCreateInfo.clipped = VK_TRUE;
 		swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		swapchainCreateInfo.oldSwapchain = oldSwapchain;
+
+		swapchainCreateInfo.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
 
 		auto device = GraphicsContext::GetDevice();
 
@@ -511,11 +537,13 @@ namespace Volt::RHI
 			{
 				m_perImageData[i].image = images.at(i);
 
+#if 0
 				SwapchainImageDesc spec{};
 				spec.swapchain = this;
 				spec.imageIndex = static_cast<uint32_t>(i);
 
 				m_perImageData[i].imageReference = Image::Create(spec);
+#endif
 			}
 		}
 	}
@@ -543,11 +571,6 @@ namespace Volt::RHI
 			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
 			VT_VK_CHECK(vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &frameData.renderFence));
 		}
-
-		for (auto& imageData : m_perImageData)
-		{
-			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &imageData.renderSemaphore));
-		}
 	}
 
 	void VulkanSwapchain::GetNextFrameIndex()
@@ -563,11 +586,59 @@ namespace Volt::RHI
 		createInfo.pNext = nullptr;
 		createInfo.hinstance = static_cast<HINSTANCE>(platformInstance);
 		createInfo.hwnd = static_cast<HWND>(platformWindow);
+		createInfo.flags = 0;
 
 		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		VkInstance instance = vulkanContext->GetHandle<VkInstance>();
 
 		vkCreateWin32SurfaceKHR(instance, &createInfo, VT_VULKAN_ALLOCATOR, &m_surface);
 #endif
+	}
+
+	void VulkanSwapchain::CreateRenderSemaphores()
+	{
+		auto device = GraphicsContext::GetDevice();
+		VkDevice vkDevice = device->GetHandle<VkDevice>();
+
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		for (auto& imageData : m_perImageData)
+		{
+			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &imageData.renderSemaphore));
+		}
+	}
+
+	void VulkanSwapchain::ReleaseRenderSemaphores()
+	{
+		Vector<VkSemaphore> tempRenderSemaphores;
+		tempRenderSemaphores.resize(m_perImageData.size());
+
+		for (size_t i = 0; i < m_perImageData.size(); ++i)
+		{
+			tempRenderSemaphores[i] = m_perImageData[i].renderSemaphore;
+		}
+
+		RHIModule::GetInstance().DestroyResource([tempRenderSemaphores]()
+		{
+			auto device = GraphicsContext::GetDevice();
+			VkDevice vkDevice = device->GetHandle<VkDevice>();
+
+			for (VkSemaphore semaphore : tempRenderSemaphores)
+			{
+				vkDestroySemaphore(vkDevice, semaphore, VT_VULKAN_ALLOCATOR);
+			}
+		});
+
+		m_perImageData.clear();
+	}
+
+	void VulkanSwapchain::CreateSwapchainImage(uint32_t imageIndex)
+	{
+		SwapchainImageDesc spec{};
+		spec.swapchain = this;
+		spec.imageIndex = imageIndex;
+
+		m_perImageData[imageIndex].imageReference = Image::Create(spec);
 	}
 }

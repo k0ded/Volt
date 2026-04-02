@@ -4,10 +4,10 @@
 
 namespace Volt::RHI
 {
-	class VTRHI_API Fence : public ArenaRHIInterface
+	class Fence : public ArenaRHIInterface
 	{
 	public:
-		static IntRef<Fence> Create();
+		VTRHI_API static IntRef<Fence> Create();
 		virtual void WaitUntilSignaled() const = 0;
 		virtual bool IsSignaled() const = 0;
 		virtual void Reset() = 0;

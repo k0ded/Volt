@@ -90,3 +90,15 @@ StringBuilder& StringBuilder::operator<<(const StringView value)
 	m_string += String(value);
 	return *this;
 }
+
+StringBuilder& StringBuilder::operator<<(const char* str)
+{
+	m_string += String(str);
+	return *this;
+}
+
+StringBuilder& StringBuilder::operator<<(const wchar_t* wstr)
+{
+	m_string += String(String::CtorConvert(), wstr, wcslen(wstr));
+	return *this;
+}

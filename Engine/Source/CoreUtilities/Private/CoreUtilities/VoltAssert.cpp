@@ -26,6 +26,7 @@ void AssertionFailure(const char* expression)
 #endif
 
 	VT_DEBUGBREAK();
+
 #ifdef VT_PLATFORM_WINDOWS
 	if (!::IsDebuggerPresent())
 #endif
@@ -56,8 +57,12 @@ bool CheckExpression(bool expression, const char* str)
 #else
 		VT_UNUSED(str);
 #endif
-
-		VT_DEBUGBREAK();
+#ifdef VT_PLATFORM_WINDOWS
+		if (::IsDebuggerPresent())
+#endif
+		{
+			VT_DEBUGBREAK();
+		}
 	}
 
 	return expression;

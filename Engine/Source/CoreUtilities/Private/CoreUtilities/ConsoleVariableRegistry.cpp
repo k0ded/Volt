@@ -1,7 +1,7 @@
-#include "cpch.h"
-#include "CoreModule/Console/ConsoleVariableRegistry.h"
+#include "cupch.h"
 
-#include <CoreUtilities/String/StringUtility.h>
+#include "CoreUtilities/ConsoleVariableRegistry.h"
+#include "CoreUtilities/String/StringUtility.h"
 
 namespace Volt
 {

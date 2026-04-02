@@ -9,8 +9,8 @@
 
 #include "Circuit/ConsoleVars.h"
 
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Window.h>
+#include <WindowModule/WindowManager_New.h>
+#include <WindowModule/Window_New.h>
 #include <WindowModule/Events/WindowEvents.h>
 
 #include <LogModule/Log.h>
@@ -22,30 +22,19 @@ namespace Circuit
 	{
 		m_resourceTable = Volt::RHI::ResourceTable::Create();
 		m_renderer = CreateRef<CircuitRenderer>(*this, m_resourceTable);
-		RegisterEventListeners();
+
+		{
+			Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(m_windowHandle);
+			window.GetIsHoveringTitlebar().BindLambda([this](int32_t mouseX, int32_t mouseY)
+			{
+				return m_windowWidget->IsHoveringTitlebar();
+			});
+		}
 	}
 
 	CircuitWindow::~CircuitWindow()
 	{
 		VT_LOG(Info, "destruct CircuitWindow");
-	}
-
-	void CircuitWindow::RegisterEventListeners()
-	{
-		RegisterListener<Volt::WindowTitlebarHittestEvent>(VT_BIND_EVENT_FN(CircuitWindow::OnWindowTitlebarHittestEvent));
-	}
-	bool CircuitWindow::OnWindowTitlebarHittestEvent(Volt::WindowTitlebarHittestEvent& e)
-	{
-		if (e.GetWindow().GetHandle() == m_windowHandle)
-		{
-			e.SetHit(m_windowWidget->IsHoveringTitlebar());
-			if (m_windowWidget->IsHoveringTitlebar())
-			{
-				VT_LOG(Info, "Hovering Titlebar!");
-			}
-		}
-
-		return false;
 	}
 
 	Volt::WindowHandle CircuitWindow::GetWindowHandle() const
@@ -55,13 +44,13 @@ namespace Circuit
 
 	CIRCUIT_API glm::i32vec2 CircuitWindow::GetPosition() const
 	{
-		Volt::Window& window = Volt::WindowManager::Get().GetWindow(m_windowHandle);
-		return { window.GetPosition().first, window.GetPosition().second };
+		Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(m_windowHandle);
+		return { window.GetPositionX(), window.GetPositionY() };
 	}
 
 	glm::u32vec2 CircuitWindow::GetSize() const
 	{
-		Volt::Window& window = Volt::WindowManager::Get().GetWindow(m_windowHandle);
+		Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(m_windowHandle);
 		return { window.GetWidth(), window.GetHeight() };
 	}
 	void CircuitWindow::Resize(const glm::vec2& size)

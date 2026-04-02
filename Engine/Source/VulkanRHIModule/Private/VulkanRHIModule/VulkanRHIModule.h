@@ -14,6 +14,7 @@
 
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
+#include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 #include "VulkanRHIModule/VulkanRHISubmissionThread.h"
 
 #include <RHIModule/RHIModule.h>
@@ -63,6 +64,7 @@ namespace Volt::RHI
 		IntRef<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		IntRef<Fence> CreateFence() const override;
+		IntRef<Semaphore> CreateSemaphore() const override;
 	
 		IntRef<ResourceTable> CreateResourceTable() const override;
 
@@ -96,6 +98,7 @@ namespace Volt::RHI
 		mutable PagedAtomicArenaAllocator<VulkanSamplerState, 1024> m_samplerStateArena;
 
 		mutable PagedAtomicArenaAllocator<VulkanFence, 1024> m_fenceArena;
+		mutable PagedAtomicArenaAllocator<VulkanSemaphore, 1024> m_semaphoreArena;
 		mutable PagedAtomicArenaAllocator<VulkanCommandBuffer, 1024> m_commandBufferArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;

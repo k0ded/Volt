@@ -2,7 +2,7 @@
 #include "AssetSystem/AssetRegistry.h"
 #include "AssetSystem/AssetManager.h"
 
-#include <CoreModule/Console/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <FileSystemModule/FileIORequest.h>
 #include <FileSystemModule/Filesystem.h>
