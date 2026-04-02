@@ -6,8 +6,14 @@
 #include <InputModule/InputCodes.h>
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 #include <CoreUtilities/Pointers/Weak.h>
+
+#include <WindowModule/WindowHandle.h>
+#include <WindowModule/WindowInputManager.h>
+
+#include <unordered_set>
 
 namespace Volt
 {
@@ -15,17 +21,23 @@ namespace Volt
 	class MouseButtonPressedEvent;
 	class MouseButtonReleasedEvent;
 	class WindowTitlebarHittestEvent;
+
+	class WindowInputManager;
+	class Window_New;
 }
 namespace Circuit
 {
 	class CircuitWindow;
 	class Widget;
-	class CIRCUIT_API CircuitInputHandler : public Volt::EventListener
+	class CIRCUIT_API CircuitInputHandler
 	{
 	public:
 		void Init();
+
+		void RegisterWindowInput(Volt::Window_New& window);
+		void DeregisterWindowInput(Volt::Window_New& window);
+
 	private:
-		void RegisterEventListeners();
 
 		Vector<Ref<Widget>> GetWidgetsUnderCursor();
 		Ref<CircuitWindow> GetHoveredWindow();
@@ -33,10 +45,20 @@ namespace Circuit
 
 		void MouseMove(const glm::vec2 mouseScreenPos);
 
+		void OnKeyEvent(const Volt::WindowInputManager::KeyEvent& keyEvent, Volt::WindowHandle windowHandle);
+		void OnMouseEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+
+		void OnMousePress(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseRelease(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseMove(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseScroll(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseLeaveWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseEnterWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+
+		glm::vec2 GetMouseScreenPosFromEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const;
+
 		bool OnMouseMoved(Volt::MouseMovedEvent& e);
 		bool OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e);
-		bool OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e);
-		bool OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e);
 
 		glm::vec2 m_mousePos;
 
@@ -49,5 +71,8 @@ namespace Circuit
 
 		Weak<Widget> m_prevHoveredWidget;
 
+
+		Map<Volt::WindowHandle, Volt::DelegateHandle> m_registeredOnKeyEventWindows;
+		Map<Volt::WindowHandle, Volt::DelegateHandle> m_registeredOnMouseEventWindows;
 	};
 }

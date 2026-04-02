@@ -16,24 +16,41 @@
 
 #include <WindowModule/Window.h>
 #include <WindowModule/Events/WindowEvents.h>
+#include <WindowModule/Window_New.h>
+#include <WindowModule/WindowInputManager.h>
+#include <WindowModule/WindowManager_New.h>
 
 #include <LogModule/Log.h>
+
 
 namespace Circuit
 {
 	void Circuit::CircuitInputHandler::Init()
 	{
 		m_isDraggingWidget = false;
-		RegisterEventListeners();
 	}
 
-	void Circuit::CircuitInputHandler::RegisterEventListeners()
+	void CircuitInputHandler::RegisterWindowInput(Volt::Window_New& window)
 	{
-		RegisterListener<Volt::MouseMovedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseMoved));
-		RegisterListener<Volt::WindowTitlebarHittestEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnWindowTitlebarHittest));
-		RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseButtonPressed));
-		RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseButtonReleased));
+		Volt::DelegateHandle keyEventHandle = window.GetInputManager().GetOnKeyEvent().AddRaw(this, &CircuitInputHandler::OnKeyEvent, window.GetHandle());
+		m_registeredOnKeyEventWindows.insert({ window.GetHandle(), keyEventHandle });
+
+		Volt::DelegateHandle mouseEventHandle = window.GetInputManager().GetOnMouseEvent().AddRaw(this, &CircuitInputHandler::OnMouseEvent, window.GetHandle());
+		m_registeredOnMouseEventWindows.insert({ window.GetHandle(), mouseEventHandle });
 	}
+
+	void CircuitInputHandler::DeregisterWindowInput(Volt::Window_New& window)
+	{
+		VT_ENSURE(m_registeredOnKeyEventWindows.contains(window.GetHandle()));
+		VT_ENSURE(m_registeredOnMouseEventWindows.contains(window.GetHandle()));
+
+		window.GetInputManager().GetOnKeyEvent().Remove(m_registeredOnKeyEventWindows[window.GetHandle()]);
+		m_registeredOnKeyEventWindows.erase(window.GetHandle());
+
+		window.GetInputManager().GetOnMouseEvent().Remove(m_registeredOnMouseEventWindows[window.GetHandle()]);
+		m_registeredOnMouseEventWindows.erase(window.GetHandle());
+	}
+
 
 	Vector<Ref<Widget>> CircuitInputHandler::GetWidgetsUnderCursor()
 	{
@@ -189,19 +206,35 @@ namespace Circuit
 		}
 	}
 
-	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
+	void CircuitInputHandler::OnKeyEvent(const Volt::WindowInputManager::KeyEvent& keyEvent, Volt::WindowHandle windowHandle)
+	{}
+
+	void CircuitInputHandler::OnMouseEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
-		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
-		return false;
+		switch (mouseEvent.GetType())
+		{
+			case Volt::WindowInputManager::MouseEvent::Type::Press:
+				OnMousePress(mouseEvent, windowHandle);
+				break;
+			case Volt::WindowInputManager::MouseEvent::Type::Release:
+				OnMouseRelease(mouseEvent, windowHandle);
+				break;
+			case Volt::WindowInputManager::MouseEvent::Type::Move:
+				OnMouseMove(mouseEvent, windowHandle);
+				break;
+			case Volt::WindowInputManager::MouseEvent::Type::Scroll:
+				OnMouseScroll(mouseEvent, windowHandle);
+				break;
+			case Volt::WindowInputManager::MouseEvent::Type::Leave:
+				OnMouseLeaveWindow(mouseEvent, windowHandle);
+				break;
+			case Volt::WindowInputManager::MouseEvent::Type::Enter:
+				OnMouseEnterWindow(mouseEvent, windowHandle);
+				break;
+		}
 	}
 
-	bool CircuitInputHandler::OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e)
-	{
-		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
-		return false;
-	}
-
-	bool Circuit::CircuitInputHandler::OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e)
+	void CircuitInputHandler::OnMousePress(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
 		if (!m_prevHoveredWidget.IsExpired())
 		{
@@ -210,22 +243,21 @@ namespace Circuit
 			if (prevHoveredWidget)
 			{
 				WidgetInteractionData interactionData;
-				interactionData.mouseButton = e.GetMouseButton();
+				interactionData.mouseButton = mouseEvent.GetMouseCode();
 				interactionData.mousePos = m_mousePos;
 
 				prevHoveredWidget->OnPressed(interactionData);
 
 				m_draggingWidget = m_prevHoveredWidget;
-				m_dragMouseButton = e.GetMouseButton();
+				m_dragMouseButton = mouseEvent.GetMouseCode();
 				m_startDragMousePos = m_mousePos;
 			}
 		}
-		return false;
 	}
 
-	bool Circuit::CircuitInputHandler::OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e)
+	void CircuitInputHandler::OnMouseRelease(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
-		if (e.GetMouseButton() == m_dragMouseButton && !m_draggingWidget.IsExpired())
+		if (mouseEvent.GetMouseCode() == m_dragMouseButton && !m_draggingWidget.IsExpired())
 		{
 			Ref<Widget> draggingWidget = m_draggingWidget.Lock();
 
@@ -249,11 +281,45 @@ namespace Circuit
 			Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
 
 			WidgetInteractionData interactionData;
-			interactionData.mouseButton = e.GetMouseButton();
+			interactionData.mouseButton = mouseEvent.GetMouseCode();
 			interactionData.mousePos = m_mousePos;
 
 			prevHoveredWidget->OnReleased(interactionData);
 		}
+	}
+
+	void CircuitInputHandler::OnMouseMove(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	{
+		VT_LOG(Info, "MouseMoved: {}, {}", mouseEvent.GetX(), mouseEvent.GetY());
+
+
+		MouseMove(GetMouseScreenPosFromEvent(mouseEvent, windowHandle));
+	}
+
+	void CircuitInputHandler::OnMouseScroll(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	{}
+
+	void CircuitInputHandler::OnMouseLeaveWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	{}
+
+	void CircuitInputHandler::OnMouseEnterWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	{}
+
+	glm::vec2 CircuitInputHandler::GetMouseScreenPosFromEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const
+	{
+		const Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
+		return glm::vec2(mouseEvent.GetX() + window.GetPositionX(), mouseEvent.GetY() + window.GetPositionY());
+	}
+
+	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
+	{
+		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
+		return false;
+	}
+
+	bool CircuitInputHandler::OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e)
+	{
+		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
 		return false;
 	}
 }

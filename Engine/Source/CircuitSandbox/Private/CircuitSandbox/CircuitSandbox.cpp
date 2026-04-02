@@ -44,45 +44,35 @@ void CircuitSandbox::RegisterEventListeners()
 void CircuitSandbox::OnAttach()
 {
 	RegisterEventListeners();
-
-	// Create main window
-	{
-		Volt::WindowInitializer windowInitializer{};
-		windowInitializer.initialWidth = 1600;
-		windowInitializer.initialHeight = 900;
-		windowInitializer.initialPosX = 0;
-		windowInitializer.initialPosY = 0;
-		windowInitializer.enableVSync = true;
-		windowInitializer.createAsDecorated = false;
-
-		m_window = Volt::WindowManager_New::Get().CreateWindow(windowInitializer);
-	}
+	Circuit::CircuitManager::Initialize();
 
 	m_editorScene = Volt::Scene::CreateDefaultScene("New Scene", true);
 	SetupNewSceneData();
 
-	Ref<Circuit::LayoutWidget> topRow = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
-	topRow->AddFlexibleSlice(
-	CreateWidget(SceneViewWidget)
-	.Scene(m_editorScene)
-	);
-	topRow->AddFlexibleSlice(
-	CreateWidget(ViewportWidget)
-	.SceneRenderer(m_sceneRenderer)
-	.Scene(m_editorScene)
-	);
-	topRow->AddFlexibleSlice(
-	CreateWidget(InspectorWidget)
-	);
+	//create main window
+	{
+		Ref<Circuit::LayoutWidget> topRow = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
+		topRow->AddFlexibleSlice(
+		CreateWidget(SceneViewWidget)
+		.Scene(m_editorScene)
+		);
+		topRow->AddFlexibleSlice(
+		CreateWidget(ViewportWidget)
+		.SceneRenderer(m_sceneRenderer)
+		.Scene(m_editorScene)
+		);
+		topRow->AddFlexibleSlice(
+		CreateWidget(InspectorWidget)
+		);
 
-	Ref<Circuit::LayoutWidget> rootLayout = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Vertical);
-	rootLayout->AddFlexibleSlice(topRow);
-	rootLayout->AddFixedSlice(
-	CreateWidget(AssetBrowserWidget),
-	300.f
-	);
-
-	Circuit::CircuitManager::Initialize(rootLayout, m_window);
+		Ref<Circuit::LayoutWidget> rootLayout = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Vertical);
+		rootLayout->AddFlexibleSlice(topRow);
+		rootLayout->AddFixedSlice(
+		CreateWidget(AssetBrowserWidget),
+		300.f
+		);
+		Circuit::CircuitManager::Get().CreateWindow(rootLayout);
+	}
 
 	constexpr float fov = glm::radians(60.f);
 	constexpr float nearPlane = 1.f;

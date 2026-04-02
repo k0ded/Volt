@@ -13,6 +13,7 @@
 namespace Volt
 {
 	class WindowRenderEvent_New;
+	class WindowCloseEvent_New;
 
 	class Window;
 }
@@ -31,23 +32,26 @@ namespace Circuit
 		~CircuitManager() = default;
 
 		CIRCUIT_API static CircuitManager& Get();
-		CIRCUIT_API static void Initialize(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle);
+		CIRCUIT_API static void Initialize();
 		CIRCUIT_API static void Shutdown();
 
 		CIRCUIT_API void Update();
 
 		CIRCUIT_API Vector<Weak<CircuitWindow>> GetWindows();
 
+		CIRCUIT_API Weak<CircuitWindow> CreateWindow(Ref<Widget> contentWidget);
+
+
+
 		//CIRCUIT_API CircuitWindow& OpenWindow(OpenWindowParams& params);  
 	private:
 		CIRCUIT_API inline static Unique<CircuitManager> s_Instance = nullptr;
 
-		void Init(Ref<Widget> mainWindowWidget, Volt::WindowHandle windowHandle);
+		void Init();
 		void RegisterEventListeners();
 
 		bool OnRenderEvent(Volt::WindowRenderEvent_New& e);
-
-		void RegisterWindow(Volt::WindowHandle handle);
+		bool OnWindowClosed(Volt::WindowCloseEvent_New& e);
 
 		static int32_t TestingStaticDelegates(float aParameter);
 		int32_t TestingRawDelegates(float aParameter);
