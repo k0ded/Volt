@@ -308,6 +308,7 @@ namespace Volt
 				break;
 			}
 
+			case WM_NCMOUSEMOVE:
 			case WM_MOUSEMOVE:
 			{
 				POINTS pt = MAKEPOINTS(lParam);
@@ -330,12 +331,14 @@ namespace Volt
 				break;
 			}
 
+			case WM_NCLBUTTONDOWN:
 			case WM_LBUTTONDOWN:
 			{
 				OnMouseButtonPressed(InputCode::Mouse_LB);
 				break;
 			}
 
+			case WM_NCRBUTTONDOWN:
 			case WM_RBUTTONDOWN:
 			{
 				OnMouseButtonPressed(InputCode::Mouse_RB);
@@ -348,13 +351,14 @@ namespace Volt
 				break;
 			}
 
-
+			case WM_NCLBUTTONUP:
 			case WM_LBUTTONUP:
 			{
 				OnMouseButtonReleased(InputCode::Mouse_LB);
 				break;
 			}
 
+			case WM_NCRBUTTONUP:
 			case WM_RBUTTONUP:
 			{
 				OnMouseButtonReleased(InputCode::Mouse_RB);

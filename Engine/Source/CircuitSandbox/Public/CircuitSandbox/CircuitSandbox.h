@@ -3,6 +3,7 @@
 #include <Volt-Application/ApplicationLayer.h>
 
 #include <WindowModule/WindowHandle.h>
+#include <WindowModule/Events/WindowEvents_New.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -38,6 +39,7 @@ private:
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
+	bool OnWindowCloseEvent(Volt::WindowCloseEvent_New& e);
 	
 	bool m_isInitialized = false;
 

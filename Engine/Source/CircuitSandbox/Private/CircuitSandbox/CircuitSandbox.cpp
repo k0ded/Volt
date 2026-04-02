@@ -16,6 +16,8 @@
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
+#include <Volt-Application/BaseApplication.h>
+
 #include <Volt-Scene/Scene.h>
 #include <Circuit/Widgets/Layout/LayoutWidget.h>
 
@@ -125,6 +127,15 @@ bool CircuitSandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 		m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
 	}
 
+	return false;
+}
+
+bool CircuitSandbox::OnWindowCloseEvent(Volt::WindowCloseEvent_New& e)
+{
+	if (e.GetWindow().GetHandle() == m_window)
+	{
+		Volt::BaseApplication::Get().Quit();
+	}
 	return false;
 }
 
