@@ -9,8 +9,6 @@
 #include "Circuit/Reply.h"
 #include "Circuit/WidgetInteractionData.h"
 
-#include <InputModule/Events/MouseEvents.h>
-
 #include <CoreUtilities/Containers/Queue.h>
 #include <CoreUtilities/Delegates/Delegate.h>
 
@@ -19,6 +17,7 @@
 #include <WindowModule/Window_New.h>
 #include <WindowModule/WindowInputManager.h>
 #include <WindowModule/WindowManager_New.h>
+#include <WindowModule/WindowInputEvents.h>
 
 #include <LogModule/Log.h>
 
@@ -206,35 +205,35 @@ namespace Circuit
 		}
 	}
 
-	void CircuitInputHandler::OnKeyEvent(const Volt::WindowInputManager::KeyEvent& keyEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnKeyEvent(const Volt::KeyEvent& keyEvent, Volt::WindowHandle windowHandle)
 	{}
 
-	void CircuitInputHandler::OnMouseEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseEvent(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
 		switch (mouseEvent.GetType())
 		{
-			case Volt::WindowInputManager::MouseEvent::Type::Press:
+			case Volt::MouseEvent::Type::Press:
 				OnMousePress(mouseEvent, windowHandle);
 				break;
-			case Volt::WindowInputManager::MouseEvent::Type::Release:
+			case Volt::MouseEvent::Type::Release:
 				OnMouseRelease(mouseEvent, windowHandle);
 				break;
-			case Volt::WindowInputManager::MouseEvent::Type::Move:
+			case Volt::MouseEvent::Type::Move:
 				OnMouseMove(mouseEvent, windowHandle);
 				break;
-			case Volt::WindowInputManager::MouseEvent::Type::Scroll:
+			case Volt::MouseEvent::Type::Scroll:
 				OnMouseScroll(mouseEvent, windowHandle);
 				break;
-			case Volt::WindowInputManager::MouseEvent::Type::Leave:
+			case Volt::MouseEvent::Type::Leave:
 				OnMouseLeaveWindow(mouseEvent, windowHandle);
 				break;
-			case Volt::WindowInputManager::MouseEvent::Type::Enter:
+			case Volt::MouseEvent::Type::Enter:
 				OnMouseEnterWindow(mouseEvent, windowHandle);
 				break;
 		}
 	}
 
-	void CircuitInputHandler::OnMousePress(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMousePress(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
 		if (!m_prevHoveredWidget.IsExpired())
 		{
@@ -255,7 +254,7 @@ namespace Circuit
 		}
 	}
 
-	void CircuitInputHandler::OnMouseRelease(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseRelease(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
 		if (mouseEvent.GetMouseCode() == m_dragMouseButton && !m_draggingWidget.IsExpired())
 		{
@@ -288,7 +287,7 @@ namespace Circuit
 		}
 	}
 
-	void CircuitInputHandler::OnMouseMove(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseMove(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
 		VT_LOG(Info, "MouseMoved: {}, {}", mouseEvent.GetX(), mouseEvent.GetY());
 
@@ -296,30 +295,18 @@ namespace Circuit
 		MouseMove(GetMouseScreenPosFromEvent(mouseEvent, windowHandle));
 	}
 
-	void CircuitInputHandler::OnMouseScroll(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseScroll(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{}
 
-	void CircuitInputHandler::OnMouseLeaveWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseLeaveWindow(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{}
 
-	void CircuitInputHandler::OnMouseEnterWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
+	void CircuitInputHandler::OnMouseEnterWindow(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{}
 
-	glm::vec2 CircuitInputHandler::GetMouseScreenPosFromEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const
+	glm::vec2 CircuitInputHandler::GetMouseScreenPosFromEvent(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const
 	{
 		const Volt::Window_New& window = Volt::WindowManager_New::Get().GetWindow(windowHandle);
 		return glm::vec2(mouseEvent.GetX() + window.GetPositionX(), mouseEvent.GetY() + window.GetPositionY());
-	}
-
-	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
-	{
-		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
-		return false;
-	}
-
-	bool CircuitInputHandler::OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e)
-	{
-		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
-		return false;
 	}
 }

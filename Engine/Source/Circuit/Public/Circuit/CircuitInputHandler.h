@@ -11,19 +11,16 @@
 #include <CoreUtilities/Pointers/Weak.h>
 
 #include <WindowModule/WindowHandle.h>
-#include <WindowModule/WindowInputManager.h>
 
 #include <unordered_set>
 
 namespace Volt
 {
-	class MouseMovedEvent;
-	class MouseButtonPressedEvent;
-	class MouseButtonReleasedEvent;
-	class WindowTitlebarHittestEvent;
-
 	class WindowInputManager;
 	class Window_New;
+
+	class KeyEvent;
+	class MouseEvent;
 }
 namespace Circuit
 {
@@ -45,20 +42,17 @@ namespace Circuit
 
 		void MouseMove(const glm::vec2 mouseScreenPos);
 
-		void OnKeyEvent(const Volt::WindowInputManager::KeyEvent& keyEvent, Volt::WindowHandle windowHandle);
-		void OnMouseEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnKeyEvent(const Volt::KeyEvent& keyEvent, Volt::WindowHandle windowHandle);
+		void OnMouseEvent(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
 
-		void OnMousePress(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
-		void OnMouseRelease(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
-		void OnMouseMove(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
-		void OnMouseScroll(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
-		void OnMouseLeaveWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
-		void OnMouseEnterWindow(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMousePress(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseRelease(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseMove(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseScroll(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseLeaveWindow(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
+		void OnMouseEnterWindow(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle);
 
-		glm::vec2 GetMouseScreenPosFromEvent(const Volt::WindowInputManager::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const;
-
-		bool OnMouseMoved(Volt::MouseMovedEvent& e);
-		bool OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e);
+		glm::vec2 GetMouseScreenPosFromEvent(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle) const;
 
 		glm::vec2 m_mousePos;
 
