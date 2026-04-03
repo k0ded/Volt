@@ -1,6 +1,7 @@
 #include "vtapppch.h"
 
 #include "Volt-Application/Application_New.h"
+#include "Volt-Application/ApplicationRenderer.h"
 
 #include <WindowModule/WindowManager_New.h>
 
@@ -29,6 +30,9 @@ namespace Volt
 		// Get the window manager
 		m_windowManager = m_subSystemManager->GetSubSystem<WindowManager_New>();
 		m_windowManager->GetOnAnyWindowRepaint().AddRaw(this, &Application_New::OnAnyWindowRepaint);
+
+		// Get the renderer
+		m_renderer = m_subSystemManager->GetSubSystem<ApplicationRenderer>();
 
 		// Create the application event listener.
 		m_eventListener = CreateUnique<ApplicationEventListener>(*this);
@@ -98,13 +102,11 @@ namespace Volt
 
 	void Application_New::RenderApplication()
 	{
-		VT_PROFILE_SCOPE("Application::Render");
-
-		AppPreRenderEvent preRenderEvent(m_frameIndex);
-		EventSystem::DispatchEvent(preRenderEvent);
-
-		AppRenderEvent renderEvent(m_currentDeltaTime);
-		EventSystem::DispatchEvent(renderEvent);
+		if (m_renderer)
+		{
+			VT_PROFILE_SCOPE("Application::Render");
+			m_renderer->Render(m_currentDeltaTime, m_frameIndex);
+		}
 	}
 
 	void Application_New::EngineLoop()

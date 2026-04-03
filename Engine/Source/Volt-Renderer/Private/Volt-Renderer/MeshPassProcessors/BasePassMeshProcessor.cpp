@@ -3,7 +3,7 @@
 #include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
 #include "Volt-Renderer/Material/RenderMaterial.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/MainMaterialShaders.h"
 
 #include <RenderCore/Shader/ShaderMap.h>

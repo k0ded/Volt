@@ -7,7 +7,7 @@
 #include "Volt-Renderer/SceneRendererRenderGraphData.h"
 #include "Volt-Renderer/RenderScene.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/Camera/Camera.h"
 #include "Volt-Renderer/ShapeLibrary.h"
 #include "Volt-Renderer/SystemTextures.h"

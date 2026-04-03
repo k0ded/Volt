@@ -4,7 +4,7 @@
 
 #include <Volt-Assets/StreamingManager.h>
 
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 
 namespace Volt
 {

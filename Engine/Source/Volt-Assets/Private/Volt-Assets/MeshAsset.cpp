@@ -4,7 +4,7 @@
 #include "Volt-Assets/MaterialAsset.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
@@ -39,7 +39,7 @@ namespace Volt
 					}
 					else
 					{
-						renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+						renderMaterial = RendererUtilities::GetDefaultResources().defaultMaterial;
 					}
 					m_mesh->SetMaterial(renderMaterial, i);
 					break;
@@ -54,7 +54,7 @@ namespace Volt
 				if (materialHandle == dependencyHandle)
 				{
 					m_materials[i] = Asset::Null();
-					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, i);
+					m_mesh->SetMaterial(RendererUtilities::GetDefaultResources().defaultMaterial, i);
 					break;
 				}
 			}
@@ -87,7 +87,7 @@ namespace Volt
 				}
 				else
 				{
-					renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+					renderMaterial = RendererUtilities::GetDefaultResources().defaultMaterial;
 				}
 
 				if (materialAsset.IsValid())
@@ -149,7 +149,7 @@ namespace Volt
 			}
 			else
 			{
-				renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+				renderMaterial = RendererUtilities::GetDefaultResources().defaultMaterial;
 			}
 			meshInitializer.AddMaterial(renderMaterial, i);
 		}

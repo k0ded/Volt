@@ -1,7 +1,7 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/Utility/ImageUtility.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 
 #include <RenderCore/CommandBufferPool.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
@@ -59,7 +59,7 @@ namespace Volt::ImageUtility
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		IntRef<RHI::ComputePipeline> pipeline = PipelineStateCache::GetComputePipeline(Renderer::GetDefaultResources().generateMipMapsShader);
+		IntRef<RHI::ComputePipeline> pipeline = PipelineStateCache::GetComputePipeline(RendererUtilities::GetDefaultResources().generateMipMapsShader);
 
 		STRING_HASH_CONSTEXPR StringHash SourceMipStringHash = StringHash::Construct("SourceMip");
 		STRING_HASH_CONSTEXPR StringHash DestinationMipStringHash = StringHash::Construct("RWDstMip");

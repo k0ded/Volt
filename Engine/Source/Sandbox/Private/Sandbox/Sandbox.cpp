@@ -55,9 +55,9 @@
 #include <InputModule/InputCodes.h>
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/SceneEvents.h>
 #include <Volt-Scene/EntityDescCustomMetadata.h>
 #include <Volt-Scene/EntityDescSerialization.h>
+#include <Volt-Scene/SceneManager.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -106,6 +106,7 @@ void Sandbox::OnAttach()
 	RegisterEventListeners();
 
 	g_editorAssetManager = CreateUnique<EditorAssetManager>(*g_assetManager);
+	m_sceneManager = SubSystemManager::GetSubSystem<Volt::SceneManager>();
 
 	SelectionManager::Initialize();
 	EditorResources::Initialize();
@@ -281,15 +282,13 @@ void Sandbox::SetupNewSceneData()
 
 	// Scene Renderers
 	{
-		Volt::SceneRendererCreateInfo spec{};
-		Volt::SceneRendererCreateInfo gameSpec{};
+		Volt::SceneRendererInitializer spec{};
+		Volt::SceneRendererInitializer gameSpec{};
 
 		spec.debugName = "Editor Viewport";
-		spec.renderScene = m_runtimeScene->GetRenderScene();
 		spec.drawDebug = true;
 
 		gameSpec.debugName = "Game Viewport";
-		gameSpec.renderScene = m_runtimeScene->GetRenderScene();
 
 		if (m_sceneRenderer)
 		{
@@ -301,7 +300,9 @@ void Sandbox::SetupNewSceneData()
 			gameSpec.initialResolution = { m_gameSceneRenderer->GetFinalImage()->GetWidth(), m_gameSceneRenderer->GetFinalImage()->GetHeight() };
 		}
 
-		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+		m_sceneRenderer = m_sceneContainer->AttachSceneRenderer(spec);
+		m_sceneRenderer->SetCamera(m_editorCameraController->GetCamera());
+
 		auto gridExt = m_sceneRenderer->AddExtension<GridSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
 		gridExt->GetIsEnabledDelegate().BindLambda([]() 
 		{
@@ -312,11 +313,8 @@ void Sandbox::SetupNewSceneData()
 		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
 		m_debugSceneRendererExtension = m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);
 
-		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);
+		m_gameSceneRenderer = m_sceneContainer->AttachSceneRenderer(gameSpec);
 	}
-
-	Volt::OnSceneLoadedEvent loadEvent{ m_runtimeScene };
-	Volt::EventSystem::DispatchEvent(loadEvent);
 }
 
 void Sandbox::InitializeModals()
@@ -382,17 +380,11 @@ void Sandbox::OnScenePlay()
 	m_gameViewPanel->Focus();
 
 	m_runtimeScene->OnRuntimeStart();
-
-	Volt::OnScenePlayEvent playEvent{};
-	Volt::EventSystem::DispatchEvent(playEvent);
 }
 
 void Sandbox::OnSceneStop()
 {
 	SelectionManager::DeselectAll();
-
-	Volt::OnSceneStopEvent stopEvent{};
-	Volt::EventSystem::DispatchEvent(stopEvent);
 
 	m_runtimeScene->OnRuntimeEnd();
 
@@ -434,9 +426,6 @@ void Sandbox::OnSimulationStop()
 {
 	SelectionManager::DeselectAll();
 
-	Volt::OnSceneStopEvent stopEvent{};
-	Volt::EventSystem::DispatchEvent(stopEvent);
-
 	m_runtimeScene->OnSimulationEnd();
 	m_runtimeScene = m_intermediateScene;
 	m_sceneState = SceneState::Edit;
@@ -453,7 +442,8 @@ void Sandbox::NewScene()
 
 	SelectionManager::DeselectAll();
 
-	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
+	m_sceneContainer = m_sceneManager->CreateScene("New Scene");
+	m_runtimeScene = m_sceneContainer->GetScene();
 
 	SetupNewSceneData();
 }
@@ -526,14 +516,14 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		}
 	}
 
-
 	SelectionManager::DeselectAll();
 
 	//load new scene
 	if (!isSameScene)
 	{
-		AssetReference<Volt::Scene> newScene = g_assetManager->GetAssetImmediately<Volt::Scene>(sceneHandle);
-		if (!newScene)
+		Volt::SceneContainer* newSceneContainer = m_sceneManager->LoadScene(sceneHandle);
+
+		if (!newSceneContainer)
 		{
 			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
 
@@ -543,7 +533,13 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 			return;
 		}
 
-		m_runtimeScene = newScene;
+		if (m_sceneContainer)
+		{
+			m_sceneManager->UnloadAndFreeScene(m_sceneContainer);
+		}
+
+		m_sceneContainer = newSceneContainer;
+		m_runtimeScene = newSceneContainer->GetScene();
 	}
 	else
 	{
@@ -597,9 +593,7 @@ void Sandbox::RegisterEventListeners()
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnUpdateEvent), isInitializedPred);
 	RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnImGuiUpdateEvent), isInitializedPred);
-	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(Sandbox::OnRenderEvent), isInitializedPred);
 	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(Sandbox::OnKeyPressedEvent), isInitializedPred);
-	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
 
 	RegisterListener<Volt::WindowTitlebarHittestEvent>([&](Volt::WindowTitlebarHittestEvent& e)
 	{
@@ -626,6 +620,10 @@ bool Sandbox::PromptUnloadCurrentScene()
 
 	m_runtimeScene->UnloadEntities();
 	m_runtimeScene.Reset();
+
+	m_sceneManager->UnloadAndFreeScene(m_sceneContainer);
+	m_sceneContainer = nullptr;
+
 	return true;
 }
 
@@ -637,6 +635,11 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	auto mousePos = Volt::Input::GetMousePosition();
 	Volt::Input::SetViewportMousePosition(m_gameViewPanel->GetViewportLocalPosition(mousePos));
+
+	if (m_gameSceneRenderer)
+	{
+		m_gameSceneRenderer->SetEnabled(m_gameViewPanel->IsOpen());
+	}
 
 	if (m_runtimeScene)
 	{
@@ -658,6 +661,46 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 				case SceneState::Simulating:
 					m_runtimeScene->UpdateSimulation(e.GetTimestep());
 					break;
+			}
+
+			switch (m_sceneState)
+			{
+				case SceneState::Edit:
+				case SceneState::Play:
+				case SceneState::Pause:
+				case SceneState::Simulating:
+				{
+					if (!m_gameSceneRenderer)
+					{
+						break;
+					}
+
+					Volt::Entity cameraEntity{};
+					int32_t highestPrio = -1;
+
+					m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
+					{
+						if ((int32_t)camComp.priority > highestPrio)
+						{
+							highestPrio = (int32_t)camComp.priority;
+							cameraEntity = { id, m_runtimeScene->GetEntityScene() };
+						}
+					});
+
+					if (!cameraEntity)
+					{
+						break;
+					}
+
+					const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
+					const auto finalImage = m_gameSceneRenderer->GetFinalImage();
+
+					Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
+					camera->SetPosition(cameraEntity.GetPosition());
+					camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
+
+					m_gameSceneRenderer->SetCamera(camera);
+				}
 			}
 		}
 
@@ -708,90 +751,12 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 	return false;
 }
 
-void Sandbox::RenderGameView(float timestep)
-{
-	if (!m_gameViewPanel->IsOpen() || !m_gameSceneRenderer)
-	{
-		return;
-	}
-
-	switch (m_sceneState)
-	{
-		case SceneState::Edit:
-		case SceneState::Play:
-		case SceneState::Pause:
-		case SceneState::Simulating:
-		{
-			if (!m_runtimeScene)
-			{
-				break;
-			}
-
-			if (!m_runtimeScene->IsFinishedLoadingEntities())
-			{
-				break;
-			}
-
-			Volt::Entity cameraEntity{};
-			int32_t highestPrio = -1;
-
-			m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
-			{
-				if ((int32_t)camComp.priority > highestPrio)
-				{
-					highestPrio = (int32_t)camComp.priority;
-					cameraEntity = { id, m_runtimeScene->GetEntityScene() };
-				}
-			});
-
-			if (!cameraEntity)
-			{
-				break;
-			}
-
-			const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
-			const auto finalImage = m_gameSceneRenderer->GetFinalImage();
-
-			Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
-			camera->SetPosition(cameraEntity.GetPosition());
-			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
-
-			m_gameSceneRenderer->OnRenderEditor(camera, timestep);
-			break;
-		}
-	}
-}
-
 void Sandbox::DrawDebug()
 {
 	m_debugRenderer.Reset();
 	m_visProxyContextManagers.clear();
 
 	DrawEntityGizmos();
-}
-
-bool Sandbox::OnRenderEvent(Volt::AppRenderEvent& e)
-{
-	VT_PROFILE_FUNCTION();
-
-	DrawDebug();
-
-	switch (m_sceneState)
-	{
-		case SceneState::Edit:
-		case SceneState::Play:
-		case SceneState::Pause:
-		case SceneState::Simulating:
-			if (m_sceneRenderer)
-			{
-				m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
-			}
-			break;
-	}
-
-	RenderGameView(e.GetTimestep());
-
-	return false;
 }
 
 bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
@@ -924,21 +889,6 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		default:
 			break;
 	}
-
-	return false;
-}
-
-bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
-{
-	m_sceneRenderer->Resize(m_viewportSize.x, m_viewportSize.y);
-
-	if (m_gameSceneRenderer)
-	{
-		m_gameSceneRenderer->Resize(m_viewportSize.x, m_viewportSize.y);
-	}
-
-	AssetReference<Volt::Scene> scene = e.GetScene();
-	scene->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
 
 	return false;
 }

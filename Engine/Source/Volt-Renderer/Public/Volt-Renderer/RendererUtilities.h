@@ -7,17 +7,11 @@
 #include <AssetSystem/AssetHandle.h>
 #include <AssetSystem/AssetReference.h>
 
-#include <RenderCore/TransientResourceSystem/TransientResourceAllocator.h>
-#include <RenderCore/CommandBufferPool.h>
-#include <RenderCore/SamplerStateCache.h>
-
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RHICommon.h>
 
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
-
-#include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
 
@@ -71,7 +65,7 @@ namespace Volt
 	class AppPostFrameUpdateEvent;
 	class AppPreRenderEvent;
 
-	class VTR_API Renderer : public SubSystem, public EventListener
+	class VTR_API RendererUtilities : public SubSystem
 	{
 	public:
 		struct EnvironmentTextures
@@ -80,11 +74,11 @@ namespace Volt
 			IntRef<RHI::Image> specular;
 		};
 
-		Renderer();
-		~Renderer() override;
+		RendererUtilities();
+		~RendererUtilities() override;
 
-		Renderer(const Renderer&) = delete;
-		Renderer& operator=(const Renderer&) = delete;
+		RendererUtilities(const RendererUtilities&) = delete;
+		RendererUtilities& operator=(const RendererUtilities&) = delete;
 
 		void Initialize() override;
 		void CreateBlueNoise();
@@ -99,21 +93,13 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{2E420D68-01AC-47D5-B7F4-F31F13D57ABF}"_guid);
 
 	private:
-		bool OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event);
-		bool OnPreRenderEvent(AppPreRenderEvent& event);
-
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
 
-		inline static Renderer* s_instance = nullptr;
+		inline static RendererUtilities* s_instance = nullptr;
 
 		DefaultResources m_defaultResources;
 
 		Unique<BlueNoise> m_blueNoise;
-		Unique<SamplerStateCache> m_samplerStateCache;
-		Unique<CommandBufferPool> m_commandBufferPool;
-		Unique<TransientResourceAllocator> m_transientResourceAllocator;
-
-		uint32_t m_frameIndex = 0;
 	};
 }

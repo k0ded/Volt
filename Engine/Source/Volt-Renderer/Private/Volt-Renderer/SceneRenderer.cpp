@@ -4,7 +4,7 @@
 #include "Volt-Renderer/Camera/Camera.h"
 #include "Volt-Renderer/RenderScene.h"
 #include "Volt-Renderer/RendererCommon.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/ShapeLibrary.h"
@@ -38,6 +38,7 @@
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/DefaultBlendStates.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -51,19 +52,37 @@ namespace Volt
 {
 	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
 
-	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
-		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo),
-		m_meshPassProcessorRegistry(createInfo.renderScene.GetRaw())
+	SceneRenderer::SceneRenderer(const SceneRendererInitializer& initializer)
+		: m_renderScene(initializer.renderScene), m_initializer(initializer),
+		m_meshPassProcessorRegistry(initializer.renderScene.GetRaw())
 	{
-		m_resizeWidth = createInfo.initialResolution.x;
-		m_resizeHeight = createInfo.initialResolution.y;
-		m_width = createInfo.initialResolution.x;
-		m_height = createInfo.initialResolution.y;
+		m_resizeWidth = initializer.initialResolution.x;
+		m_resizeHeight = initializer.initialResolution.y;
+		m_width = initializer.initialResolution.x;
+		m_height = initializer.initialResolution.y;
 
-		CreateMainRenderTarget(createInfo.initialResolution.x, createInfo.initialResolution.y);
+		CreateMainRenderTarget(initializer.initialResolution.x, initializer.initialResolution.y);
 
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	
+		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
+
+		AddMeshPassProcessors();
+	}
+
+	SceneRenderer::SceneRenderer(const SceneRendererInitializer& initializer, Ref<RenderScene> renderScene)
+		: m_renderScene(renderScene), m_initializer(initializer),
+		m_meshPassProcessorRegistry(renderScene.GetRaw())
+	{
+		m_resizeWidth = initializer.initialResolution.x;
+		m_resizeHeight = initializer.initialResolution.y;
+		m_width = initializer.initialResolution.x;
+		m_height = initializer.initialResolution.y;
+
+		CreateMainRenderTarget(initializer.initialResolution.x, initializer.initialResolution.y);
+
+		m_skyboxMesh = ShapeLibrary::GetCube();
+
 		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
 
 		AddMeshPassProcessors();
@@ -80,11 +99,6 @@ namespace Volt
 		}
 	}
 
-	void SceneRenderer::OnRenderEditor(Ref<Camera> camera, float timestep)
-	{
-		OnRender(camera, timestep);
-	}
-
 	void SceneRenderer::Resize(const uint32_t width, const uint32_t height)
 	{
 		m_resizeWidth = width;
@@ -98,9 +112,20 @@ namespace Volt
 		return m_outputImage;
 	}
 
-	void SceneRenderer::OnRender(Ref<Camera> camera, float timestep)
+	void SceneRenderer::SetEnabled(bool enabled)
 	{
+		m_isEnabled = enabled;
+	}
+
+	void SceneRenderer::OnRender(float timestep)
+	{
+		if (!m_isEnabled)
+		{
+			return;
+		}
+
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(m_camera != nullptr, "No camera has been set!");
 
 		if (m_shouldResize)
 		{
@@ -129,17 +154,15 @@ namespace Volt
 		{
 			m_prevJitter = m_currentJitter;
 			m_currentJitter = m_taaNoise.Get(m_frameIndex, { m_width, m_height });
-			camera->SetSubpixelOffset(m_currentJitter);
+			m_camera->SetSubpixelOffset(m_currentJitter);
 		}
-
-		m_renderScene->Update(renderGraph);
 
 		RenderView renderView;
 		renderView.width = m_width;
 		renderView.height = m_height;
-		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
+		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, m_camera);
 		renderView.frameIndex = m_frameIndex;
-		renderView.camera = camera;
+		renderView.camera = m_camera;
 		renderView.renderScene = m_renderScene;
 
 		AddDefaultTextures(renderGraph, blackboard);
@@ -193,9 +216,7 @@ namespace Volt
 
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 
-		m_renderScene->RenderDebug(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
-		m_renderScene->EndFrame(renderGraph);
-
+		//m_renderScene->RenderDebug(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
 
 		renderGraph.Compile();
 		m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
@@ -208,8 +229,8 @@ namespace Volt
 	void SceneRenderer::AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
 		DefaultTextures& defaultTextures = blackboard.Add<DefaultTextures>();
-		defaultTextures.white1x1 = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().white1x1);
-		defaultTextures.black1x1Cube = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+		defaultTextures.white1x1 = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().white1x1);
+		defaultTextures.black1x1Cube = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().blackCubeTexture);
 	}
 
 	void SceneRenderer::AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
@@ -219,7 +240,7 @@ namespace Volt
 		EnvironmentTextures& environmentTextures = blackboard.Add<EnvironmentTextures>();
 		environmentTextures.irradiance = defaultTextures.black1x1Cube;
 		environmentTextures.radiance = defaultTextures.black1x1Cube;
-		environmentTextures.DFGLuT = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().DFGLuT);
+		environmentTextures.DFGLuT = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().DFGLuT);
 
 		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
 		{
@@ -274,7 +295,7 @@ namespace Volt
 
 		if (!directionalShadowMap)
 		{
-			directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+			directionalShadowMap = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().blackCubeTexture);
 		}
 
 		passParameters->PS.CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
@@ -695,7 +716,7 @@ namespace Volt
 
 			if (!directionalShadowMap)
 			{
-				directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+				directionalShadowMap = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().blackCubeTexture);
 			}
 
 			passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
@@ -714,7 +735,7 @@ namespace Volt
 		{
 			if (!indirectLightTexture)
 			{
-				indirectLightTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().black1x1);
+				indirectLightTexture = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().black1x1);
 			}
 
 			CompositeLightingCS::Parameters* passParameters = renderGraph.AllocParameters<CompositeLightingCS::Parameters>();
@@ -729,11 +750,6 @@ namespace Volt
 				RenderGraphPassFlags::None,
 				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 		}
-	}
-
-	void SceneRenderer::Enable()
-	{
-		m_enabled = true;
 	}
 
 	const uint64_t SceneRenderer::GetFrameTotalGPUAllocationSize() const

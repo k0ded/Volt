@@ -150,7 +150,7 @@ namespace Volt
 		void BindToMaterialCompiledDelegate();
 		void OnMaterialCompiled(AssetHandle materialHandle);
 
-		bool OnPreRenderEvent(AppPreRenderEvent& event);
+		bool OnUpdateEvent(AppUpdateEvent& event);
 
 		bool IsValidAssetHandle(AssetHandle assetHandle) const;
 

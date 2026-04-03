@@ -9,7 +9,7 @@
 #include <Volt-Application/UI/UIScopedHelpers.h>
 #include <Volt-Application/UI/UIProperties.h>
 
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
 #include <AssetSystem/SourceAssetManager.h>
@@ -134,7 +134,7 @@ void TextureImportModal::Import(const Filesystem::Path& filepath, const Filesyst
 			Volt::JobRef job = Volt::JobSystem::CreateJob("Generate Environment Texture", Volt::ExecutionPriority::Latent,
 			[textureHandle, importConfig]()
 			{
-				Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(textureHandle);
+				Volt::RendererUtilities::EnvironmentTextures envTextures = Volt::RendererUtilities::GenerateEnvironmentTextures(textureHandle);
 				g_assetManager->CreateAssetAndFile<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, envTextures.diffuse, envTextures.specular);
 			});
 

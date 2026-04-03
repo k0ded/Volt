@@ -2,9 +2,10 @@
 #include "Volt-Renderer/BlueNoise.h"
 
 #include "Volt-Renderer/Texture/Texture2D.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <AssetSystem/AssetManager.h>
 

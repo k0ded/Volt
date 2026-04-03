@@ -1,7 +1,7 @@
 #include "vrpch.h"
 #include "Volt-Renderer/UISceneRenderer.h"
 
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/Utility/StagedBufferUpload.h"
 
 #include "Volt-Renderer/Texture/Texture2D.h"
@@ -104,7 +104,7 @@ namespace Volt
 	};
 
 	UISceneRenderer::UISceneRenderer(const UISceneRendererSpecification& specification)
-		: m_scene(specification.scene), m_isEditor(specification.isEditor), m_commandBufferSet(Renderer::GetFramesInFlight())
+		: m_scene(specification.scene), m_isEditor(specification.isEditor), m_commandBufferSet(RendererUtilities::GetFramesInFlight())
 	{
 
 	}

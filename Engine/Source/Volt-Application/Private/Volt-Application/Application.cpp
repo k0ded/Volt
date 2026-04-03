@@ -1,11 +1,12 @@
 #include "vtapppch.h"
 #include "Volt-Application/Application.h"
+#include "Volt-Application/ApplicationRenderer.h"
 #include "Volt-Application/UI/ImGuiSubSystem.h"
 #include "Volt-Application/UI/FileDialogueHelpers.h"
 
 #include <CoreModule/Project/ProjectManager.h>
 
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -72,10 +73,6 @@ namespace Volt
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 
-		//TODO: this is a hack because we dont have access to the AssetManager in all application types
-		Renderer* rendererSubsystem = SubSystemManager::GetSubSystem<Renderer>();
-		rendererSubsystem->CreateBlueNoise();
-
 		//Init AudioEngine
 		{
 			//Filesystem::Path defaultPath = ProjectManager::GetAudioBanksDirectory();
@@ -106,6 +103,7 @@ namespace Volt
 
 		m_scriptingSystem = CreateUnique<ScriptingSystem>();
 		m_eventListener = CreateUnique<ApplicationEventListener>(*this);
+		m_renderer = SubSystemManager::GetSubSystem<ApplicationRenderer>();
 
 		SetupFrameCapture();
 	}
@@ -250,6 +248,8 @@ namespace Volt
 
 			AppRenderEvent renderEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(renderEvent);
+
+			m_renderer->Render(m_currentDeltaTime, m_frameIndex);
 		}
 
 		{

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/SceneRendererStructs.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/RenderingTechniques/TAANoise.h"
@@ -58,7 +58,7 @@ namespace Volt
 		END_SHADER_PARAMETER_STRUCT()
 	};
 
-	struct SceneRendererCreateInfo
+	struct SceneRendererInitializer
 	{
 		String debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
@@ -93,21 +93,24 @@ namespace Volt
 			TAA
 		};
 
-		SceneRenderer(const SceneRendererCreateInfo& specification);
+		SceneRenderer(const SceneRendererInitializer& specification);
+		SceneRenderer(const SceneRendererInitializer& specification, Ref<RenderScene> renderScene);
 		~SceneRenderer() override;
 
-		void OnRenderEditor(Ref<Camera> camera, float timestep);
+		void OnRender(float timestep);
 
 		void Resize(const uint32_t width, const uint32_t height);
 
 		inline void SetVisualizationMode(VisualizationMode visualizationMode) { m_visualizationMode = visualizationMode; }
 		inline VisualizationMode GetVisualizationMode2() const { return m_visualizationMode; }
 
+		inline void SetCamera(Ref<Camera> camera) { VT_ASSERT(camera != nullptr); m_camera = camera; }
+
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		IntRef<RHI::Image> GetFinalImage();
 
-		void Enable();
+		void SetEnabled(bool enabled);
 
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
@@ -116,8 +119,6 @@ namespace Volt
 
 	private:
 		using SceneRendererExtensionMap = Map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
-
-		void OnRender(Ref<Camera> camera, float timestep);
 
 		///// Render Passes /////
 		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
@@ -143,12 +144,13 @@ namespace Volt
 		bool OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event);
 		RGTextureRef ExecuteSceneRendererExtensions(SceneRendererExtensionStage stage, RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage);
 
-		bool m_enabled = false;
+		bool m_isEnabled = true;
 
 		IntRef<RHI::Image> m_outputImage;
 		IntRef<RHI::Image> m_previousColorImage;
 
 		Ref<Mesh> m_skyboxMesh;
+		Ref<Camera> m_camera;
 
 		bool m_shouldResize = false;
 
@@ -171,7 +173,7 @@ namespace Volt
 		JobCounterRef m_renderGraphExecutionCounter = nullptr;
 
 		RenderGraphDebugger m_renderGraphDebugger;
-		SceneRendererCreateInfo m_createInfo;
+		SceneRendererInitializer m_initializer;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 

@@ -91,6 +91,7 @@ namespace Volt
 		Unique<ApplicationEventListener> m_eventListener;
 		Unique<AI::NavigationSystem> m_navigationSystem; //is this in use anywhere?
 
+		class ApplicationRenderer* m_renderer = nullptr;
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;

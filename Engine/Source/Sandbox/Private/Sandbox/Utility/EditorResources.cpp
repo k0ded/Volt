@@ -5,7 +5,7 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/ShapeLibrary.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -121,7 +121,7 @@ IntRef<Volt::RHI::Image> EditorResources::GetEditorIcon(EditorIcon icon)
 {
 	if (!m_editorIcons.contains(icon))
 	{
-		return Volt::Renderer::GetDefaultResources().white1x1;
+		return Volt::RendererUtilities::GetDefaultResources().white1x1;
 	}
 
 	return m_editorIcons.at(icon);
@@ -147,7 +147,7 @@ void EditorResources::TryLoadIcon(const Filesystem::Path& path, IntRef<Volt::RHI
 	}
 	else
 	{
-		*outTexture = Volt::Renderer::GetDefaultResources().white1x1;
+		*outTexture = Volt::RendererUtilities::GetDefaultResources().white1x1;
 	}
 }
 

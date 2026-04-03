@@ -17,6 +17,7 @@ namespace Volt
 	class KeyPressedEvent;
 
 	class SceneRenderer;
+	class SceneContainer;
 	class Camera;
 }
 class OutlineSceneRendererExtension;
@@ -37,18 +38,18 @@ private:
 	void RegisterEventListeners();
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
-	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	
 	bool m_isInitialized = false;
 
 	//temp
 	void SetupNewSceneData();
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
+	Volt::SceneContainer* m_sceneContainer;
+
 	//Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
 	//Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
 	//Ref<DebugSceneRendererExtension> m_debugSceneRendererExtension;
 
-	AssetReference<Volt::Scene> m_editorScene;
 	Ref<Volt::Camera> m_camera;
 	Volt::WindowHandle m_window;
 	//end temp

@@ -7,7 +7,7 @@
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <Volt-Renderer/Material/RenderMaterial.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <RenderCore/Shader/DefaultShaders.h>
@@ -118,7 +118,7 @@ namespace Volt
 
 					if (!image)
 					{
-						image = Renderer::GetDefaultResources().white1x1;
+						image = RendererUtilities::GetDefaultResources().white1x1;
 					}
 
 					m_renderMaterial->SetTexture(textureInfo.index, RenderTexture(image));

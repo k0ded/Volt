@@ -1,11 +1,9 @@
 #include "vrpch.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 
 #include "Volt-Renderer/Texture/Texture2D.h"
 #include "Volt-Renderer/Material/RenderMaterial.h"
 #include "Volt-Renderer/ShapeLibrary.h"
-
-#include <CoreModule/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -13,35 +11,28 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/ShaderMap.h>
-#include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderSubSystem.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
-#include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Images/Image.h>
-#include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/RHIModule.h>
-
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Window.h>
 
 #include <AssetSystem/AssetManagerSubSystem.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Math/Hash.h>
-#include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(Renderer, Minimal, Engine);
+	VT_REGISTER_SUBSYSTEM(RendererUtilities, Minimal, Engine);
 
 	struct EquirectangularToCubemapCS : public GlobalShader
 	{
@@ -119,58 +110,48 @@ namespace Volt
 		}
 	}
 
-	Renderer::Renderer()
+	RendererUtilities::RendererUtilities()
 	{
 		VT_ASSERT(!s_instance);
 		s_instance = this;
-
-		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(Renderer::OnEndOfFrameUpdate));
-		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(Renderer::OnPreRenderEvent));
 	}
 
-	Renderer::~Renderer()
+	RendererUtilities::~RendererUtilities()
 	{
 		s_instance = nullptr;
 	}
 
-	void Renderer::Initialize()
+	void RendererUtilities::Initialize()
 	{
-		m_samplerStateCache = CreateUnique<SamplerStateCache>();
-		m_commandBufferPool = CreateUnique<CommandBufferPool>();
-		m_transientResourceAllocator = CreateUnique<TransientResourceAllocator>();
-
 		CreateDefaultResources();
 		CreateBlueNoise();
 	}
 
-	void Renderer::CreateBlueNoise()
+	void RendererUtilities::CreateBlueNoise()
 	{
 		m_blueNoise = CreateUnique<BlueNoise>();
 	}
 
-	void Renderer::Shutdown()
+	void RendererUtilities::Shutdown()
 	{
 		m_blueNoise.Reset();
 
 		m_defaultResources.Clear();
 
 		ShapeLibrary::Shutdown();
-
-		m_samplerStateCache = nullptr;
-		m_transientResourceAllocator = nullptr;
 	}
 
-	const uint32_t Renderer::GetFramesInFlight()
+	const uint32_t RendererUtilities::GetFramesInFlight()
 	{
 		return RHI::RHICapabilities::NumFramesInFlight;
 	}
 
-	const DefaultResources& Renderer::GetDefaultResources()
+	const DefaultResources& RendererUtilities::GetDefaultResources()
 	{
 		return s_instance->m_defaultResources;
 	}
 
-	Renderer::EnvironmentTextures Renderer::GenerateEnvironmentTextures(AssetHandle baseTextureHandle)
+	RendererUtilities::EnvironmentTextures RendererUtilities::GenerateEnvironmentTextures(AssetHandle baseTextureHandle)
 	{
 		AssetReference<Texture2D> environmentTexture = g_assetManager->GetAssetImmediately<Texture2D>(baseTextureHandle);
 
@@ -292,29 +273,10 @@ namespace Volt
 		renderGraph.Compile();
 		renderGraph.ExecuteImmediateAndWait();
 
-		// #TODO_Ivar: Reimplement
-		//result.diffuse->GenerateMips();
-
 		return result;
 	}
 
-	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)
-	{
-		m_frameIndex++;
-		return false;
-	}
-
-	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
-	{
-		VT_PROFILE_FUNCTION();
-
-		m_transientResourceAllocator->OnPreRender(event.GetFrameIndex());
-		m_commandBufferPool->Update();
-
-		return false;
-	}
-
-	void Renderer::CreateDefaultResources()
+	void RendererUtilities::CreateDefaultResources()
 	{
 		// Full white 1x1
 		{
@@ -403,7 +365,7 @@ namespace Volt
 		}
 	}
 
-	void Renderer::GenerateDFGLuT()
+	void RendererUtilities::GenerateDFGLuT()
 	{
 		constexpr uint32_t DFGSize = 512;
 
@@ -445,7 +407,7 @@ namespace Volt
 		renderGraph.ExecuteImmediateAndWait();
 	}
 
-	void Renderer::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	void RendererUtilities::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
 		outDependencies.AddDependency<ShaderSubSystem>();
 		outDependencies.AddDependency<AssetManagerSubSystem>();

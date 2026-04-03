@@ -42,11 +42,11 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color,
 
 	if (color.a < 1.f)
 	{
-		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultTranslucentMaterial;
+		drawCommand.material = Volt::RendererUtilities::GetDefaultResources().defaultTranslucentMaterial;
 	}
 	else
 	{
-		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultMaterial;
+		drawCommand.material = Volt::RendererUtilities::GetDefaultResources().defaultMaterial;
 	}
 }
 

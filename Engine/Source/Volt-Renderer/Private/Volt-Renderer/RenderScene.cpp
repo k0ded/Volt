@@ -3,7 +3,7 @@
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/GPUScene.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
@@ -65,12 +65,18 @@ namespace Volt
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
 			m_rayTracingResourceTable = RHI::ResourceTable::Create();
 		}
-
-		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent)); 
 	}
 
 	RenderScene::~RenderScene()
 	{
+	}
+
+	void RenderScene::BeginFrame(uint64_t frameIndex)
+	{
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingResourceTable->Update(static_cast<uint32_t>(frameIndex));
+		}
 	}
 
 	void RenderScene::Update(RenderGraph& renderGraph)
@@ -119,7 +125,6 @@ namespace Volt
 		UpdateInvalidLights(renderGraph);
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
-
 
 		if (m_currentBoneCount > 0)
 		{
@@ -294,18 +299,6 @@ namespace Volt
 			}
 
 		}, static_cast<uint32_t>(m_primitiveDrawData.size()), 128);
-	}
-
-	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
-	{
-		VT_PROFILE_FUNCTION();
-
-		if (RHI::RHICanUseRayTracing())
-		{
-			m_rayTracingResourceTable->Update(static_cast<uint32_t>(event.GetFrameIndex()));
-		}
-
-		return false;
 	}
 
 	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(RenderPrimitiveID id) const

@@ -1,7 +1,7 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/Debug/DebugRenderer.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/Material/MaterialShaderRegistry.h"
 
 #include <CoreModule/Algorithms.h>
@@ -337,7 +337,7 @@ namespace Volt
 
 				if (activeRange->texture == nullptr)
 				{
-					activeRange->texture = Volt::Renderer::GetDefaultResources().white1x1;
+					activeRange->texture = Volt::RendererUtilities::GetDefaultResources().white1x1;
 				}
 			}
 			else

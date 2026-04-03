@@ -21,7 +21,6 @@ namespace Volt::RHI
 
 	RHIModuleLoader::RHIModuleLoader()
 	{
-		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RHIModuleLoader::OnPreRenderEvent));
 	}
 
 	void RHIModuleLoader::LoadRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo)
@@ -120,22 +119,19 @@ namespace Volt::RHI
 		}
 	}
 
-	bool RHIModuleLoader::OnPreRenderEvent(AppPreRenderEvent& event)
-	{
-		m_rhiModule->BeginFrame();
-		return false;
-	}
-
-	bool RHIModuleLoader::OnPostFrameUpdate(AppPostFrameUpdateEvent& event)
-	{
-		m_rhiModule->EndFrame();
-		return false;
-	}
-
 	void RHIModuleLoader::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
-		outDependencies.AddDependency<EventSystem>();
 		outDependencies.AddDependency<IOThreads>();
 		outDependencies.AddDependency<ProjectManager>();
+	}
+
+	void RHIModuleLoader::OnPreRender()
+	{
+		m_rhiModule->BeginFrame();
+	}
+
+	void RHIModuleLoader::OnPostRender()
+	{
+		m_rhiModule->EndFrame();
 	}
 }

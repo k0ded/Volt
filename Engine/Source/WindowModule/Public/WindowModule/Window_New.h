@@ -34,7 +34,7 @@ namespace Volt
 		int32_t initialPosY = 0;
 
 		bool enableVSync : 1 = true;
-		bool createAsDecorated : 1 = false;
+		bool createAsDecorated : 1 = true;
 	};
 
 	class Window_New

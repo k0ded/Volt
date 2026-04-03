@@ -73,7 +73,7 @@ void GameViewPanel::UpdateMainContent()
 
 void GameViewPanel::OnOpen()
 {
-	Volt::SceneRendererCreateInfo spec{};
+	Volt::SceneRendererInitializer spec{};
 	spec.debugName = "Game Viewport";
 	if (m_editorScene)
 	{

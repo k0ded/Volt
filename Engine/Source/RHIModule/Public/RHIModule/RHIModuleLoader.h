@@ -7,13 +7,6 @@
 
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
-#include <EventSystem/EventListener.h>
-
-namespace Volt
-{
-	class AppPreRenderEvent;
-	class AppPostFrameUpdateEvent;
-}
 
 namespace Volt::RHI
 {
@@ -33,7 +26,7 @@ namespace Volt::RHI
 		Filesystem::Path pipelineCacheFilepath;
 	};
 
-	class VTRHI_API RHIModuleLoader : public SubSystem, public EventListener
+	class VTRHI_API RHIModuleLoader : public SubSystem
 	{
 	public:
 		RHIModuleLoader();
@@ -42,6 +35,9 @@ namespace Volt::RHI
 		void Shutdown() override;
 		void LoadRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
 
+		void OnPreRender();
+		void OnPostRender();
+
 		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{3E52F9E9-B7E0-4FAC-B728-0BBEE5CDE831}"_guid);
 	private:
@@ -49,8 +45,6 @@ namespace Volt::RHI
 
 		void LoadRHIFromFilepath(const Filesystem::Path& filepath);
 		void CreateGraphicsContextForRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
-		bool OnPreRenderEvent(AppPreRenderEvent& event);
-		bool OnPostFrameUpdate(AppPostFrameUpdateEvent& event);
 
 		RHIModule* m_rhiModule = nullptr;
 		IntRef<RHI::GraphicsContext> m_graphicsContext;

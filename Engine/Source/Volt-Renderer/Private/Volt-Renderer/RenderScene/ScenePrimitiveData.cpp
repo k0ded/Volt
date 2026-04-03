@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/RenderScene/ScenePrimitiveData.h"
 #include "Volt-Renderer/RenderScene.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 
 #include <RHIModule/RHIFeatures.h>
@@ -93,7 +93,7 @@ namespace Volt
 			if (!material)
 			{
 				VT_LOGC(Warning, LogScenePrimitiveData, "Mesh {} has an invalid material at index {}! Assigning a default material.", m_primitiveMesh->GetName(), materialIndex);
-				material = Renderer::GetDefaultResources().defaultMaterial;
+				material = RendererUtilities::GetDefaultResources().defaultMaterial;
 			}
 
 			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_animator, m_primitiveMesh, material, static_cast<uint32_t>(i));

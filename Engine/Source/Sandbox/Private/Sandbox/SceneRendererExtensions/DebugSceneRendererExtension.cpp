@@ -5,7 +5,7 @@
 #include "Sandbox/DebugMeshRenderers/DebugMeshRenderers.h"
 
 #include <Volt-Renderer/SceneRendererRenderGraphData.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/Debug/DebugRenderer.h>
 #include <Volt-Renderer/RenderView.h>
 #include <Volt-Renderer/RenderScene.h>
@@ -120,7 +120,7 @@ void DebugSceneRendererExtension::RenderForwardLitDebugMeshes(Volt::RenderGraph&
 
 		if (!directionalShadowMapTexture)
 		{
-			directionalShadowMapTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+			directionalShadowMapTexture = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().blackCubeTexture);
 		}
 
 		passParameters->PS.CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMapTexture);
@@ -189,7 +189,7 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 
 			if (!directionalShadowMapTexture)
 			{
-				directionalShadowMapTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+				directionalShadowMapTexture = renderGraph.RegisterExternalTexture(RendererUtilities::GetDefaultResources().blackCubeTexture);
 			}
 
 			passParameters->PS.CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMapTexture);

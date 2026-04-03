@@ -1,7 +1,7 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/Material/RenderMaterial.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
@@ -64,7 +64,7 @@ namespace Volt
 					IntRef<RHI::Image> texture = textureInfo.texture.GetResource();
 					if (!texture)
 					{
-						texture = Renderer::GetDefaultResources().white1x1;
+						texture = RendererUtilities::GetDefaultResources().white1x1;
 					}
 
 					shaderBindingMap.SetTextureSRV(parameterMap.GetShaderStage(), resourceBinding->binding, texture->GetView());

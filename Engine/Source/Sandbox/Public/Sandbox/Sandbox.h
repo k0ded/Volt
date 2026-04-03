@@ -29,10 +29,9 @@ namespace Volt
 	class AppImGuiUpdateEvent;
 	class AppRenderEvent;
 	class KeyPressedEvent;
-	class ViewportResizeEvent;
-	class OnSceneLoadedEvent;
-	class OnSceneTransitionEvent;
-	class AssetFileCreatedEvent;
+
+	class SceneManager;
+	class SceneContainer;
 }
 
 enum class SceneState
@@ -113,9 +112,7 @@ private:
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
-	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
-	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
 
 	void CreateWatches();
 	void RegisterPanels();
@@ -135,8 +132,6 @@ private:
 
 	void DrawUnsavedAssetsBlock();
 	void DrawDirtyAssetsExternalActionModal();
-	
-	void RenderGameView(float timestep);
 	///////////////
 
 	///// File Watchers /////
@@ -176,6 +171,9 @@ private:
 	UUID64 m_fontImportModal;
 	//////////////////
 
+	Volt::SceneManager* m_sceneManager = nullptr;
+	Volt::SceneContainer* m_sceneContainer = nullptr;
+
 	AssetReference<Volt::Scene> m_runtimeScene;
 	AssetReference<Volt::Scene> m_intermediateScene;
 
@@ -185,9 +183,6 @@ private:
 	Ref<GameViewPanel> m_gameViewPanel;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
-
-	glm::uvec2 m_viewportSize = { 1280, 720 };
-	glm::uvec2 m_viewportPosition = { 0, 0 };
 
 	bool m_shouldOpenSaveSceneAs = false;
 	bool m_openShouldSaveScenePopup = false;

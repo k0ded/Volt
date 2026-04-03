@@ -8,7 +8,7 @@
 #include <CoreUtilities/ConsoleVariableRegistry.h>
 
 #include <Volt-Renderer/RenderScene/ScenePrimitiveData.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
@@ -67,7 +67,7 @@ namespace Volt
 
 		m_materialInvalidationQueue.Allocate(1024);
 
-		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(StreamingManager::OnPreRenderEvent));
+		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(StreamingManager::OnUpdateEvent));
 	}
 
 	StreamingManager::~StreamingManager()
@@ -322,7 +322,7 @@ namespace Volt
 		}
 		else
 		{
-			mesh = Renderer::GetDefaultResources().defaultMesh;
+			mesh = RendererUtilities::GetDefaultResources().defaultMesh;
 		}
 
 		ScenePrimitiveDescription primitiveDescription;
@@ -345,7 +345,7 @@ namespace Volt
 			// Material handle was null, or material was not loaded/found.
 			if (renderMaterial == nullptr)
 			{
-				renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+				renderMaterial = RendererUtilities::GetDefaultResources().defaultMaterial;
 			}
 
 			primitiveDescription.materials.emplace_back(renderMaterial);
@@ -381,8 +381,8 @@ namespace Volt
 		}
 		else
 		{
-			lightDescription.diffuseIBL = Renderer::GetDefaultResources().blackCubeTexture;
-			lightDescription.specularIBL = Renderer::GetDefaultResources().blackCubeTexture;
+			lightDescription.diffuseIBL = RendererUtilities::GetDefaultResources().blackCubeTexture;
+			lightDescription.specularIBL = RendererUtilities::GetDefaultResources().blackCubeTexture;
 		}
 
 		instance.sceneLightData->InitializeFromDescription(lightDescription);
@@ -403,7 +403,7 @@ namespace Volt
 		m_materialInvalidationQueue.Emplace(materialHandle);
 	}
 
-	bool StreamingManager::OnPreRenderEvent(AppPreRenderEvent& event)
+	bool StreamingManager::OnUpdateEvent(AppUpdateEvent& event)
 	{
 		VT_PROFILE_FUNCTION();
 

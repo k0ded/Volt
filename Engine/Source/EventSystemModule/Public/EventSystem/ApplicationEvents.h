@@ -38,6 +38,7 @@ namespace Volt
 		uint64_t m_frameIndex;
 	};
 
+	// #Deprecate
 	class AppPostFrameUpdateEvent : public Event
 	{
 	public:
@@ -60,6 +61,7 @@ namespace Volt
 		EVENT_CLASS(AppImGuiUpdateEvent, "{AAFC6679-2596-4706-99B1-E8F27A339C55}"_guid);
 	};
 
+	// #Deprecate
 	class AppPreRenderEvent : public Event
 	{
 	public:

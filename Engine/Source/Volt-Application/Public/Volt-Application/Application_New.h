@@ -56,6 +56,7 @@ namespace Volt
 		MultiTimer m_frameTimer;
 
 		class WindowManager_New* m_windowManager = nullptr;
+		class ApplicationRenderer* m_renderer = nullptr;
 
 		uint64_t m_frameIndex = 0;
 		float m_currentDeltaTime = 0.f;

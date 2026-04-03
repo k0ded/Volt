@@ -1,7 +1,7 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/ShapeLibrary.h"
-#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 
 namespace Volt
@@ -93,7 +93,7 @@ namespace Volt
 		MeshInitializer meshInitializer;
 		meshInitializer.AddVertices(vertices);
 		meshInitializer.AddIndices(indices);
-		meshInitializer.AddMaterial(Renderer::GetDefaultResources().defaultMaterial, 0);
+		meshInitializer.AddMaterial(RendererUtilities::GetDefaultResources().defaultMaterial, 0);
 		meshInitializer.AddSubMesh(subMesh);
 
 		Ref<Mesh> mesh = CreateRef<Mesh>();
@@ -219,7 +219,7 @@ namespace Volt
 		MeshInitializer meshInitializer;
 		meshInitializer.AddVertices(vertices);
 		meshInitializer.AddIndices(indices);
-		meshInitializer.AddMaterial(Renderer::GetDefaultResources().defaultMaterial, 0);
+		meshInitializer.AddMaterial(RendererUtilities::GetDefaultResources().defaultMaterial, 0);
 		meshInitializer.AddSubMesh(subMesh);
 
 		Ref<Mesh> mesh = CreateRef<Mesh>();

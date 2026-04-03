@@ -10,7 +10,7 @@
 #include <Volt-Renderer/Material/RenderMaterial.h>
 #include <Volt-Renderer/Material/CompiledMaterialShaders.h>
 #include <Volt-Renderer/Material/MaterialShaderRegistry.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <CoreModule/Project/ProjectManager.h>
@@ -172,7 +172,7 @@ namespace Volt
 
 				if (image == nullptr)
 				{
-					image = Renderer::GetDefaultResources().white1x1;
+					image = RendererUtilities::GetDefaultResources().white1x1;
 				}
 
 				materialAsset->GetRenderMaterial()->SetTexture(textureInfo.textureIndex, RenderTexture(image));

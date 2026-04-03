@@ -4,7 +4,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 
 #include "Sandbox/Utility/EditorUtilities.h"
 
@@ -41,7 +41,7 @@ void RendererSettingsPanel::UpdateMainContent()
 
 	if (ImGui::Button("Enable"))
 	{
-		m_sceneRenderer->Enable();
+		m_sceneRenderer->SetEnabled(true);
 	}
 
 	//UI::Header("Settings");

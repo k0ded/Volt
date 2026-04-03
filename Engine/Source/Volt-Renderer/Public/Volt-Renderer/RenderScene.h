@@ -14,9 +14,6 @@
 
 #include <RHIModule/Descriptors/ResourceTable.h>
 
-#include <EventSystem/EventListener.h>
-#include <EventSystem/ApplicationEvents.h>
-
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
 #include <span>
@@ -53,7 +50,7 @@ namespace Volt
 		RGBufferRef perMeshIndirectDrawCommands;
 	};
 
-	class VTR_API RenderScene : public EventListener
+	class VTR_API RenderScene
 	{
 	public:
 		DECLARE_MULTICAST_DELEGATE_OneParam(RenderPrimitiveAddedDelegate, const RenderPrimitiveData*);
@@ -62,8 +59,10 @@ namespace Volt
 		RenderScene(EntityScene* sceneRef);
 		~RenderScene();
 
+		void BeginFrame(uint64_t frameIndex);
 		void Update(RenderGraph& renderGraph);
 		void EndFrame(RenderGraph& renderGraph);
+
 		void RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth);
 
 		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
@@ -123,8 +122,6 @@ namespace Volt
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
 		void VisualizeRenderPrimitives();
-
-		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
 		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);
