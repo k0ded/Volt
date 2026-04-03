@@ -4,9 +4,13 @@
 
 namespace Volt::RHI
 {
-	class Semaphore : public ArenaRHIInterface
+	class VTRHI_API Semaphore : public ArenaRHIInterface
 	{
 	public:
-		VTRHI_API static IntRef<Semaphore> Create();
+		 static IntRef<Semaphore> Create();
+
+	protected:
+		Semaphore() = default;
+		~Semaphore() override = default;
 	};
 }
