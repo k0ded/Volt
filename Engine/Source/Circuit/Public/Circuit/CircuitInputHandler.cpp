@@ -183,7 +183,14 @@ namespace Circuit
 		bool hoveredChanged = m_prevHoveredWidget.IsExpired() && !hoveredWidget.IsExpired();
 		if (!hoveredChanged)
 		{
-			hoveredChanged = m_prevHoveredWidget.Lock() != hoveredWidget.Lock();
+			if (hoveredWidget.IsExpired())
+			{
+				hoveredChanged = true;
+			}
+			else
+			{
+				hoveredChanged = m_prevHoveredWidget.Lock() != hoveredWidget.Lock();
+			}
 		}
 		if (hoveredChanged)
 		{
