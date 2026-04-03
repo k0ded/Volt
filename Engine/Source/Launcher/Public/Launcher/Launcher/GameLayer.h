@@ -23,7 +23,8 @@ namespace Volt
 	class AppRenderEvent;
 	class Window_New;
 
-	class OnSceneLoadedEvent;
+	class SceneContainer;
+	class SceneManager;
 }
 
 class GameLayer : public Volt::ApplicationLayer, public Volt::EventListener
@@ -37,13 +38,14 @@ public:
 
 private:
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
-	bool OnRenderEvent(Volt::AppRenderEvent& e);
 
 	void RenderWindow(Volt::Window_New& window);
 
-	AssetReference<Volt::Scene> m_scene;
-	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::Camera> m_camera;
 	
+	Volt::SceneManager* m_sceneManager = nullptr;
+	Volt::SceneContainer* m_sceneContainer = nullptr;
+	Ref<Volt::SceneRenderer> m_sceneRenderer;
+
 	Volt::WindowHandle m_window;
 };

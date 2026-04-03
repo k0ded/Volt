@@ -107,7 +107,7 @@ bool TestingLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 	renderGraph.Compile();
 	renderGraph.Execute();
 #else
-	m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
+	//m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
 #endif
 
 	return false;

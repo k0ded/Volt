@@ -6,6 +6,12 @@
 
 #include <Volt-Renderer/SceneRenderer.h>
 
+#include <Volt-Scene/SceneManager.h>
+
+#include <SubSystem/SubSystemManager.h>
+
+#include <JobSystem/JobSystem.h>
+
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/CopyToSwapchainShaders.h>
 #include <RenderCore/Shader/ShaderMap.h>
@@ -25,7 +31,6 @@ GameLayer::GameLayer(Volt::WindowHandle window)
 void GameLayer::OnAttach()
 {
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(GameLayer::OnUpdateEvent));
-	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(GameLayer::OnRenderEvent));
 
 	Window_New& window = WindowManager_New::Get().GetWindow(m_window);
 
@@ -45,17 +50,19 @@ void GameLayer::OnAttach()
 
 	window.GetOnWindowRender().AddRaw(this, &GameLayer::RenderWindow);
 
-	m_scene = Scene::CreateDefaultScene("Test");
-	
-	SceneRendererCreateInfo createInfo{};
-	createInfo.renderScene = m_scene->GetRenderScene();
+	m_sceneManager = SubSystemManager::GetSubSystem<SceneManager>();
+	m_sceneContainer = m_sceneManager->CreateMemoryScene("TestScene");
+
+	SceneRendererInitializer createInfo{};
 	createInfo.drawDebug = true;
 	createInfo.initialResolution = { window.GetWidth(), window.GetHeight() };
 	
-	m_sceneRenderer = CreateRef<SceneRenderer>(createInfo);
-	
+	m_sceneRenderer = m_sceneContainer->AttachSceneRenderer(createInfo);
+
 	m_camera = CreateRef<Camera>(glm::radians(60.f), 16.f / 9.f, 0.1f, 100000.f);
 	m_camera->SetPosition({ 0.f, 0.f, -200.f });
+
+	m_sceneRenderer->SetCamera(m_camera);
 }
 
 void GameLayer::OnDetach()
@@ -64,13 +71,6 @@ void GameLayer::OnDetach()
 
 bool GameLayer::OnUpdateEvent(Volt::AppUpdateEvent& e)
 {
-	return false;
-}
-
-bool GameLayer::OnRenderEvent(Volt::AppRenderEvent& e)
-{
-	m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
-
 	return false;
 }
 
@@ -111,5 +111,6 @@ void GameLayer::RenderWindow(Volt::Window_New& window)
 	});
 
 	renderGraph.Compile();
-	renderGraph.Execute();
+	JobCounterRef counter = renderGraph.ExecuteAndExtractCounter();
+	JobSystem::WaitForAndDestroyCounter(counter);
 }

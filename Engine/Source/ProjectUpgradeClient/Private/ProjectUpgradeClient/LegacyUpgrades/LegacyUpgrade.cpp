@@ -13,7 +13,7 @@
 
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/RendererUtilities.h>
 
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Assets/MaterialAsset.h>
@@ -1522,7 +1522,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		 importConfig.createAsMemoryAsset = true;
 		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
 
-		 Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(future.Get().front()->GetAssetHandle());
+		 Volt::RendererUtilities::EnvironmentTextures envTextures = Volt::RendererUtilities::GenerateEnvironmentTextures(future.Get().front()->GetAssetHandle());
 		 return g_assetManager->CreateAssetAndFileWithAssetHandle<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, metadata.handle, envTextures.diffuse, envTextures.specular);
 	 }
 	 else
