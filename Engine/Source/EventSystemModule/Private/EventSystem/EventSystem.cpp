@@ -3,10 +3,9 @@
 
 #include "EventSystem/EventListener.h"
 
-#include <PlatformsModule/Platform.h>
-
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/ConsoleVariableRegistry.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 namespace Volt
 {
@@ -47,7 +46,7 @@ namespace Volt
 
 	void EventSystem::Update()
 	{
-		VT_ASSERT_MSG(PlatformThread::GetThreadConfig().isMainThread, "EventSystem Update may only be called on the main thread.");
+		VT_ASSERT_MSG(Threads::GetThreadConfig().isMainThread, "EventSystem Update may only be called on the main thread.");
 
 		if (s_instance->m_queuedUnregisters.empty() && s_instance->m_queuedRegisters.empty())
 		{
@@ -92,7 +91,7 @@ namespace Volt
 	{
 		auto& listeners = s_instance->m_registeredListeners[eventGUID];
 
-		const bool notOnMainThread = !PlatformThread::GetThreadConfig().isMainThread;
+		const bool notOnMainThread = !Threads::GetThreadConfig().isMainThread;
 		for (int32_t i = static_cast<int32_t>(listeners.size()) - 1; i >= 0; --i)
 		{
 			if (listeners[i].listener == listener)
@@ -139,7 +138,7 @@ namespace Volt
 	{
 		VT_PROFILE_SCOPE(std::format("Dispatch {}", e.GetName()).c_str());
 
-		VT_ASSERT_MSG(PlatformThread::GetThreadConfig().isMainThread, "Event was dispatched from a thread other than the Main Thread.");
+		VT_ASSERT_MSG(Threads::GetThreadConfig().isMainThread, "Event was dispatched from a thread other than the Main Thread.");
 		VT_ASSERT_MSG(!m_dispatchSet.contains(eventGUID), "Recursive event call detected, this is not allowed!");
 
 		{

@@ -4,13 +4,14 @@
 #include "JobSystem/JobFiber.h"
 #include "JobSystem/Asm/FiberContext.h"
 
+#include <EventSystem/EventSystem.h>
+#include <EventSystem/ApplicationEvents.h>
+
 #include <PlatformsModule/Platform.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Core.h>
-
-#include <EventSystem/EventSystem.h>
-#include <EventSystem/ApplicationEvents.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 namespace Volt
 {
@@ -373,7 +374,7 @@ namespace Volt
 
 	void JobSystem::SpawnWorker(uint32_t workerId)
 	{
-		PlatformThread::SetupThreadConfig(true, false, false);
+		Threads::InitializeThreadConfig(true, false, false);
 
 		g_workerId = workerId;
 		JobWorker& workerData = *m_workers[workerId];

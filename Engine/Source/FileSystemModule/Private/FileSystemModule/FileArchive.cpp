@@ -6,6 +6,7 @@
 
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 FileWriter::FileWriter()
 	: Archive(false),
@@ -117,7 +118,7 @@ void FileWriter::Close()
 
 	VT_ENSURE_MSG(m_fileHandle.IsValid(), "No file is open!");
 
-	if (!VT_CHECK_MSG(Volt::PlatformThread::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
+	if (!VT_CHECK_MSG(Threads::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
 	{
 		return;
 	}
@@ -199,7 +200,7 @@ bool FileReader::Open(const Filesystem::Path& filepath, const FileReaderConfig& 
 {
 	VT_PROFILE_FUNCTION();
 
-	if (!VT_CHECK_MSG(Volt::PlatformThread::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
+	if (!VT_CHECK_MSG(Threads::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
 	{
 		return false;
 	}

@@ -5,6 +5,7 @@
 #include <JobSystem/JobSystem.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 namespace Volt
 {
@@ -55,7 +56,7 @@ namespace Volt
 
 	void IOThreads::SpawnIOThread(uint32_t workerId)
 	{
-		PlatformThread::SetupThreadConfig(false, true);
+		Threads::InitializeThreadConfig(false, true);
 
 		IOThread& workerData = *m_ioThreads[workerId];
 

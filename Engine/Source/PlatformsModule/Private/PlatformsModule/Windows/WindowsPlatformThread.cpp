@@ -6,8 +6,6 @@
 
 namespace Volt
 {
-	thread_local ThreadConfig g_threadConfig;
-
 	std::thread::native_handle_type WindowsPlatformThread::m_mainThreadHandle = nullptr;
 
 	void WindowsPlatformThread::Initialize()
@@ -61,18 +59,6 @@ namespace Volt
 	{
 		HANDLE threadHandle = ::GetCurrentThread();
 		return reinterpret_cast<std::thread::native_handle_type>(threadHandle);
-	}
-
-	void WindowsPlatformThread::SetupThreadConfig(bool isWorkerThread, bool isIOThread, bool isMainThread /*= false*/)
-	{
-		g_threadConfig.isWorkerThread = isWorkerThread;
-		g_threadConfig.isIOThread = isIOThread;
-		g_threadConfig.isMainThread = isMainThread;
-	}
-
-	const ThreadConfig& WindowsPlatformThread::GetThreadConfig()
-	{
-		return g_threadConfig;
 	}
 }
 #endif

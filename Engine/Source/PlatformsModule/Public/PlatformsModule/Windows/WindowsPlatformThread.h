@@ -3,7 +3,6 @@
 #ifdef VT_PLATFORM_WINDOWS
 
 #include "PlatformsModule/Config.h"
-#include "PlatformsModule/ThreadConfig.h"
 #include "PlatformsModule/ThreadPriority.h"
 
 #include <CoreUtilities/Time/Time.h>
@@ -25,9 +24,6 @@ namespace Volt
 		static void AssignThreadToCore(std::thread::native_handle_type threadHandle, uint64_t affinityMask);
 		static std::thread::native_handle_type GetMainThreadHandle() { return m_mainThreadHandle; }
 		static std::thread::native_handle_type GetCurrentThreadHandle();
-
-		static void SetupThreadConfig(bool isWorkerThread, bool isIOThread, bool isMainThread = false);
-		static const ThreadConfig& GetThreadConfig();
 
 		template<typename Period = Time::Milliseconds>
 		static void Sleep(const float duration)
