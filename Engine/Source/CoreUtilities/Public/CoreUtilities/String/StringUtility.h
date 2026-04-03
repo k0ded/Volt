@@ -23,6 +23,50 @@ namespace Utility
 		return newStr;
 	}
 
+	inline void RemoveFromStartInline(String& targetString, StringView removeString)
+	{
+		if (removeString.length() > targetString.length())
+		{
+			return;
+		}
+
+		StringView targetStringStart = StringView(targetString.begin(), removeString.length());
+		if (targetStringStart != removeString)
+		{
+			return;
+		}
+		targetString.erase(0, removeString.length());
+	}
+
+	inline String RemoveFromStart(const String& targetString, StringView removeString)
+	{
+		String result = targetString;
+		RemoveFromStartInline(result, removeString);
+		return result;
+	}
+
+	inline void RemoveFromEndInline(String& targetString, StringView removeString)
+	{
+		if (removeString.length() > targetString.length())
+		{
+			return;
+		}
+
+		StringView targetStringEnd = StringView(targetString.end() - removeString.length(), removeString.length());
+		if (targetStringEnd != removeString)
+		{
+			return;
+		}
+		targetString.erase(targetString.length() - removeString.length(), removeString.length());
+	}
+
+	inline String RemoveFromEnd(const String& targetString, StringView removeString)
+	{
+		String result = targetString;
+		RemoveFromEndInline(result, removeString);
+		return result;
+	}
+
 	inline String RemoveTrailingZeroes(const String& string)
 	{
 		String newStr = string;

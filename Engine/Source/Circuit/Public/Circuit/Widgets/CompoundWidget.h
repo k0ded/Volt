@@ -16,6 +16,8 @@ namespace Circuit
 
 	protected:
 		void AddChildWidget(Ref<Widget> childWidget);
+		void RemoveChildWidget(Ref<Widget> childWidget);
+		void ClearChildWidgets();
 	private:
 		Vector<Ref<Widget>> m_childWidgets;
 	};

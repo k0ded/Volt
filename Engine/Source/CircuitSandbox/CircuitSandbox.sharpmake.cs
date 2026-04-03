@@ -47,6 +47,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<AssetSystemModule>(target); // temp
 			conf.AddPrivateDependency<VoltAssets>(target); // temp
 			conf.AddPrivateDependency<EntitySystemModule>(target); // temp
+			conf.AddPrivateDependency<FileSystemModule>(target); // temp
 
 
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");

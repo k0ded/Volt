@@ -39,6 +39,11 @@ namespace Volt
 		m_assetCache.Clear();
 	}
 
+	VTAS_API int32_t AssetManager::GetNumAssetsInRegistry() const
+	{
+		return m_assetRegistry.GetNumMetadata();
+	}
+
 	WriteableAssetMetadata AssetManager::GetWriteableAssetMetadata(AssetHandle assetHandle) const
 	{
 		if (assetHandle == Asset::Null())

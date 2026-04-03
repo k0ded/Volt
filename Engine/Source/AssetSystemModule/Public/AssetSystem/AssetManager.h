@@ -33,6 +33,8 @@ namespace Volt
 		VTAS_API AssetManager(const Filesystem::Path& engineDirectoryPath, const Filesystem::Path& projectDirectoryPath, StringView assetsDirectoryName);
 		VTAS_API ~AssetManager();
 
+		VTAS_API int32_t GetNumAssetsInRegistry() const;
+
 		///// Asset Metadata /////
 		// Returns a single thread writeable accessor, locks for the
 		// duration of the WriteableAssetMetadata object.

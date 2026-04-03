@@ -29,4 +29,16 @@ namespace Circuit
 	{
 		m_childWidgets.push_back(childWidget);
 	}
+	void CompoundWidget::RemoveChildWidget(Ref<Widget> childWidget)
+	{
+		auto foundIt = m_childWidgets.find(childWidget);
+		if (foundIt != m_childWidgets.end())
+		{
+			m_childWidgets.erase(foundIt);
+		}
+	}
+	void CompoundWidget::ClearChildWidgets()
+	{
+		m_childWidgets.clear();
+	}
 }

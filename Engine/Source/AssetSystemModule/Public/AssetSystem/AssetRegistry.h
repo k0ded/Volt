@@ -29,6 +29,8 @@ namespace Volt
 
 		VTAS_API bool IsValidAssetHandle(AssetHandle assetHandle) const;
 
+		VTAS_API int32_t GetNumMetadata() const { return m_numMetadata.load(); }
+
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
 		void RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex = false);
 
@@ -63,6 +65,7 @@ namespace Volt
 		Vector<AssetMetadata*> m_metadataIndirection;
 		AssetMetadataAllocator m_metadata;
 		JobCounterRef m_metadataLoadingCounter;
+		std::atomic_int m_numMetadata;
 	};
 
 	class AssetRegistryIterator

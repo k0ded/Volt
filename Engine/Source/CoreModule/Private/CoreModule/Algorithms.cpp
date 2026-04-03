@@ -50,7 +50,7 @@ namespace Volt::Algo
 		}
 	}
 
-	void ForEachParallelAsync(std::function<void(uint32_t, uint32_t)>&& func, uint32_t iterationCount)
+	void ForEachParallelAsync(std::function<void(uint32_t, uint32_t)>&& func, uint32_t iterationCount, ExecutionPriority priority)
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 
@@ -68,7 +68,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", ExecutionPriority::Critical, [currThreadIterationCount, func, iterOffset, i]()
+			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", priority, [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{

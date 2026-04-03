@@ -62,6 +62,10 @@ namespace Circuit
 			m_isPressed = false;
 			m_onReleasedRow.ExecuteIfBound(interactionData);
 		}
+		virtual void OnDoubleClicked(const WidgetInteractionData& interactionData) override
+		{
+			m_onDoubleClickRow.ExecuteIfBound(interactionData);
+		}
 
 
 		void SetColorAttribute(Volt::Attribute<CircuitColor> color)
@@ -80,6 +84,10 @@ namespace Circuit
 		OnListRowInteraction& GetOnRowPressedDelegate()
 		{
 			return m_onPressedRow;
+		}
+		OnListRowInteraction& GetOnRowDoubleClickedDelegate()
+		{
+			return m_onDoubleClickRow;
 		}
 		OnListRowInteraction& GetOnRowReleasedDelegate()
 		{
@@ -102,6 +110,7 @@ namespace Circuit
 			return m_color.Get();
 		}
 
+		OnListRowInteraction m_onDoubleClickRow;
 		OnListRowInteraction m_onPressedRow;
 		OnListRowInteraction m_onReleasedRow;
 
@@ -118,6 +127,7 @@ namespace Circuit
 	{
 	public:
 		DECLARE_DELEGATE_RetVal_OneParam(Ref<IListViewRow<ItemType>>, OnGenerateRowDelegate, ItemType&);
+		DECLARE_DELEGATE_OneParam(OnRowInteractDelegate, ItemType&);
 
 		CIRCUIT_BEGIN_ARGS(ListViewWidget)
 			: _ItemsSource(nullptr)
@@ -126,12 +136,21 @@ namespace Circuit
 		CIRCUIT_ARGUMENT(Vector<ItemType>*, ItemsSource);
 		CIRCUIT_EVENT(OnGenerateRowDelegate, OnGenerateRow);
 
+		CIRCUIT_EVENT(OnRowInteractDelegate, OnRowDoubleClicked);
+
 		CIRCUIT_END_ARGS();
 
 		void Build(const Arguments& args)
 		{
 			m_itemsSource = args._ItemsSource;
 			m_onGenerateRow = args._OnGenerateRow;
+			m_onRowDoubleClicked = args._OnRowDoubleClicked;
+			RegenerateRows();
+		}
+
+		void SetItemsSource(Vector<ItemType>* itemsSource)
+		{
+			m_itemsSource = itemsSource;
 			RegenerateRows();
 		}
 
@@ -174,6 +193,7 @@ namespace Circuit
 		void RegenerateRows()
 		{
 			m_rowWidgets.clear();
+			ClearChildWidgets();
 
 			if (!m_itemsSource || !m_onGenerateRow.IsBound())
 			{
@@ -199,6 +219,7 @@ namespace Circuit
 					rowWidget->SetPressedColorAttribute(pressedColorAttribute);
 
 					rowWidget->GetOnRowReleasedDelegate().BindRaw(this, &ListViewWidget::RowClicked, rowWidget);
+					rowWidget->GetOnRowDoubleClickedDelegate().BindRaw(this, &ListViewWidget::RowDoubleClicked, &(*m_itemsSource)[i]);
 
 					m_rowWidgets.push_back(rowWidget);
 					AddChildWidget(rowWidget);
@@ -251,9 +272,20 @@ namespace Circuit
 			}
 		}
 
+		void RowDoubleClicked(const WidgetInteractionData& interactionData, ItemType* item)
+		{
+			if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
+			{
+				return;
+			}
+
+			m_onRowDoubleClicked.ExecuteIfBound(*item);
+		}
+
 		std::unordered_set<Ref<IListViewRow<ItemType>>> m_selectedRows;
 		Vector<ItemType>* m_itemsSource = nullptr;
 		OnGenerateRowDelegate m_onGenerateRow;
+		OnRowInteractDelegate m_onRowDoubleClicked;
 		Vector<Ref<IListViewRow<ItemType>>> m_rowWidgets;
 	};
 }

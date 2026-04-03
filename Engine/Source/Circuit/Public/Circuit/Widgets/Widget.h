@@ -50,6 +50,8 @@ namespace Circuit
 		virtual void OnEndHover(const WidgetInteractionData& interactionData) {}
 		virtual void OnPressed(const WidgetInteractionData& interactionData) {}
 		virtual void OnReleased(const WidgetInteractionData& interactionData) {}
+		virtual void OnDoubleClicked(const WidgetInteractionData& interactionData) {}
+
 		virtual void OnBeginDrag(const WidgetInteractionData& interactionData) {}
 		virtual void OnDrag(const WidgetInteractionData& interactionData){}
 		virtual void OnEndDrag(const WidgetInteractionData& interactionData){}

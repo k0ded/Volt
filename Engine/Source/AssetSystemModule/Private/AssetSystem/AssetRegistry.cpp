@@ -85,6 +85,8 @@ namespace Volt
 		VT_LOGC(Info, LogAssetSystem, "Fetching asset meta data...");
 		ScopedTimer timer{};
 
+		m_numMetadata.store(0);
+
 		Vector<Filesystem::Path> engineAssetFilepaths;
 		Vector<Filesystem::Path> projectAssetFilepaths;
 
@@ -196,6 +198,7 @@ namespace Volt
 			*allocatedAssetMetadata = std::move(assetMetadata);
 
 			m_metadataIndirection[metadataIndex] = allocatedAssetMetadata;
+			m_numMetadata.fetch_add(1);
 		}
 	}
 
@@ -214,6 +217,7 @@ namespace Volt
 			}
 			m_metadata.Free(m_metadataIndirection.at(metadataIndex));
 			m_metadataIndirection[metadataIndex] = nullptr;
+			m_numMetadata.fetch_sub(1);
 		}
 		else
 		{

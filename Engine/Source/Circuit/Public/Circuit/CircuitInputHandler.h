@@ -13,6 +13,7 @@
 #include <WindowModule/WindowHandle.h>
 
 #include <unordered_set>
+#include <chrono>
 
 namespace Volt
 {
@@ -63,7 +64,15 @@ namespace Circuit
 		bool m_isDraggingWidget;
 		static constexpr int32_t MIN_DRAG_DELTA_THRESHOLD = 5; // in pixels
 
+		//double-click
+		Volt::InputCode m_lastClickButton;
+		Weak<Widget> m_lastClickWidget;
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastClickedTime;
+
+
 		Weak<Widget> m_prevHoveredWidget;
+
+
 
 
 		Map<Volt::WindowHandle, Volt::DelegateHandle> m_registeredOnKeyEventWindows;

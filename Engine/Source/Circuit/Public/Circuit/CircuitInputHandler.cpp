@@ -256,6 +256,29 @@ namespace Circuit
 
 	void CircuitInputHandler::OnMouseRelease(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{
+		//todo: hacky way to handle double click
+			auto nowTime = std::chrono::high_resolution_clock::now();
+		if (mouseEvent.GetMouseCode() == m_lastClickButton)
+		{
+			long long millisecondsSinceLastClick = std::chrono::duration_cast<std::chrono::milliseconds>(nowTime - m_lastClickedTime).count();
+			if (millisecondsSinceLastClick < 300)
+			{
+				if (!m_prevHoveredWidget.IsExpired())
+				{
+					Ref<Widget> prevHoveredWidget = m_prevHoveredWidget.Lock();
+
+					WidgetInteractionData interactionData;
+					interactionData.mouseButton = mouseEvent.GetMouseCode();
+					interactionData.mousePos = m_mousePos;
+
+					prevHoveredWidget->OnDoubleClicked(interactionData);
+				}
+			}
+		}
+		m_lastClickButton = mouseEvent.GetMouseCode();
+		m_lastClickedTime = nowTime;
+
+
 		if (mouseEvent.GetMouseCode() == m_dragMouseButton && !m_draggingWidget.IsExpired())
 		{
 			Ref<Widget> draggingWidget = m_draggingWidget.Lock();
