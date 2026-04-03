@@ -27,7 +27,7 @@ namespace Volt
 			case Volt::FiberStackSize::KB512: return 1ull << 19ull;
 		}
 		VT_ENSURE_NO_ENTRY();
-		return 0;
+		return 1;
 	}
 
 	struct FiberStack
