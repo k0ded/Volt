@@ -7,6 +7,8 @@
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 
+#include <chrono>
+
 namespace Volt
 {
 	ArchiveVersionRegistrar g_registerSubMeshArchiveVersion(SubMeshArchiveVersion::guid, SubMeshArchiveVersion::LatestVersion, "SubMeshArchiveVersion");

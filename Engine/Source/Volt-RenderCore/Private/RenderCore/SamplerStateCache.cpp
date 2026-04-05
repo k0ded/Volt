@@ -2,6 +2,7 @@
 #include "RenderCore/SamplerStateCache.h"
 
 #include <CoreUtilities/Math/Hash.h>
+#include <CoreUtilities/Locks/ScopedLock.h>
 
 namespace Volt
 {
@@ -60,7 +61,7 @@ namespace Volt
 		const size_t samplerHash = Utility::GetHashFromSamplerDesc(samplerDesc);
 
 		{
-			std::scoped_lock lock{ m_cacheMutex };
+			ScopedLock lock{ m_cacheMutex };
 			if (m_cache.contains(samplerHash))
 			{
 				return m_cache.at(samplerHash);
@@ -69,7 +70,7 @@ namespace Volt
 
 		IntRef<RHI::SamplerState> samplerState = RHI::SamplerState::Create(samplerDesc);
 		{
-			std::scoped_lock lock{ m_cacheMutex };
+			ScopedLock lock{ m_cacheMutex };
 			m_cache[samplerHash] = samplerState;
 		}
 

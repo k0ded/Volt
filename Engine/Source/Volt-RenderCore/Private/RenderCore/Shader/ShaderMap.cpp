@@ -12,6 +12,8 @@
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+#include <CoreUtilities/Locks/ScopedLock.h>
+
 namespace Volt
 {
 	namespace Utility
@@ -157,7 +159,7 @@ namespace Volt
 
 	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader, bool hasPermutations)
 	{
-		std::scoped_lock lock{ s_instance->m_registerMutex };
+		ScopedLock lock{ s_instance->m_registerMutex };
 
 		ShaderBucket& shaderBucket = s_instance->m_shaderMap[typeIndex];
 		shaderBucket.hasPermutations = hasPermutations;

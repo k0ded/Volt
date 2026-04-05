@@ -13,7 +13,7 @@ namespace Volt
 	class VTASSETS_API FontAsset : public Asset
 	{
 	public:
-		FontAsset() = default;
+		FontAsset();
 		~FontAsset() override = default;
 
 		VT_NODISCARD VT_INLINE const FontMetrics& GetMetrics() const { return m_metrics; }

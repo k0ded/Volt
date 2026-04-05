@@ -120,7 +120,7 @@ namespace Volt
 
 	private:
 		Map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
-		PagedAtomicArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
+		PagedAtomicArenaAllocator<StreamingInstance, 1024, DefaultHeapAllocator, true> m_instanceAllocator;
 		mutable VT_PROFILE_DECLARE_MUTEX(std::mutex, m_mutex);
 	};
 

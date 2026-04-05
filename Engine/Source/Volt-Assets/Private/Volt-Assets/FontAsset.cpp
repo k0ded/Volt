@@ -31,6 +31,11 @@ namespace Volt
 		}
 	};
 
+	FontAsset::FontAsset()
+	{
+
+	}
+
 	void FontAsset::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		TextureHeader textureHeader;

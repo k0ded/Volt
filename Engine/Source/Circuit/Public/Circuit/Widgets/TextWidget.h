@@ -13,7 +13,7 @@ namespace Circuit
     {
     public:
         TextWidget();
-        virtual ~TextWidget();
+        ~TextWidget() override;
 
         CIRCUIT_BEGIN_ARGS(TextWidget): 
             _Size(21.f),

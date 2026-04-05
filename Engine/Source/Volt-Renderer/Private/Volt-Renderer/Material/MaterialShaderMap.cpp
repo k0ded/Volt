@@ -4,6 +4,9 @@
 #include "Volt-Renderer/Material/MaterialShaderRegistry.h"
 
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/IORequestCompileShader.h>
+
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -26,6 +29,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		// #Mutex_Replace
 		std::shared_lock lock{ m_mutex };
 		auto it = m_shaderMap.find(shaderType);
 
@@ -51,6 +55,7 @@ namespace Volt
 
 	IntRef<RHI::Shader> MaterialShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
 	{
+		// #Mutex_Replace
 		std::unique_lock lock{ m_mutex };
 
 		ShaderBucket& shaderBucket = m_shaderMap[shaderType];
@@ -62,8 +67,6 @@ namespace Volt
 
 		IntRef<RHI::Shader> shader;
 		{
-			VT_PROFILE_SCOPE("Compile Shader");
-
 			const CompiledMaterialShaders::CompiledMaterialShader& compiledShader = m_compiledMaterialShaders.Get(shaderType);
 
 			RHI::ShaderCreateInfo shaderSpecification;
@@ -74,7 +77,10 @@ namespace Volt
 			shaderSpecification.failureIsFatal = false;
 			shaderSpecification.permutationConfig = std::move(permutationConfig);
 
-			shader = RHI::Shader::CreateWithSource(shaderSpecification, compiledShader.compiledShader);
+			IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Compile Material Shader", shaderSpecification, compiledShader.compiledShader);
+
+			VT_ASSERT(result.GetResultCode() == IORequestResultCode::Success);
+			shader = result.GetResult();
 		}
 
 		shaderBucket.permutations[permutationIndex] = shader;

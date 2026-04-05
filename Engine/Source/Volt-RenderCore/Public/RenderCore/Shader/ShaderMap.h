@@ -11,8 +11,7 @@
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
-
-#include <string>
+#include <CoreUtilities/Locks/SpinMutex.h>
 
 namespace Volt
 {
@@ -88,7 +87,7 @@ namespace Volt
 		Map<size_t, IntRef<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
 		Map<size_t, IntRef<RHI::ShaderBindingTable>> m_shaderBindingTableCache;
 
-		std::mutex m_registerMutex;
+		SpinMutex m_registerMutex;
 		std::mutex m_rayTracingCacheMutex;
 		std::mutex m_shaderBindingTableMutex;
 	};

@@ -5,6 +5,7 @@
 #include <RHIModule/Images/SamplerState.h>
 
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Locks/SpinMutex.h>
 
 namespace Volt
 {
@@ -40,7 +41,7 @@ namespace Volt
 	
 		IntRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc);
 
-		std::mutex m_cacheMutex;
+		SpinMutex m_cacheMutex;
 		Map<size_t, IntRef<RHI::SamplerState>> m_cache;
 	};
 }

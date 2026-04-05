@@ -8,6 +8,8 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <PlatformsModule/Platform.h>
 
+#include <CoreUtilities/ThreadConfig.h>
+
 namespace Volt::RHI
 {
 	VulkanRHISubmissionThread::VulkanRHISubmissionThread()
@@ -48,6 +50,8 @@ namespace Volt::RHI
 	void VulkanRHISubmissionThread::RunSubmissionThread()
 	{
 		VT_PROFILE_THREAD("RHI Submission Thread");
+
+		Threads::InitializeThreadConfig(false, false);
 
 		while (m_isRunning.load(std::memory_order::relaxed))
 		{

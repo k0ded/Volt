@@ -2,6 +2,7 @@
 
 #include "RenderCore/Shader/ShaderSubSystem.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
+#include "RenderCore/Shader/IORequestCompileShader.h"
 
 #include <CoreUtilities/ConsoleVariableRegistry.h>
 #include <CoreModule/ConfigManager.h>
@@ -12,6 +13,8 @@
 #include <RHIModule/RHIModule.h>
 
 #include <JobSystem/TaskGraph.h>
+
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 
@@ -132,12 +135,12 @@ namespace Volt
 			createInfo.stage = registrationInfo.stageInfos.shaderStage;
 			createInfo.forceCompile = false;
 
-			IntRef<RHI::Shader> shader;
+			IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Create Shader", createInfo);
+			
+			if (result.GetResultCode() == IORequestResultCode::Success)
 			{
-				VT_PROFILE_SCOPE("Create Shader");
-				shader = RHI::Shader::Create(createInfo);
+				ShaderMap::RegisterShader(typeIndex, result.GetResult(), registrationInfo.stageInfos.hasPermutations);
 			}
-			ShaderMap::RegisterShader(typeIndex, shader, registrationInfo.stageInfos.hasPermutations);
 		};
 
 		TaskGraph taskGraph{ ExecutionPriority::Immediate };
@@ -150,7 +153,7 @@ namespace Volt
 				taskGraph.AddTask("Load and Register Shader", [typeIndex, registrationInfo, compileFunc]()
 				{
 					compileFunc(typeIndex, registrationInfo);
-				}, FiberStackSize::KB512);
+				});
 			}
 			else
 			{

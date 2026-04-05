@@ -2,20 +2,20 @@
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::~PagedAtomicArenaAllocator()
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::~PagedAtomicArenaAllocator()
 {
 	Release();
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::PagedAtomicArenaAllocator(PagedAtomicArenaAllocator&& other) noexcept
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::PagedAtomicArenaAllocator(PagedAtomicArenaAllocator&& other) noexcept
 {
 	m_basePage.store(other.m_basePage.exchange(nullptr, std::memory_order::relaxed), std::memory_order::relaxed);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>& PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::operator=(PagedAtomicArenaAllocator&& other) noexcept
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>& PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::operator=(PagedAtomicArenaAllocator&& other) noexcept
 {
 	if (this != &other)
 	{
@@ -26,9 +26,9 @@ PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>& PagedAtomicArenaA
 	return *this;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
 template<typename... Args>
-Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Allocate(Args&&... args)
+Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Allocate(Args&&... args)
 {
 	while (true)
 	{
@@ -49,8 +49,8 @@ Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Allocate(Ar
 	}
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Free(Type* allocation)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Free(Type* allocation)
 {
 	VT_ENSURE(allocation != nullptr);
 
@@ -69,8 +69,8 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Free(Type* a
 	VT_ENSURE_MSG(false, "Allocation not found in any page!");
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-uint64_t PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::GetNumAllocatedPages() const
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+uint64_t PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::GetNumAllocatedPages() const
 {
 	uint64_t result = 0;
 	Page* page = m_basePage.load(std::memory_order::acquire);
@@ -83,8 +83,8 @@ uint64_t PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::GetNumAl
 	return result;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::ReservePages(uint32_t numPages)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::ReservePages(uint32_t numPages)
 {
 	const uint64_t numAllocatedPages = GetNumAllocatedPages();
 	if (numAllocatedPages >= numPages)
@@ -100,8 +100,8 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::ReservePages
 	}
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Release()
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Release()
 {
 	Page* page = m_basePage.exchange(nullptr, std::memory_order::acq_rel);
 	while (page != nullptr)
@@ -112,8 +112,8 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Release()
 	}
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::GetOrAllocateBasePage()
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::GetOrAllocateBasePage()
 {
 	Page* page = m_basePage.load(std::memory_order::acquire);
 	if (page != nullptr)
@@ -132,8 +132,8 @@ PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomic
 	return m_basePage.load(std::memory_order::acquire);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::GetOrAllocateNextPage(Page* current)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::GetOrAllocateNextPage(Page* current)
 {
 	Page* next = current->next.load(std::memory_order::acquire);
 	if (next != nullptr)
@@ -153,28 +153,48 @@ PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomic
 	return newPage;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::AllocatePage()
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::AllocatePage()
 {
 	void* newPtr = m_allocator.Allocate(sizeof(Page), 0);
 	return new(newPtr) Page();
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::FreePage(Page* page)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::FreePage(Page* page)
 {
-	for (uint64_t bitmask : page->bitset.bitset)
+	if constexpr (AllocatorOwnsAllocations)
 	{
-		VT_ENSURE_MSG(bitmask == 0, "Not all entries were destroyed prior to destruction!");
+		uint64_t index = 0;
+
+		for (uint64_t bitmask : page->bitset.bitset)
+		{
+			for (uint64_t bit = 0; bit < SimpleBitset::NumBits; ++bit)
+			{
+				if ((bitmask & (1ull << bit)) != 0)
+				{
+					Type* object = std::launder(reinterpret_cast<Type*>(&page->data[index * sizeof(Type)]));
+					object->~Type();
+				}
+				index++;
+			}
+		}
+	}
+	else
+	{
+		for (uint64_t bitmask : page->bitset.bitset)
+		{
+			VT_ENSURE_MSG(bitmask == 0, "Not all entries were destroyed prior to destruction!");
+		}
 	}
 
 	page->~Page();
 	m_allocator.Free(page);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
 template<typename... Args>
-Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::TryAllocate(Args&&... args)
+Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page::TryAllocate(Args&&... args)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -200,8 +220,8 @@ Type* PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::TryAl
 	return nullptr;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::Free(Type* allocation)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page::Free(Type* allocation)
 {
 	std::ptrdiff_t allocationIndex = allocation - reinterpret_cast<Type*>(data);
 	allocation->~Type();
@@ -210,8 +230,8 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::Free(T
 	nextIndex.store(allocationIndex, std::memory_order::relaxed);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset::TrySetBit(uint64_t index)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::SimpleBitset::TrySetBit(uint64_t index)
 {
 	const BitmaskType bitmaskIndex = index / NumBits;
 	const BitmaskType bitIndex = index % NumBits;
@@ -224,8 +244,8 @@ bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset
 	return (prevValue & mask) == 0;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset::Test(uint64_t index)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::SimpleBitset::Test(uint64_t index)
 {
 	const BitmaskType bitmaskIndex = index / NumBits;
 	const BitmaskType bitIndex = index % NumBits;
@@ -237,8 +257,8 @@ bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset
 	return (bitmask & mask) != 0;
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset::ResetBit(uint64_t index)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::SimpleBitset::ResetBit(uint64_t index)
 {
 	const BitmaskType bitmaskIndex = index / NumBits;
 	const BitmaskType bitIndex = index % NumBits;
@@ -249,15 +269,15 @@ void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::SimpleBitset
 	VT_ASSERT((prevValue & mask) != 0);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Page::IsPointerWithinPage(Type* allocation)
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+bool PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Page::IsPointerWithinPage(Type* allocation)
 {
 	const Type* dataPtr = reinterpret_cast<Type*>(data);
 	return allocation >= dataPtr && allocation < (dataPtr + PageSize);
 }
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/>
-void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator>::Iterator::Advance()
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
+void PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::Iterator::Advance()
 {
 	while (m_currentPage != nullptr)
 	{

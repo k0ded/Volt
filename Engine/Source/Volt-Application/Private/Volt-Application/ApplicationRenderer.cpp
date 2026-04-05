@@ -11,6 +11,8 @@
 
 #include <SubSystem/SubSystemManager.h>
 
+#include <JobSystem/TaskGraph.h>
+
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(ApplicationRenderer, Minimal, Engine);
@@ -46,25 +48,39 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Update Render Scenes");
 
+			TaskGraph renderSceneUpdateGraph{ ExecutionPriority::Render };
+
 			for (SceneContainer* container : sceneContainers)
 			{
 				Ref<RenderScene> renderScene = container->GetRenderScene();
 				if (renderScene)
 				{
-					UpdateRenderScene(*renderScene, frameIndex);
+					renderSceneUpdateGraph.AddTask("Update RenderScene", [this, renderScene, frameIndex]() 
+					{
+						UpdateRenderScene(*renderScene, frameIndex);
+					}, FiberStackSize::KB64);
 				}
 			}
+
+			renderSceneUpdateGraph.ExecuteAndWait();
 		}
 
 		// Render scene renderers
 		{
+			TaskGraph sceneRendererGraph{ ExecutionPriority::Render };
+
 			for (SceneContainer* container : sceneContainers)
 			{
 				for (const Ref<SceneRenderer>& sceneRenderer : container->GetSceneRenderers())
 				{
-					RenderSceneRenderer(*sceneRenderer, timestep);
+					sceneRendererGraph.AddTask("Render SceneRenderer", [this, sceneRenderer, timestep]()
+					{
+						RenderSceneRenderer(*sceneRenderer, timestep);
+					}, FiberStackSize::KB64);
 				}
 			}
+
+			sceneRendererGraph.ExecuteAndWait();
 		}
 
 		PostRender();

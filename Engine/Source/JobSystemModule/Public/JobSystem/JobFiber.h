@@ -13,11 +13,13 @@ namespace Volt
 	class JobFiber
 	{
 	public:
-		VTJS_API JobFiber(const String& fiberName);
+		VTJS_API JobFiber(const String& fiberName, int32_t id);
 
 		VTJS_API bool ExecuteJob(Job* job);
 		VTJS_API void ContinueExecution();
 		VTJS_API void Free();
+
+		VT_INLINE int32_t GetID() const { return m_id; }
 
 	private:
 		friend void ExecuteFiber(void* userdata);
@@ -28,5 +30,6 @@ namespace Volt
 		FiberStack m_stack;
 		Job* m_currentJob = nullptr;
 		String m_name;
+		int32_t m_id;
 	};
 }

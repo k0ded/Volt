@@ -16,4 +16,5 @@ namespace Threads
 {
 	VTCOREUTIL_API extern void InitializeThreadConfig(bool isWorkerThread, bool isIOThread, bool isMainThread = false);
 	VTCOREUTIL_API extern const ThreadConfig& GetThreadConfig();
+	VTCOREUTIL_API extern void SetFiberExecutionID(int32_t fiberId);
 }

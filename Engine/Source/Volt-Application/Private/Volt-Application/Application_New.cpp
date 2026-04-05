@@ -40,12 +40,16 @@ namespace Volt
 
 	Application_New::~Application_New()
 	{
+		m_layerStack.Clear();
+
+		m_eventListener = nullptr;
+		m_renderer = nullptr;
+		m_windowManager = nullptr;
+
 		m_subSystemManager->OnPreShutdown();
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
-
-		m_layerStack.Clear();
 	}
 	
 	void Application_New::Run()

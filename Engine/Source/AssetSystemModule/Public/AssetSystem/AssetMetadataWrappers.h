@@ -107,20 +107,36 @@ namespace Volt
 
 		VT_INLINE ReadOnlyAssetMetadata& operator=(ReadOnlyAssetMetadata&& other) noexcept
 		{
-			// We take control of the lock from the moved asset.
-			m_metadata = other.m_metadata;
-			other.m_metadata = nullptr;
+			if (this != &other)
+			{
+				if (m_metadata)
+				{
+					m_metadata->m_assetMetadataMutex.unlock_shared();
+				}
+
+				// We take control of the lock from the moved asset.
+				m_metadata = other.m_metadata;
+				other.m_metadata = nullptr;
+			}
 
 			return *this;
 		}
 
 		VT_INLINE ReadOnlyAssetMetadata& operator=(const ReadOnlyAssetMetadata& other) noexcept
 		{
-			// Lock the asset meta for this instance.
-			m_metadata = other.m_metadata;
-			if (m_metadata)
+			if (this != &other)
 			{
-				m_metadata->m_assetMetadataMutex.lock_shared();
+				if (m_metadata)
+				{
+					m_metadata->m_assetMetadataMutex.unlock_shared();
+				}
+
+				// Lock the asset meta for this instance.
+				m_metadata = other.m_metadata;
+				if (m_metadata)
+				{
+					m_metadata->m_assetMetadataMutex.lock_shared();
+				}
 			}
 
 			return *this;

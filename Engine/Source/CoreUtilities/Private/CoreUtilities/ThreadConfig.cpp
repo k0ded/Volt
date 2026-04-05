@@ -20,4 +20,10 @@ namespace Threads
 		VT_FATAL(g_threadConfig.isInitialized);
 		return g_threadConfig;
 	}
+
+	void SetFiberExecutionID(int32_t fiberId)
+	{
+		VT_FATAL(g_threadConfig.isInitialized);
+		g_threadConfig.activeFiberId = fiberId;
+	}
 }

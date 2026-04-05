@@ -38,6 +38,6 @@ namespace Volt
 		}
 
 	private:
-		PagedAtomicArenaAllocator<T, 512> m_allocator;
+		PagedAtomicArenaAllocator<T, 512, DefaultHeapAllocator, true> m_allocator;
 	};
 }

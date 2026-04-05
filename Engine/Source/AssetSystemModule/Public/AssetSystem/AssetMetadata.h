@@ -9,9 +9,7 @@
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Any.h>
 #include <CoreUtilities/EnumUtils.h>
-
-#include <shared_mutex>
-#include <filesystem>
+#include <CoreUtilities/Locks/SharedSpinMutex.h>
 
 namespace Volt
 {
@@ -327,7 +325,7 @@ namespace Volt
 		std::atomic<uint64_t> m_generation = 1;
 		std::atomic<uint64_t> m_publishedGeneration = 0;
 
-		RecursiveSharedMutex m_assetMetadataMutex;
+		SharedSpinMutex m_assetMetadataMutex;
 	};
 
 	bool AssetMetadata::IsFlagSet(AssetMetadataFlag flag) const

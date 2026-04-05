@@ -14,26 +14,25 @@ public:
 		: m_ticketActive{ true, false }
 	{}
 
-	VT_INLINE void Lock()
+	VT_INLINE void lock()
 	{
 		uint32_t writerNumber = m_writerCounter.fetch_add(1, std::memory_order::acq_rel);
 
 		while (writerNumber != m_nextWriter.load(std::memory_order::acquire))
 		{
-			//VT_PAUSE_THREAD();
 		}
 
 		WaitOnReaders();
 	}
 
 
-	VT_INLINE void Unlock()
+	VT_INLINE void unlock()
 	{
 		m_ticketActive[m_readerTicketIndex].store(true, std::memory_order::release);
 		m_nextWriter.fetch_add(1, std::memory_order::acq_rel);
 	}
 
-	VT_INLINE bool TryLock()
+	VT_INLINE bool try_lock()
 	{
 		uint32_t writerNumber = m_writerCounter.load(std::memory_order::acquire);
 		if (writerNumber != m_nextWriter.load(std::memory_order::acquire))
@@ -50,7 +49,7 @@ public:
 		return true;
 	}
 
-	VT_INLINE void LockShared()
+	VT_INLINE void lock_shared()
 	{
 		uint32_t readerTicketIndex;
 		uint32_t currentWriter = m_currentWriter.load(std::memory_order::acquire);
@@ -72,16 +71,15 @@ public:
 
 		while (!m_ticketActive[readerTicketIndex].load(std::memory_order::acquire))
 		{
-			//VT_PAUSE_THREAD();
 		}
 	}
 
-	VT_INLINE void UnlockShared()
+	VT_INLINE void unlock_shared()
 	{
 		m_ticketReaderCount[m_readerTicketIndex].fetch_sub(1, std::memory_order::acq_rel);
 	}
 
-	VT_INLINE bool TryLockShared()
+	VT_INLINE bool try_lock_shared()
 	{
 		uint32_t currentWriter = m_currentWriter.load(std::memory_order::acquire);
 		uint32_t readerTicketIndex = m_newReaderTicketIndex.load(std::memory_order::acquire);
@@ -114,7 +112,6 @@ private:
 
 		while (m_ticketReaderCount[flushingReaderTicket].load(std::memory_order::acquire) != 0)
 		{
-			//VT_PAUSE_THREAD();
 		}
 
 		m_ticketActive[flushingReaderTicket].store(false, std::memory_order::release);

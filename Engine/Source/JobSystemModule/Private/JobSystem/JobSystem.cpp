@@ -164,7 +164,9 @@ namespace Volt
 		if (VT_CHECK(workerData.currentlyExecutingJob != nullptr))
 		{
 			Job* job = workerData.currentlyExecutingJob;
-			
+
+			Threads::SetFiberExecutionID(-1);
+
 			// Swap back to the worker context
 			FiberSwapContext(&job->m_assignedFiber->m_executionContext, &workerData.fiberContext, OnFiberSwitch_PushToQueue, job);
 		}
@@ -188,6 +190,8 @@ namespace Volt
 			{
 				auto& worker = *s_instance->m_workers[g_workerId];
 				worker.scratch.toQueueWaitCounter = counter;
+
+				Threads::SetFiberExecutionID(-1);
 
 				Job* job = worker.currentlyExecutingJob;
 				FiberSwapContext(&job->m_assignedFiber->m_executionContext, &worker.fiberContext, OnFiberSwitch_PushToWaitingList, job);
@@ -431,6 +435,8 @@ namespace Volt
 
 	void JobSystem::SpawnWaitingListManager()
 	{
+		Threads::InitializeThreadConfig(false, false);
+
 		while (m_isRunning.load(std::memory_order::relaxed))
 		{
 			VT_PROFILE_SCOPE("FlushWaitingList");
@@ -605,6 +611,7 @@ namespace Volt
 		JobFiber* assignedFiber = job->GetAssignedFiber();
 		if (assignedFiber)
 		{
+			Threads::SetFiberExecutionID(assignedFiber->GetID());
 			assignedFiber->ContinueExecution();
 			return true;
 		}
@@ -615,6 +622,7 @@ namespace Volt
 
 			if (hasFiber && assignedFiber)
 			{
+				Threads::SetFiberExecutionID(assignedFiber->GetID());
 				ranJob = assignedFiber->ExecuteJob(job);
 			}
 
@@ -650,6 +658,8 @@ namespace Volt
 		counter->DecRef();
 		waitCounter->DecRef();
 		job->DecRef();
+
+		Threads::SetFiberExecutionID(-1);
 
 		// Move back to the worker fiber
 		FiberSwapContext(&fiber->m_executionContext, &m_workers[g_workerId]->fiberContext, OnFiberSwitch_FreeFiber, fiber);

@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-template<typename Type, uint64_t PageSize, typename SecondaryAllocator = DefaultHeapAllocator>
+template<typename Type, uint64_t PageSize, typename SecondaryAllocator = DefaultHeapAllocator, bool AllocatorOwnsAllocations = false>
 class PagedAtomicArenaAllocator
 {
 public:

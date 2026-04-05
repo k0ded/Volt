@@ -47,7 +47,7 @@ namespace Volt
 		friend class AssetRegistryIterator;
 		friend class AssetRegistryConstIterator;
 
-		using AssetMetadataAllocator = PagedAtomicArenaAllocator<AssetMetadata, 2048>;
+		using AssetMetadataAllocator = PagedAtomicArenaAllocator<AssetMetadata, 2048, DefaultHeapAllocator, true>;
 
 		void Initialize();
 		

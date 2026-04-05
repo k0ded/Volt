@@ -126,9 +126,9 @@ namespace Circuit
 		);
 
 		// Register callbacks
-		window.GetOnWindowRender().AddLambda([circuitWindow](Volt::Window_New& windowObject)
+		window.GetOnWindowRender().AddLambda([&window = *circuitWindow](Volt::Window_New& windowObject)
 		{
-			circuitWindow->OnRender();
+			window.OnRender();
 		});
 
 		window.GetOnWindowClosed().AddLambda([](Volt::Window_New& windowObject) 
