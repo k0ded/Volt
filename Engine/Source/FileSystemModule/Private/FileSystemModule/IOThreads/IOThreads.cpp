@@ -66,11 +66,7 @@ namespace Volt
 			while (m_ioRequestQueue.Pop(request))
 			{
 				VT_PROFILE_SCOPE(request.request->GetName().data());
-
-				request.request->Execute();
-				request.referencedCounter->Decrement();
-				request.referencedCounter->DecRef();
-				request.request->DecRef();
+				ExecuteIORequest(std::move(request));
 			}
 
 			std::unique_lock lock(workerData.wakeMutex);
@@ -86,6 +82,30 @@ namespace Volt
 	void IOThreads::FreeIORequest(IORequest* request)
 	{
 		m_requestAllocator.Free(request);
+	}
+
+	void IOThreads::ExecuteIORequest(QueuedIORequest&& request)
+	{
+		request.request->Execute();
+		request.referencedCounter->Decrement();
+		request.referencedCounter->DecRef();
+		request.request->DecRef();
+	}
+
+	void IOThreads::QueueOrExecuteIORequest(QueuedIORequest&& request)
+	{
+		const ThreadConfig& threadConfig = Threads::GetThreadConfig();
+
+		// If we are coming from an IO thread, we'll execute the request directly to not get deadlocked.
+		if (threadConfig.isIOThread)
+		{
+			ExecuteIORequest(std::move(request));
+		}
+		else
+		{
+			m_ioRequestQueue.Emplace(request);
+			m_wakeCondition.notify_all();
+		}
 	}
 
 	void IOThreads::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)

@@ -53,8 +53,10 @@ namespace Volt
 		void AllocateThreads();
 
 		void SpawnIOThread(uint32_t workerId);
-
 		void FreeIORequest(IORequest* request);
+
+		void ExecuteIORequest(QueuedIORequest&& request);
+		VTFS_API void QueueOrExecuteIORequest(QueuedIORequest&& request);
 
 		VTFS_API inline static IOThreads* s_instance = nullptr;
 
@@ -86,8 +88,7 @@ namespace Volt
 		// Note: Ensure that the result is created before the request is queued.
 		IORequestResult<RequestType> result(counter, request);
 
-		s_instance->m_ioRequestQueue.Emplace(queuedRequest);
-		s_instance->m_wakeCondition.notify_all();
+		s_instance->QueueOrExecuteIORequest(std::move(queuedRequest));
 
 		return result;
 	}

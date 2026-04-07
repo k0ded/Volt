@@ -159,6 +159,8 @@ namespace Volt::RHI
 		Vector<const char*> extensionsVector{ extensions, extensions + extensionCount };
 		extensionsVector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		extensionsVector.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
+		extensionsVector.push_back(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+		extensionsVector.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
 
 		return extensionsVector;
 	}

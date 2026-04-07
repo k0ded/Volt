@@ -174,6 +174,14 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 	{
 		const uint commandIndex = R_CulledUIElements[tileOffset + i];
 		UICommand command = R_Commands[commandIndex];
+
+		if (pixelPos.x < command.bounds.x ||
+			pixelPos.x > command.bounds.z ||
+			pixelPos.y < command.bounds.y ||
+			pixelPos.y > command.bounds.w)
+		{
+			continue;
+		}
 		
 		const float4 commandColor = UnpackUIntToFloat4(command.color);
 
