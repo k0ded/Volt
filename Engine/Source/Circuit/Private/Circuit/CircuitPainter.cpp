@@ -70,6 +70,14 @@ namespace Circuit
 		command.halfSize.x = width / 2;
 		command.halfSize.y = height / 2;
 
+		command.position += command.halfSize;
+
+		command.bounds = 
+		{ 
+			command.position - command.halfSize,
+			command.position + command.halfSize 
+		};
+
 		command.color = color;
 
 		AddDrawCommand(std::move(command));
@@ -87,6 +95,14 @@ namespace Circuit
 		command.halfSize.x = width / 2;
 		command.halfSize.y = height / 2;
 
+		command.position += command.halfSize;
+
+		command.bounds =
+		{
+			command.position - command.halfSize,
+			command.position + command.halfSize
+		};
+
 		command.radiusInner = lineThickness;
 
 		command.color = color;
@@ -102,8 +118,13 @@ namespace Circuit
 		command.scale = scale;
 
 		command.color = color;
-
 		command.radius = radius;
+
+		command.bounds =
+		{
+			command.position - radius,
+			command.position + radius
+		};
 
 		AddDrawCommand(std::move(command));
 	}
@@ -121,6 +142,12 @@ namespace Circuit
 		command.radiusInner = innerRadius;
 		command.angle = glm::radians(angleDegrees) * 0.5f;
 
+		command.bounds =
+		{
+			command.position - outerRadius,
+			command.position + outerRadius
+		};
+
 		AddDrawCommand(std::move(command));
 	}
 
@@ -132,6 +159,12 @@ namespace Circuit
 		command.radius = radius;
 		command.lineA = ToPixelPos({ x0, y0 });
 		command.lineB = ToPixelPos({ x1, y1 });
+
+		command.bounds =
+		{
+			glm::min(command.lineA, command.lineB),
+			glm::max(command.lineA, command.lineB)
+		};
 
 		AddDrawCommand(std::move(command));
 	}
@@ -289,6 +322,11 @@ namespace Circuit
 				command.textureIndex = textureIndex;
 				command.dimensions = dimensions;
 
+				command.bounds = {
+					command.minMaxPx.x, command.minMaxPx.w,
+					command.minMaxPx.z, command.minMaxPx.y
+				};
+
 				AddDrawCommand(std::move(command));
 
 				double advance = glyph->GetAdvance();
@@ -327,6 +365,8 @@ namespace Circuit
 		command.minMaxUV.y = uv0y;
 		command.minMaxUV.z = uv1x;
 		command.minMaxUV.w = uv1y;
+
+		command.bounds = command.minMaxPx;
 
 		command.textureIndex = m_resourceTable->GetOrAddTextureSlotIndex(image);
 		command.dimensions = { image->GetWidth(), image->GetHeight() };

@@ -4,64 +4,11 @@
 #include "Utility/Packing.hlsli"
 #include "Utility/2DSDF.hlsli"
 
+#include "UIDrawCommand.hlsli"
+#include "UICommandCulling.hlsli"
+
 #include "ResourceTable.hlsli"
 #include "StaticSamplerStates.hlsli"
-
-namespace UIPrimitiveType
-{
-	static const uint Circle = 0;
-	static const uint Rect = 1;
-	static const uint Line = 2;
-	static const uint CircleSegment = 3;
-	static const uint TextChar = 4;
-	static const uint Image = 5;
-}
-
-struct UICommand
-{
-	uint type;
-	int primitiveGroup;
-
-	// Common
-	float rotation;
-	float scale;
-	float2 position;
-
-	float glowDistance;
-	float glowStrength;
-
-	float2 shadowOffset;
-	float shadowStrength;
-	float padding0;
-
-	uint color;
-	uint textureIndex;
-
-	// Rounding
-	float rounding;
-
-	// Circle
-	float radius;
-
-	// Rect
-	float2 halfSize;
-
-	// Circle Segment
-	float radiusInner;
-	float angle;
-
-	// Line
-	float2 lineA;
-	float2 lineB;
-
-	// Image
-	uint2 dimensions;
-	float2 padding1;
-
-	// Text
-	float4 minMaxUV;
-	float4 minMaxPx;
-};
 
 float3 SDF_Glow(float sdf, float glowDistance, float glowStrength, float3 glowColor, float3 prevColor)
 {
@@ -109,7 +56,6 @@ struct SDFPrimitiveGroup
 	{
 		const float4 color = UnpackUIntToFloat4(command.color);
 		float2 position = SDF_Transform(command.position, command.scale, command.rotation, pixelPos);
-		position = SDF_Translate(position, -command.halfSize);
 
 		float tempSdf = SDF_Rectangle(position, command.halfSize, command.rounding) * command.scale;
 		if (command.radiusInner > 0.f)
@@ -188,10 +134,13 @@ struct SDFPrimitiveGroup
 	}
 };
 
-StructuredBuffer<UICommand> Commands;
+StructuredBuffer<UICommand> R_Commands;
+StructuredBuffer<int> R_CulledUIElements;
+Buffer<uint> R_PerTileCommandOffset;
+Buffer<uint> R_PerTileCommandCount;
 
 uint CommandCount;
-uint2 RenderSize;
+uint2 NumTiles;
 
 float ScreenPxRange(float2 msdfSize, float2 texCoords)
 {
@@ -209,16 +158,22 @@ float SDF_TextMedian(float r, float g, float b)
 
 float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
-	const float2 pixelPos = input.position.xy + 0.5f;
-	
+	const float2 pixelPos = input.position.xy;
+	const uint2 tileId = pixelPos / CULLING_GROUP_SIZE_X;
+	const uint tileIndex = tileId.y * NumTiles.x + tileId.x;
+
+	const uint tileOffset = R_PerTileCommandOffset[tileIndex];
+	const uint numCommands = R_PerTileCommandCount[tileIndex];
+
 	float3 resultColor = 0.f;
 
 	SDFPrimitiveGroup primitiveGroup;
 	int activePrimitiveGroup = -1;
 
-	for (uint i = 0; i < CommandCount; i++)
+	for (uint i = 0; i < numCommands; i++)
 	{
-		UICommand command = Commands[i];
+		const uint commandIndex = R_CulledUIElements[tileOffset + i];
+		UICommand command = R_Commands[commandIndex];
 		
 		const float4 commandColor = UnpackUIntToFloat4(command.color);
 
@@ -258,7 +213,8 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 
 			case UIPrimitiveType::TextChar:
 			{
-				if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
+				if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || 
+					pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
 				{
 					break;
 				}
@@ -307,9 +263,10 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 			}
 		}
 
-		if (i < CommandCount - 1)
+		if (i < numCommands - 1)
 		{
-			int nextPrimitiveGroup = Commands[i + 1].primitiveGroup;
+			uint nextCommandIndex = R_CulledUIElements[tileOffset + i + 1];
+			int nextPrimitiveGroup = R_Commands[nextCommandIndex].primitiveGroup;
 		
 			// Apply group
 			if (activePrimitiveGroup != nextPrimitiveGroup || // Next will be a new group
@@ -319,11 +276,12 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 			}
 		}
 		// Last command, apply
-		else if (i == CommandCount - 1)
+		else if (i == numCommands - 1)
 		{
 			primitiveGroup.ApplyGroup(command, resultColor);
 		}
 	}
 
 	return float4(resultColor, 1.f);
+	//return float4((numCommands.xxx) / 100.f, 1.f);
 }

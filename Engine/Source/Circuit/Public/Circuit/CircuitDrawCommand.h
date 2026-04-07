@@ -26,6 +26,9 @@ namespace Circuit
 		// Common
 		float rotation;
 		float scale;
+
+		glm::vec4 bounds;
+
 		glm::vec2 position;
 
 		float glowDistance;
@@ -73,6 +76,7 @@ namespace Circuit
 			result.shadowStrength = 0.f;
 			result.rounding = 0.f;
 			result.radiusInner = 0.f;
+			result.bounds = 0;
 
 			return result;
 		}

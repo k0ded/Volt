@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
 namespace Volt
@@ -9,8 +11,8 @@ namespace Volt
 	class PrefixSumTechnique
 	{
 	public:
-		PrefixSumTechnique(RenderGraph& renderGraph);
-		void Execute(RGBufferRef inputBuffer, RGBufferRef outputBuffer, uint32_t numValues);
+		VTR_API PrefixSumTechnique(RenderGraph& renderGraph);
+		VTR_API void Execute(RGBufferRef inputBuffer, RGBufferRef outputBuffer, uint32_t numValues);
 
 	private:
 		RenderGraph& m_renderGraph;

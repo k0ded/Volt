@@ -1,6 +1,9 @@
 #include "rcpch.h"
 #include "RenderCore/Shader/ShaderMap.h"
 #include "RenderCore/Shader/PipelineStateCache.h"
+#include "RenderCore/Shader/IORequestCompileShader.h"
+
+#include <FileSystemModule/IOThreads/IOThreads.h>
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
@@ -233,18 +236,20 @@ namespace Volt
 		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
 		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
 
-		RHI::ShaderCreateInfo createInfo;
-		createInfo.name = shaderBucket.baseShader->GetName();
-		createInfo.entryPoint = sourceInfo.sourceEntry.entryPoint;
-		createInfo.sourceFilepath = sourceInfo.sourceEntry.filepath;
-		createInfo.stage = sourceInfo.sourceEntry.shaderStage;
-		createInfo.permutationConfig = std::move(permutationConfig);
-		createInfo.forceCompile = false;
-
 		IntRef<RHI::Shader> shader;
 		{
-			VT_PROFILE_SCOPE("Compile shader permutation");
-			shader = RHI::Shader::Create(createInfo);
+			RHI::ShaderCreateInfo createInfo;
+			createInfo.name = shaderBucket.baseShader->GetName();
+			createInfo.entryPoint = sourceInfo.sourceEntry.entryPoint;
+			createInfo.sourceFilepath = sourceInfo.sourceEntry.filepath;
+			createInfo.stage = sourceInfo.sourceEntry.shaderStage;
+			createInfo.permutationConfig = std::move(permutationConfig);
+			createInfo.forceCompile = false;
+
+			IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Compile Shader Permutation", createInfo);
+
+			VT_ASSERT(result.GetResultCode() == IORequestResultCode::Success);
+			shader = result.GetResult();
 		}
 
 		m_shaderMap.at(typeIndex).permutationMap[permutationIndex] = shader;

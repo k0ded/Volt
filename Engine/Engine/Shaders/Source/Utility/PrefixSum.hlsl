@@ -26,17 +26,8 @@ groupshared uint GroupPartitionIndex;
 groupshared uint GroupLookBackFlag;
 groupshared uint GroupPartitionPrefix;
 
-[numthreads(32, 1, 1)]
-void MainCS()
-{
-    const uint laneIndex = WaveGetLaneIndex();
-
-    uint laneValue = InputValues[laneIndex];
-    RWOutputValues[laneIndex] = WavePrefixSum(laneValue);
-}
-
 [numthreads(TG_SIZE, 1, 1)]
-void MainCS2(uint GroupThreadId : SV_GroupThreadId)
+void MainCS(uint GroupThreadId : SV_GroupThreadId)
 {
     // We need to use the raw buffer here.
     const uint WaveSize = WaveGetLaneCount();
