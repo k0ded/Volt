@@ -20,6 +20,7 @@ struct UICommand
 	float scale;
 
 	float4 bounds;
+	float4 clipRect;
 
 	float2 position;
 

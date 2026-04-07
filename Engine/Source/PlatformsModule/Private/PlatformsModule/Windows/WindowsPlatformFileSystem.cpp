@@ -92,7 +92,8 @@ namespace Volt
 	void WindowsPlatformFileSystem::CloseFile(FileHandle fileHandle)
 	{
 		VT_ASSERT(fileHandle.IsValid());
-		CloseHandle(fileHandle.Get());
+		BOOL result = CloseHandle(fileHandle.Get());
+		VT_ASSERT(result == TRUE);
 	}
 
 	void WindowsPlatformFileSystem::CreateDirectory(const Filesystem::Path& path)
@@ -376,6 +377,7 @@ namespace Volt
 		FILETIME ftCreate, ftAccess, ftWrite;
 		if (!::GetFileTime(fileHandle.Get(), &ftCreate, &ftAccess, &ftWrite))
 		{
+			CloseFile(fileHandle);
 			return 0;
 		}
 
@@ -385,6 +387,7 @@ namespace Volt
 	
 		constexpr uint64_t WINDOWS_TO_UNIX_MS = 11644473600000ULL;
 
+		CloseFile(fileHandle);
 		return (temp.QuadPart / 10000) - WINDOWS_TO_UNIX_MS;
 	}
 
@@ -415,8 +418,7 @@ namespace Volt
 
 		DWORD lastError = GetLastError();
 
-		if (lastError == ERROR_FILE_NOT_FOUND ||
-			lastError == ERROR_PATH_NOT_FOUND ||
+		if (lastError == ERROR_PATH_NOT_FOUND ||
 			lastError == ERROR_INVALID_NAME || 
 			lastError == ERROR_BAD_PATHNAME ||
 			lastError == ERROR_BAD_NETPATH)

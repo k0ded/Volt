@@ -28,6 +28,7 @@ namespace Circuit
 		float scale;
 
 		glm::vec4 bounds;
+		glm::vec4 clipRect;
 
 		glm::vec2 position;
 
@@ -77,6 +78,7 @@ namespace Circuit
 			result.rounding = 0.f;
 			result.radiusInner = 0.f;
 			result.bounds = 0;
+			result.clipRect = { -FLT_MAX, -FLT_MAX, FLT_MAX, FLT_MAX };
 
 			return result;
 		}

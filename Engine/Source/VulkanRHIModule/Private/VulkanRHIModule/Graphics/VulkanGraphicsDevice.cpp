@@ -348,6 +348,11 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+			}
+
 			return enabledExtensions;
 		}
 	}

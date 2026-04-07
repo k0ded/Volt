@@ -40,10 +40,9 @@ void CullUIElementsCS(uint2 DispatchThreadID : SV_DispatchThreadID, uint2 GroupI
 		if (index < NumCommands)
 		{
 			const UICommand command = R_Commands[index];
-			hasIntersectingCommand = IsAABBIntersectingAABB(
-				command.bounds.xy, command.bounds.zw,
-				minPixelCoords, maxPixelCoords
-			);
+			hasIntersectingCommand = 
+				IsAABBIntersectingAABB(command.bounds.xy, command.bounds.zw, minPixelCoords, maxPixelCoords) &&
+				IsAABBIntersectingAABB(command.clipRect.xy, command.clipRect.zw, minPixelCoords, maxPixelCoords);
 		}
 
 		const uint numIntersectingCommands = WaveActiveCountBits(hasIntersectingCommand);
