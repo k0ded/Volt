@@ -2,7 +2,6 @@
 
 #include "CoreUtilities/Malloc.h"
 #include "CoreUtilities/Memory.h"
-#include "CoreUtilities/Allocators/GlobalMemoryStack.h"
 
 class DefaultHeapAllocator
 {
@@ -136,41 +135,5 @@ public:
 		uint8_t m_data[TotalSize];
 		void* m_heapAllocation = nullptr;
 		SecondaryAllocator::template ForElementType<ValueType> m_allocator;
-	};
-};
-
-class GlobalMemoryStackAllocator
-{
-public:
-	template<typename ValueType>
-	class ForElementType
-	{
-	public:
-		ForElementType()
-			: m_allocation(nullptr)
-		{}
-
-		~ForElementType()
-		{}
-
-		VT_INLINE void* Allocate(size_t size, size_t alignment)
-		{
-			void* newAllocation = ::GlobalMemoryStack::Get().Allocate(size, alignment);
-			m_allocation = newAllocation;
-			return newAllocation;
-		}
-
-		VT_INLINE void Free(void* allocation)
-		{}
-
-		VT_INLINE void Swap(ForElementType& other)
-		{
-			std::swap(m_allocation, other.m_allocation);
-		}
-
-		VT_INLINE ValueType* GetAllocation() { return reinterpret_cast<ValueType*>(m_allocation); }
-
-	private:
-		void* m_allocation;
 	};
 };

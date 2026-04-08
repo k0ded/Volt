@@ -3,13 +3,15 @@
 #include "CoreUtilities/Malloc.h"
 #include "CoreUtilities/Profiling/Profiling.h"
 
-namespace Memory
-{
 #define USE_MIMALLOC 1
 
 #if USE_MIMALLOC
-	#include <mimalloc.h>
+#include <mimalloc.h>
+#endif
 
+namespace Memory
+{
+#if USE_MIMALLOC
 	static void InitializeMiMalloc()
 	{
 		static bool initialized = false;
@@ -55,7 +57,7 @@ namespace Memory
 #endif
 		}
 
-		VT_PROFILE_ALLOC(resultPtr, size);
+		//VT_PROFILE_ALLOC(resultPtr, size);
 		return resultPtr;
 	}
 
@@ -88,8 +90,8 @@ namespace Memory
 		Free(original);
 #endif
 
-		VT_PROFILE_FREE(original);
-		VT_PROFILE_ALLOC(resultPtr, size);
+		//VT_PROFILE_FREE(original);
+		//VT_PROFILE_ALLOC(resultPtr, size);
 		return resultPtr;
 	}
 
@@ -106,6 +108,6 @@ namespace Memory
 		_aligned_free(ptr);
 #endif
 
-		VT_PROFILE_FREE(ptr);
+		//VT_PROFILE_FREE(ptr);
 	}
 }

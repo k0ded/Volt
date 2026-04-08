@@ -49,8 +49,8 @@ namespace Volt
 
 	private:
 		InputCode m_mouseCode;
+		Type m_eventType;
 		float m_x;
 		float m_y;
-		Type m_eventType;
 	};
 }

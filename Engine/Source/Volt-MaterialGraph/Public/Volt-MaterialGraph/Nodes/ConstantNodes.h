@@ -47,7 +47,7 @@ namespace Volt::MosaicNodes
 			}
 
 			const String varName = m_graph->GetNextVariableName();
-			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
+			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).template Get<ValueType>());
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
@@ -145,7 +145,7 @@ namespace Volt::MosaicNodes
 			}
 
 			const String varName = m_graph->GetNextVariableName();
-			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
+			String result = FormatString(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).template Get<ValueType>());
 			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};

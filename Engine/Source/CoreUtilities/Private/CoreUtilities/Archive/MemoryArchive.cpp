@@ -9,8 +9,8 @@ MemoryWriter::MemoryWriter()
 
 MemoryWriter::MemoryWriter(const MemoryWriter& other)
 	: Archive(false),
-	m_isOpen(other.m_isOpen),
-	m_allocator(other.m_allocator)
+	m_allocator(other.m_allocator),
+	m_isOpen(other.m_isOpen)
 {}
 
 MemoryWriter& MemoryWriter::operator=(const MemoryWriter& other)

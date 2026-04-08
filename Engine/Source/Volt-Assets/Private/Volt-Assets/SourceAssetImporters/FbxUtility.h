@@ -190,7 +190,7 @@ namespace Volt
 
 		FatIndex()
 		{
-			for (int i = 0; i < ElementType::Count; i++)
+			for (uint32_t i = 0; i < ElementType::Count; i++)
 			{
 				elements[i] = -1;
 			}

@@ -80,7 +80,7 @@ namespace Volt::RHI
 	inline VertexAttributeData CreateVertexLayoutFromShaders(const PipelineShadersVector& shaders, VertexBufferLayout& vertexBufferLayout)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
-		for (const auto shader : shaders)
+		for (const auto& shader : shaders)
 		{
 			const ShaderInfo& shaderInfo = shader->GetShaderInfo();
 
@@ -128,7 +128,7 @@ namespace Volt::RHI
 		{
 			Vector<ShaderParameterMap::ResourceBindings> shaderResourceBindings;
 
-			for (const auto shader : m_createInfo.shaders)
+			for (const auto& shader : m_createInfo.shaders)
 			{
 				const ShaderParameterMap& parameterMap = shader->GetParameterMap();
 
@@ -309,7 +309,7 @@ namespace Volt::RHI
 
 			Vector<VkPipelineShaderStageCreateInfo> pipelineStageInfos{};
 
-			for (const auto shader : m_createInfo.shaders)
+			for (const auto& shader : m_createInfo.shaders)
 			{
 				VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
 

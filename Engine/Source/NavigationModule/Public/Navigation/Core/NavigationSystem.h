@@ -24,7 +24,7 @@ namespace Volt
 			const Ref<NavMesh>& GetVTNavMesh() { return myNavMesh; };
 
 		private:
-			friend class Scene;
+			friend class Volt::Scene;
 
 			//todo_fabian: reimplement
 			//bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);

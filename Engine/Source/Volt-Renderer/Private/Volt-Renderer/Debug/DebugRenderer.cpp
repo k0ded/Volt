@@ -91,53 +91,65 @@ namespace Volt
 		for (size_t i = 1; i < m_lineSphere.circleXZ.size(); i++)
 		{
 			DrawLineWithVertices(
-				baseVertex++, baseVertex++,
+				baseVertex, baseVertex + 1,
 				center + m_lineSphere.circleXZ.at(i - 1) * radius,
 				center + m_lineSphere.circleXZ.at(i) * radius,
 				color
 			);
+
+			baseVertex += 2;
 		}
 
 		DrawLineWithVertices(
-			baseVertex++, baseVertex++,
+			baseVertex, baseVertex + 1,
 			center + m_lineSphere.circleXZ.back() * radius,
 			center + m_lineSphere.circleXZ.front() * radius,
 			color
 		);
 
+		baseVertex += 2;
+
 		for (size_t i = 1; i < m_lineSphere.circleXY.size(); i++)
 		{
 			DrawLineWithVertices(
-				baseVertex++, baseVertex++,
+				baseVertex, baseVertex + 1,
 				center + m_lineSphere.circleXY.at(i - 1) * radius,
 				center + m_lineSphere.circleXY.at(i) * radius,
 				color
 			);
+
+			baseVertex += 2;
 		}
 
 		DrawLineWithVertices(
-			baseVertex++, baseVertex++,
+			baseVertex, baseVertex + 1,
 			center + m_lineSphere.circleXY.back() * radius,
 			center + m_lineSphere.circleXY.front() * radius,
 			color
 		);
 
+		baseVertex += 2;
+
 		for (size_t i = 1; i < m_lineSphere.circleYZ.size(); i++)
 		{
 			DrawLineWithVertices(
-				baseVertex++, baseVertex++,
+				baseVertex, baseVertex + 1,
 				center + m_lineSphere.circleYZ.at(i - 1) * radius,
 				center + m_lineSphere.circleYZ.at(i) * radius,
 				color
 			);
+
+			baseVertex += 2;
 		}
 
 		DrawLineWithVertices(
-			baseVertex++, baseVertex++,
+			baseVertex, baseVertex + 1,
 			center + m_lineSphere.circleYZ.back() * radius,
 			center + m_lineSphere.circleYZ.front() * radius,
 			color
 		);
+
+		baseVertex += 2;
 	}
 
 	void DebugRenderer::Render(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef depthTexture)

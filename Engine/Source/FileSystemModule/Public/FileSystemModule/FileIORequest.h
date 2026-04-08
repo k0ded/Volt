@@ -12,6 +12,10 @@ namespace Volt
 
 		struct Config
 		{
+			Config()
+				: maxReadSize(0)
+			{}
+
 			/*
 				Max bytes to read from file, 0 will read the entire file.
 			*/

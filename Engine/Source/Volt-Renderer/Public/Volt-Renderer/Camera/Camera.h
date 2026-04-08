@@ -83,8 +83,6 @@ namespace Volt
 
 		glm::vec2 m_subpixelOffset = 0.f;
 
-		bool m_reversed = true;
-
 		float m_nearPlane = 0.f;
 		float m_farPlane = 0.f;
 
@@ -104,6 +102,8 @@ namespace Volt
 		float m_ISO = 100.f;
 
 		bool m_isOrthographic = false;
+		bool m_reversed = true;
+
 		Frustum m_frustum;
 	};
 }

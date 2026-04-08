@@ -144,8 +144,6 @@ namespace Volt
 		}
 		VT_PROFILE_MESSAGE("START LOADING ENTITIES");
 
-		bool apa =  m_entityScene.IsEntityValid(EntityID::Null());
-		apa;
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
 			//collect all entity descriptions to spawn

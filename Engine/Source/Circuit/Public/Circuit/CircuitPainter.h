@@ -62,8 +62,5 @@ namespace Circuit
 		CircuitPainter* m_basePainter = nullptr;
 		CircuitPainter* m_parentPainter = nullptr;
 		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
-
-		bool m_calculateBounds = false;
-
 	};
 }

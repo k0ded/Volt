@@ -91,7 +91,7 @@ struct StringHash
 #endif
 };
 
-STRING_HASH_CONSTEXPR inline StringHash operator"" _sh(const char* input, size_t)
+STRING_HASH_CONSTEXPR inline StringHash operator""_sh(const char* input, size_t)
 {
 	return StringHash::Construct(StringView(input));
 }

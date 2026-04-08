@@ -70,6 +70,7 @@ namespace Volt
 	class VTAS_API SourceAssetImporter
 	{
 	public:
+		virtual ~SourceAssetImporter() = default;
 		virtual SourceAssetFileInformation GetSourceFileInformation(const Filesystem::Path& filepath) const = 0;
 
 		template<typename ConfigType>

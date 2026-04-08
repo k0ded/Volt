@@ -213,7 +213,7 @@ namespace Volt
 
 		if constexpr (std::tuple_size_v<ComponentTuple> > 1)
 		{
-			auto view = m_entityScene.GetRegistry().view<T...>().use<FirstComponentType>();
+			auto view = m_entityScene.GetRegistry().view<T...>().template use<FirstComponentType>();
 			view.each(func);
 		}
 		else

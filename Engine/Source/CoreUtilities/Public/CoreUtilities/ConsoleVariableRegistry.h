@@ -10,6 +10,7 @@ namespace Volt
 	class RegisteredConsoleVariableBase
 	{
 	public:
+		virtual ~RegisteredConsoleVariableBase() = default;
 		virtual const void* Get() const = 0;
 		virtual void Set(const void* value) = 0;
 
@@ -29,6 +30,7 @@ namespace Volt
 	{
 	public:
 		RegisteredConsoleVariable(const String& variableName, const T& defaultValue, StringView description);
+		~RegisteredConsoleVariable() override = default;
 
 		VT_NODISCARD const void* Get() const override;
 		void Set(const void* value) override;

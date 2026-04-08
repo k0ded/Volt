@@ -60,7 +60,7 @@ namespace Volt
 				{
 					VT_ENSURE(m_componentData.headers[0].componentDataOffset == 0);
 
-					for (int i = 0; i < m_componentData.headers.size() - 1; i++)
+					for (int i = 0; i < static_cast<int32_t>(m_componentData.headers.size()) - 1; i++)
 					{
 						EntityDescSerialization::ComponentHeader& header = m_componentData.headers[i];
 						EntityDescSerialization::ComponentHeader& nextHeader = m_componentData.headers[i + 1];

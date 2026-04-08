@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RHIModule/Buffers/Buffer.h>
+
 #include <CoreUtilities/Pointers/IntRef.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 

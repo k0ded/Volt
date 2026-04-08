@@ -26,7 +26,7 @@ public:
 	{
 		constexpr TypeTraits::TypeIndex envTypeIndex = TypeTraits::TypeIndex::FromType<EnvType>();
 
-		auto it = std::find_if(m_registeredEnvironmentDefinitions.begin(), m_registeredEnvironmentDefinitions.end(), [](const auto& def) { return def.typeIndex == envTypeIndex; });
+		auto it = std::find_if(m_registeredEnvironmentDefinitions.begin(), m_registeredEnvironmentDefinitions.end(), [envTypeIndex](const auto& def) { return def.typeIndex == envTypeIndex; });
 		const bool hasBeenRegistered = it != m_registeredEnvironmentDefinitions.end();
 		VT_ENSURE_MSG(!hasBeenRegistered, "Type can not be registered more than once!");
 
@@ -50,9 +50,9 @@ public:
 	{
 		constexpr TypeTraits::TypeIndex envTypeIndex = TypeTraits::TypeIndex::FromType<EnvType>();
 
-		if (VT_CHECK(m_registeredEnvironmentDefinitions.contains_with_predicate([](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; })))
+		if (VT_CHECK(m_registeredEnvironmentDefinitions.contains_with_predicate([envTypeIndex](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; })))
 		{
-			m_registeredEnvironmentDefinitions.erase_with_predicate([](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; });
+			m_registeredEnvironmentDefinitions.erase_with_predicate([envTypeIndex](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; });
 		}
 	}
 

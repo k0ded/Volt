@@ -112,7 +112,7 @@ public:
 	template<std::derived_from<T> U>
 	VT_INLINE AssetReference<U> ConvertTo() const
 	{
-		AssetReference<U> result{ m_asset.As<U>() };
+		AssetReference<U> result{ m_asset.template As<U>() };
 		return result;
 	}
 

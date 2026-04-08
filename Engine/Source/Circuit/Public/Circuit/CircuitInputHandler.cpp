@@ -74,7 +74,7 @@ namespace Circuit
 		}
 
 		//keep adding widgets that we find are under the cursor
-		for (int i = 0; i < widgetsToCheck.size(); i++)
+		for (size_t i = 0; i < widgetsToCheck.size(); i++)
 		{
 			Ref<Widget> checkingWidget = widgetsToCheck[i];
 			if (!checkingWidget)

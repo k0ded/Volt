@@ -82,13 +82,13 @@ namespace Volt
 		void OnRenderPrimitiveRemoved(const RenderPrimitiveData* renderPrimitive);
 		Vector<RenderPrimitiveData*> GetRenderPrimitives() const;
 
-		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
+		VT_NODISCARD VT_INLINE uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 
 		VT_NODISCARD uint32_t GetMaterialIndex(RenderMaterial* material) const;
 		VT_NODISCARD uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
 		VT_NODISCARD VT_INLINE uint32_t GetMaxPrimitiveIndex() const { return static_cast<uint32_t>(m_primitiveIndicesContainer.GetMaxIndex()); }
 
-		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
+		VT_NODISCARD VT_INLINE const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
 		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
 
 		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
@@ -246,7 +246,6 @@ namespace Volt
 		EntityScene* m_scene = nullptr;
 
 		uint32_t m_currentBoneCount = 0;
-		uint32_t m_frameIndex = 0;
 		
 		// Debug
 		DebugRenderer m_debugRenderer;

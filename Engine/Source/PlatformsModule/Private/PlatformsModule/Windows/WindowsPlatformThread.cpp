@@ -3,6 +3,7 @@
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/String/VoltString.h>
+#include <CoreUtilities/VoltAssert.h>
 
 namespace Volt
 {

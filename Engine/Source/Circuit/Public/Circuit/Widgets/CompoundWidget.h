@@ -12,7 +12,7 @@ namespace Circuit
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 		Vector<Ref<Widget>> GetChildren() override { return m_childWidgets; }
-		bool HasChildren() const { return !m_childWidgets.empty(); }
+		bool HasChildren() const override { return !m_childWidgets.empty(); }
 
 	protected:
 		void AddChildWidget(Ref<Widget> childWidget);

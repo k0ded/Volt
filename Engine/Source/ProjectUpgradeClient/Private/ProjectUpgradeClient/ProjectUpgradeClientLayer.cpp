@@ -117,7 +117,7 @@ namespace Volt
 			for (int i = static_cast<int>(m_availableUpgradeVersions.size()) - 1; i >= 0; i--)
 			{
 				const Volt::Version& upgradeVersion = m_availableUpgradeVersions[i];
-				ImGui::Text(upgradeVersion.ToString().c_str());
+				ImGui::TextUnformatted(upgradeVersion.ToString().c_str());
 			}
 			ImGui::Unindent();
 
@@ -181,7 +181,7 @@ namespace Volt
 			const size_t total = (m_currentUpgrade->GetNumTotalActions() != 0) ? m_currentUpgrade->GetNumTotalActions() : 1;
 			progressFraction = static_cast<float>(m_currentUpgrade->GetNumActionsCompleted()) / static_cast<float>(total);
 			ImGui::Text("%s", m_currentUpgrade->GetCurrentActionText().c_str());
-			ImGui::Text("%d/%d", m_currentUpgrade->GetNumActionsCompleted(), m_currentUpgrade->GetNumTotalActions());
+			ImGui::Text("%d/%d", static_cast<int32_t>(m_currentUpgrade->GetNumActionsCompleted()), static_cast<int32_t>(m_currentUpgrade->GetNumTotalActions()));
 		}
 
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();

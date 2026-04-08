@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iterator>
+#include "CoreUtilities/VoltAssert.h"
 
 template<typename T, size_t N = 1>
 struct Array

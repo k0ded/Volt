@@ -33,8 +33,8 @@ namespace Volt::MosaicNodes
 		{
 			constexpr const char* nodeStr = "const {} {} = {}({}, {});\n";
 
-			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
-			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).template Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).template Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{
@@ -95,9 +95,9 @@ namespace Volt::MosaicNodes
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5});\n";
 		
-			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
-			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
-			String B = FormatString("{}", GetInputParameter(2).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).template Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).template Get<ValueType>());
+			String B = FormatString("{}", GetInputParameter(2).template Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{
@@ -163,10 +163,10 @@ namespace Volt::MosaicNodes
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5}, {6});\n";
 
-			String R = FormatString("{}", GetInputParameter(0).Get<ValueType>());
-			String G = FormatString("{}", GetInputParameter(1).Get<ValueType>());
-			String B = FormatString("{}", GetInputParameter(2).Get<ValueType>());
-			String A = FormatString("{}", GetInputParameter(3).Get<ValueType>());
+			String R = FormatString("{}", GetInputParameter(0).template Get<ValueType>());
+			String G = FormatString("{}", GetInputParameter(1).template Get<ValueType>());
+			String B = FormatString("{}", GetInputParameter(2).template Get<ValueType>());
+			String A = FormatString("{}", GetInputParameter(3).template Get<ValueType>());
 
 			for (const auto& edgeId : underlyingNode.GetInputEdges())
 			{

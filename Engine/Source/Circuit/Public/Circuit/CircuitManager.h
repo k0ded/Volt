@@ -1,11 +1,13 @@
 #pragma once
 #include "Circuit/Config.h"
+#include "Circuit/CircuitInputHandler.h"
 
 #include <EventSystem/EventListener.h>
 #include <WindowModule/WindowHandle.h>
 
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/Pointers/Ref.h>
+#include <CoreUtilities/Pointers/Weak.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <map>

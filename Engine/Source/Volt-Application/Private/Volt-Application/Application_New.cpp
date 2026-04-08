@@ -13,11 +13,6 @@
 
 namespace Volt
 {
-	ApplicationEventListener::ApplicationEventListener(Application_New& application)
-		: m_application(application)
-	{
-	}
-
 	Application_New::Application_New(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
@@ -33,16 +28,12 @@ namespace Volt
 
 		// Get the renderer
 		m_renderer = m_subSystemManager->GetSubSystem<ApplicationRenderer>();
-
-		// Create the application event listener.
-		m_eventListener = CreateUnique<ApplicationEventListener>(*this);
 	}
 
 	Application_New::~Application_New()
 	{
 		m_layerStack.Clear();
 
-		m_eventListener = nullptr;
 		m_renderer = nullptr;
 		m_windowManager = nullptr;
 

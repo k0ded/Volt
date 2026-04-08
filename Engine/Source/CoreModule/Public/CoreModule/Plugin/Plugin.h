@@ -49,7 +49,7 @@ extern "C"
 
 #define VT_DECLARE_PLUGIN_GUID(guid)				   \
 	inline static constexpr VoltGUID pluginGUID = guid; \
-	VT_NODISCARD VT_INLINE VoltGUID GetGUID() const { return pluginGUID; } 
+	VT_NODISCARD VT_INLINE VoltGUID GetGUID() const override { return pluginGUID; } 
 
 #define VT_REGISTER_PLUGIN(pluginTypename)											\
 VT_EXPORT_DLL Volt::Plugin* CreatePluginInstance(PluginInitializationInfo& initializationInfo)	\

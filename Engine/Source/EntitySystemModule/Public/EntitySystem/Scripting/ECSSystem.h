@@ -78,11 +78,11 @@ public:
 	template<typename T>
 	struct FunctionTraits;
 
-	template<typename Ret, typename... Args>
-	struct FunctionTraits<Ret(*)(Args...)>
+	template<typename RetTraits, typename... ArgsTraits>
+	struct FunctionTraits<RetTraits(*)(ArgsTraits...)>
 	{
-		using ReturnType = Ret;
-		using ArgumentTypes = std::tuple<Args...>;
+		using ReturnType = RetTraits;
+		using ArgumentTypes = std::tuple<ArgsTraits...>;
 	};
 
 	using Traits = FunctionTraits<Ret(*)(Args...)>;

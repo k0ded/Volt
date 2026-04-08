@@ -67,9 +67,11 @@ namespace UI
 	{
 	public:
 		ScopedColorPredicate(bool predicate, ImGuiCol_ color, const glm::vec4& newColor)
-			: m_color(color), m_Predicate(predicate), m_oldColor(0)
+			: m_oldColor(0),
+			m_color(color), 
+			m_predicate(predicate)
 		{
-			if (!m_Predicate)
+			if (!m_predicate)
 			{
 				return;
 			}
@@ -81,7 +83,7 @@ namespace UI
 
 		~ScopedColorPredicate()
 		{
-			if (!m_Predicate)
+			if (!m_predicate)
 			{
 				return;
 			}
@@ -94,7 +96,7 @@ namespace UI
 		glm::vec4 m_oldColor;
 		ImGuiCol_ m_color;
 
-		bool m_Predicate = false;
+		bool m_predicate = false;
 	};
 
 	class ScopedStyleFloat

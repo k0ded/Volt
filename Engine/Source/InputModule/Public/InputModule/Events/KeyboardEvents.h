@@ -22,7 +22,8 @@ namespace Volt
 		EVENT_CLASS(KeyEvent, "{F57124D9-554B-4A8F-9788-79641498BF1C}"_guid);
 	protected:
 		KeyEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t modifierBitmask)
-			: m_window(window), m_scanCode(scanCode)
+			: m_scanCode(scanCode),
+			m_window(window)
 		{
 			m_keyCode = GLFWKeyCodeToInputCode(keyCode);
 			m_inputModifiers = GLFWModifierToInputModifier(modifierBitmask);

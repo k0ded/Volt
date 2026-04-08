@@ -79,6 +79,7 @@ namespace Volt
 		uint32_t id;
 	};
 
+#if 0
 	static constexpr uint32_t s_quadVertexCount = 4;
 	static constexpr uint32_t s_quadIndexCount = 6;
 	static constexpr glm::vec4 s_quadVertexPositions[s_quadVertexCount] =
@@ -102,9 +103,10 @@ namespace Volt
 		0, 1, 2,
 		2, 1, 3
 	};
+#endif
 
 	UISceneRenderer::UISceneRenderer(const UISceneRendererSpecification& specification)
-		: m_scene(specification.scene), m_isEditor(specification.isEditor), m_commandBufferSet(RendererUtilities::GetFramesInFlight())
+		: m_scene(specification.scene), m_commandBufferSet(RendererUtilities::GetFramesInFlight())
 	{
 
 	}
@@ -350,3 +352,4 @@ namespace Volt
 		return result;
 	}
 }
+

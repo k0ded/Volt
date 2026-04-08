@@ -2,6 +2,18 @@
 
 #include "CoreUtilities/Config.h"
 
+#if defined(_MSC_VER) && !defined(__llvm__)
+	#define VT_COMPILER_IS_MSVC 1
+#else
+	#define VT_COMPILER_IS_MSVC 0
+#endif
+
+#if defined(__clang__)
+	#define VT_COMPILER_IS_CLANG 1
+#else
+	#define VT_COMPILER_IS_CLANG 0
+#endif
+
 // Static analasys assume
 #if defined (_MSC_VER) && (_MSC_VER >= 1300)
 	#define VT_ANALASYS_ASSUME(x) __analysis_assume(!!(x))
@@ -87,6 +99,15 @@ inline void VTBaseUnused(const volatile T& x) { (void)x; }
 #define VT_NODISCARD [[nodiscard]]
 #define VT_MAYBE_UNUSED [[maybe_unused]]
 #define VT_FALLTHROUGH [[fallthrough]]
+
+#if VT_COMPILER_IS_MSVC
+	#define VT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#elif VT_COMPILER_IS_CLANG
+	#define VT_NO_UNIQUE_ADDRESS
+#else
+	#error "Not defined!"
+#endif
+
 
 #define VT_UNREACHABLE __assume(0)
 

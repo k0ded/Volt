@@ -19,7 +19,7 @@ void* GlobalMemoryStack::Allocate(uint64_t numBytes, uint64_t alignment)
 
 GlobalMemoryStack& GlobalMemoryStack::Get()
 {
-	constexpr size_t MaxFiberCount = 256;
+	constexpr int32_t MaxFiberCount = 256;
 
 	static Vector<GlobalMemoryStack> instances(MaxFiberCount);
 	static thread_local GlobalMemoryStack threadInstance;

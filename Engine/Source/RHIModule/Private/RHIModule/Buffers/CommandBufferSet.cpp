@@ -17,18 +17,18 @@ namespace Volt::RHI
 	}
 
 	CommandBufferSet::CommandBufferSet(const CommandBufferSet& other) noexcept
-		: m_count(other.m_count),
-		m_currentIndex(other.m_currentIndex),
+		: m_commandBuffers(other.m_commandBuffers),
 		m_fences(other.m_fences),
-		m_commandBuffers(other.m_commandBuffers)
+		m_currentIndex(other.m_currentIndex),
+		m_count(other.m_count)
 	{
 	}
 
 	CommandBufferSet::CommandBufferSet(CommandBufferSet&& other) noexcept 
-		: m_count(other.m_count),
-		m_currentIndex(std::move(other.m_currentIndex)),
+		: m_commandBuffers(std::move(other.m_commandBuffers)),
 		m_fences(std::move(other.m_fences)),
-		m_commandBuffers(std::move(other.m_commandBuffers))
+		m_currentIndex(other.m_currentIndex),
+		m_count(other.m_count)
 	{
 	}
 

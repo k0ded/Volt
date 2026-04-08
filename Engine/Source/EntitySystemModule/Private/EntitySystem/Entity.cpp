@@ -12,20 +12,24 @@ namespace Volt
 	Entity::Entity()
 	{}
 
-	Entity::Entity(entt::entity entityHandle, EntityScene* scene)
-		: m_handle(entityHandle), m_sceneReference(scene)
+	Entity::Entity(entt::entity entityHandle, EntityScene* scene) 
+		: m_sceneReference(scene),
+		m_handle(entityHandle)
 	{}
 
 	Entity::Entity(entt::entity entityHandle, const EntityScene* scene)
-		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(scene))
+		: m_sceneReference(const_cast<EntityScene*>(scene)),
+		m_handle(entityHandle)
 	{}
 
 	Entity::Entity(entt::entity entityHandle, EntityScene& scene)
-		: m_handle(entityHandle), m_sceneReference(&scene)
+		: m_sceneReference(&scene),
+		m_handle(entityHandle)
 	{}
 
 	Entity::Entity(entt::entity entityHandle, const EntityScene& scene)
-		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(&scene))
+		: m_sceneReference(const_cast<EntityScene*>(&scene)),
+		m_handle(entityHandle)
 	{}
 
 	Entity::~Entity()
@@ -432,7 +436,7 @@ namespace Volt
 
 		auto& childChildren = child.GetComponent<RelationshipComponent>().children;
 
-		if (auto it = std::find(childChildren.begin(), childChildren.end(), parent.GetID()) != childChildren.end())
+		if (std::find(childChildren.begin(), childChildren.end(), parent.GetID()) != childChildren.end())
 		{
 			return;
 		}

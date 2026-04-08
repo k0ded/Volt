@@ -3,7 +3,6 @@
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
-#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 

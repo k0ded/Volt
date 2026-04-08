@@ -21,7 +21,6 @@ namespace ImGui
 		const ImGuiID id = window->GetID("#image");
 		PopID();
 
-		const ImVec2 padding = (frame_padding >= 0) ? ImVec2((float)frame_padding, (float)frame_padding) : g.Style.FramePadding;
 		return ImageButtonEx(id, texId, size, uv0, uv1, bg_col, tint_col);
 	}
 

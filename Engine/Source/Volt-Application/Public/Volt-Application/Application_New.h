@@ -16,15 +16,6 @@ namespace Volt
 {
 	class Application_New;
 
-	class ApplicationEventListener : public EventListener
-	{
-	public:
-		ApplicationEventListener(Application_New& application);
-
-	private:
-		Application_New& m_application;
-	};
-
 	class VTAPP_API Application_New : public BaseApplication
 	{
 	public:
@@ -43,14 +34,11 @@ namespace Volt
 		void LaunchMainWindow() override;
 
 	private:
-		friend class ApplicationEventListener;
-
 		void RenderApplication();
 		void EngineLoop();
 		void OnAnyWindowRepaint();
 
 		Unique<SubSystemManager> m_subSystemManager;
-		Unique<ApplicationEventListener> m_eventListener;
 
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;

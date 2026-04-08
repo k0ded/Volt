@@ -5,6 +5,7 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/Math/Math.h>
+#include <CoreUtilities/VoltAssert.h>
 
 #include <combaseapi.h>
 #include <lmcons.h>

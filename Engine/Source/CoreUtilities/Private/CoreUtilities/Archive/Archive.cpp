@@ -9,13 +9,13 @@ Archive::Archive(bool isLoading)
 }
 
 Archive::Archive(Archive&& other) noexcept
-	: m_isLoading(other.m_isLoading),
-	m_versions(std::move(other.m_versions))
+	: m_versions(std::move(other.m_versions)),
+	m_isLoading(other.m_isLoading)
 {}
 
 Archive::Archive(const Archive& other)
-	: m_isLoading(other.m_isLoading),
-	m_versions(other.m_versions)
+	: m_versions(other.m_versions),
+	m_isLoading(other.m_isLoading)
 {
 
 }

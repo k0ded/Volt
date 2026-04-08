@@ -1413,7 +1413,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel, submissionFence = m_submissionFence]()
+		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, submissionFence = m_submissionFence]()
 		{
 			auto device = GraphicsContext::GetDevice();
 

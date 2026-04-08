@@ -26,5 +26,14 @@ namespace VoltSharpmake
 
             conf.Defines.Add("_CRT_SECURE_NO_WARNINGS");
         }
+
+		public override void ConfigureClangCl(Configuration conf, CommonTarget target)
+		{
+			base.ConfigureClangCl(conf, target);
+
+			conf.AdditionalCompilerOptions.Add(
+				"-Wno-deprecated-declarations"
+			);
+		}
     }
 }

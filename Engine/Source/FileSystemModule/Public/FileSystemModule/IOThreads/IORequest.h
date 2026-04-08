@@ -3,6 +3,7 @@
 #include "FileSystemModule/Config.h"
 
 #include <JobSystem/Job.h>
+#include <JobSystem/JobSystem.h>
 
 #include <concepts>
 
@@ -80,8 +81,8 @@ namespace Volt
 	template<typename T>
 		requires(std::is_base_of_v<IORequest, T>)
 	IORequestResult<T>::IORequestResult(JobCounterRef assignedCounter, T* ioRequest)
-		: m_assignedCounter(assignedCounter),
-		m_ioRequest(ioRequest)
+		: m_ioRequest(ioRequest),
+		m_assignedCounter(assignedCounter)
 	{
 		m_ioRequest->IncRef();
 		m_assignedCounter->IncRef();

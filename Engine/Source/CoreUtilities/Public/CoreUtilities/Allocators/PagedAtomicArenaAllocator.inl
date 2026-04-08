@@ -1,6 +1,7 @@
 #pragma once
 
-#include <CoreUtilities/Profiling/Profiling.h>
+#include "CoreUtilities/Profiling/Profiling.h"
+#include "CoreUtilities/VoltAssert.h"
 
 template<typename Type, uint64_t PageSize, typename SecondaryAllocator /*= DefaultHeapAllocator*/, bool AllocatorOwnsAllocations /*= false*/>
 PagedAtomicArenaAllocator<Type, PageSize, SecondaryAllocator, AllocatorOwnsAllocations>::~PagedAtomicArenaAllocator()

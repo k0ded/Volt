@@ -35,12 +35,6 @@ namespace Volt::RHI
 
 	void ResourceTableDescriptorSetManager::CreateDescriptorSetLayout()
 	{
-		Array<VkDescriptorType, DescriptorTypeCount> descriptorTypes =
-		{
-			VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
-		};
-
 		Array<VkDescriptorSetLayoutBinding, DescriptorTypeCount> descriptorSetLayoutBindings;
 
 		{

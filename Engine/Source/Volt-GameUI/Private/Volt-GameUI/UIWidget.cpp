@@ -14,7 +14,8 @@ namespace Volt
 	}
 
 	UIWidget::UIWidget(entt::entity handle, UIScene* scene)
-		: m_scene(scene), m_handle(handle)
+		: m_handle(handle),
+		m_scene(scene)
 	{
 	}
 

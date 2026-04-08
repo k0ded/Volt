@@ -15,7 +15,7 @@ namespace UI
 
 	int32_t GetAndIncrementPropertiesStackID()
 	{
-		if (s_propertiesContextIndex >= s_propertiesContextStackIDs.size() || s_propertiesContextIndex < 0)
+		if (s_propertiesContextIndex >= static_cast<int32_t>(s_propertiesContextStackIDs.size()) || s_propertiesContextIndex < 0)
 		{
 			return 0;
 		}
@@ -50,7 +50,7 @@ namespace UI
 
 			s_propertiesContextIndex++;
 			s_propertiesContextStackIDs.push_back(0);
-			VT_ENSURE(s_propertiesContextIndex == s_propertiesContextStackIDs.size() - 1);
+			VT_ENSURE(s_propertiesContextIndex == static_cast<int32_t>(s_propertiesContextStackIDs.size()) - 1);
 		}
 
 		return open;
@@ -66,7 +66,7 @@ namespace UI
 		s_propertiesContextStackIDs.pop_back();
 	}
 
-	void UI::BeginPropertyRow()
+	void BeginPropertyRow()
 	{
 		auto* window = ImGui::GetCurrentWindow();
 		window->DC.CurrLineSize.y = PROPERTY_ROW_HEIGHT;
@@ -78,7 +78,7 @@ namespace UI
 		SetPropertyBackgroundColor();
 	}
 
-	void UI::EndPropertyRow()
+	void EndPropertyRow()
 	{}
 
 	bool Property(const String& text, bool& value, const String& toolTip)
@@ -637,7 +637,7 @@ namespace UI
 		String buttonId = "Open...##" + MakePropertyID();
 		if (ImGui::Button(buttonId.c_str(), { ImGui::GetContentRegionAvail().x, 25.f }))
 		{
-			auto newPath = FileDialogueHelpers::OpenFileDialogue({ { "All (*.*)" }, { "*" } }, baseDir);
+			auto newPath = FileDialogueHelpers::OpenFileDialogue({ FileDialogueHelpers::FileFilter{.name = "All (*.*)", .extensions = "*" } }, baseDir);
 			if (!newPath.IsEmpty())
 			{
 				path = newPath;
@@ -730,7 +730,7 @@ namespace UI
 		return changed;
 	}
 
-	bool UI::ComboProperty(const String& text, int& currentItem, const Vector<const char*>& items, float width)
+	bool ComboProperty(const String& text, int& currentItem, const Vector<const char*>& items, float width)
 	{
 		bool changed = false;
 
@@ -750,7 +750,7 @@ namespace UI
 		return changed;
 	}
 
-	bool UI::ComboProperty(const String& text, int& currentItem, const Vector<String>& strItems, float width)
+	bool ComboProperty(const String& text, int& currentItem, const Vector<String>& strItems, float width)
 	{
 		bool changed = false;
 
@@ -817,7 +817,7 @@ namespace UI
 	}
 
 
-	bool UI::IsPropertyRowHovered()
+	bool IsPropertyRowHovered()
 	{
 		const ImVec2 rowAreaMin = ImGui::TableGetCellBgRect(ImGui::GetCurrentTable(), 0).Min;
 		const ImVec2 rowAreaMax = { ImGui::TableGetCellBgRect(ImGui::GetCurrentTable(), ImGui::TableGetColumnCount() - 1).Max.x, rowAreaMin.y + PROPERTY_ROW_HEIGHT + PROPERTY_ROW_PADDING * 2.f };
@@ -829,7 +829,7 @@ namespace UI
 		return isRowHovered;
 	}
 
-	bool UI::IsPropertyColumnHovered(const uint32_t column)
+	bool IsPropertyColumnHovered(const uint32_t column)
 	{
 		const ImVec2 rowAreaMin = ImGui::TableGetCellBgRect(ImGui::GetCurrentTable(), static_cast<int32_t>(column)).Min;
 		const ImVec2 rowAreaMax = { ImGui::TableGetCellBgRect(ImGui::GetCurrentTable(), static_cast<int32_t>(column)).Max.x, rowAreaMin.y + PROPERTY_ROW_HEIGHT + PROPERTY_ROW_PADDING * 2.f };
@@ -841,7 +841,7 @@ namespace UI
 		return isColumnHovered;
 	}
 
-	void UI::SetPropertyBackgroundColor()
+	void SetPropertyBackgroundColor()
 	{
 		static const glm::vec4 PropertyBackground = { 36.f / 255.f, 36.f / 255.f, 36.f / 255.f, 1.f };
 		static const glm::vec4 PropertyBackgroundHovered = { 47.f / 255.f, 47.f / 255.f, 47.f / 255.f, 1.f };
@@ -864,7 +864,7 @@ namespace UI
 
 		BeginPropertyRow();
 
-		ImGui::Text(text.c_str());
+		ImGui::TextUnformatted(text.c_str());
 
 		ImGui::TableNextColumn();
 
@@ -981,7 +981,7 @@ namespace UI
 
 		BeginPropertyRow();
 
-		ImGui::Text(text.c_str());
+		ImGui::TextUnformatted(text.c_str());
 
 		ImGui::TableNextColumn();
 		const float width = ImGui::CalcItemWidth() / 2;

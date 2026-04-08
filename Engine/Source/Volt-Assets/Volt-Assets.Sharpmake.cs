@@ -41,5 +41,18 @@ namespace VoltSharpmake
 
 			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tinyddsloader"));
 		}
+
+		public override void ConfigureClangCl(Configuration conf, CommonTarget target)
+		{
+			base.ConfigureClangCl(conf, target);
+
+			conf.AdditionalCompilerOptions.Add(
+				"-Wno-deprecated-copy-with-user-provided-copy",
+				"-Wno-deprecated-declarations",
+				"-Wno-deprecated-builtins",
+				"-Wno-nontrivial-memcall",
+				"-Wno-uninitialized-const-reference"
+			);
+		}
 	}
 }

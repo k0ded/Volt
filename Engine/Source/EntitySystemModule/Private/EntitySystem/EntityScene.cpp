@@ -199,7 +199,7 @@ namespace Volt
 		//even when ignoring children, we still need to remove ourselves as a parent from our children
 		if (ignoreChildren)
 		{
-			for (int32_t i = 0; i < relationshipComponent->children.size(); ++i)
+			for (int32_t i = 0; i < static_cast<int32_t>(relationshipComponent->children.size()); ++i)
 			{
 				EntityID childID = relationshipComponent->children.at(i);
 				Entity child = GetEntityFromID(childID);

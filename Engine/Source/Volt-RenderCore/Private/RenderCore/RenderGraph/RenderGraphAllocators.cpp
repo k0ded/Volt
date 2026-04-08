@@ -44,9 +44,9 @@ namespace Volt
 	}
 
 	RenderGraphPassAllocator::RenderGraphPassAllocator(RenderGraphPassAllocator&& other) noexcept
-		: m_numPasses(std::move(other.m_numPasses)),
-		m_passExecutionFunctionAllocator(std::move(other.m_passExecutionFunctionAllocator)),
+		: m_passExecutionFunctionAllocator(std::move(other.m_passExecutionFunctionAllocator)),
 		m_passNodeAllocator(std::move(other.m_passNodeAllocator)),
+		m_numPasses(std::move(other.m_numPasses)),
 		m_passDestructors(std::move(other.m_passDestructors))
 	{
 	}

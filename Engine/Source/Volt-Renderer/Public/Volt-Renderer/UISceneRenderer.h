@@ -41,8 +41,6 @@ namespace Volt
 		bool PrepareForRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		VertexIndexCounts CalculateMaxVertexAndIndexCount();
 
-		bool m_isEditor = false;
-
 		Ref<UIScene> m_scene;
 		IntRef<RHI::Image> m_widgetIDImage;
 		RHI::CommandBufferSet m_commandBufferSet;

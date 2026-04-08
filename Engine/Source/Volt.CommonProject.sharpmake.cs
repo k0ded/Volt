@@ -213,8 +213,10 @@ namespace VoltSharpmake
                 "-Wno-missing-braces",
                 "-Wno-return-type-c-linkage",
 				"-Wno-nonportable-include-path",
-				"-Wno-switch"
-            );
+				"-Wno-switch",
+				"-Wno-deprecated-literal-operator",
+				"-Wno-multichar"
+			);
         }
         #endregion
         ////////////////////////////////////////////////////////////////////////

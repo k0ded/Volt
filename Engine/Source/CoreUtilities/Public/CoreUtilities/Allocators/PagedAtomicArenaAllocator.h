@@ -70,13 +70,13 @@ public:
 	{
 	public:
 		Iterator()
-			: m_allocator(nullptr),
-			m_currentPage(nullptr)
+			: m_currentPage(nullptr),
+			m_allocator(nullptr)
 		{}
 
 		Iterator(const PagedAtomicArenaAllocator& allocator)
-			: m_allocator(&allocator),
-			m_currentPage(nullptr)
+			: m_currentPage(nullptr),
+			m_allocator(&allocator)
 		{
 			// Find first allocation
 			m_currentPage = m_allocator->m_basePage.load(std::memory_order::acquire);

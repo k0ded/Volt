@@ -22,7 +22,7 @@ public:
 
 private:
 	Ref<RenderDocFrameCapture> m_frameCapture;
-	bool m_isCapturing = false;
+	//bool m_isCapturing = false;
 };
 
 class PLUGIN_API RenderDocPlugin : public Volt::Plugin

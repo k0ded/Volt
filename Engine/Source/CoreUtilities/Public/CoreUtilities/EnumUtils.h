@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Containers/Vector.h"
-
-#include <CoreUtilities/Concepts.h>
-#include <CoreUtilities/String/VoltString.h>
+#include "CoreUtilities/Config.h"
+#include "CoreUtilities/Containers/Vector.h"
+#include "CoreUtilities/Concepts.h"
+#include "CoreUtilities/String/VoltString.h"
 
 #include <unordered_map>
 #include <map>
@@ -20,17 +20,17 @@ namespace Utils
 		template<Enum EnumType>
 		static String ToString(uint64_t aEnumValue)
 		{
-			assert(myRegistry.contains(typeid(EnumType).name()) && "Tried to Convert enum to string with an enum that is not registered!");
+			assert(GetRegistry().contains(typeid(EnumType).name()) && "Tried to Convert enum to string with an enum that is not registered!");
 
-			return myRegistry[typeid(EnumType).name()][aEnumValue];
+			return GetRegistry()[typeid(EnumType).name()][aEnumValue];
 		}
 
 		//to enum
 		template<Enum EnumType>
 		static EnumType ToEnum(String aEnumValue)
 		{
-			assert(myRegistry.contains(typeid(EnumType).name()) && "Tried to convert string to enum that has not been registered!");
-			const auto& enumMap = myRegistry[typeid(EnumType).name()];
+			assert(GetRegistry().contains(typeid(EnumType).name()) && "Tried to convert string to enum that has not been registered!");
+			const auto& enumMap = GetRegistry()[typeid(EnumType).name()];
 			for (const auto& pair : enumMap)
 			{
 				if (pair.second == aEnumValue)
@@ -99,7 +99,7 @@ namespace Utils
 						String base = memberValueString.substr(0, bitshiftOffset);
 						String shift = memberValueString.substr(bitshiftOffset + 2, memberValueString.size() - bitshiftOffset - 2);
 
-						memberValue = StoUll(base, nullptr, 10) << (shift, nullptr, 10);
+						memberValue = StoUll(base, nullptr, 10) << StoUll(shift, nullptr, 10);
 					}
 					//if the value is bitshifted to the right
 					else if (memberValueString.find('>') != String::npos)
@@ -140,7 +140,7 @@ namespace Utils
 					}
 				}
 			}
-			auto& enumMap = myRegistry[name];
+			auto& enumMap = GetRegistry()[name];
 			for (size_t i = 0; i < enumNames.size(); i++)
 			{
 				enumMap.insert({ enumValues[i], enumNames[i] });
@@ -149,11 +149,11 @@ namespace Utils
 			return true;
 		}
 
-
-
 	private:
 		//<EnumName, <EnumValue, EnumString>>
-		inline static std::unordered_map<String, std::map<uint64_t, String>> myRegistry;
+		using RegistryMap = std::unordered_map<String, std::map<uint64_t, String>>;
+
+		VTCOREUTIL_API static RegistryMap& GetRegistry();
 	};
 }
 

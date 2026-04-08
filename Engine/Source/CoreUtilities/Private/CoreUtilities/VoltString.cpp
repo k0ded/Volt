@@ -1,6 +1,7 @@
 #include "cupch.h"
 
 #include "CoreUtilities/String/VoltString.h"
+#include "CoreUtilities/VoltAssert.h"
 
 unsigned long long StoUll(const String& str, size_t* index, int32_t base /*= 10*/)
 {

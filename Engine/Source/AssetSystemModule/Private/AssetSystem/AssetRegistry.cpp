@@ -303,7 +303,7 @@ namespace Volt
 				continue;
 			}
 
-			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]() 
+			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index, AssetExtension]()
 			{
 				for (const auto& entry : Filesystem::RecursiveDirectoryIterator(filepathToScan))
 				{
@@ -320,7 +320,7 @@ namespace Volt
 		// Make sure the project assets directory exists.
 		if (Filesystem::Exists(projectFilepathToScan))
 		{
-			scanGraph.AddTask("Scan Project Assets", [&outProjectAssets, &projectFilepathToScan]() 
+			scanGraph.AddTask("Scan Project Assets", [&outProjectAssets, &projectFilepathToScan, AssetExtension]()
 			{
 				for (const auto& entry : Filesystem::RecursiveDirectoryIterator(projectFilepathToScan))
 				{

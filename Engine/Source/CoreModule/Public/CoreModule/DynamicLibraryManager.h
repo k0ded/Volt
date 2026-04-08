@@ -18,7 +18,7 @@ namespace Volt
 		VTC_API DynamicLibraryManager();
 		VTC_API ~DynamicLibraryManager();
 
-		VTC_API VT_NODISCARD DLLHandle LoadDynamicLibrary(const Filesystem::Path& binaryFilepath, bool& outExternallyLoaded);
+		VT_NODISCARD VTC_API DLLHandle LoadDynamicLibrary(const Filesystem::Path& binaryFilepath, bool& outExternallyLoaded);
 		VTC_API bool UnloadDynamicLibrary(const Filesystem::Path& binaryFilepath);
 
 		VTC_API static DynamicLibraryManager& Get();

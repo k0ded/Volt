@@ -27,27 +27,38 @@ namespace Circuit
 			switch (command.type)
 			{
 				case CircuitPrimitiveType::Rect:
+				{
 					bounds.MergeRectIntoThis(Volt::Rect(command.position, command.halfSize * 2.f));
 					break;
-				
+				}
+
 				case CircuitPrimitiveType::CircleSegment:
 				case CircuitPrimitiveType::Circle:
+				{
 					bounds.MergeRectIntoThis(Volt::Rect(command.position - glm::vec2(command.radius), command.radius * 2.f));
 					break;
+				}
 
 				case CircuitPrimitiveType::Image:
 				case CircuitPrimitiveType::TextCharacter:
+				{
 					bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
 					break;
+				}
 
 				case CircuitPrimitiveType::Line:
+				{
 					const glm::vec2 minPos = glm::min(command.lineA, command.lineB);
 					const glm::vec2 maxPos = glm::max(command.lineA, command.lineB);
 					bounds.MergeRectIntoThis(Volt::Rect(minPos, maxPos - minPos));
 					break;
+				}
+
 				default:
+				{
 					VT_ENSURE_NO_ENTRY();
 					break;
+				}
 			}
 		}
 

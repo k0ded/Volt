@@ -128,7 +128,7 @@ public:
 		}
 
 		std::ptrdiff_t allocationIndex = ptr - reinterpret_cast<Type*>(m_dataBuffer);
-		if (allocationIndex >= m_numMaxElements)
+		if (allocationIndex >= static_cast<std::ptrdiff_t>(m_numMaxElements))
 		{
 			return false;
 		}

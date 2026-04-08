@@ -65,7 +65,7 @@ namespace Volt
 
 		// Create a counter which we supply to the promise.
 		JobCounterRef importCounter = JobSystem::CreateCounter();
-		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, importCounter, [this, extension, importFunc, resultPromise, importConfig]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, importCounter, [extension, importFunc, resultPromise, importConfig]()
 		{
 			auto result = importFunc();
 
@@ -113,20 +113,20 @@ namespace Volt
 			return;
 		}
 
-		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, [this, extension, importFunc, importedCallback, importConfig]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, [extension, importFunc, importedCallback, importConfig]()
 		{
 			auto result = importFunc();
 
 			if (importConfig.createAsMemoryAsset)
 			{
-				for (const auto asset : result)
+				for (const auto& asset : result)
 				{
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
 				}
 			}
 			else
 			{
-				for (const auto asset : result)
+				for (const auto& asset : result)
 				{
 					Filesystem::Path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, String(asset->GetAssetName()));
 					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);

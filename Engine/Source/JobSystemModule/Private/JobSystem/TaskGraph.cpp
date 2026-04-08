@@ -7,7 +7,8 @@
 namespace Volt
 {
 	TaskGraph::TaskGraph(ExecutionPriority priority, size_t numExpectedTasks)
-		: m_numExpectedTasks(numExpectedTasks), m_priority(priority)
+		: m_priority(priority),
+		m_numExpectedTasks(numExpectedTasks)
 	{
 	}
 

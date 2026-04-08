@@ -4,8 +4,8 @@
 namespace Volt
 {
 	IORequest::IORequest(StringView name)
-		: m_name(name),
-		m_refCount(0)
+		: m_refCount(0),
+		m_name(name)
 	{
 	}
 

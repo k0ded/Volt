@@ -14,6 +14,8 @@ SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
 	s_instance = this;
 
 	BuildDependencyTree();
+
+	VT_UNUSED(m_inclusionLevel);
 }
 
 SubSystemManager::~SubSystemManager()

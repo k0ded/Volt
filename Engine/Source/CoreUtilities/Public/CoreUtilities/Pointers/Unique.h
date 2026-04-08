@@ -47,7 +47,7 @@ public:
 	T* GetRaw() const;
 
 private:
-	template<typename U, typename DestroyerType>
+	template<typename U, typename OtherDestroyerType>
 	friend class Unique;
 
 	T* m_ptr;

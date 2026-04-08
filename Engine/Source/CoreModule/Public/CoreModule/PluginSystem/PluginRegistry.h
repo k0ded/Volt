@@ -23,7 +23,7 @@ namespace Volt
 		void OnPostStageInitializaton() override;
 
 		VTC_API void FindAndRegisterPluginsInDirectory(const Filesystem::Path& directory);
-		VTC_API VT_NODISCARD const PluginDefinition& GetPluginDefinitionByName(const String& name) const;
+		VT_NODISCARD VTC_API const PluginDefinition& GetPluginDefinitionByName(const String& name) const;
 
 		void BuildPluginDependencies();
 		VT_NODISCARD VT_INLINE const Graph<VoltGUID, uint32_t>& GetPluginDependencyGraph() const { return m_pluginDependencyGraph; }

@@ -18,9 +18,9 @@ namespace Volt
 	}
 
 	ScenePrimitiveData::ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene, Ref<TempAnimator> animator)
-		: m_relatedEntity(relatedEntity),
-		m_renderScene(renderScene),
-		m_animator(animator)
+		: m_animator(animator),
+		m_relatedEntity(relatedEntity),
+		m_renderScene(renderScene)
 	{
 
 	}

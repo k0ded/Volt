@@ -45,10 +45,10 @@ namespace Circuit
 
 		float GetValueNormalized();
 
-		virtual void OnPressed(const WidgetInteractionData& interactionData) override;
-		virtual void OnBeginDrag(const WidgetInteractionData& interactionData);
-		virtual void OnDrag(const WidgetInteractionData& interactionData);
-		virtual void OnEndDrag(const WidgetInteractionData& interactionData);
+		void OnPressed(const WidgetInteractionData& interactionData) override;
+		void OnBeginDrag(const WidgetInteractionData& interactionData) override;
+		void OnDrag(const WidgetInteractionData& interactionData) override;
+		void OnEndDrag(const WidgetInteractionData& interactionData) override;
 
 	private:
 

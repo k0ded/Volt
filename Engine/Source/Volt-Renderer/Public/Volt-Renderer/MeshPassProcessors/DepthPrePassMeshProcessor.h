@@ -11,6 +11,6 @@ namespace Volt
 		void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive) override;
 
 	private:
-		bool ShouldIncludePrimitive(const RenderPrimitiveData* renderPrimitive) const;
+		bool ShouldIncludePrimitive(const RenderPrimitiveData* renderPrimitive) const override;
 	};
 }

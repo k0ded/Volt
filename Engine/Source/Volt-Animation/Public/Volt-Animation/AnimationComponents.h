@@ -27,7 +27,6 @@ namespace Volt
 		{
 			reflect.SetGUID("{45673840-5218-417D-A1C7-800A46711F23}"_guid);
 			reflect.SetLabel("Animation Player Component");
-			AssetHandle animationHandle = Asset::Null();
 			reflect.AddMember(&AnimationPlayerComponent::skeletonHandle, 'skel', "Skeleton", "", Asset::Null(), AssetTypes::Skeleton);
 			reflect.AddMember(&AnimationPlayerComponent::animationHandle, 'anim', "Animation", "", Asset::Null(), AssetTypes::Animation);
 			reflect.AddMember(&AnimationPlayerComponent::currentPlayTime, 'play', "Current Play Time", "", 0.f);

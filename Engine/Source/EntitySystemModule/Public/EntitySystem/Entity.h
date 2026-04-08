@@ -18,8 +18,8 @@ namespace Volt
 	class VTES_API Entity
 	{
 	public:
-		static VT_NODISCARD Entity Null();
-		constexpr static VT_NODISCARD EntityID NullID() { return EntityID(0); }
+		VT_NODISCARD static Entity Null();
+		VT_NODISCARD constexpr static EntityID NullID() { return EntityID(0); }
 	public:
 		Entity();
 		Entity(entt::entity entityHandle, EntityScene* scene);

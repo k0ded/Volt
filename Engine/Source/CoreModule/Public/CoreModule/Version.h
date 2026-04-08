@@ -16,8 +16,8 @@ namespace Volt
 		VTC_API static Version CreateFromString(const String& strValue);
 		VTC_API static Version Create(const uint32_t major, const uint32_t minor, const uint32_t patch);
 
-		VTC_API VT_NODISCARD const String ToString() const;
-		VTC_API VT_NODISCARD const bool IsValid() const;
+		VT_NODISCARD VTC_API const String ToString() const;
+		VT_NODISCARD VTC_API const bool IsValid() const;
 
 		VT_NODISCARD inline const uint32_t GetMajor() const { return m_major; }
 		VT_NODISCARD inline const uint32_t GetMinor() const { return m_minor; }

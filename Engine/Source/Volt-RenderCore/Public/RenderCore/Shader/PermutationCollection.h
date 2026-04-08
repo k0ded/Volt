@@ -133,7 +133,7 @@ namespace Volt
 
 			constexpr size_t PermutationIndex = PermutationTraits::Value;
 			VT_ENSURE_MSG(m_permutations[PermutationIndex].value.HasValue(), "Permutation must have been set!");
-			return m_permutations[PermutationIndex].value.Cast<typename U::PermutationType>();
+			return m_permutations[PermutationIndex].value.template Cast<typename U::PermutationType>();
 		}
 
 		void InitializeWithPermutationIndex(size_t index)

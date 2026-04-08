@@ -197,7 +197,7 @@ namespace Volt::RHI
 		{
 			Vector<ShaderParameterMap::ResourceBindings> shaderResourceBindings;
 
-			for (const auto shader : m_createInfo.rayGenTable)
+			for (const auto& shader : m_createInfo.rayGenTable)
 			{
 				const ShaderParameterMap& parameterMap = shader->GetParameterMap();
 

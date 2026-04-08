@@ -53,7 +53,8 @@ namespace Volt
 	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
 
 	SceneRenderer::SceneRenderer(const SceneRendererInitializer& initializer)
-		: m_renderScene(initializer.renderScene), m_initializer(initializer),
+		: m_initializer(initializer),
+		m_renderScene(initializer.renderScene), 
 		m_meshPassProcessorRegistry(initializer.renderScene.GetRaw())
 	{
 		m_resizeWidth = initializer.initialResolution.x;
@@ -71,7 +72,8 @@ namespace Volt
 	}
 
 	SceneRenderer::SceneRenderer(const SceneRendererInitializer& initializer, Ref<RenderScene> renderScene)
-		: m_renderScene(renderScene), m_initializer(initializer),
+		: m_initializer(initializer),
+		m_renderScene(renderScene), 
 		m_meshPassProcessorRegistry(renderScene.GetRaw())
 	{
 		m_resizeWidth = initializer.initialResolution.x;
@@ -186,7 +188,7 @@ namespace Volt
 		{
 			if (light.description.lightType == SceneLightType::Directional)
 			{
-				CascadedShadowMapsTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard, m_cascadedShadowMapMeshProcessor };
+				CascadedShadowMapsTechnique cascadedDirectionalShadowTechnique{ renderGraph, m_cascadedShadowMapMeshProcessor };
 				directionalShadowMap = cascadedDirectionalShadowTechnique.Execute(renderView, light);
 
 				break;

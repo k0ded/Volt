@@ -36,12 +36,12 @@
 	Volt::Attribute<AttrType> _##AttrName
 
 #define CIRCUIT_ATTRIBUTE_FUNCTION(AttrType, AttrName)\
-	WidgetArgumentsType& ##AttrName(const AttrType& attribute)\
+	WidgetArgumentsType& AttrName(const AttrType& attribute)\
 	{\
 		_##AttrName = Volt::Attribute<AttrType>(attribute);\
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
 	}\
-	WidgetArgumentsType& ##AttrName(Volt::Attribute<AttrType> attribute)\
+	WidgetArgumentsType& AttrName(Volt::Attribute<AttrType> attribute)\
 	{\
 		_##AttrName = std::move(attribute);\
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
@@ -64,7 +64,7 @@
 	{ \
 		_##AttrName = std::move(Volt::Attribute< AttrType >::Create(std::move(Volt::Attribute< AttrType >::Getter::CreateRaw(userObject, func,  std::forward(params)...)))); \
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
- } \
+	} \
 	template <typename UserClass, typename... RawFnParamTypes> \
 	WidgetArgumentsType& AttrName##_Raw(const UserClass* userObject, typename Volt::Attribute< AttrType >::Getter::template MemberFnPtr<UserClass> func, RawFnParamTypes&&... params) \
 	{ \

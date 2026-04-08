@@ -4,6 +4,9 @@
 #include "RenderCore/Shader/ShaderMap.h"
 #include "RenderCore/Shader/PipelineStateCache.h"
 
+#include <RHIModule/Shader/ShaderCache.h>
+#include <RHIModule/Shader/ShaderCompiler.h>
+
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
 
@@ -14,12 +17,6 @@ VT_DECLARE_LOG_CATEGORY_EXPORT(VTRC_API, LogShaderSubSystem, LogVerbosity::Trace
 
 namespace Volt
 {
-	namespace RHI
-	{
-		class ShaderCompiler;
-		class ShaderCache;
-	}
-
 	class VTRC_API ShaderSubSystem : public SubSystem
 	{
 	public:

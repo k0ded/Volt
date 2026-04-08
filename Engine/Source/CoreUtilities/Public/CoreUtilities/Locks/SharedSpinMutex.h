@@ -126,7 +126,7 @@ private:
 	// Writer members
 	alignas(CacheLineAlignment) std::atomic<uint32_t> m_writerCounter = 0;
 	alignas(CacheLineAlignment) std::atomic<uint32_t> m_currentWriter = 0;
-	[[no_unique_address]] alignas(CacheLineAlignment) std::atomic<uint32_t> m_nextWriter = 0;
+	VT_NO_UNIQUE_ADDRESS alignas(CacheLineAlignment) std::atomic<uint32_t> m_nextWriter = 0;
 
 	alignas(CacheLineAlignment) std::uint_fast8_t m_readerTicketIndex = false;
 };

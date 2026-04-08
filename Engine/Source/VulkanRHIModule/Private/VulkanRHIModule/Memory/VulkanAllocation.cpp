@@ -12,8 +12,8 @@
 namespace Volt::RHI
 {
 	VulkanImageAllocation::VulkanImageAllocation(const size_t hash, const String& name)
-		: m_allocationHash(hash),
-		m_name(name)
+		: m_name(name),
+		m_allocationHash(hash)
 	{
 	}
 
@@ -51,8 +51,8 @@ namespace Volt::RHI
 	}
 
 	VulkanBufferAllocation::VulkanBufferAllocation(const size_t hash, const String& name)
-		: m_allocationHash(hash),
-		m_name(name)
+		: m_name(name),
+		m_allocationHash(hash)
 	{
 	}
 
@@ -97,8 +97,8 @@ namespace Volt::RHI
 	}
 
 	VulkanTransientBufferAllocation::VulkanTransientBufferAllocation(const size_t hash, const String& name)
-		: m_allocationHash(hash),
-		m_name(name)
+		: m_name(name),
+		m_allocationHash(hash)
 	{
 	}
 
@@ -144,8 +144,8 @@ namespace Volt::RHI
 
 
 	VulkanTransientImageAllocation::VulkanTransientImageAllocation(const size_t hash, const String& name)
-		: m_allocationHash(hash),
-		m_name(name)
+		: m_name(name),
+		m_allocationHash(hash)
 	{
 	}
 

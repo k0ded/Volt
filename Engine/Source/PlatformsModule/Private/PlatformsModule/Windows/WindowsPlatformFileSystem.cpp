@@ -119,8 +119,8 @@ namespace Volt
 		HRESULT result = CopyFile2(from.CStr(), to.CStr(), &params);
 
 		if (overwriteExisting &&
-			result == ERROR_ALREADY_EXISTS ||
-			result == ERROR_FILE_EXISTS)
+			(result == ERROR_ALREADY_EXISTS ||
+			result == ERROR_FILE_EXISTS))
 		{
 			return false;
 		}

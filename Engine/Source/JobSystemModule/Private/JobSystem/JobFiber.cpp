@@ -40,7 +40,7 @@ namespace Volt
 		m_currentJob->m_assignedFiber = this;
 
 		memset(&m_executionContext, 0, sizeof(FiberContext));
-		m_executionContext.rip = &ExecuteFiber;
+		m_executionContext.rip = reinterpret_cast<void*>(&ExecuteFiber);
 		m_executionContext.rsp = m_stack.GetStackPointer();
 		m_executionContext.stackBase = m_stack.GetStackBase();
 		m_executionContext.stackLimit = m_stack.GetStackLimit();

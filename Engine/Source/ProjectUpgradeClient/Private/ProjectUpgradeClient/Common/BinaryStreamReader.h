@@ -249,7 +249,6 @@ inline void BinaryStreamReader::Read(std::array<F, COUNT>& data)
 template<typename Key, typename Value>
 inline void BinaryStreamReader::Read(std::map<Key, Value>& data)
 {
-	TypeHeader typeHeader{};
 	TypeHeader serializedTypeHeader = ReadTypeHeader();
 
 	const size_t elementCount = serializedTypeHeader.totalTypeSize;

@@ -56,8 +56,8 @@ namespace Volt
 
 		VTR_API static MaterialShaderRegistry& Get();
 	
-		VT_INLINE VT_NODISCARD const Map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
-		VT_INLINE VT_NODISCARD const ShaderRegistrationInfo& GetShaderRegistrationInfoForShader(TypeTraits::TypeIndex typeIndex) const { return m_shaderRegistrationInfo.at(typeIndex); }
+		VT_NODISCARD VT_INLINE const Map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
+		VT_NODISCARD VT_INLINE const ShaderRegistrationInfo& GetShaderRegistrationInfoForShader(TypeTraits::TypeIndex typeIndex) const { return m_shaderRegistrationInfo.at(typeIndex); }
 
 	private:
 		Map<TypeTraits::TypeIndex, ShaderRegistrationInfo> m_shaderRegistrationInfo;

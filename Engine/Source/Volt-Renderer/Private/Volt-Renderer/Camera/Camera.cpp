@@ -6,7 +6,11 @@
 namespace Volt
 {
 	Camera::Camera(float fov, float aspect, float nearPlane, float farPlane, bool reverse)
-		: m_fieldOfView(fov), m_aspecRatio(aspect), m_nearPlane(nearPlane), m_farPlane(farPlane), m_reversed(reverse)
+		: m_nearPlane(nearPlane),
+		m_farPlane(farPlane),
+		m_fieldOfView(fov), 
+		m_aspecRatio(aspect), 
+		m_reversed(reverse)
 	{
 		if (reverse)
 		{
@@ -25,7 +29,12 @@ namespace Volt
 	}
 
 	Camera::Camera(float left, float right, float bottom, float top, float nearPlane, float farPlane)
-		: m_nearPlane(nearPlane), m_farPlane(farPlane), m_left(left), m_right(right), m_bottom(bottom), m_top(top)
+		: m_nearPlane(nearPlane), 
+		m_farPlane(farPlane), 
+		m_left(left), 
+		m_right(right),
+		m_top(top),
+		m_bottom(bottom) 
 	{
 		m_projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
 		m_nonReversedProjectionMatrix = m_projectionMatrix;

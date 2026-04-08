@@ -258,7 +258,7 @@ constexpr bool IntRef<T>::operator==(const U* rhs) const noexcept
 
 template<typename T>
 template<typename... Args>
-static IntRef<T> IntRef<T>::Create(Args&&... args)
+IntRef<T> IntRef<T>::Create(Args&&... args)
 {
 	void* allocatedPtr = Memory::Malloc(sizeof(T), alignof(T));
 	T* objectPtr = new (allocatedPtr) T(std::forward<Args>(args)...);

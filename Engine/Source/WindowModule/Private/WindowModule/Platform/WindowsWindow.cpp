@@ -540,7 +540,7 @@ namespace Volt
 
 		m_instance = GetModuleHandle(nullptr);
 		
-		WNDCLASSEXW windowClass{ 0 };
+		WNDCLASSEXW windowClass{};
 		windowClass.cbSize = sizeof(WNDCLASSEXW);
 		windowClass.style = CS_CLASSDC | CS_HREDRAW | CS_VREDRAW;
 		windowClass.lpfnWndProc = HandleMsgSetup;
@@ -719,7 +719,7 @@ namespace Volt
 					}
 				}
 
-				POINT cursorPoint = { 0 };
+				POINT cursorPoint = {};
 				cursorPoint.x = GET_X_PARAM(lParam);
 				cursorPoint.y = GET_Y_PARAM(lParam);
 				ScreenToClient(hWnd, &cursorPoint);

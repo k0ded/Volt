@@ -427,7 +427,7 @@ namespace Volt
 							j++;
 						}
 
-						VT_ENSURE(j < materials.size());
+						VT_ENSURE(j < static_cast<int32_t>(materials.size()));
 						materialMap[vertices[i].material] = j;
 
 					}
@@ -589,7 +589,7 @@ namespace Volt
 		const size_t triIndexCount = fatIndices.size();
 
 		outVertices.resize(triIndexCount);
-		for (int32_t i = 0; i < triIndexCount; i++)
+		for (int32_t i = 0; i < static_cast<int32_t>(triIndexCount); i++)
 		{
 			if (hasMaterials)
 			{
@@ -796,8 +796,6 @@ namespace Volt
 		const glm::vec3 nodeTranslation = FbxUtility::ToVec3(fbxMesh.GetNode()->LclTranslation.Get());
 		const glm::quat nodeRotation = glm::quat(glm::radians(FbxUtility::ToVec3(fbxMesh.GetNode()->LclRotation.Get())));
 		const glm::vec3 nodeScale = FbxUtility::ToVec3(fbxMesh.GetNode()->LclScaling.Get());
-
-		const glm::quat configRotation = glm::quat(glm::radians(importConfig.rotation));
 
 		const TQS configTransform = TQS::Make(importConfig.translation, glm::radians(importConfig.rotation), importConfig.scale);
 		const TQS nodeTransform = TQS::Make(nodeTranslation, nodeRotation, nodeScale);

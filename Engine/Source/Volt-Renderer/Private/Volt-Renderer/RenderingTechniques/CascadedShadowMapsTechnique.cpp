@@ -28,9 +28,8 @@ namespace Volt
 		SHADER_PARAMETER_STRUCT_INCLUDE(MeshPassProcessorParameters, ProcessorParameters)
 	END_SHADER_PARAMETER_STRUCT()
 
-	CascadedShadowMapsTechnique::CascadedShadowMapsTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, CascadedShadowMapMeshProcessor* meshProcessor)
+	CascadedShadowMapsTechnique::CascadedShadowMapsTechnique(RenderGraph& renderGraph, CascadedShadowMapMeshProcessor* meshProcessor)
 		: m_renderGraph(renderGraph),
-		m_blackboard(blackboard),
 		m_meshProcessor(meshProcessor)
 	{
 
@@ -297,8 +296,6 @@ namespace Volt
 
 		const float projectionSize = glm::max(max.x - min.x, max.y - min.y);
 
-		const glm::mat4 viewMatrix = glm::lookAt(renderLightData.description.direction + center, center, { 0.f, 1.f, 0.f });
-		
 		glm::mat4 projection = glm::identity<glm::mat4>();
 		projection[0][0] = 2.f / projectionSize;
 		projection[1][1] = 2.f / projectionSize;

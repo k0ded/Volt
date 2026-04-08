@@ -71,7 +71,7 @@ namespace Volt
 	};
 
 	template<typename RequestType, typename... Args>
-	static IORequestResult<RequestType> IOThreads::SubmitRequest(Args&&... args)
+	IORequestResult<RequestType> IOThreads::SubmitRequest(Args&&... args)
 	{
 		VT_ENSURE(s_instance != nullptr);
 

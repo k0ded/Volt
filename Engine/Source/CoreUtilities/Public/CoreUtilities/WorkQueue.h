@@ -217,7 +217,7 @@ private:
 			pushIndex = queueIndices.unwrappedPushIndex % Capacity();
 
 			int32_t diff = queueIndices.unwrappedPushIndex - queueIndices.unwrappedPopIndex;
-			if ((diff == Capacity()) || (diff == (Capacity() - m_indexEnd)))
+			if ((diff == static_cast<int32_t>(Capacity())) || (diff == (static_cast<int32_t>(Capacity()) - m_indexEnd)))
 			{
 				// Queue is full
 				return {};
@@ -670,7 +670,7 @@ public:
 			// If size is SizeMask, we should exit.
 			if (m_size.load(std::memory_order::relaxed) == ThisType::SizeMask)
 			{
-				return false;
+				return;
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RHIModule/RayTracing/ShaderBindingTable.h>
+#include <RHIModule/Buffers/Buffer.h>
 
 namespace Volt::RHI
 {

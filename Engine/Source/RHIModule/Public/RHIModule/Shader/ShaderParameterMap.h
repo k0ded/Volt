@@ -38,7 +38,7 @@ namespace Volt::RHI
 		const ShaderResourceBinding* GetResourceBindingFromName(StringHash name) const;
 
 		VT_INLINE void SetShaderStage(ShaderStage shaderStage) { m_shaderStage = shaderStage; }
-		VT_NODISCARD VT_INLINE void SetAccessesResourceTable() { m_accessesResourceTable = true; }
+		VT_INLINE void SetAccessesResourceTable() { m_accessesResourceTable = true; }
 
 		VT_NODISCARD VT_INLINE const ResourceBindings& GetResourceBindings() const { return m_resourceBindings; }
 		VT_NODISCARD VT_INLINE const ParameterMap& GetShaderParameters() const { return m_shaderParameters; }

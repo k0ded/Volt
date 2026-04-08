@@ -24,7 +24,8 @@
 namespace Volt::RHI
 {
 	VulkanImage::VulkanImage(const ImageDesc& desc, const void* data)
-		: m_desc(desc), m_viewCache(this)
+		: m_desc(desc), 
+		m_viewCache(this)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -33,7 +34,8 @@ namespace Volt::RHI
 	}
 
 	VulkanImage::VulkanImage(const SwapchainImageDesc& desc)
-		: m_isSwapchainImage(true), m_viewCache(this)
+		: m_viewCache(this),
+		m_isSwapchainImage(true)
 	{
 		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 

@@ -43,8 +43,8 @@ private:
 	typedef void(*DestructorFunc)(void*);
 	
 	DestructorHelper(DestructorFunc destructorFunc, void* dataPointer)
-		: m_destructorFunc(destructorFunc),
-		m_dataPointer(dataPointer)
+		: m_dataPointer(dataPointer),
+		m_destructorFunc(destructorFunc)
 	{ }
 
 	void* m_dataPointer = nullptr;

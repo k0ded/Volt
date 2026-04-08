@@ -48,7 +48,6 @@ namespace Volt::RHI
 		const Vector<const char*> GetRequiredExtensions() const;
 
 		VkInstance_T* m_instance = nullptr;
-		VkDebugUtilsMessengerEXT_T* m_debugMessenger = nullptr;
 		VkDescriptorSetLayout_T* m_emptyDescriptorSetLayout = nullptr;
 
 		IntRef<GraphicsDevice> m_graphicsDevice;

@@ -41,3 +41,39 @@ public:
 private:
 	uint64_t m_stackPointer = 0;
 };
+
+class GlobalMemoryStackAllocator
+{
+public:
+	template<typename ValueType>
+	class ForElementType
+	{
+	public:
+		ForElementType()
+			: m_allocation(nullptr)
+		{}
+
+		~ForElementType()
+		{}
+
+		VT_INLINE void* Allocate(size_t size, size_t alignment)
+		{
+			void* newAllocation = GlobalMemoryStack::Get().Allocate(size, alignment);
+			m_allocation = newAllocation;
+			return newAllocation;
+		}
+
+		VT_INLINE void Free(void* allocation)
+		{}
+
+		VT_INLINE void Swap(ForElementType& other)
+		{
+			std::swap(m_allocation, other.m_allocation);
+		}
+
+		VT_INLINE ValueType* GetAllocation() { return reinterpret_cast<ValueType*>(m_allocation); }
+
+	private:
+		void* m_allocation;
+	};
+};

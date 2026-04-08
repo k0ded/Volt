@@ -20,5 +20,15 @@ namespace VoltSharpmake
             conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "spdlog/include"));
             conf.Defines.Add("_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING");
         }
+
+		public override void ConfigureClangCl(Configuration conf, CommonTarget target)
+		{
+			base.ConfigureClangCl(conf, target);
+
+			// #Note: Added because fmt inside of spdlog triggers this warning.
+			conf.AdditionalCompilerOptions.Add(
+				"-Wno-deprecated-literal-operator"	
+			);
+		}
     }
 }

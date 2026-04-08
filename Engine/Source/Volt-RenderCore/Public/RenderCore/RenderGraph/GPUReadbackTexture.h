@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RHIModule/Images/Image.h>
+
 #include <CoreUtilities/Pointers/IntRef.h>
 
 namespace Volt

@@ -16,8 +16,8 @@ namespace Circuit
         ~TextWidget() override;
 
         CIRCUIT_BEGIN_ARGS(TextWidget): 
-            _Size(21.f),
-            _Color(0xffffffff)
+			_Color(0xffffffff),
+            _Size(21.f)
         {
         };
         CIRCUIT_ATTRIBUTE(String, Text);
@@ -28,10 +28,10 @@ namespace Circuit
 
         void Build(const Arguments& args);
 
-        virtual glm::vec2 GetDesiredSize() override;
-        virtual void OnPaint(CircuitPainter& painter) override;
+        glm::vec2 GetDesiredSize() override;
+        void OnPaint(CircuitPainter& painter) override;
 
-        virtual bool IsHittestInvisible() const { return true; };
+        bool IsHittestInvisible() const override { return true; };
     private:
         Volt::Attribute<String> m_text;
         Volt::Attribute<CircuitColor> m_color;

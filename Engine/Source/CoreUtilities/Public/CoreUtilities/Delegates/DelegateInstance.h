@@ -29,6 +29,8 @@ namespace Volt
 		{
 		}
 
+		virtual ~DelegateInstance() = default;
+
 		virtual bool IsSafeToExecute() const = 0;
 		virtual ReturnType Execute(ParamTypes...) const = 0;
 		virtual bool ExecuteIfSafe(ParamTypes...) const = 0;

@@ -41,4 +41,4 @@ namespace Volt
 }
 
 #define VT_REGISTER_ASSET_FACTORY(assetType, type) \
-	inline static bool AssetFactory_ ## type ## _Registered = AssetFactory::Get().RegisterAssetType<type>(assetType ## Type ##::guid)
+	inline static bool AssetFactory_ ## type ## _Registered = AssetFactory::Get().RegisterAssetType<type>(assetType ## Type::guid)

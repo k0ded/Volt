@@ -34,8 +34,6 @@ namespace Volt
 	private:
 		PagedAtomicLinearAllocator<65536> m_allocator;
 		RGVector<DestructorHelper> m_nodeDestructors;
-
-		uint32_t m_nextResourceId = 0;
 	};
 	
 	class VTRC_API RenderGraphPassAllocator

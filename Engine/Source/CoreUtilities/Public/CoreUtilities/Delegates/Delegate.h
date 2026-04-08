@@ -13,7 +13,7 @@ namespace Volt
 	};
 
 	template<typename ReturnType, typename... ParamTypes>
-	class VTCOREUTIL_API Delegate<ReturnType(ParamTypes...)>
+	class Delegate<ReturnType(ParamTypes...)>
 	{
 		using FnType = ReturnType(ParamTypes...);
 

@@ -19,15 +19,15 @@ typedef uint32_t NodePinID;
 
 struct NodePinDefinition
 {
-	PinDirection direction;
+	PinDirection direction = PinDirection::Input;
 
-	NodePinID pinID;
+	NodePinID pinID = 0;
 	String pinName;
 
 	PinTypeCustomDataVector pinTypeData;
-	VoltGUID pinTypeGUID;
+	VoltGUID pinTypeGUID = VoltGUID::Null();
 	// todo: kind of ends up being duplicated data here since many pins can use the same pin type...
-	int32_t pinTypeStorageTypeSize;
+	int32_t pinTypeStorageTypeSize = 0;
 
 	std::function<void(void*)> constructPinStorageFn;
 	std::function<void(void*)> destructPinStorageFn;
@@ -56,15 +56,13 @@ public:
 		customPinTypeData.resize(sizeof(typename PinType::CustomDataType));
 		memcpy_s(customPinTypeData.data(), customPinTypeData.size(), &inCustomPinTypeData, sizeof(typename PinType::CustomDataType));
 
-		NodePinDefinition definition;
-		memset(&definition, 0, sizeof(NodePinDefinition));
-
+		NodePinDefinition definition{};
 		definition.direction = pinDirection;
 		definition.pinID = pinID;
 		definition.pinName = String(pinName);
 		definition.pinTypeData = std::move(customPinTypeData);
 		definition.pinTypeGUID = PinType::GetStaticTypeGUID();
-		definition.pinTypeStorageTypeSize = sizeof(PinType::StorageType);
+		definition.pinTypeStorageTypeSize = sizeof(typename PinType::StorageType);
 
 		definition.constructPinStorageFn = [](void* ptr)
 		{

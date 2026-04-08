@@ -215,7 +215,6 @@ namespace UI
 	void RenderHighlightedBackground(const glm::vec4& color, float height)
 	{
 		auto currentWindow = ImGui::GetCurrentWindow();
-		const auto windowPos = ImGui::GetWindowPos();
 		const auto availRegion = ImGui::GetContentRegionMax();
 		const auto cursorPos = ImGui::GetCursorPos();
 

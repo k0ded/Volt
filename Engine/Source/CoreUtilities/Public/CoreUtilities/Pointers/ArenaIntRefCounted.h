@@ -61,8 +61,8 @@ public:
 
 protected:
 	ArenaIntRefCounted() noexcept
-		: m_arenaPtr(nullptr),
-		m_arenaFreeFunc(nullptr),
+		: m_arenaFreeFunc(nullptr),
+		m_arenaPtr(nullptr),
 		m_count(1)
 	{ }
 

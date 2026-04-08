@@ -95,13 +95,13 @@ namespace Volt
 		{}
 
 		CustomAssetMetadata(const CustomAssetMetadata& other)
-			: m_assetType(other.m_assetType),
-			m_storage(other.m_storage)
+			: m_storage(other.m_storage),
+			m_assetType(other.m_assetType)
 		{}
 
 		CustomAssetMetadata(CustomAssetMetadata&& other)
-			: m_assetType(other.m_assetType),
-			m_storage(std::move(other.m_storage))
+			: m_storage(std::move(other.m_storage)),
+			m_assetType(other.m_assetType)
 		{}
 
 		CustomAssetMetadata& operator=(const CustomAssetMetadata& other)

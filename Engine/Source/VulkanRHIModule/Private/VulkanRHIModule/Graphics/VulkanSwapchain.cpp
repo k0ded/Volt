@@ -132,7 +132,10 @@ namespace Volt::RHI
 	}
 
 	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
-		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync), m_width(createInfo.width), m_height(createInfo.height)
+		: m_width(createInfo.width), 
+		m_height(createInfo.height),
+		m_VSyncEnabled(createInfo.enableVSync),
+		m_createInfo(createInfo)
 	{
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
 

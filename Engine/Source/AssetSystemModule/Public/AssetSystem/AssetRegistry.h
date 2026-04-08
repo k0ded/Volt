@@ -72,9 +72,11 @@ namespace Volt
 	{
 	public:
 		AssetRegistryIterator(AssetRegistry& assetRegistry)
-			: m_assetRegistry(assetRegistry),
-			m_iterator(assetRegistry.m_metadata)
-		{}
+			: m_iterator(assetRegistry.m_metadata),
+			m_assetRegistry(assetRegistry)
+		{
+			VT_UNUSED(m_assetRegistry);
+		}
 	
 		VT_INLINE void operator++()
 		{
@@ -100,9 +102,11 @@ namespace Volt
 	{
 	public:
 		AssetRegistryConstIterator(const AssetRegistry& assetRegistry)
-			: m_assetRegistry(assetRegistry),
-			m_iterator(assetRegistry.m_metadata)
-		{}
+			: m_iterator(assetRegistry.m_metadata),
+			m_assetRegistry(assetRegistry)
+		{
+			VT_UNUSED(m_assetRegistry);
+		}
 
 		VT_INLINE void operator++()
 		{

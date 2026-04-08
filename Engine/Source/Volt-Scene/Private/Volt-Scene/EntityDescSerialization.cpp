@@ -240,13 +240,13 @@ namespace Volt::EntityDescSerialization
 		bool dataHasComponent = false;
 
 		int32_t dataComponentHeaderIndex = -1;
-		for (int32_t i = 0; i < outComponentData.headers.size(); i++)
+		for (size_t i = 0; i < outComponentData.headers.size(); i++)
 		{
 			const ComponentHeader& header = outComponentData.headers[i];
 			if (header.componentGUID == componentToUpdate)
 			{
 				dataHasComponent = true;
-				dataComponentHeaderIndex = i;
+				dataComponentHeaderIndex = static_cast<int32_t>(i);
 				break;
 			}
 		}
@@ -336,7 +336,7 @@ namespace Volt::EntityDescSerialization
 		header.componentDataSize = newSize;
 
 		//also update the other headers
-		for (int i = 0; i < componentData.headers.size(); i++)
+		for (size_t i = 0; i < componentData.headers.size(); i++)
 		{
 			ComponentHeader& updatingHeader = componentData.headers[i];
 			if (updatingHeader.componentDataOffset > header.componentDataOffset)

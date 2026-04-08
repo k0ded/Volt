@@ -2,6 +2,7 @@
 
 #include "EntitySystem/Scripting/ECSSystem.h"
 #include "EntitySystem/Scripting/ScriptingEngine.h"
+#include "EntitySystem/Scripting/ECSEventDispatcher.h"
 
 #include <EventSystem/Event.h>
 

@@ -9,6 +9,7 @@ namespace Volt
 {
 	struct VTR_API BoundingVolume
 	{
+		virtual ~BoundingVolume() = default;
 		virtual const bool IsInFrusum(const Frustum& frustum, const glm::mat4& transform) const = 0;
 		virtual const glm::vec3& GetCenter() const = 0;
 		virtual const float GetRadius() const = 0;

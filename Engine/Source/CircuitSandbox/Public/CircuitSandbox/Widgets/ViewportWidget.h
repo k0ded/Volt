@@ -1,12 +1,13 @@
 #pragma once
 
+#include <Volt-Scene/Scene.h>
+
 #include <Circuit/Widgets/CompoundWidget.h>
 #include <AssetSystem/AssetReference.h>
 
 namespace Volt
 {
 	class SceneRenderer;
-	class Scene;
 }
 
 class ViewportWidget : public Circuit::CompoundWidget

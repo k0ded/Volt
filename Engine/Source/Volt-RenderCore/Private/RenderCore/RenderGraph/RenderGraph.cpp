@@ -200,11 +200,11 @@ namespace Volt
 	}
 
 	RenderGraph::RenderGraph()
-		: m_resourceAllocator(m_dataAllocator.Get()),
+		: m_resourceManager(m_dataAllocator.Get()),
+		m_resourceAllocator(m_dataAllocator.Get()),
 		m_resourceAccessorAllocator(m_dataAllocator.Get()),
 		m_passParametersAllocator(m_dataAllocator.Get()),
-		m_passAllocator(m_dataAllocator.Get()),
-		m_resourceManager(m_dataAllocator.Get())
+		m_passAllocator(m_dataAllocator.Get())
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -225,24 +225,26 @@ namespace Volt
 	}
 
 	RenderGraph::RenderGraph(RenderGraph&& other) noexcept
-		: m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
+		: m_dataAllocator(std::move(other.m_dataAllocator)),
+		m_resourceManager(std::move(other.m_resourceManager)),
+		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
+		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
+		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_resourceAllocator(std::move(other.m_resourceAllocator)),
 		m_resourceAccessorAllocator(std::move(other.m_resourceAccessorAllocator)),
 		m_passParametersAllocator(std::move(other.m_passParametersAllocator)),
 		m_passAllocator(std::move(other.m_passAllocator)),
-		m_renderPasses(std::move(other.m_renderPasses)),
-		m_resources(std::move(other.m_resources)),
-		m_compiledRenderPasses(std::move(other.m_compiledRenderPasses)),
-		m_executionFence(std::move(other.m_executionFence)),
 		m_textureExtractions(std::move(other.m_textureExtractions)),
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
-		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
-		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
-		m_dataAllocator(std::move(other.m_dataAllocator)),
+		m_renderPasses(std::move(other.m_renderPasses)),
+		m_resources(std::move(other.m_resources)),
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
-		m_resourceManager(std::move(other.m_resourceManager)),
+		m_renderTargets(std::move(other.m_renderTargets)),
+		m_compiledRenderPasses(std::move(other.m_compiledRenderPasses)),
 		m_resourceLifetimes(std::move(other.m_resourceLifetimes)),
+		m_executionFence(std::move(other.m_executionFence)),
+		m_nextResourceId(other.m_nextResourceId),
 		m_isCompiled(other.m_isCompiled)
 	{
 	}
@@ -1153,7 +1155,7 @@ namespace Volt
 			return subResourceState.previousState.layout != subResourceState.state.layout;
 		};
 
-		constexpr auto canMergeSubResourceBarriers = [](RHI::ResourceBarrierInfo* activeBarrier, const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
+		constexpr auto canMergeSubResourceBarriers = [isLayoutTransitionRequired](RHI::ResourceBarrierInfo* activeBarrier, const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
 		{
 			// No previous barrier.
 			if (activeBarrier == nullptr)
@@ -1992,14 +1994,14 @@ namespace Volt
 
 			for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
 			{
-				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges]()
+				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges, executePassRangeFunc]()
 				{
 					executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
 				}, FiberStackSize::KB64);
 				index++;
 			}
 
-			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence]()
+			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence, executeRenderGraphFunc]()
 			{
 				executeRenderGraphFunc(renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence);
 			});
@@ -2230,7 +2232,8 @@ namespace Volt
 	}
 
 	RenderGraphShaderParameterUniformBuffer::RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph)
-		: m_head(0), m_mappedPtr(nullptr)
+		: m_mappedPtr(nullptr),
+		m_head(0)
 	{
 		VT_PROFILE_FUNCTION();
 

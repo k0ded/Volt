@@ -616,6 +616,11 @@ namespace Volt
 			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 
+		VT_UNUSED(RT_vertexPositionsBuffer);
+		VT_UNUSED(RT_vertexAnimationInfoBuffer);
+		VT_UNUSED(RT_vertexMaterialBuffer);
+		VT_UNUSED(RT_indexBuffer);
+
 		const size_t newMeshIndex = m_individualMeshes.size();
 
 		m_individualMeshes.emplace_back(mesh);

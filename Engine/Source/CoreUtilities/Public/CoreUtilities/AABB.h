@@ -100,7 +100,7 @@ namespace Volt
 		/// \xxx Untested -- This function is not represented in our unit tests.
 		bool IsSimilarTo(const AABB& b, float diff = 0.5) const;
 
-		VT_INLINE VT_NODISCARD bool Contains(const glm::vec3& p) const
+		VT_NODISCARD VT_INLINE bool Contains(const glm::vec3& p) const
 		{
 			return (p.x >= m_min.x && p.x <= m_max.x &&
 					p.y >= m_min.y && p.y <= m_max.y &&

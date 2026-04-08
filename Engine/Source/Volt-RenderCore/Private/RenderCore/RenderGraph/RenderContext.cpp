@@ -19,9 +19,12 @@ namespace Volt
 	}
 
 	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
-		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
+		: m_commandBuffer(commandBuffer),
+		m_renderGraph(renderGraph),
+		m_currentPass(currentPass),
+		m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
-
+		VT_UNUSED(m_renderGraph);
 	}
 
 	void RenderContext::Flush(IntRef<RHI::Fence> fence)
