@@ -4,6 +4,7 @@
 #include "CoreUtilities/String/CharConversion.h"
 #include "CoreUtilities/CompressedPair.h"
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
+#include "CoreUtilities/VoltAssert.h"
 
 #include <algorithm>
 #include <iterator>
