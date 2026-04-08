@@ -36,4 +36,14 @@ namespace Volt::RHI
 	{
 		return m_semaphore;
 	}
+
+	bool VulkanSemaphore::TryGetWait()
+	{
+		return m_isWaitable.exchange(false, std::memory_order::relaxed);
+	}
+
+	void VulkanSemaphore::ResetWait()
+	{
+		m_isWaitable.store(true, std::memory_order::relaxed);
+	}
 }

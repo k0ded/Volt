@@ -176,11 +176,18 @@ namespace Volt::RHI
 		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence, VK_TRUE, UINT64_MAX);
 		vkResetFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence);
 
-		m_swapchainMutex.lock();
-		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImageIndex);
-		m_swapchainMutex.unlock();
+		VkResult swapchainStatus;
+		{
+			VT_PROFILE_SCOPE("AcquireNextImage");
 
-		//VT_LOGC(Trace, LogVulkanRHI, "NextImageIndex: {}", m_currentImageIndex);
+			// Reset the 'wait' of the semaphore
+			VulkanSemaphore* vkSemaphore = ResourceCast(frameData.acquireSemaphore.GetRaw());
+			vkSemaphore->ResetWait();
+
+			m_swapchainMutex.lock();
+			swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.acquireSemaphore->GetHandle<VkSemaphore>(), nullptr, &m_currentImageIndex);
+			m_swapchainMutex.unlock();
+		}
 
 		if (swapchainStatus == VK_SUCCESS || swapchainStatus == VK_SUBOPTIMAL_KHR)
 		{
@@ -231,8 +238,16 @@ namespace Volt::RHI
 
 		VulkanRHISubmissionThread* submissionThread = ResourceCast(&RHIModule::GetInstance().GetSubmissionThread());
 		{
+			VulkanSemaphore* vkSemaphore = ResourceCast(frameData.acquireSemaphore.GetRaw());
+			VkSemaphore semaphore = nullptr;
+
+			if (vkSemaphore->TryGetWait())
+			{
+				semaphore = vkSemaphore->GetHandle<VkSemaphore>();
+			}
+
 			submissionThread->QueueSwapchainSubmit(
-				frameData.presentSemaphore,
+				semaphore,
 				imageData.renderSemaphore,
 				frameData.renderFence,
 				m_commandBuffers.at(m_currentFrameIndex)->GetHandle<VkCommandBuffer>()
@@ -349,14 +364,14 @@ namespace Volt::RHI
 			tempRenderSemaphores[i] = m_perImageData[i].renderSemaphore;
 		}
 
-		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempRenderSemaphores, swapchain = m_swapchain, surface = m_surface]()
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempRenderSemaphores, swapchain = m_swapchain, surface = m_surface]() mutable
 		{
 			auto device = GraphicsContext::GetDevice();
 			VkDevice vkDevice = device->GetHandle<VkDevice>();
 
 			for (auto& perFrameData : perFrameInFlightData)
 			{
-				vkDestroySemaphore(vkDevice, perFrameData.presentSemaphore, VT_VULKAN_ALLOCATOR);
+				perFrameData.acquireSemaphore.Reset();
 				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
 			}
 
@@ -536,14 +551,6 @@ namespace Volt::RHI
 			for (size_t i = 0; i < m_perImageData.size(); i++)
 			{
 				m_perImageData[i].image = images.at(i);
-
-#if 0
-				SwapchainImageDesc spec{};
-				spec.swapchain = this;
-				spec.imageIndex = static_cast<uint32_t>(i);
-
-				m_perImageData[i].imageReference = Image::Create(spec);
-#endif
 			}
 		}
 	}
@@ -568,7 +575,7 @@ namespace Volt::RHI
 
 		for (auto& frameData : m_perFrameInFlightData)
 		{
-			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
+			frameData.acquireSemaphore = Semaphore::Create();
 			VT_VK_CHECK(vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &frameData.renderFence));
 		}
 	}

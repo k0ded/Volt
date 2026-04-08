@@ -28,6 +28,7 @@
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
+#include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 #include "VulkanRHIModule/VulkanRHISubmissionThread.h"
 
 #include "VulkanRHIModule/VulkanRHISubmissionThread.h"
@@ -176,6 +177,12 @@ namespace Volt::RHI
 	struct VulkanTypeTraits<TransientHeap>
 	{
 		using ConcreteType = VulkanTransientHeap;
+	};
+
+	template<>
+	struct VulkanTypeTraits<Semaphore>
+	{
+		using ConcreteType = VulkanSemaphore;
 	};
 
 	template<typename RHIType>

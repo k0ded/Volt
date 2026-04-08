@@ -807,7 +807,12 @@ namespace Volt::RHI
 						VulkanImage& vulkanImage = image.AsRef<VulkanImage>();
 						VulkanSwapchain& swapchain = vulkanImage.m_swapchainImageData.swapchain->AsRef<VulkanSwapchain>();
 					
-						m_waitSemaphores.emplace_back(swapchain.GetAquireSemaphore());
+						VulkanSemaphore* vkSemaphore = ResourceCast(swapchain.GetAcquireSemaphore().GetRaw());
+
+						if (vkSemaphore->TryGetWait())
+						{
+							m_waitSemaphores.emplace_back(vkSemaphore->GetHandle<VkSemaphore>());
+						}
 					}
 
 					break;

@@ -248,7 +248,7 @@ namespace Volt::RHI
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 		submitInfo.pNext = nullptr;
 		submitInfo.flags = 0;
-		submitInfo.waitSemaphoreInfoCount = 1;
+		submitInfo.waitSemaphoreInfoCount = presentSemaphore != nullptr ? 1 : 0;
 		submitInfo.pWaitSemaphoreInfos = &presentWaitInfo;
 		submitInfo.signalSemaphoreInfoCount = 1;
 		submitInfo.pSignalSemaphoreInfos = &signalInfo;

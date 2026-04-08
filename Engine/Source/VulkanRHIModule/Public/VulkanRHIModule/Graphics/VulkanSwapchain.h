@@ -5,7 +5,7 @@
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
-#include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/Synchronization/Semaphore.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -50,7 +50,7 @@ namespace Volt::RHI
 		bool IsHDREnabled() const override;
 
 		inline VkImage_T* GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).image; }
-		inline VkSemaphore_T* GetAquireSemaphore() const { return m_perFrameInFlightData[m_currentFrameIndex].presentSemaphore; }
+		inline IntRef<Semaphore> GetAcquireSemaphore() const { return m_perFrameInFlightData[m_currentFrameIndex].acquireSemaphore; }
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -86,7 +86,7 @@ namespace Volt::RHI
 
 		struct PerFrameInFlightData
 		{
-			VkSemaphore_T* presentSemaphore = nullptr;
+			IntRef<Semaphore> acquireSemaphore;
 			VkFence_T* renderFence = nullptr;
 		};
 
