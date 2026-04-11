@@ -6,6 +6,11 @@
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
+#include <CoreModule/Project/ProjectManager.h>
+#include <FileSystemModule/Filesystem.h>
+#include <FileSystemModule/FileIORequest.h>
+#include <FileSystemModule/IOThreads/IOThreads.h>
+
 #include <RHIModule/Shader/ShaderUtility.h>
 #include <RHIModule/Shader/ShaderPreProcessor.h>
 #include <RHIModule/Shader/ShaderCache.h>
@@ -14,6 +19,7 @@
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Pointers/Unique.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 #ifdef _WIN32
 #include <wrl.h>
@@ -108,17 +114,12 @@ namespace Volt::RHI
 		VT_LOGC(Trace, LogVulkanRHI, "Initializing VulkanShaderCompiler");
 		DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_hlslCompiler));
 		DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_hlslUtils));
-		DxcCreateInstance(CLSID_DxcRewriter, IID_PPV_ARGS(&m_hlslRewriter));
-
-		m_hlslRewriter->QueryInterface(&m_hlslRewriter2);
 	}
 
 	VulkanShaderCompiler::~VulkanShaderCompiler()
 	{
 		m_hlslUtils->Release();
 		m_hlslCompiler->Release();
-		m_hlslRewriter->Release();
-		m_hlslRewriter2->Release();
 
 		VT_LOGC(Trace, LogVulkanRHI, "Destroying VulkanShaderCompiler");
 	}
@@ -173,6 +174,12 @@ namespace Volt::RHI
 		}
 
 		ReflectShader(specification, result);
+		
+		if (ShouldDumpShaderDebugInfo())
+		{
+			DumpSpirv(specification, result);
+		}
+		
 		m_shaderCache->CacheShader(specification, result);
 
 		return result;
@@ -214,6 +221,11 @@ namespace Volt::RHI
 
 			DXC_ARG_PACK_MATRIX_COLUMN_MAJOR
 		};
+
+		if (ShouldDumpShaderDebugInfo())
+		{
+			DumpShaderText(specification, processedSource);
+		}
 
 		// Append permutations
 		const Vector<WString> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
@@ -425,43 +437,6 @@ namespace Volt::RHI
 			outProcessedSource = preProcessorResult.preProcessedResult;
 		}
 
-		// Rewrite source
-#if 0
-		if (succeded)
-		{
-			const WString wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
-
-			Vector<const wchar_t*> rewriteArgs =
-			{
-				sourceEntry.filepath.c_str(),
-				L"-E",
-				wEntryPoint.c_str(),
-				L"-HV",
-				L"2021",
-				L"-remove-unused-globals"
-			};
-
-			// #TODO_Ivar: Reenable once DXR has support for it.
-			if (g_rhiCapabilities.supportsNative16BitOperations)
-			{
-				rewriteArgs.push_back(L"-enable-16bit-types");
-			}
-
-			RewriteResult rewriteResult = RewriteHLSL(rewriteArgs, sourceEntry.filepath, outProcessedSource);
-
-			if (rewriteResult.succeded)
-			{
-				outProcessedSource = rewriteResult.outSource;
-			}
-			else
-			{
-				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, rewriteResult.error);
-			}
-
-			succeded = rewriteResult.succeded;
-		}
-#endif
-
 		return succeded;
 	}
 
@@ -515,52 +490,6 @@ namespace Volt::RHI
 
 		sourceBlob->Release();
 	
-		return result;
-	}
-
-  	VulkanShaderCompiler::RewriteResult VulkanShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source)
-	{
-		VT_PROFILE_FUNCTION();
-
-		IDxcBlobEncoding* sourceBlob = nullptr;
-		// Use first null character as size, as the string might contain many, which is invalid.
-		size_t firstNullChar = source.find('\0');
-		if (firstNullChar == String::npos)
-		{
-			firstNullChar = source.size();
-		}
-
-		m_hlslUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(firstNullChar), CP_UTF8, &sourceBlob);
-
-		IDxcOperationResult* rewriteResult = nullptr;
-		HRESULT hResult = m_hlslRewriter2->RewriteWithOptions(sourceBlob, sourceFilepath.CStr(), arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, 0, nullptr, &rewriteResult);
-
-		HRESULT hStatus;
-		rewriteResult->GetStatus(&hStatus);
-
-		const bool failed = FAILED(hResult) || FAILED(hStatus);
-
-		RewriteResult result;
-		result.succeded = !failed;
-
-		if (failed)
-		{
-			result.error = FormatString("Failed to rewrite. Error: {}\n", hResult);
-			result.error.append(FormatString("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(rewriteResult), sourceFilepath.ToString()));
-		}
-		else
-		{
-			IDxcBlob* blob;
-			rewriteResult->GetResult(&blob);
-
-			result.outSource = String(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
-			
-			blob->Release();
-		}
-
-		sourceBlob->Release();
-		rewriteResult->Release();
-
 		return result;
 	}
 
@@ -808,5 +737,47 @@ namespace Volt::RHI
 		memcpy(spirv.data(), spvReflectGetCode(&spirvModule), spirvSize);
 
 		spvReflectDestroyShaderModule(&spirvModule);
+	}
+
+	void VulkanShaderCompiler::DumpSpirv(const Specification& specification, const CompilationResultData& data)
+	{
+		const Filesystem::Path dumpDirectory = GetShaderDumpDirectory(specification);
+
+		if (!Filesystem::Exists(dumpDirectory))
+		{
+			Filesystem::CreateDirectories(dumpDirectory);
+		}
+
+		const Filesystem::Path filepath = dumpDirectory / specification.shaderSourceInfo.sourceEntry.filepath.Stem() + ".spv";
+
+		// We only need to copy the data if we are not on an IO thread.
+		const bool createCopyOfData = !Threads::GetThreadConfig().isIOThread;
+		IORequestResult<IORequestWriteFile_Binary> ioResult = IOThreads::SubmitRequest<IORequestWriteFile_Binary>("Write Shader Dump (Text)", filepath, data.shaderBinary.data(), data.shaderBinary.byte_size(), createCopyOfData);
+	}
+	
+	void VulkanShaderCompiler::DumpShaderText(const Specification& specification, StringView shaderText)
+	{
+		const Filesystem::Path dumpDirectory = GetShaderDumpDirectory(specification);
+
+		if (!Filesystem::Exists(dumpDirectory))
+		{
+			Filesystem::CreateDirectories(dumpDirectory);
+		}
+
+		const Filesystem::Path filepath = dumpDirectory / specification.shaderSourceInfo.sourceEntry.filepath.Filename();
+		IORequestResult<IORequestWriteFile_String> ioResult = IOThreads::SubmitRequest<IORequestWriteFile_String>("Write Shader Dump (Text)", filepath, shaderText);
+	}
+
+	bool VulkanShaderCompiler::ShouldDumpShaderDebugInfo() const
+	{
+		return (m_createInfo.flags & ShaderCompilerFlags::OutputShaderDebugInfo) != ShaderCompilerFlags::None;
+	}
+
+	Filesystem::Path VulkanShaderCompiler::GetShaderDumpDirectory(const Specification& specification) const
+	{
+		const Filesystem::Path& filepath = specification.shaderSourceInfo.sourceEntry.filepath;
+		const Filesystem::Path shaderDirectory = filepath.Stem() / FormatString("{}", specification.permutationConfig.GetPermutationIndex());
+
+		return ProjectManager::GetGeneratedDirectory() / "ShaderDebugInfo" / "Vulkan" / shaderDirectory;
 	}
 }

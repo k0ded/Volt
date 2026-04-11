@@ -64,7 +64,8 @@ namespace Volt
 		IORequestResult& operator=(const IORequestResult&) noexcept = delete;
 		IORequestResult& operator=(IORequestResult&&) noexcept;
 
-		ResultType& GetResult();
+		std::add_lvalue_reference_t<ResultType> GetResult() requires(!std::is_same_v<ResultType, void>);
+
 		VT_INLINE IORequestResultCode GetResultCode() const 
 		{
 			JobSystem::WaitForCounter(m_assignedCounter);
@@ -125,7 +126,8 @@ namespace Volt
 
 	template<typename T>
 		requires(std::is_base_of_v<IORequest, T>)
-	IORequestResult<T>::ResultType& IORequestResult<T>::GetResult()
+	std::add_lvalue_reference_t<typename IORequestResult<T>::ResultType> IORequestResult<T>::GetResult()
+		requires(!std::is_same_v<ResultType, void>)
 	{
 		JobSystem::WaitForCounter(m_assignedCounter);
 		return m_ioRequest->GetResult();

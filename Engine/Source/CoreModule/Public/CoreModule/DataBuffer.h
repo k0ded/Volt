@@ -3,9 +3,6 @@
 #include <CoreUtilities/Archive/Archive.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Pointers/Ref.h>
-#include <CoreUtilities/Filesystem/Path.h>
-
-#include <fstream>
 
 class DataBuffer
 {

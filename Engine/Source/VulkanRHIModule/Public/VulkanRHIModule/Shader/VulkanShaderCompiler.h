@@ -35,13 +35,6 @@ namespace Volt::RHI
 			bool succeded;
 		};
 
-		struct RewriteResult
-		{
-			String outSource;
-			String error;
-			bool succeded;
-		};
-
 		CompilationResultData CompileShader(const Specification& specification);
 		bool PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult);
 
@@ -49,13 +42,16 @@ namespace Volt::RHI
 		void ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap);
 		void ReflectShader(const Specification& specification, CompilationResultData& inOutData);
 
+		void DumpSpirv(const Specification& specification, const CompilationResultData& data);
+		void DumpShaderText(const Specification& specification, StringView shaderText);
+		Filesystem::Path GetShaderDumpDirectory(const Specification& specification) const;
+
 		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source, HLSLIncluder* includer);
-		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source);
+
+		bool ShouldDumpShaderDebugInfo() const;
 
 		IDxcCompiler3* m_hlslCompiler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;
-		IDxcRewriter* m_hlslRewriter = nullptr;
-		IDxcRewriter2* m_hlslRewriter2 = nullptr;
 	
 		ShaderCompilerCreateInfo m_createInfo;
 

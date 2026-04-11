@@ -56,18 +56,35 @@ namespace Volt
 		IORequestResultCode m_resultCode;
 	};
 
+	class IORequestReadFile_Binary : public IORequest
+	{
+	public:
+		using ResultType = Vector<uint8_t>;
+
+		VTFS_API IORequestReadFile_Binary(StringView name, const Filesystem::Path& filepath);
+		~IORequestReadFile_Binary() override = default;
+
+		void Execute() override;
+		IORequestResultCode GetResultCode() const override;
+
+		Vector<uint8_t>& GetResult() { return m_result; }
+
+	private:
+		Vector<uint8_t> m_result;
+		Filesystem::Path m_filepath;
+		IORequestResultCode m_resultCode;
+	};
+
 	class IORequestWriteFile_FileWriter : public IORequest
 	{
 	public:
-		using ResultType = bool;
+		using ResultType = void;
 
 		VTFS_API IORequestWriteFile_FileWriter(StringView name, FileWriter&& fileWriter);
 		~IORequestWriteFile_FileWriter() override = default;
 
 		void Execute() override;
 		IORequestResultCode GetResultCode() const override;
-
-		bool& GetResult() { return m_result; }
 
 	private:
 		FileWriter m_fileWriter;
@@ -78,20 +95,39 @@ namespace Volt
 	class IORequestWriteFile_String : public IORequest
 	{
 	public:
-		using ResultType = bool;
+		using ResultType = void;
 
 		VTFS_API IORequestWriteFile_String(StringView name, const Filesystem::Path& filepath, String&& string);
+		VTFS_API IORequestWriteFile_String(StringView name, const Filesystem::Path& filepath, StringView string);
 		~IORequestWriteFile_String() override = default;
 
 		void Execute() override;
 		IORequestResultCode GetResultCode() const override;
-
-		bool& GetResult() { return m_result; }
 
 	private:
 		Filesystem::Path m_filepath;
 		String m_string;
 		IORequestResultCode m_resultCode;
 		bool m_result;
+	};
+
+	class IORequestWriteFile_Binary : public IORequest
+	{
+	public:
+		using ResultType = void;
+
+		VTFS_API IORequestWriteFile_Binary(StringView name, const Filesystem::Path& filepath, const void* data, uint64_t dataSize, bool createCopyOfData = true);
+		~IORequestWriteFile_Binary() override;
+
+		void Execute() override;
+		IORequestResultCode GetResultCode() const override;
+
+	private:
+		Filesystem::Path m_filepath;
+		const void* m_data;
+		uint64_t m_dataSize;
+		IORequestResultCode m_resultCode;
+		bool m_result;
+		bool m_createCopy;
 	};
 }
