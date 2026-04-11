@@ -50,6 +50,11 @@ namespace Volt::RHI
 	// Device fault
 	inline PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT;
 
+	// Nsight Aftermath
+#if VT_ENABLE_NV_AFTERMATH
+	inline PFN_vkCmdSetCheckpointNV vkCmdSetCheckpointNV;
+#endif
+
 	inline static void LoadVulkanFunctions(VkInstance instance)
 	{
 #ifdef VT_PLATFORM_WINDOWS
@@ -90,5 +95,10 @@ namespace Volt::RHI
 	
 		// Device fault
 		VT_GET_VULKAN_FUNCTION(vkGetDeviceFaultInfoEXT);
+	
+		// Nsight Aftermath
+#if VT_ENABLE_NV_AFTERMATH
+		VT_GET_VULKAN_FUNCTION(vkCmdSetCheckpointNV);
+#endif
 	}
 }

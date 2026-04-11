@@ -23,17 +23,17 @@ namespace VoltSharpmake
 
             conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<CoreModule>(target);
-			conf.AddPublicDependency<imgui>(target);
 
-            conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<EventSystemModule>(target);
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<PlatformsModule>(target);
 			conf.AddPrivateDependency<FileSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
 
-			//conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
-			//conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
+			conf.AddPrivateDependency<NsightAftermath>(target);
+
+			conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
+			conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
 		}
     }
 }

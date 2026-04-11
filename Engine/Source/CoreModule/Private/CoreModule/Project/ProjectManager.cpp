@@ -201,6 +201,11 @@ namespace Volt
 		return GetProjectDirectory() / GetAssetsDirectory() / "Cache";
 	}
 
+	const Filesystem::Path ProjectManager::GetGeneratedDirectory()
+	{
+		return GetProjectDirectory() / "Generated";
+	}
+
 	const Filesystem::Path ProjectManager::GetPathRelativeToProject(const Filesystem::Path& path)
 	{
 		return Filesystem::Relative(path, GetProjectDirectory());

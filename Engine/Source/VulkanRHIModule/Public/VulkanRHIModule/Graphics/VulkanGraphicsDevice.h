@@ -36,6 +36,7 @@ namespace Volt::RHI
 
 		VT_INLINE bool HasCalibratedTimeDomains() const { return m_hasCalibratedTimeDomains; }
 		VT_INLINE tracy::VkCtx* GetProfilingContext() const { return m_profilingContext; }
+		VT_INLINE GPUCrashTracker& GetGPUCrashTracker() { return m_deviceCrashTracker; }
 
 	protected:
 		void* GetHandleImpl() const override;

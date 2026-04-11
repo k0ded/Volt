@@ -300,6 +300,11 @@ namespace Volt
 		};
 
 		m_waitingLists.Emplace(priority, entry);
+	
+		if (waitCounter->IsCompleted())
+		{
+			NotifyCounterReady();
+		}
 	}
 
 	bool JobSystem::FlushWaitingList(ExecutionPriority priority)

@@ -1,21 +1,11 @@
 #pragma once
 
-#ifdef VT_ENABLE_NV_AFTERMATH
-#include "VulkanRHIModule/Common/VulkanNsightAftermath.h"
-#endif
-
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include <cstdint>
 
 const char* VKResultToString(int32_t result);
 void HandleDeviceLost();
-
-#ifdef VT_ENABLE_NV_AFTERMATH
-
-#define VT_VK_CHECK(x) Volt::RHI::CheckWaitReturnValue(x)
-
-#else
 
 #ifdef VT_ENABLE_ASSERTS
 
@@ -29,8 +19,6 @@ void HandleDeviceLost();
 
 #else
 #define VT_VK_CHECK(x) x
-#endif
-
 #endif
 
 namespace VulkanDefaults

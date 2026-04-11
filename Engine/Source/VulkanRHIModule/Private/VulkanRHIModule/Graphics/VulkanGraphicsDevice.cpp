@@ -220,15 +220,18 @@ namespace Volt::RHI
 			}
 
 #ifdef VT_ENABLE_NV_AFTERMATH
-			s_enabledFeatures.aftermathDiagInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
-			s_enabledFeatures.aftermathDiagInfo.pNext = chainEntryPoint;
-			s_enabledFeatures.aftermathDiagInfo.flags =
-				VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |
-				VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |
-				VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV |
-				VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV; // #TODO_Ivar: Implement some kind of debug level
+			if (physicalDevice->IsExtensionAvailable(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME))
+			{
+				s_enabledFeatures.aftermathDiagInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
+				s_enabledFeatures.aftermathDiagInfo.pNext = chainEntryPoint;
+				s_enabledFeatures.aftermathDiagInfo.flags =
+					VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |
+					VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |
+					VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV |
+					VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV; // #TODO_Ivar: Implement some kind of debug level
 
-			chainEntryPoint = &s_enabledFeatures.aftermathDiagInfo;
+				chainEntryPoint = &s_enabledFeatures.aftermathDiagInfo;
+			}
 #endif
 
 			s_enabledFeatures.physicalDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -303,13 +306,6 @@ namespace Volt::RHI
 			if (physicalDevice->IsExtensionAvailable(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME))
 			{
 				enabledExtensions.emplace_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
-			}
-#endif
-
-#ifdef VT_ENABLE_VALIDATION
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
-			{
-				enabledExtensions.emplace_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 			}
 #endif
 

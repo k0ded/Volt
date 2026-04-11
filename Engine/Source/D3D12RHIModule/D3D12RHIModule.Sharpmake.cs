@@ -27,7 +27,6 @@ namespace VoltSharpmake
             conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<imgui>(target);
 
-            conf.AddPrivateDependency<Aftermath>(target);
             conf.AddPrivateDependency<DXC>(target);
 
             conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "d3d12"));

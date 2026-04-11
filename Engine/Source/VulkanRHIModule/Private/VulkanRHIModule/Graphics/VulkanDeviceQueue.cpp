@@ -100,6 +100,8 @@ namespace Volt::RHI
 				waitSemaphoreInfo.pNext = nullptr;
 				waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_2_NONE;
 				waitSemaphoreInfo.semaphore = semaphore;
+				waitSemaphoreInfo.deviceIndex = 0;
+				waitSemaphoreInfo.value = 0;
 			}
 		}
 

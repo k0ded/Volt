@@ -82,7 +82,7 @@ third-party component used within this product.
 
 ## Support
 
-* Microsoft Windows 10 (Version 1809 or newer)
+* Microsoft Windows 10 or newer
 
 * Linux (kernel 4.15.0 or newer)
 
@@ -438,7 +438,7 @@ based on requirements and acceptable overhead.
 
         // Set up device creation info.
         VkDeviceCreateInfo deviceInfo = {};
-        deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         deviceInfo.pNext = &aftermathInfo;
         deviceInfo.queueCreateInfoCount = 1;
         deviceInfo.pQueueCreateInfos = &queueInfo;
@@ -827,17 +827,26 @@ dump using a previously created decoder object:
         Utility::Printf("Access Type: %u", pageFaultInfo.accessType);
         Utility::Printf("Engine: %u", pageFaultInfo.engine);
         Utility::Printf("Client: %u", pageFaultInfo.client);
-        if (pageFaultInfo.bHasResourceInfo)
+        if (pageFaultInfo.resourceInfoCount > 0)
         {
-            Utility::Printf("Fault in resource starting at 0x%016llx", pageFaultInfo.resourceInfo.gpuVa);
-            Utility::Printf("Size of resource: (w x h x d x ml) = {%u, %u, %u, %u} = %llu bytes",
-                pageFaultInfo.resourceInfo.width,
-                pageFaultInfo.resourceInfo.height,
-                pageFaultInfo.resourceInfo.depth,
-                pageFaultInfo.resourceInfo.mipLevels,
-                pageFaultInfo.resourceInfo.size);
-            Utility::Printf("Format of resource: %u", pageFaultInfo.resourceInfo.format);
-            Utility::Printf("Resource was destroyed: %d", pageFaultInfo.resourceInfo.bWasDestroyed);
+            std::vector<GFSDK_Aftermath_GpuCrashDump_ResourceInfo> resourceInfos(pageFaultInfo.resourceInfoCount);
+            GFSDK_Aftermath_GpuCrashDump_GetPageFaultResourceInfo(decoder, pageFaultInfo.resourceInfoCount, resourceInfos.data());
+
+            int index = 0;
+            for (auto resourceInfo : resourceInfos)
+            {
+                Utility::Printf("Resource[%d]", index);
+                Utility::Printf("\tFault in resource starting at 0x%016llx", resourceInfo.gpuVa);
+                Utility::Printf("\tSize of resource: (w x h x d x ml) = {%u, %u, %u, %u} = %llu bytes",
+                    resourceInfo.width,
+                    resourceInfo.height,
+                    resourceInfo.depth,
+                    resourceInfo.mipLevels,
+                    resourceInfo.size);
+                Utility::Printf("\tFormat of resource: %u", resourceInfo.format);
+                Utility::Printf("\tResource was destroyed: %d", resourceInfo.bWasDestroyed);
+                index++;
+            }
         }
     }
 ```
@@ -865,9 +874,9 @@ the time of the GPU crash or hang could look like this:
             // Print information for each active shader
             for (const GFSDK_Aftermath_GpuCrashDump_ShaderInfo& shaderInfo : shaderInfos)
             {
-                Utility::Printf("Active shader: ShaderHash = 0x%016llx ShaderInstance = 0x%016llx Shadertype = %u",
+                Utility::Printf("Active shader: ShaderHash = 0x%016llx ShaderDebugInfoUid = 0x%016llx Shadertype = %u",
                     shaderInfo.shaderHash,
-                    shaderInfo.shaderInstance,
+                    shaderInfo.shaderDebugInfoUid,
                     shaderInfo.shaderType);
             }
         }
@@ -1155,7 +1164,7 @@ of generating source shader debug information:
 
    The (crash dump decoder) application then needs to pass the contents of the
    `full/shader.spv` and `stripped/shader.spv` pair to
-   `GFSDK_Aftermath_GetDebugNameSpirv` to generate the shader DebugName to use
+   `GFSDK_Aftermath_GetShaderDebugNameSpirv` to generate the shader DebugName to use
    with `ShaderSourceDebugInfoLookupCallback`.
 
 # Limitations and Known Issues
@@ -1172,7 +1181,7 @@ of generating source shader debug information:
   with a reduced feature set (no API resource tracking and no shader address
   mapping) is available for D3D11 devices.
 
-* Nsight Aftermath is fully supported on Windows 10, with limited support on
+* Nsight Aftermath is fully supported on Windows 10 and newer, with limited support on
   Windows 7.
 
 * Nsight Aftermath event markers and resource tracking is incompatible with the
@@ -1187,8 +1196,10 @@ of generating source shader debug information:
 
 ## Vulkan
 
-* Shader line mappings are not yet supported for shaders compiled with the
-  NonSemantic.Vulkan.DebugInfo.100 extension.
+* Shader line mappings are not yet supported for SPIR-V shaders compiled with the
+  NonSemantic.Shader.DebugInfo.100 extended instruction set, i.e., shaders compiled
+  with the `-gVS` option of `glslangValidator` or the `-fspv-debug=vulkan-with-source`
+  option of the DirectX Shader Compiler.
 
 # Copyright and Licenses
 

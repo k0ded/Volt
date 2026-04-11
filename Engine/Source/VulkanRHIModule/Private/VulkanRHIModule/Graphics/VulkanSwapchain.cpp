@@ -23,16 +23,6 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
-#ifdef VT_ENABLE_NV_AFTERMATH
-
-#include <GFSDK_Aftermath.h>
-#include <GFSDK_Aftermath_Defines.h>
-#include <GFSDK_Aftermath_GpuCrashDump.h>
-
-#include <RHIModule/Utility/NsightAftermathHelpers.h>
-
-#endif
-
 namespace Volt::RHI
 {
 	namespace Utility

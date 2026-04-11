@@ -71,6 +71,7 @@ namespace Volt
 		VT_INLINE void Reset()
 		{
 			m_counter.store(0, std::memory_order::seq_cst);
+			m_isCompleted.store(0, std::memory_order::seq_cst);
 		}
 
 		VT_INLINE uint32_t GetRefCount() const

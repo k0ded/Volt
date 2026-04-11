@@ -40,6 +40,7 @@ namespace Volt
 		VTC_API static const Filesystem::Path GetPathRelativeToEngine(const Filesystem::Path& path);
 		VTC_API static const Filesystem::Path GetPathRelativeToProject(const Filesystem::Path& path);
 		VTC_API static const Filesystem::Path GetCachePath();
+		VTC_API static const Filesystem::Path GetGeneratedDirectory();
 		VTC_API static const Filesystem::Path GetOrCreateSettingsDirectory();
 		VTC_API static const Filesystem::Path GetPhysicsSettingsPath();
 		VTC_API static const Filesystem::Path GetPhysicsLayersPath();

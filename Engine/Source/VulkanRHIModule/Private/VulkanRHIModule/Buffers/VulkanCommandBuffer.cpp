@@ -46,16 +46,6 @@
 
 #include <CoreUtilities/EnumUtils.h>
 
-#ifdef VT_ENABLE_NV_AFTERMATH
-
-#include <GFSDK_Aftermath.h>
-#include <GFSDK_Aftermath_Defines.h>
-#include <GFSDK_Aftermath_GpuCrashDump.h>
-
-#include <RHIModule/Utility/NsightAftermathHelpers.h>
-
-#endif
-
 #include <CoreUtilities/MemoryUtility.h>
 
 #include <tracy/TracyVulkan.hpp>
@@ -985,6 +975,19 @@ namespace Volt::RHI
 			Volt::RHI::vkCmdBeginDebugUtilsLabelEXT(m_commandBufferData.commandBuffer, &markerInfo);
 		}
 
+#if VT_ENABLE_NV_AFTERMATH
+		if (Volt::RHI::vkCmdSetCheckpointNV)
+		{
+			VulkanGraphicsDevice& vkDevice = GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>();
+			uint64_t markerIndex = vkDevice.GetGPUCrashTracker().GetMarkerAllocator().AllocateMarker();
+		
+			String& marker = vkDevice.GetGPUCrashTracker().GetMarkerAllocator().GetMarker(markerIndex);
+			marker = markerLabel;
+		
+			Volt::RHI::vkCmdSetCheckpointNV(m_commandBufferData.commandBuffer, (const void*)markerIndex);
+		}
+#endif
+
 #if 0
 		VulkanGraphicsDevice& vkDevice = GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>();
 		Tracy::BeginProfilingScope(vkDevice.GetProfilingContext(), TracyLine, TracyFile, strlen(TracyFile), TracyFunction, strlen(TracyFunction), markerLabel.data(), markerLabel.size(), m_commandBufferData.commandBuffer);
@@ -1564,7 +1567,14 @@ namespace Volt::RHI
 		{
 			case ShaderRegisterType::CBV:
 			{
-				VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+				IntRef<RHI::BufferView> bufferView = binding.resource.Get<IntRef<RHI::BufferView>>();
+
+				if (!VT_CHECK(bufferView != nullptr))
+				{
+					break;
+				}
+
+				VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 				const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
 
 				// If dynamic offsets were provided it's a special case, because the descriptor is
@@ -1589,14 +1599,23 @@ namespace Volt::RHI
 
 				break;
 			}
+			
 			case ShaderRegisterType::Sampler:
 			{
-				VulkanSamplerState& vkSampler = binding.resource.Get<IntRef<RHI::SamplerState>>()->AsRef<VulkanSamplerState>();
+				IntRef<RHI::SamplerState> samplerState = binding.resource.Get<IntRef<RHI::SamplerState>>();
+
+				if (!VT_CHECK(samplerState != nullptr))
+				{
+					break;
+				}
+
+				VulkanSamplerState& vkSampler = samplerState->AsRef<VulkanSamplerState>();
 				const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
 				vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
 
 				break;
 			}
+
 			case ShaderRegisterType::SRV:
 			{
 				switch (binding.resourceType)
@@ -1604,7 +1623,14 @@ namespace Volt::RHI
 					case ShaderResourceType::TexelBuffer:
 					case ShaderResourceType::StructuredBuffer:
 					{
-						VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+						IntRef<RHI::BufferView> bufferView = binding.resource.Get<IntRef<RHI::BufferView>>();
+
+						if (!VT_CHECK(bufferView != nullptr))
+						{
+							break;
+						}
+
+						VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
@@ -1612,6 +1638,13 @@ namespace Volt::RHI
 					};
 					case ShaderResourceType::Texture:
 					{
+						IntRef<RHI::ImageView> imageView = binding.resource.Get<IntRef<RHI::ImageView>>();
+
+						if (!VT_CHECK(imageView != nullptr))
+						{
+							break;
+						}
+
 						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
 						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
@@ -1620,11 +1653,18 @@ namespace Volt::RHI
 					}
 					case ShaderResourceType::AccelerationStructure:
 					{
+						IntRef<RHI::AccelerationStructure> accelerationStructure = binding.resource.Get<IntRef<RHI::AccelerationStructure>>();
+						
+						if (!VT_CHECK(accelerationStructure != nullptr))
+						{
+							break;
+						}
+
 						VkDescriptorGetInfoEXT descriptorInfo;
 						descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
 						descriptorInfo.pNext = nullptr;
 						descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-						descriptorInfo.data.accelerationStructure = binding.resource.Get<IntRef<RHI::AccelerationStructure>>()->GetDeviceAddress();
+						descriptorInfo.data.accelerationStructure = accelerationStructure->GetDeviceAddress();
 
 						const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
 
@@ -1642,7 +1682,14 @@ namespace Volt::RHI
 					case ShaderResourceType::TexelBuffer:
 					case ShaderResourceType::StructuredBuffer:
 					{
-						VulkanBufferView& vkBufferView = binding.resource.Get<IntRef<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+						IntRef<RHI::BufferView> bufferView = binding.resource.Get<IntRef<RHI::BufferView>>();
+
+						if (!VT_CHECK(bufferView != nullptr))
+						{
+							break;
+						}
+
+						VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& uavDescriptor = vkBufferView.GetUAVDescriptor();
 						vkGetDescriptorEXT(vkDevice, &uavDescriptor.vkDescriptorInfo, uavDescriptor.descriptorSize, outDescriptorPtr);
@@ -1651,6 +1698,13 @@ namespace Volt::RHI
 
 					case ShaderResourceType::Texture:
 					{
+						IntRef<RHI::ImageView> imageView = binding.resource.Get<IntRef<RHI::ImageView>>();
+
+						if (!VT_CHECK(imageView != nullptr))
+						{
+							break;
+						}
+
 						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
 						const VulkanImageView::DescriptorDescription& uavDescriptor = vkImageView.GetUAVDescriptor();

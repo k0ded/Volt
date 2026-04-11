@@ -29,7 +29,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<SPIRV_Tools>(target);
 
 			conf.AddPrivateDependency<VulkanMemoryAllocator>(target);
-			conf.AddPrivateDependency<Aftermath>(target);
+			conf.AddPrivateDependency<NsightAftermath>(target);
 			conf.AddPrivateDependency<DXC>(target);
 			conf.AddPrivateDependency<spirv_reflect>(target);
 

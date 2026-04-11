@@ -2,11 +2,17 @@
 #include "VulkanCommon.h"
 
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
 
 #include <vulkan/vulkan.h>
+
+#include <chrono>
+
+#if VT_ENABLE_NV_AFTERMATH
+#include <GFSDK_Aftermath_GpuCrashDump.h>
+#endif
 
 const char* VKResultToString(int32_t result)
 {
@@ -72,6 +78,11 @@ const char* GetAddressTypeStr(VkDeviceFaultAddressTypeEXT addressType)
 
 void HandleDeviceLost()
 {
+#if VT_ENABLE_NV_AFTERMATH
+	auto device = Volt::RHI::GraphicsContext::GetDevice();
+	Volt::RHI::VulkanGraphicsDevice& vkDevice = device->AsRef<Volt::RHI::VulkanGraphicsDevice>();
+	vkDevice.GetGPUCrashTracker().HandleGPUCrash();
+#else
 	VkDeviceFaultCountsEXT counts{};
 	counts.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
 
@@ -111,4 +122,5 @@ void HandleDeviceLost()
 			VT_LOG(Error, "Fault address: {}, type: {}\n", (uint64_t)a.reportedAddress, GetAddressTypeStr(a.addressType));
 		}
 	}
+#endif
 }
