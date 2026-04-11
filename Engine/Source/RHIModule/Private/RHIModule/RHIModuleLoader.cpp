@@ -1,6 +1,7 @@
 #include "rhipch.h"
 
 #include "RHIModule/RHIModuleLoader.h"
+#include "RHIModule/RHIConfiguration.h"
 #include "RHIModule/Graphics/DeviceQueue.h"
 
 #include <EventSystem/ApplicationEvents.h>
@@ -14,10 +15,17 @@
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/String/StringUtility.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 namespace Volt::RHI
 {
 	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, Minimal, PreEngine);
+
+	static ConsoleVariable<int32_t> g_rhiUseBindless(
+		"rhi.UseBindless",
+		0,
+		"Whether or not the RHI should use bindless"
+	);
 
 	RHIModuleLoader::RHIModuleLoader()
 	{
@@ -133,5 +141,12 @@ namespace Volt::RHI
 	void RHIModuleLoader::OnPostRender()
 	{
 		m_rhiModule->EndFrame();
+	}
+
+	void RHIModuleLoader::SetupRHIConfiguration()
+	{
+		g_rhiConfiguration.useBindless = g_rhiUseBindless.GetValue();
+		g_rhiConfiguration.useMeshShaders = false;
+		g_rhiConfiguration.useRayTracing = false;
 	}
 }

@@ -1835,7 +1835,7 @@ namespace Volt::RHI
 			return m_submissionFence->IsSignaled();
 		}
 
-		return true;
+		return false;
 	}
 
 	void VulkanCommandBuffer::BindDescriptorBuffer(IntRef<ResourceTable> rayTracingResourceTable)
@@ -1900,5 +1900,10 @@ namespace Volt::RHI
 		{
 			VT_ENSURE(m_activeComputePipeline->HasInlineParameters());
 		}
+	}
+
+	void VulkanCommandBuffer::Reset()
+	{
+		m_submissionFence = nullptr;
 	}
 }

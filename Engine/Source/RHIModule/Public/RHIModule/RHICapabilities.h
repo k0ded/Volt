@@ -46,11 +46,6 @@ namespace Volt::RHI
 		bool supportsBindless = false;
 
 		ComputeDimensions maxDispatchThreadGroupsPerDimension;
-
-		// #TODO_Ivar: Move to some other place
-		bool useMeshShaders = false;
-		bool useBindless = false;
-		bool useRayTracing = false;
 	};
 }
 extern VTRHI_API Volt::RHI::RHICapabilities g_rhiCapabilities;

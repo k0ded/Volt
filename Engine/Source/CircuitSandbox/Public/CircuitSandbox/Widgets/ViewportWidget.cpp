@@ -34,7 +34,7 @@ void ViewportWidget::OnPaint(Circuit::CircuitPainter& painter)
 			m_sceneRenderer->Resize(static_cast<uint32_t>(m_prevAllottedPaintSize.x), static_cast<uint32_t>(m_prevAllottedPaintSize.y));
 			m_scene->SetRenderSize(static_cast<uint32_t>(m_prevAllottedPaintSize.x), static_cast<uint32_t>(m_prevAllottedPaintSize.y));
 		}
-		//painter.AddImage(0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y, m_sceneRenderer->GetFinalImage());
+		painter.AddImage(0, 0, painter.GetAllottedSize().x, painter.GetAllottedSize().y, m_sceneRenderer->GetFinalImage());
 	}
 	else
 	{

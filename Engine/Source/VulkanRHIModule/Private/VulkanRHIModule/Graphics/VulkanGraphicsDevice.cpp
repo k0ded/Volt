@@ -9,6 +9,7 @@
 #include "VulkanRHIModule/Core.h"
 
 #include <RHIModule/RHICapabilities.h>
+#include <RHIModule/RHIConfiguration.h>
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 
@@ -114,7 +115,7 @@ namespace Volt::RHI
 
 			void* chainEntryPoint = &s_enabledFeatures.vulkan14Features;
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiCapabilities.useMeshShaders)
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiConfiguration.useMeshShaders)
 			{
 				s_enabledFeatures.meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 				s_enabledFeatures.meshShaderFeaturesEXT.meshShader = VK_TRUE;
@@ -135,7 +136,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.deviceRobustness2FeaturesEXT;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiCapabilities.useBindless)
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiConfiguration.useBindless)
 			{
 				s_enabledFeatures.mutableDescriptorTypeFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
 				s_enabledFeatures.mutableDescriptorTypeFeaturesEXT.pNext = chainEntryPoint;
@@ -144,7 +145,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.mutableDescriptorTypeFeaturesEXT;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				s_enabledFeatures.accelerationStructureFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 				s_enabledFeatures.accelerationStructureFeaturesKHR.pNext = chainEntryPoint;
@@ -160,7 +161,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.accelerationStructureFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				s_enabledFeatures.rayQueryFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 				s_enabledFeatures.rayQueryFeaturesKHR.pNext = chainEntryPoint;
@@ -168,7 +169,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.rayQueryFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				s_enabledFeatures.rayTracingPipelineFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 				s_enabledFeatures.rayTracingPipelineFeaturesKHR.pNext = chainEntryPoint;
@@ -181,7 +182,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.rayTracingPipelineFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.pNext = chainEntryPoint;
@@ -266,7 +267,7 @@ namespace Volt::RHI
 		{
 			Vector<const char*> enabledExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiCapabilities.useMeshShaders)
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiConfiguration.useMeshShaders)
 			{
 				enabledExtensions.emplace_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 			}
@@ -276,22 +277,22 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) && g_rhiConfiguration.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 				enabledExtensions.emplace_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -314,7 +315,7 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiCapabilities.useBindless)
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiConfiguration.useBindless)
 			{
 				enabledExtensions.emplace_back(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
 			}

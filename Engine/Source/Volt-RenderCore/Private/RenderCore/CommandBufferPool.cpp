@@ -42,6 +42,7 @@ namespace Volt
 		{
 			if (commandBuffer->HasFinishedExecution())
 			{
+				commandBuffer->Reset();
 				m_commandBufferPool.Push(commandBuffer);
 			}
 			else

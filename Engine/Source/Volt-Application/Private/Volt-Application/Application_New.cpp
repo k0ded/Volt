@@ -57,10 +57,10 @@ namespace Volt
 			EventSystem::Update();
 
 			m_windowManager->ProcessMessages();
+			m_windowManager->BeginFrame();
 
 			EngineLoop();
 
-			m_windowManager->BeginFrame();
 			m_windowManager->Render(m_currentDeltaTime);
 			m_windowManager->Present();
 

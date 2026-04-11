@@ -57,6 +57,8 @@ namespace Volt::RHI
 		virtual void Begin(bool oneTimeSubmit = true) = 0;
 		virtual void End() = 0;
 
+		virtual void Reset() = 0;
+
 		virtual void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) = 0;
 		virtual void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance) = 0;
 		virtual void DrawIndexedIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;

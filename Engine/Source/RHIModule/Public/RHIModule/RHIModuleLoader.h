@@ -46,6 +46,8 @@ namespace Volt::RHI
 		void LoadRHIFromFilepath(const Filesystem::Path& filepath);
 		void CreateGraphicsContextForRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
 
+		void SetupRHIConfiguration();
+
 		RHIModule* m_rhiModule = nullptr;
 		IntRef<RHI::GraphicsContext> m_graphicsContext;
 
