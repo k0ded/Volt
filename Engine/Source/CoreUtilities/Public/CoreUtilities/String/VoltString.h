@@ -2893,16 +2893,16 @@ size_t SplitStringWithDelimiter(const BasicString<T, Allocator>& inString, Basic
 	return (pos != BasicString<T, Allocator>::npos) ? pos + 1 : pos;
 }
 
-typedef BasicString<char> String;
-typedef BasicString<wchar_t> WString;
+using String = BasicString<char>;
+using WString = BasicString<wchar_t>;
 
-typedef BasicString<char> String8;
-typedef BasicString<char16_t> String16;
-typedef BasicString<char32_t> String32;
+using String8 = BasicString<char>;
+using String16 = BasicString<char16_t>;
+using String32 = BasicString<char32_t>;
 
-typedef BasicString<char8_t> U8String;
-typedef BasicString<char16_t> U16String;
-typedef BasicString<char32_t> U32String;
+using U8String = BasicString<char8_t>;
+using U16String = BasicString<char16_t>;
+using U32String = BasicString<char32_t>;
 
 VTCOREUTIL_API unsigned long long StoUll(const String& str, size_t* index = nullptr, int32_t base = 10);
 VTCOREUTIL_API int StoI(const String& str, size_t* index = nullptr, int32_t base = 10);

@@ -61,6 +61,7 @@ namespace Volt
 		void DeserializeProject();
 
 		Filesystem::Path m_currentEngineDirectory;
+		Filesystem::Path m_engineAssetsDirectory;
 		Unique<Project> m_currentProject;
 
 		PluginRegistry* m_pluginRegistry = nullptr;

@@ -18,11 +18,11 @@ namespace Circuit
 		CircuitPainter subPainter = CreateSubPainter(subAllotedScreenArea);
 		widget->OnPaint(subPainter);
 
-		std::vector<CircuitDrawCommand> commands = subPainter.GetCommands();
+		ArrayView<CircuitDrawCommand> commands = subPainter.GetCommands();
 
 		Volt::Rect bounds = Volt::Rect(allotedLocalArea.GetPosition(), glm::vec2(0.f, 0.f));
 
-		for (CircuitDrawCommand& command : commands)
+		for (const CircuitDrawCommand& command : commands)
 		{
 			switch (command.type)
 			{
@@ -193,12 +193,14 @@ namespace Circuit
 			return;
 		}
 
-		U32String utf32string(U32String::CtorConvert(), text);
+		using LocalU32String = BasicString<char32_t, GlobalMemoryStackAllocator>;
+
+		GlobalMemoryStackMark memMark;
+		LocalU32String utf32string(LocalU32String::CtorConvert(), text);
 
 		const FontMetrics& fontMetrics = font->GetMetrics();
 		const FontGeometry& fontGeometry = font->GetGeometry();
 
-		GlobalMemoryStackMark memMark;
 		GlobalMemoryStackVector<int32_t> lineSplits;
 
 		// Find all line splits
@@ -385,14 +387,16 @@ namespace Circuit
 		AddDrawCommand(std::move(command));
 	}
 
-	std::vector<CircuitDrawCommand> CircuitPainter::GetCommands()
+	ArrayView<CircuitDrawCommand> CircuitPainter::GetCommands()
 	{
 		return m_drawCommands;
 	}
+
 	glm::vec2 CircuitPainter::ToPixelPos(const glm::vec2& localPos)
 	{
 		return localPos + m_allottedScreenArea.GetPosition() - m_basePainter->m_allottedScreenArea.GetPosition();
 	}
+
 	void CircuitPainter::AddDrawCommand(CircuitDrawCommand&& command)
 	{
 		//std::vector<CircuitDrawCommand>* drawCommandsToAppendTo = &m_drawCommands;
@@ -403,14 +407,14 @@ namespace Circuit
 		//drawCommandsToAppendTo->push_back(command);
 
 		//TODO: extremely wasteful to add to 3 different lists, need to refactor this whole paiting system
-		m_drawCommands.push_back(CircuitDrawCommand(command));
+		m_drawCommands.emplace_back(command);
 		if (m_basePainter != this)
 		{
-			m_basePainter->m_drawCommands.push_back(command);
+			m_basePainter->m_drawCommands.emplace_back(command);
 		}
 		if (m_parentPainter)
 		{
-			m_parentPainter->m_drawCommands.push_back(command);
+			m_parentPainter->m_drawCommands.emplace_back(command);
 		}
 	}
 

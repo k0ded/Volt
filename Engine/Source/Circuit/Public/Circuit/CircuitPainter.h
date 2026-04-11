@@ -41,7 +41,8 @@ namespace Circuit
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float scale = 1.f);
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
 
-		std::vector<CircuitDrawCommand> GetCommands();
+		ArrayView<CircuitDrawCommand> GetCommands();
+
 	private:
 		CircuitPainter(CircuitPainter* basePainter, CircuitPainter* parentPainter, const Volt::Rect& allotedScreenArea, IntRef<Volt::RHI::ResourceTable> resourceTable)
 			: m_allottedScreenArea(allotedScreenArea),
@@ -55,7 +56,7 @@ namespace Circuit
 		glm::vec2 ToPixelPos(const glm::vec2& localPos);
 		void AddDrawCommand(CircuitDrawCommand&& command);
 
-		std::vector<CircuitDrawCommand> m_drawCommands;
+		Vector<CircuitDrawCommand> m_drawCommands;
 
 		Volt::Rect m_allottedScreenArea;
 

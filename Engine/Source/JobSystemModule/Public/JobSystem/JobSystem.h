@@ -18,6 +18,7 @@
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Atomics/Latch.h>
 
 namespace Volt
 {
@@ -81,6 +82,7 @@ namespace Volt
 			Job* currentlyExecutingJob = nullptr;
 
 			VT_PROFILE_DECLARE_MUTEX(std::mutex, wakeMutex);
+			std::condition_variable_any wakeCondition;
 			JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> workQueues;
 		};
 
@@ -118,6 +120,9 @@ namespace Volt
 		bool AllocateStack(FiberStackSize stackSize, FiberStack& outStack);
 		void FreeStack(FiberStack stack);
 
+		void RunJobInternal(Job* job);
+		void RunJobsInternal(ArrayView<Job*> jobs);
+
 		///// Worker functions /////
 		Job* TryGetJob(uint32_t workerId);
 		Job* TryGetYieldedJob();
@@ -131,7 +136,6 @@ namespace Volt
 		alignas(std::hardware_constructive_interference_size) std::atomic_bool m_isRunning = true;
 		alignas(std::hardware_constructive_interference_size) std::atomic_uint32_t m_nextQueueToPush = 0;
 
-		std::condition_variable_any m_workerWakeCondition;
 		std::condition_variable_any m_waitingListManangerCondition;
 		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_waitingListManagerMutex, "JobSystemWaitingListManagerMutex");
 
@@ -147,6 +151,8 @@ namespace Volt
 		PagedAtomicArenaAllocator<JobWorker, 16> m_workerAllocator;
 		JobAllocator<Job> m_jobAllocator;
 		JobAllocator<JobCounter> m_counterAllocator;
+
+		Latch m_startWorkersLatch;
 
 		JobStackAllocator m_stackAllocator;
 		FiberPool m_fiberPool;

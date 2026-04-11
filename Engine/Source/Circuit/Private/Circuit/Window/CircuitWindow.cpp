@@ -58,8 +58,10 @@ namespace Circuit
 		m_windowSize = size;
 	}
 
-	std::vector<CircuitDrawCommand> CircuitWindow::GetDrawCommands()
+	ArrayView<CircuitDrawCommand> CircuitWindow::GetDrawCommands()
 	{
+		VT_PROFILE_FUNCTION();
+
 		const Volt::Rect windowScreenBounds = Volt::Rect(static_cast<float>(GetPosition().x), static_cast<float>(GetPosition().y), static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));
 		CircuitPainter basePainter(windowScreenBounds, m_resourceTable);
 		if (m_windowWidget)

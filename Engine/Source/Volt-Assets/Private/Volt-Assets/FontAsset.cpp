@@ -77,7 +77,10 @@ namespace Volt
 			return glm::vec2(0.f);
 		}
 
-		U32String utf32string(U32String::CtorConvert(), string.data(), string.size());
+		using LocalU32String = BasicString<char32_t, GlobalMemoryStackAllocator>;
+
+		GlobalMemoryStackMark memMark;
+		LocalU32String utf32string(LocalU32String::CtorConvert(), string.data(), string.size());
 
 		const double fsScale = 1.0 / (m_metrics.ascenderY - m_metrics.descenderY);
 

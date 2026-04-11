@@ -139,21 +139,21 @@ namespace Circuit
 		const uint32_t swapchainWidth = m_targetWindow.GetSwapchain().GetWidth();
 		const uint32_t swapchainHeight = m_targetWindow.GetSwapchain().GetHeight();
 
-		std::vector<Circuit::CircuitDrawCommand> cmds = m_targetCircuitWindow.GetDrawCommands();
+		ArrayView<Circuit::CircuitDrawCommand> commands = m_targetCircuitWindow.GetDrawCommands();
 
-		if (cmds.empty())
+		if (commands.empty())
 		{
 			return;
 		}
 
-		const uint32_t numCommands = static_cast<uint32_t>(cmds.size());
+		const uint32_t numCommands = static_cast<uint32_t>(commands.size());
 
 		RGBufferDesc cmdsBufferDesc = RGBufferDesc::CreateMappableBufferDesc<Circuit::CircuitDrawCommand>(numCommands, RHI::BufferUsage::StorageBuffer, "UI Commands");
 		RGBufferRef cmdsBuffer = renderGraph.CreateBuffer(cmdsBufferDesc);
 
 		RGTextureRef renderTarget = renderGraph.RegisterExternalTexture(m_targetWindow.GetSwapchain().GetCurrentImage());
 
-		AddMappedBufferUploadCopyData(renderGraph, cmdsBuffer, cmds.data(), numCommands * sizeof(Circuit::CircuitDrawCommand));
+		AddMappedBufferUploadCopyData(renderGraph, cmdsBuffer, commands.data(), commands.byte_size());
 
 		constexpr uint32_t NumMaxUICommands = 1024;
 		const glm::uvec2 numTiles = { Math::DivideRoundUp(swapchainWidth, 16u), Math::DivideRoundUp(swapchainHeight, 16u) };

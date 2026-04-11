@@ -159,11 +159,15 @@ namespace Volt
 			m_currentProject->isDeprecated = true;
 			VT_LOGC(Error, LogProject, "The loaded project is deprecated!");
 		}
+
+		m_engineAssetsDirectory = m_currentEngineDirectory / "Engine";
+		m_currentProject->assetsDirectory = GetProjectDirectory() / GetAssetsDirectoryName();
+		m_currentProject->generatedDirectory = GetProjectDirectory() / "Generated";
 	}
 
 	const Filesystem::Path ProjectManager::GetAssetsDirectory()
 	{
-		return s_instance->m_currentProject->isDeprecated ? "./" : GetProjectDirectory() / GetAssetsDirectoryName();
+		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->assetsDirectory;
 	}
 
 	const StringView ProjectManager::GetAssetsDirectoryName()
@@ -188,7 +192,7 @@ namespace Volt
 
 	const Filesystem::Path ProjectManager::GetEngineAssetsDirectory()
 	{
-		return s_instance->m_currentEngineDirectory / "Engine";
+		return s_instance->m_engineAssetsDirectory;
 	}
 
 	const Filesystem::Path ProjectManager::GetPathRelativeToEngine(const Filesystem::Path& path)
@@ -203,7 +207,7 @@ namespace Volt
 
 	const Filesystem::Path ProjectManager::GetGeneratedDirectory()
 	{
-		return GetProjectDirectory() / "Generated";
+		return s_instance->m_currentProject->generatedDirectory;
 	}
 
 	const Filesystem::Path ProjectManager::GetPathRelativeToProject(const Filesystem::Path& path)

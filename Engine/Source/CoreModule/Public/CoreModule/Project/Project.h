@@ -25,5 +25,9 @@ namespace Volt
 		Vector<PluginDefinition> pluginDefinitions;
 
 		bool isDeprecated = false;
+
+		// Runtime values
+		Filesystem::Path assetsDirectory;
+		Filesystem::Path generatedDirectory;
 	};
 }

@@ -98,62 +98,15 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(s_instance);
 
-		// Enqueue job if it's ready to run, otherwise push to waiting list.
-		if (job->GetWaitCounter()->IsCompleted())
-		{
-			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
-			{
-				const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
-				s_instance->m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
-				s_instance->m_workerWakeCondition.notify_all();
-			}
-			else
-			{
-				s_instance->m_mainThreadQueue.Emplace(job);
-			}
-		}
-		else
-		{
-			s_instance->PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
-		}
+		s_instance->RunJobInternal(job);
 	}
 
 	void JobSystem::RunJobs(ArrayView<Job*> jobs)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(s_instance);
 
-		const uint32_t numJobs = static_cast<uint32_t>(jobs.size());
-		const uint32_t numJobsPerWorker = numJobs / s_instance->m_numWorkers;
-		const uint32_t remainder = numJobs - numJobsPerWorker * s_instance->m_numWorkers;
-
-		for (uint32_t worker = 0; worker < s_instance->m_numWorkers; ++worker)
-		{
-			const uint32_t numJobsOnWorker = numJobsPerWorker + (worker == (s_instance->m_numWorkers - 1) ? remainder : 0);
-
-			for (uint32_t index = 0; index < numJobsOnWorker; ++index)
-			{
-				const uint32_t jobIndex = numJobsPerWorker * worker + index;
-				Job* job = jobs[jobIndex];
-
-				if (job->GetWaitCounter()->IsCompleted())
-				{
-					if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
-					{
-						s_instance->m_workers[worker]->workQueues.Emplace(job->GetPriority(), job);
-					}
-					else
-					{
-						s_instance->m_mainThreadQueue.Emplace(job);
-					}
-				}
-				else
-				{
-					s_instance->PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
-				}
-			}
-		}
-
-		s_instance->m_workerWakeCondition.notify_all();
+		s_instance->RunJobsInternal(jobs);
 	}
 
 	void JobSystem::YieldFromJob()
@@ -230,6 +183,9 @@ namespace Volt
 	{
 		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfPhysicalCores() - 1;
 		m_numWorkers = hardwareConcurrency;
+
+		// Initialize the latch with the number of workers.
+		m_startWorkersLatch.InitializeWithValue(m_numWorkers);
 	
 		for (uint32_t i = 0; i < hardwareConcurrency; ++i)
 		{
@@ -261,19 +217,17 @@ namespace Volt
 			PlatformThread::SetThreadName(m_waitingListManagerThread.native_handle(), "Volt::WaitingListManager");
 			PlatformThread::SetThreadPriority(m_waitingListManagerThread.native_handle(), ThreadPriority::High);
 		}
-
-		// Notify all threads that they are allowed to run.
-		m_workerWakeCondition.notify_all();
 	}
 
 	void JobSystem::Shutdown()
 	{
 		m_isRunning = false;
-		m_workerWakeCondition.notify_all();
 		m_waitingListManangerCondition.notify_all();
 
 		for (auto worker : m_workers)
 		{
+			worker->wakeCondition.notify_one();
+
 			if (worker->thread.joinable())
 			{
 				worker->thread.join();
@@ -389,11 +343,7 @@ namespace Volt
 		JobWorker& workerData = *m_workers[workerId];
 
 		// Wait here for all threads to be created.
-		{
-			std::unique_lock spawnLock(workerData.wakeMutex);
-			VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-			m_workerWakeCondition.wait(spawnLock);
-		}
+		m_startWorkersLatch.ArriveAndWait();
 
 		while (m_isRunning.load(std::memory_order::relaxed))
 		{
@@ -423,7 +373,7 @@ namespace Volt
 
 				std::unique_lock lock(workerData.wakeMutex);
 				VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-				m_workerWakeCondition.wait(lock, [this, workerId]()
+				workerData.wakeCondition.wait(lock, [this, workerId]()
 				{
 					return !m_isRunning.load(std::memory_order::relaxed) ||
 						HasWorkAvailable(workerId);
@@ -458,7 +408,11 @@ namespace Volt
 
 			if (anyJobRun)
 			{
-				m_workerWakeCondition.notify_all();
+				// Notify all workers.
+				for (JobWorker* worker : m_workers)
+				{
+					worker->wakeCondition.notify_one();
+				}
 			}
 
 			std::unique_lock lock(m_waitingListManagerMutex);
@@ -537,6 +491,36 @@ namespace Volt
 	void JobSystem::FreeStack(FiberStack stack)
 	{
 		m_stackAllocator.FreeStack(stack);
+	}
+
+	void JobSystem::RunJobInternal(Job* job)
+	{
+		// Enqueue job if it's ready to run, otherwise push to waiting list.
+		if (job->GetWaitCounter()->IsCompleted())
+		{
+			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
+			{
+				const uint32_t nextQueueToPush = m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % m_numWorkers;
+				m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
+				m_workers[nextQueueToPush]->wakeCondition.notify_one();
+			}
+			else
+			{
+				m_mainThreadQueue.Emplace(job);
+			}
+		}
+		else
+		{
+			PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
+		}
+	}
+
+	void JobSystem::RunJobsInternal(ArrayView<Job*> jobs)
+	{
+		for (Job* job : jobs)
+		{
+			RunJobInternal(job);
+		}
 	}
 
 	Job* JobSystem::TryGetJob(uint32_t workerId)

@@ -15,7 +15,10 @@ namespace Circuit
 	{
 		float determinedSize = 0;
 		int numUndeterminedSlices = 0;
-		Vector<float> widgetAllotedSizes(m_slices.size());
+
+		GlobalMemoryStackMark memMark;
+		GlobalMemoryStackVector<float> widgetAllotedSizes(m_slices.size());
+
 		for (size_t i = 0; i < m_slices.size(); i++)
 		{
 			Slice& slice = m_slices[i];

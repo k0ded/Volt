@@ -23,7 +23,7 @@ namespace Volt
 
 
 	public:
-		T Get() const
+		const T& Get() const
 		{
 			if (m_getter.IsBound())
 			{
