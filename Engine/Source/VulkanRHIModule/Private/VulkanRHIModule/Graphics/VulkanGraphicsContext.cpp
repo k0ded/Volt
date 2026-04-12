@@ -7,6 +7,7 @@
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
@@ -68,6 +69,11 @@ namespace Volt::RHI
 		m_staticSamplerDescriptorSetManager = CreateRef<StaticSamplerDescriptorSetManager>();
 		m_descriptorHeap = CreateRef<VulkanDescriptorHeap>();
 
+		if (RHICanUseBindless())
+		{
+			m_bindlessDescriptorManager = CreateRef<VulkanBindlessDescriptorManager>();
+		}
+
 		CreateEmptyDescriptorSetLayout();
 
 		m_pipelineCache.Initialize(m_createInfo.pipelineCacheFilepath);
@@ -78,6 +84,8 @@ namespace Volt::RHI
 		m_pipelineCache.Shutdown();
 
 		DestroyEmptyDescriptorSetLayout();
+
+		m_bindlessDescriptorManager = nullptr;
 		m_descriptorHeap = nullptr;
 		m_staticSamplerDescriptorSetManager = nullptr;
 		m_resourceTableDescriptorSetManager = nullptr;

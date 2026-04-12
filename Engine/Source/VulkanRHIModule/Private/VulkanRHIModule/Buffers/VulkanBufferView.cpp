@@ -7,10 +7,12 @@
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 
 #include <RHIModule/Core/RHIResource.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -33,6 +35,13 @@ namespace Volt::RHI
 
 	VulkanBufferView::~VulkanBufferView()
 	{
+		if (RHICanUseBindless())
+		{
+			RHIModule::GetInstance().DestroyResource([bindlessIndex = m_bindlessIndex]()
+			{
+				VulkanBindlessDescriptorManager::Get().FreeIndex(bindlessIndex);
+			}, GetLastSubmissionTrackerFence());
+		}
 	}
 
 	uint64_t VulkanBufferView::GetDeviceAddress() const
@@ -105,6 +114,11 @@ namespace Volt::RHI
 			m_srvDescriptor.vkDescriptorInfo.data.pUniformBuffer = &m_srvDescriptor.addressInfo;
 			m_srvDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize;
+		}
+
+		if (RHICanUseBindless())
+		{
+			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
 		}
 	}
 

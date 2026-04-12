@@ -18,6 +18,7 @@ namespace Volt::RHI
 	class VulkanDescriptorHeap;
 	class ResourceTableDescriptorSetManager;
 	class StaticSamplerDescriptorSetManager;
+	class VulkanBindlessDescriptorManager;
 
 	class VulkanGraphicsContext final : public GraphicsContext
 	{
@@ -60,6 +61,7 @@ namespace Volt::RHI
 		Ref<VulkanDescriptorHeap> m_descriptorHeap;
 		Ref<ResourceTableDescriptorSetManager> m_resourceTableDescriptorSetManager;
 		Ref<StaticSamplerDescriptorSetManager> m_staticSamplerDescriptorSetManager;
+		Ref<VulkanBindlessDescriptorManager> m_bindlessDescriptorManager;
 
 		VulkanPipelineCache m_pipelineCache;
 

@@ -1663,7 +1663,7 @@ namespace Volt::RHI
 		m_activeRenderPipeline.Reset();
 	}
 
-	static void SetupShaderBinding(VkDevice vkDevice, const ShaderBindingMap::ResourceBinding& binding, uint8_t* outDescriptorPtr)
+	void VulkanCommandBuffer::SetupShaderBinding(VkDevice_T* vkDevice, const ShaderBindingMap::ResourceBinding& binding, uint8_t* outDescriptorPtr)
 	{
 		switch (binding.registerType)
 		{
@@ -1675,6 +1675,8 @@ namespace Volt::RHI
 				{
 					break;
 				}
+
+				RegisterUsage(bufferView);
 
 				VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 				const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
@@ -1711,6 +1713,8 @@ namespace Volt::RHI
 					break;
 				}
 
+				RegisterUsage(samplerState);
+
 				VulkanSamplerState& vkSampler = samplerState->AsRef<VulkanSamplerState>();
 				const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
 				vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
@@ -1732,6 +1736,8 @@ namespace Volt::RHI
 							break;
 						}
 
+						RegisterUsage(bufferView);
+
 						VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
@@ -1747,6 +1753,8 @@ namespace Volt::RHI
 							break;
 						}
 
+						RegisterUsage(imageView);
+
 						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
 						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
@@ -1761,6 +1769,8 @@ namespace Volt::RHI
 						{
 							break;
 						}
+
+						RegisterUsage(accelerationStructure);
 
 						VkDescriptorGetInfoEXT descriptorInfo;
 						descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
@@ -1791,6 +1801,8 @@ namespace Volt::RHI
 							break;
 						}
 
+						RegisterUsage(bufferView);
+
 						VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
 
 						const VulkanBufferView::DescriptorDescription& uavDescriptor = vkBufferView.GetUAVDescriptor();
@@ -1806,6 +1818,8 @@ namespace Volt::RHI
 						{
 							break;
 						}
+
+						RegisterUsage(imageView);
 
 						VulkanImageView& vkImageView = binding.resource.Get<IntRef<RHI::ImageView>>()->AsRef<VulkanImageView>();
 

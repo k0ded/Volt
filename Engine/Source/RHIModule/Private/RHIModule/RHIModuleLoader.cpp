@@ -12,6 +12,7 @@
 
 #include <CoreModule/GlobalCommandLine.h>
 #include <CoreModule/Project/ProjectManager.h>
+#include <CoreModule/ConfigManager.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/String/StringUtility.h>
@@ -81,6 +82,8 @@ namespace Volt::RHI
 
 	void RHIModuleLoader::Initialize()
 	{
+		SetupRHIConfiguration();
+
 		RHI::RHICallbackInfo callbackInfo{};
 
 		RHI::RHIConfig rhiConfig;
@@ -131,6 +134,7 @@ namespace Volt::RHI
 	{
 		outDependencies.AddDependency<IOThreads>();
 		outDependencies.AddDependency<ProjectManager>();
+		outDependencies.AddDependency<ConfigManager>();
 	}
 
 	void RHIModuleLoader::OnPreRender()

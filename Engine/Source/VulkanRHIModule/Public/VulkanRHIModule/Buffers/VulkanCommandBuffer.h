@@ -7,6 +7,7 @@
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Core/RenderingInfo.h>
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 struct VkCommandBuffer_T;
 struct VkCommandPool_T;
@@ -15,6 +16,7 @@ struct VkFence_T;
 struct VkQueryPool_T;
 struct VkPipelineLayout_T;
 struct VkSemaphore_T;
+struct VkDevice_T;
 
 namespace Volt::RHI
 {
@@ -121,6 +123,7 @@ namespace Volt::RHI
 		void BeginSecondaryInternal(bool oneTimeSubmit);
 
 		void BindDescriptorBuffer(IntRef<ResourceTable> rayTracingResourceTable);
+		void SetupShaderBinding(VkDevice_T* vkDevice, const ShaderBindingMap::ResourceBinding& binding, uint8_t* outDescriptorPtr);
 
 		void ClearActivePipeline();
 		void ValidateInlineParameters();

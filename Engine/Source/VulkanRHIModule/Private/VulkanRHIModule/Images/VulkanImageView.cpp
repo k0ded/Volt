@@ -5,11 +5,13 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <RHIModule/RHIModule.h>
 
@@ -50,14 +52,25 @@ namespace Volt::RHI
 		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
 
 		CreateDescriptors();
+
+		if (RHICanUseBindless())
+		{
+			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+		}
 	}
 
 	VulkanImageView::~VulkanImageView()
 	{
-		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
+		RHIModule::GetInstance().DestroyResource([imageView = m_imageView, bindlessIndex = m_bindlessIndex]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, VT_VULKAN_ALLOCATOR);
+
+			if (RHICanUseBindless())
+			{
+				VulkanBindlessDescriptorManager::Get().FreeIndex(bindlessIndex);
+			}
+
 		}, GetLastSubmissionTrackerFence());
 
 		m_imageView = nullptr;
