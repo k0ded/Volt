@@ -89,6 +89,7 @@ namespace Volt::RHI
 					vkDeviceQueue->SwapchainPresent(
 						swapchainPresent.swapchain,
 						swapchainPresent.renderSemaphore,
+						swapchainPresent.presentFence,
 						swapchainPresent.imageIndex,
 						swapchainPresent.swapchainMutex
 					);
@@ -129,7 +130,8 @@ namespace Volt::RHI
 
 	void VulkanRHISubmissionThread::QueueSwapchainPresent(
 		VkSwapchainKHR_T* swapchain, 
-		VkSemaphore_T* renderSemaphore, 
+		VkSemaphore_T* renderSemaphore,
+		VkFence_T* presentFence,
 		uint32_t imageIndex,
 		std::mutex* swapchainMutex)
 	{
@@ -140,6 +142,7 @@ namespace Volt::RHI
 		SubmissionData::SwapchainPresent& submitInfo = submissionData.data.Emplace<SubmissionData::SwapchainPresent>();
 		submitInfo.swapchain = swapchain;
 		submitInfo.renderSemaphore = renderSemaphore;
+		submitInfo.presentFence = presentFence;
 		submitInfo.imageIndex = imageIndex;
 		submitInfo.swapchainMutex = swapchainMutex;
 
@@ -155,6 +158,12 @@ namespace Volt::RHI
 		{
 			VulkanFence& vkFence = fence->AsRef<VulkanFence>();
 			vkFence.m_hasBeenSubmitted.store(true, std::memory_order::relaxed);
+		}
+
+		for (const auto& commandBuffer : executeInfo.commandBuffers)
+		{
+			VulkanCommandBuffer& vkCommandBuffer = commandBuffer->AsRef<VulkanCommandBuffer>();
+			vkCommandBuffer.MarkAsSubmitted();
 		}
 
 		if (executeInfo.executionFence)

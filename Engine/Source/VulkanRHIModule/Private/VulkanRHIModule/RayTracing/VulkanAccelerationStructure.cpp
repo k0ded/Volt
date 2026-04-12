@@ -32,7 +32,7 @@ namespace Volt::RHI
 		{
 			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
 			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, VT_VULKAN_ALLOCATOR);
-		});
+		}, GetLastSubmissionTrackerFence());
 	}
 
 	uint64_t VulkanAccelerationStructure::GetDeviceAddress() const

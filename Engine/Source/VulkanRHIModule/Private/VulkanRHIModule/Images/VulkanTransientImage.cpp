@@ -33,7 +33,7 @@ namespace Volt::RHI
 			{
 				auto device = GraphicsContext::GetDevice();
 				vkDestroyImage(device->GetHandle<VkDevice>(), imageHandle, VT_VULKAN_ALLOCATOR);
-			});
+			}, GetLastSubmissionTrackerFence());
 		}
 	}
 

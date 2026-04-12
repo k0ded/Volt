@@ -32,6 +32,7 @@ namespace Volt::RHI
 		void SwapchainPresent(
 			VkSwapchainKHR_T* swapchain,
 			VkSemaphore_T* renderSemaphore,
+			VkFence_T* presentFence,
 			uint32_t imageIndex,
 			std::mutex* swapchainMutex
 		);

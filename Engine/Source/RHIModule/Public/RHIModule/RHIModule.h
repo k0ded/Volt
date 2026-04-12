@@ -138,7 +138,7 @@ namespace Volt::RHI
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 
-		virtual void DestroyResource(std::function<void()>&& function) = 0;
+		virtual void DestroyResource(std::function<void()>&& function, IntRef<Fence> waitForFence) = 0;
 		virtual void RequestApplicationClose() = 0;
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;

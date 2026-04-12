@@ -264,7 +264,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDeviceQueue::SwapchainPresent(VkSwapchainKHR_T* swapchain, VkSemaphore_T* renderSemaphore, uint32_t imageIndex, std::mutex* swapchainMutex)
+	void VulkanDeviceQueue::SwapchainPresent(VkSwapchainKHR_T* swapchain, VkSemaphore_T* renderSemaphore, VkFence_T* presentFence, uint32_t imageIndex, std::mutex* swapchainMutex)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE_MSG(RHIModule::GetSubmissionThread().GetSubmissionThreadId() == std::this_thread::get_id(), "Submissions may only come from the RHI Submission Thread!");
@@ -276,6 +276,14 @@ namespace Volt::RHI
 		presentInfo.pWaitSemaphores = &renderSemaphore;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pImageIndices = &imageIndex;
+
+		VkSwapchainPresentFenceInfoEXT fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT;
+		fenceInfo.pNext = nullptr;
+		fenceInfo.pFences = &presentFence;
+		fenceInfo.swapchainCount = 1;
+
+		presentInfo.pNext = &fenceInfo;
 
 		{
 			std::scoped_lock lock{ m_executeMutex };

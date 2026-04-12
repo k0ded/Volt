@@ -101,6 +101,8 @@ namespace Volt::RHI
 		void ExecuteSecondaryCommandBuffer(IntRef<CommandBuffer> commandBuffer) const override;
 		void ExecuteSecondaryCommandBuffers(Vector<IntRef<CommandBuffer>> commandBuffers) const override;
 
+		void MarkAsSubmitted();
+
 	protected:
 		void* GetHandleImpl() const override;
 
@@ -125,11 +127,12 @@ namespace Volt::RHI
 
 		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
 
-		template<typename T>
-		void RegisterUsage(RawPtr<T> resource);
-
-		template<typename T>
-		void RegisterUsage(IntRef<T> resource);
+		template<typename T> void RegisterUsage(RawPtr<T> resource);
+		template<typename T> void RegisterUsage(IntRef<T> resource);
+		// Special case since the resource being viewed also has to be
+		// registered.
+		void RegisterUsage(RawPtr<ImageView> resource);
+		void RegisterUsage(RawPtr<BufferView> resource);
 
 		VkPipelineLayout_T* GetActivePipelineLayout();
 		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();

@@ -8,47 +8,57 @@
 
 namespace Volt::RHI
 {
-	void ResourceDeletionQueue::EnqueueResourceDeletion(uint32_t index, FunctionType&& deletionFunc)
+	void ResourceDeletionQueue::EnqueueResourceDeletion(FunctionType&& deletionFunc, IntRef<Fence> waitForFence)
 	{
 		std::scoped_lock lock{ m_queueMutex };
 		VT_PROFILE_LOCK_MARK(m_queueMutex);
 
-		m_queues.at(index).emplace_back(deletionFunc);
+		VT_ASSERT(deletionFunc);
+
+		Item& item = m_queue.emplace_back();
+		item.func = std::move(deletionFunc);
+		item.waitForFence = waitForFence;
 	}
 
-	void ResourceDeletionQueue::FlushQueue(uint32_t index)
+	void ResourceDeletionQueue::FlushQueue(bool waitForFences)
 	{
 		VT_PROFILE_FUNCTION();
 
 		std::scoped_lock lock{ m_queueMutex };
 		VT_PROFILE_LOCK_MARK(m_queueMutex);
 
-		for (const auto& func : m_queues.at(index))
+		for (int32_t i = static_cast<int32_t>(m_queue.size()) - 1; i >= 0; --i)
 		{
-			if (func)
+			Item& item = m_queue[i];
+
+			if (item.waitForFence)
 			{
-				func();
+				if (!waitForFences)
+				{
+					if (!item.waitForFence->IsSignaled())
+					{
+						continue;
+					}
+				}
+				else
+				{
+					item.waitForFence->WaitUntilSignaled();
+				}
 			}
+
+			item.func();
+
+			m_queue.erase_unsorted(m_queue.begin() + i);
 		}
-
-		m_queues.at(index).clear();
-	}
-
-	void ResourceDeletionQueue::SetSize(uint32_t size)
-	{
-		m_queues.resize(size);
 	}
 
 	ResourceDeletionQueue::ResourceDeletionQueue(const ResourceDeletionQueue& other)
 	{
-		m_queues = other.m_queues;
+		m_queue = other.m_queue;
 	}
 
 	void ResourceDeletionQueue::FlushAll()
 	{
-		for (uint32_t i = 0; i < static_cast<uint32_t>(m_queues.size()); ++i)
-		{
-			FlushQueue(i);
-		}
+		FlushQueue(true);
 	}
 }

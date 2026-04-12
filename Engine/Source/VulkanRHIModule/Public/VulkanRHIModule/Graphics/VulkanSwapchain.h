@@ -61,15 +61,16 @@ namespace Volt::RHI
 
 		void QuerySwapchainCapabilities();
 
-		void CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync);
+		VkSwapchainKHR_T* CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync);
 		void CreateSyncObjects();
 		void CreateRenderSemaphores();
 		void CreateWindowSurface(void* platformWindow, void* platformInstance);
 		void CreateSwapchainImage(uint32_t imageIndex);
 
-		void ReleaseRenderSemaphores();
+		void ReleasePreviousSwapchain(VkSwapchainKHR_T* swapchain);
 
 		void GetNextFrameIndex();
+		VkFence_T* GetLastSubmittedPresentFence();
 
 		uint32_t m_currentImageIndex = 0;
 		uint32_t m_currentFrameIndex = 0;
@@ -88,6 +89,7 @@ namespace Volt::RHI
 		{
 			IntRef<Semaphore> acquireSemaphore;
 			VkFence_T* renderFence = nullptr;
+			VkFence_T* presentFence = nullptr;
 		};
 
 		struct PerImageData

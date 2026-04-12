@@ -37,7 +37,6 @@ namespace Volt::RHI
 	VulkanRHIModule::VulkanRHIModule()
 	{
 		s_instance = this;
-		m_resourceDeletionQueue.SetSize(RHI::RHICapabilities::NumFramesInFlight);
 
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
@@ -180,10 +179,9 @@ namespace Volt::RHI
 		m_callbackInfo = callbackInfo;
 	}
 
-	void VulkanRHIModule::DestroyResource(std::function<void()>&& function)
+	void VulkanRHIModule::DestroyResource(std::function<void()>&& function, IntRef<Fence> waitForFence)
 	{
-		const uint32_t queueIndex = m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
-		m_resourceDeletionQueue.EnqueueResourceDeletion(queueIndex, std::move(function));
+		m_resourceDeletionQueue.EnqueueResourceDeletion(std::move(function), waitForFence);
 	}
 
 	void VulkanRHIModule::RequestApplicationClose()
@@ -204,8 +202,7 @@ namespace Volt::RHI
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		vkGraphicsContext.GetDescriptorHeap().BeginFrame();
 
-		const uint32_t queueIndex = ++m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
-		m_resourceDeletionQueue.FlushQueue(queueIndex);
+		m_resourceDeletionQueue.FlushQueue();
 	}
 
 	void VulkanRHIModule::FlushResourceDeletionQueue()

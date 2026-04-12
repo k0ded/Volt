@@ -16,4 +16,10 @@ namespace Volt::RHI
 		VulkanFence* vkFence = ResourceCast(m_submissionFence.GetRaw());
 		vkFence->AssignSemaphore(semaphore, value);
 	}
+
+	void LastSubmissionTracker::MarkAsSubmitted()
+	{
+		VulkanFence* vkFence = ResourceCast(m_submissionFence.GetRaw());
+		vkFence->m_hasBeenSubmitted.store(true, std::memory_order::relaxed);
+	}
 }

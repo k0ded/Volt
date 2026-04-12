@@ -12,9 +12,14 @@ namespace Volt::RHI
 		LastSubmissionTracker();
 		virtual ~LastSubmissionTracker() = default;
 
-		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
+		VT_INLINE IntRef<Fence> GetLastSubmissionTrackerFence() const { return m_submissionFence; }
 
-	public:
+	private:
+		friend class LastSubmissionTrackerManager;
+
+		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
+		void MarkAsSubmitted();
+
 		IntRef<Fence> m_submissionFence;
 	};
 }

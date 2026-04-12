@@ -372,7 +372,7 @@ namespace Volt::RHI
 					vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
 				}
 			}
-		});
+		}, GetLastSubmissionTrackerFence());
 
 		m_pipelineLayout = nullptr;
 		m_pipeline = nullptr;

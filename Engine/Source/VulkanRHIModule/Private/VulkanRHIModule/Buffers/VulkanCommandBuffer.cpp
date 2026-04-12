@@ -315,6 +315,32 @@ namespace Volt::RHI
 		m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(resource));
 	}
 
+	void VulkanCommandBuffer::RegisterUsage(RawPtr<BufferView> view)
+	{
+		VulkanBufferView* vkView = ResourceCast(view.GetRaw());
+		RawPtr<RHIResource> resource = vkView->GetResource();
+
+		if (resource->GetType() == ResourceType::Buffer)
+		{
+			m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(IntRef<Buffer>::Attach(resource.As<Buffer>().GetRaw())));
+		}
+		else
+		{
+			m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(IntRef<UniformBuffer>::Attach(resource.As<UniformBuffer>().GetRaw())));
+		}
+
+		m_lastSubmissionTrackerManager.TryRegisterResource(IntRef<VulkanBufferView>::Attach(vkView));
+	}
+
+	void VulkanCommandBuffer::RegisterUsage(RawPtr<ImageView> view)
+	{
+		VulkanImageView* vkView = ResourceCast(view.GetRaw());
+		RawPtr<Image> resource = vkView->GetImage();
+
+		m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(IntRef<Image>::Attach(resource.GetRaw())));
+		m_lastSubmissionTrackerManager.TryRegisterResource(IntRef<VulkanImageView>::Attach(vkView));
+	}
+
 	VulkanCommandBuffer::VulkanCommandBuffer(QueueType queueType)
 		: m_queueType(queueType)
 	{
@@ -1497,14 +1523,9 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, submissionFence = m_submissionFence]()
+		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
-
-			if (submissionFence)
-			{
-				submissionFence->WaitUntilSignaled();
-			}
 
 			vkDestroyCommandPool(device->GetHandle<VkDevice>(), commandPool, VT_VULKAN_ALLOCATOR);
 			
@@ -1512,7 +1533,7 @@ namespace Volt::RHI
 			{
 				vkDestroyQueryPool(device->GetHandle<VkDevice>(), timestampPool, VT_VULKAN_ALLOCATOR);
 			}
-		});
+		}, m_submissionFence);
 
 		m_commandBufferData = {};
 	}
@@ -1997,5 +2018,10 @@ namespace Volt::RHI
 		vkFence.AssignSemaphore(semaphore, value);
 
 		m_lastSubmissionTrackerManager.AssignSemaphore(semaphore, value);
+	}
+
+	void VulkanCommandBuffer::MarkAsSubmitted()
+	{
+		m_lastSubmissionTrackerManager.MarkAsSubmitted();
 	}
 }

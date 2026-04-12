@@ -49,6 +49,7 @@ namespace Volt::RHI
 		void TryRegisterResource(IntRef<T> resource);
 
 		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
+		void MarkAsSubmitted();
 		void Reset();
 
 	private:

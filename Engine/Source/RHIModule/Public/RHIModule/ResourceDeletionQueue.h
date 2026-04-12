@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/Core.h"
+#include "RHIModule/Synchronization/Fence.h"
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -19,13 +20,19 @@ namespace Volt::RHI
 		ResourceDeletionQueue() = default;
 		ResourceDeletionQueue(const ResourceDeletionQueue& other);
 
-		void SetSize(uint32_t size);
-		void EnqueueResourceDeletion(uint32_t index, FunctionType&& deletionFunc);
-		void FlushQueue(uint32_t index);
+		void EnqueueResourceDeletion(FunctionType&& deletionFunc, IntRef<Fence> waitForFence);
+		void FlushQueue(bool waitForFences = false);
 		void FlushAll();
 
 	private:
-		Vector<PerFrameQueue> m_queues;
+		struct Item
+		{
+			FunctionType func;
+			IntRef<Fence> waitForFence;
+		};
+
+		Vector<Item> m_queue;
+
 		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_queueMutex);
 	};
 }

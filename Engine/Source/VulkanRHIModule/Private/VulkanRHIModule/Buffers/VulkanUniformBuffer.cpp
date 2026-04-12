@@ -56,7 +56,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([allocation = m_allocation]() 
 		{
 			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
-		});
+		}, GetLastSubmissionTrackerFence());
 
 		m_allocation = nullptr;
 	}

@@ -72,7 +72,7 @@ namespace Volt::RHI
 		IntRef<ShaderBindingTable> CreateShaderBindingTable(IntRef<RayTracingPipeline> pipeline) const override;
 
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
-		void DestroyResource(std::function<void()>&& function) override;
+		void DestroyResource(std::function<void()>&& function, IntRef<Fence> waitForFence) override;
 		void RequestApplicationClose() override;
 		void BeginFrame() override;
 		void EndFrame() override;

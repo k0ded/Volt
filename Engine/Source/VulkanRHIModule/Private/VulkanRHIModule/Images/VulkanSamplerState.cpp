@@ -55,7 +55,7 @@ namespace Volt::RHI
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, VT_VULKAN_ALLOCATOR);
-		});
+		}, GetLastSubmissionTrackerFence());
 
 		m_sampler = nullptr;
 	}

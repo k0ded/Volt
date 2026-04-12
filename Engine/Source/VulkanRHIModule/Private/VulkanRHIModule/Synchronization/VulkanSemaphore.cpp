@@ -29,7 +29,7 @@ namespace Volt::RHI
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroySemaphore(device->GetHandle<VkDevice>(), semaphore, VT_VULKAN_ALLOCATOR);
-		});
+		}, nullptr);
 	}
 
 	void* VulkanSemaphore::GetHandleImpl() const

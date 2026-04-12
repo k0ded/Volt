@@ -250,9 +250,16 @@ namespace Volt::RHI
 		}
 
 		{
+			auto device = GraphicsContext::GetDevice();
+
+			// Reset the present fence
+			vkWaitForFences(device->GetHandle<VkDevice>(), 1, &frameData.presentFence, VK_TRUE, UINT64_MAX);
+			vkResetFences(device->GetHandle<VkDevice>(), 1, &frameData.presentFence);
+
 			submissionThread->QueueSwapchainPresent(
 				m_swapchain,
 				imageData.renderSemaphore,
+				frameData.presentFence,
 				m_currentImageIndex,
 				&m_swapchainMutex
 			);
@@ -278,9 +285,14 @@ namespace Volt::RHI
 		m_VSyncEnabled = enableVSync;
 
 		QuerySwapchainCapabilities();
-		ReleaseRenderSemaphores();
-
-		CreateSwapchain(width, height, enableVSync);
+		
+		VkSwapchainKHR oldSwapchain = CreateSwapchain(width, height, enableVSync);
+		
+		if (oldSwapchain)
+		{
+			ReleasePreviousSwapchain(oldSwapchain);
+		}
+		
 		CreateRenderSemaphores();
 	}
 
@@ -344,38 +356,44 @@ namespace Volt::RHI
 			return;
 		}
 
-		if (m_lastSubmittedFence < RHI::RHICapabilities::NumFramesInFlight)
+		struct TempData
 		{
-			vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_perFrameInFlightData.at(m_lastSubmittedFence).renderFence, VK_TRUE, UINT64_MAX);
-		}
+			VkSemaphore presentSemaphore;
+		};
 
-		Vector<VkSemaphore> tempRenderSemaphores;
-		tempRenderSemaphores.resize(m_perImageData.size());
+		Vector<TempData> tempData;
+		tempData.resize(m_perImageData.size());
 
 		for (size_t i = 0; i < m_perImageData.size(); ++i)
 		{
-			tempRenderSemaphores[i] = m_perImageData[i].renderSemaphore;
+			tempData[i].presentSemaphore = m_perImageData[i].renderSemaphore;
 		}
 
-		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempRenderSemaphores, swapchain = m_swapchain, surface = m_surface]() mutable
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempData, swapchain = m_swapchain, surface = m_surface]() mutable
 		{
 			auto device = GraphicsContext::GetDevice();
 			VkDevice vkDevice = device->GetHandle<VkDevice>();
 
 			for (auto& perFrameData : perFrameInFlightData)
 			{
-				perFrameData.acquireSemaphore.Reset();
-				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
+				vkWaitForFences(vkDevice, 1, &perFrameData.presentFence, VK_TRUE, UINT64_MAX);
 			}
 
-			for (VkSemaphore semaphore : tempRenderSemaphores)
+			for (const TempData& data : tempData)
 			{
-				vkDestroySemaphore(vkDevice, semaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(vkDevice, data.presentSemaphore, VT_VULKAN_ALLOCATOR);
+			}
+
+			for (auto& perFrameData : perFrameInFlightData)
+			{
+				perFrameData.acquireSemaphore.Reset();
+				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
+				vkDestroyFence(vkDevice, perFrameData.presentFence, VT_VULKAN_ALLOCATOR);
 			}
 
 			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
 			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, nullptr); 
-		});
+		}, nullptr);
 
 		m_perFrameInFlightData.clear();
 		m_perImageData.clear();
@@ -454,7 +472,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanSwapchain::CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync)
+	VkSwapchainKHR_T* VulkanSwapchain::CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -516,13 +534,6 @@ namespace Volt::RHI
 			{
 				imageData.imageReference = nullptr;
 			}
-
-			RHIModule::GetInstance().DestroyResource([oldSwapchain]() 
-			{
-				auto device = GraphicsContext::GetDevice();
-				vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), oldSwapchain, VT_VULKAN_ALLOCATOR);
-			});
-
 		}
 
 		Vector<VkImage> images{};
@@ -546,6 +557,8 @@ namespace Volt::RHI
 				m_perImageData[i].image = images.at(i);
 			}
 		}
+
+		return oldSwapchain;
 	}
 
 	void VulkanSwapchain::CreateSyncObjects()
@@ -570,6 +583,7 @@ namespace Volt::RHI
 		{
 			frameData.acquireSemaphore = Semaphore::Create();
 			VT_VK_CHECK(vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &frameData.renderFence));
+			VT_VK_CHECK(vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &frameData.presentFence));
 		}
 	}
 
@@ -609,30 +623,6 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanSwapchain::ReleaseRenderSemaphores()
-	{
-		Vector<VkSemaphore> tempRenderSemaphores;
-		tempRenderSemaphores.resize(m_perImageData.size());
-
-		for (size_t i = 0; i < m_perImageData.size(); ++i)
-		{
-			tempRenderSemaphores[i] = m_perImageData[i].renderSemaphore;
-		}
-
-		RHIModule::GetInstance().DestroyResource([tempRenderSemaphores]()
-		{
-			auto device = GraphicsContext::GetDevice();
-			VkDevice vkDevice = device->GetHandle<VkDevice>();
-
-			for (VkSemaphore semaphore : tempRenderSemaphores)
-			{
-				vkDestroySemaphore(vkDevice, semaphore, VT_VULKAN_ALLOCATOR);
-			}
-		});
-
-		m_perImageData.clear();
-	}
-
 	void VulkanSwapchain::CreateSwapchainImage(uint32_t imageIndex)
 	{
 		SwapchainImageDesc spec{};
@@ -640,5 +630,42 @@ namespace Volt::RHI
 		spec.imageIndex = imageIndex;
 
 		m_perImageData[imageIndex].imageReference = Image::Create(spec);
+	}
+
+	VkFence_T* VulkanSwapchain::GetLastSubmittedPresentFence()
+	{
+		if (m_lastSubmittedFence < RHI::RHICapabilities::NumFramesInFlight)
+		{
+			return m_perFrameInFlightData[m_lastSubmittedFence].presentFence;
+		}
+
+		return nullptr;
+	}
+
+	void VulkanSwapchain::ReleasePreviousSwapchain(VkSwapchainKHR swapchain)
+	{
+		Vector<VkSemaphore> tempData;
+		tempData.resize(m_perImageData.size());
+
+		for (size_t i = 0; i < m_perImageData.size(); ++i)
+		{
+			tempData[i] = m_perImageData[i].renderSemaphore;
+		}
+
+		RHIModule::GetInstance().DestroyResource([tempData, presentFence = GetLastSubmittedPresentFence(), swapchain]()
+		{
+			auto device = GraphicsContext::GetDevice();
+			VkDevice vkDevice = device->GetHandle<VkDevice>();
+
+			vkWaitForFences(vkDevice, 1, &presentFence, VK_TRUE, UINT64_MAX);
+
+			for (VkSemaphore presentSemaphore : tempData)
+			{
+				vkDestroySemaphore(vkDevice, presentSemaphore, VT_VULKAN_ALLOCATOR);
+			}
+
+			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
+
+		}, nullptr);
 	}
 }

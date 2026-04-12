@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIInterface.h"
+#include "RHIModule/Synchronization/Fence.h"
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/Synchronization/Semaphore.h"
 
@@ -10,7 +11,6 @@ namespace Volt::RHI
 {
 	class CommandBuffer;
 	class Semaphore;
-	class Fence;
 
 	struct DeviceQueueExecuteInfo
 	{
