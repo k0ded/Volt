@@ -94,4 +94,248 @@
 		<DisplayString>{m_begin,[m_count]}</DisplayString>
 		<StringView>m_begin,[m_count]</StringView>
 	</Type>
+
+	<!-- Variant with 1 type -->
+	<Type Name="Variant&lt;*&gt;" Priority="MediumLow">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 2 types -->
+	<Type Name="Variant&lt;*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 3 types -->
+	<Type Name="Variant&lt;*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 4 types -->
+	<Type Name="Variant&lt;*,*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 3">{{ index=3, value={*($T4*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 3">*($T4*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 5 types -->
+	<Type Name="Variant&lt;*,*,*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 3">{{ index=3, value={*($T4*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 4">{{ index=4, value={*($T5*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 3">*($T4*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 4">*($T5*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 6 types -->
+	<Type Name="Variant&lt;*,*,*,*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 3">{{ index=3, value={*($T4*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 4">{{ index=4, value={*($T5*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 5">{{ index=5, value={*($T6*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 3">*($T4*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 4">*($T5*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 5">*($T6*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 7 types -->
+	<Type Name="Variant&lt;*,*,*,*,*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 3">{{ index=3, value={*($T4*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 4">{{ index=4, value={*($T5*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 5">{{ index=5, value={*($T6*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 6">{{ index=6, value={*($T7*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 3">*($T4*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 4">*($T5*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 5">*($T6*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 6">*($T7*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- Variant with 8 types -->
+	<Type Name="Variant&lt;*,*,*,*,*,*,*,*&gt;">
+		<DisplayString Condition="m_typeIndex == 0xffffffffffffffff">[empty]</DisplayString>
+		<DisplayString Condition="m_typeIndex == 0">{{ index=0, value={*($T1*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 1">{{ index=1, value={*($T2*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 2">{{ index=2, value={*($T3*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 3">{{ index=3, value={*($T4*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 4">{{ index=4, value={*($T5*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 5">{{ index=5, value={*($T6*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 6">{{ index=6, value={*($T7*)m_storage} }}</DisplayString>
+		<DisplayString Condition="m_typeIndex == 7">{{ index=7, value={*($T8*)m_storage} }}</DisplayString>
+		<Expand>
+			<Item Name="[index]">m_typeIndex</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 0">*($T1*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 1">*($T2*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 2">*($T3*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 3">*($T4*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 4">*($T5*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 5">*($T6*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 6">*($T7*)m_storage</Item>
+			<Item Name="[value]" Condition="m_typeIndex == 7">*($T8*)m_storage</Item>
+		</Expand>
+	</Type>
+
+	<!-- UUID64 -->
+	<Type Name="UUID64">
+		<DisplayString>{m_uuid}</DisplayString>
+	</Type>
+
+	<!-- UUID32 -->
+	<Type Name="UUID32">
+		<DisplayString>{m_uuid}</DisplayString>
+	</Type>
+
+	<!-- StringHash -->
+	<Type Name="StringHash">
+		<DisplayString>{hash}</DisplayString>
+	</Type>
+
+	<!-- Array -->
+	<Type Name="Array&lt;*,*&gt;">
+		<DisplayString>{{ size={$T2} }}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>$T2</Size>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<!-- Queue (circular buffer) -->
+	<Type Name="Queue&lt;*&gt;">
+		<DisplayString>{{ size={m_size} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]">m_size</Item>
+			<Item Name="[capacity]">m_capacity</Item>
+			<IndexListItems>
+				<Size>m_size</Size>
+				<ValueNode>m_buffer.m_ptrBegin[(m_head + $i) % m_capacity]</ValueNode>
+			</IndexListItems>
+		</Expand>
+	</Type>
+
+	<!-- Ref (shared pointer) -->
+	<Type Name="Ref&lt;*&gt;">
+		<DisplayString Condition="m_ptr == 0">empty</DisplayString>
+		<DisplayString Condition="m_ptr != 0">Ref {*m_ptr} [refs: {m_controlBlock->referenceCount._Storage._Value}]</DisplayString>
+		<Expand>
+			<Item Condition="m_ptr != 0" Name="[ptr]">m_ptr</Item>
+			<Item Condition="m_ptr != 0" Name="[ref count]">m_controlBlock->referenceCount._Storage._Value</Item>
+			<Item Condition="m_ptr != 0" Name="[control block refs]">m_controlBlock->controlBlockRefCount._Storage._Value</Item>
+		</Expand>
+	</Type>
+
+	<!-- Weak pointer -->
+	<Type Name="Weak&lt;*&gt;">
+		<DisplayString Condition="m_ptr == 0">empty</DisplayString>
+		<DisplayString Condition="m_ptr != 0 &amp;&amp; m_controlBlock->referenceCount._Storage._Value == 0">expired</DisplayString>
+		<DisplayString Condition="m_ptr != 0 &amp;&amp; m_controlBlock->referenceCount._Storage._Value &gt; 0">Weak {*m_ptr}</DisplayString>
+		<Expand>
+			<Item Condition="m_ptr != 0" Name="[ptr]">m_ptr</Item>
+			<Item Condition="m_ptr != 0" Name="[ref count]">m_controlBlock->referenceCount._Storage._Value</Item>
+			<Item Condition="m_ptr != 0" Name="[expired]">m_controlBlock->referenceCount._Storage._Value == 0</Item>
+		</Expand>
+	</Type>
+
+	<!-- Unique pointer -->
+	<Type Name="Unique&lt;*&gt;">
+		<DisplayString Condition="m_ptr == 0">empty</DisplayString>
+		<DisplayString Condition="m_ptr != 0">Unique {*m_ptr}</DisplayString>
+		<Expand>
+			<Item Condition="m_ptr != 0" Name="[ptr]">m_ptr</Item>
+		</Expand>
+	</Type>
+
+	<!-- IntRef (internally reference counted pointer) -->
+	<Type Name="IntRef&lt;*&gt;">
+		<DisplayString Condition="m_object == 0">empty</DisplayString>
+		<DisplayString Condition="m_object != 0">IntRef {*m_object}</DisplayString>
+		<Expand>
+			<Item Condition="m_object != 0" Name="[ptr]">m_object</Item>
+		</Expand>
+	</Type>
+
+	<!-- RawPtr (non-owning pointer) -->
+	<Type Name="RawPtr&lt;*&gt;">
+		<DisplayString Condition="m_object == 0">null</DisplayString>
+		<DisplayString Condition="m_object != 0">{*m_object}</DisplayString>
+		<Expand>
+			<Item Condition="m_object != 0" Name="[ptr]">m_object</Item>
+		</Expand>
+	</Type>
+
+	<!-- Handle (non-owning pointer) -->
+	<Type Name="Handle&lt;*&gt;">
+		<DisplayString Condition="m_pointer == 0">null</DisplayString>
+		<DisplayString Condition="m_pointer != 0">{*m_pointer}</DisplayString>
+		<Expand>
+			<Item Condition="m_pointer != 0" Name="[ptr]">m_pointer</Item>
+		</Expand>
+	</Type>
+
+	<!-- Volt::AABB -->
+	<Type Name="Volt::AABB">
+		<DisplayString Condition="m_min.x &gt; m_max.x || m_min.y &gt; m_max.y || m_min.z &gt; m_max.z">[null]</DisplayString>
+		<DisplayString>min=({m_min.x}, {m_min.y}, {m_min.z}), max=({m_max.x}, {m_max.y}, {m_max.z})</DisplayString>
+		<Expand>
+			<Item Name="[min]">m_min</Item>
+			<Item Name="[max]">m_max</Item>
+		</Expand>
+	</Type>
 </AutoVisualizer>
