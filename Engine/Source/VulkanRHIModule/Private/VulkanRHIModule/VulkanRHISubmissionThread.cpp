@@ -24,7 +24,7 @@ namespace Volt::RHI
 	VulkanRHISubmissionThread::~VulkanRHISubmissionThread()
 	{
 		m_isRunning = false;
-		m_wakeCondition.notify_all();
+		m_workAvailableSemaphore.release();
 		m_thread->join();
 	}
 
@@ -39,7 +39,8 @@ namespace Volt::RHI
 
 		VT_MAYBE_UNUSED bool succeded = m_submissionQueue.Emplace(std::move(submissionData));
 		VT_ENSURE(succeded);
-		m_wakeCondition.notify_all();
+
+		m_workAvailableSemaphore.release();
 	}
 
 	std::thread::id VulkanRHISubmissionThread::GetSubmissionThreadId() const
@@ -98,14 +99,9 @@ namespace Volt::RHI
 				}
 			}
 
-			std::unique_lock lock{ m_wakeMutex };
-			m_wakeCondition.wait(lock, [this]()
-			{
-				return !m_isRunning.load(std::memory_order::relaxed) ||
-					m_submissionQueue.Size() > 0;
-			});
-
 			VT_PROFILE_FRAME_END("RHI Submission");
+
+			m_workAvailableSemaphore.acquire();
 		}
 	}
 
@@ -127,7 +123,8 @@ namespace Volt::RHI
 
 		VT_MAYBE_UNUSED bool succeded = m_submissionQueue.Emplace(std::move(submissionData));
 		VT_ENSURE(succeded);
-		m_wakeCondition.notify_all();
+
+		m_workAvailableSemaphore.release();
 	}
 
 	void VulkanRHISubmissionThread::QueueSwapchainPresent(
@@ -148,7 +145,8 @@ namespace Volt::RHI
 
 		VT_MAYBE_UNUSED bool succeded = m_submissionQueue.Emplace(std::move(submissionData));
 		VT_ENSURE(succeded);
-		m_wakeCondition.notify_all();
+
+		m_workAvailableSemaphore.release();
 	}
 
 	void VulkanRHISubmissionThread::MarkFencesAsSubmitted(DeviceQueueExecuteInfo& executeInfo)

@@ -9,6 +9,8 @@
 #include <CoreUtilities/Variant.h>
 #include <CoreUtilities/Pointers/Unique.h>
 
+#include <semaphore>
+
 struct VkSemaphore_T;
 struct VkFence_T;
 struct VkCommandBuffer_T;
@@ -73,8 +75,7 @@ namespace Volt::RHI
 		void MarkFencesAsSubmitted(DeviceQueueExecuteInfo& executeInfo);
 
 		std::atomic_bool m_isRunning = true;
-		std::condition_variable_any m_wakeCondition;
-		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_wakeMutex, "VulkanRHISubmission Mutex");
+		std::counting_semaphore<> m_workAvailableSemaphore{ 0 };
 		Unique<std::thread> m_thread;
 
 		WorkQueue<SubmissionData, QueueThreadingPolicy::MPSC> m_submissionQueue;

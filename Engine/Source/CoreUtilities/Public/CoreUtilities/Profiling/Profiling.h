@@ -19,8 +19,8 @@
 #define VT_PROFILE_CATEGORY(...)
 
 #define VT_PROFILE_MESSAGE(MESSAGE) TracyMessageL(MESSAGE)
-#define VT_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
-#define VT_PROFILE_FREE(ptr) TracyFree(ptr)
+#define VT_PROFILE_ALLOC(ptr, size) TracySecureAllocS(ptr, size, 10)
+#define VT_PROFILE_FREE(ptr) TracySecureFreeS(ptr, 10)
 
 #define VT_PROFILE_DECLARE_MUTEX(type, name) TracyLockable(type, name)
 #define VT_PROFILE_DECLARE_MUTEX_SHARED(type, name) TracySharedLockable(type, name)

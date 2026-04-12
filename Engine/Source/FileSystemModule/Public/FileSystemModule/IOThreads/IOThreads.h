@@ -37,7 +37,6 @@ namespace Volt
 
 		struct IOThread
 		{
-			VT_PROFILE_DECLARE_MUTEX(std::mutex, wakeMutex);
 			std::thread thread;
 		};
 
@@ -61,7 +60,7 @@ namespace Volt
 		VTFS_API inline static IOThreads* s_instance = nullptr;
 
 		std::atomic_bool m_isRunning = true;
-		std::condition_variable_any m_wakeCondition;
+		std::counting_semaphore<> m_workAvailableSemaphore{ 0 };
 
 		WorkQueue<QueuedIORequest, QueueThreadingPolicy::MPMC> m_ioRequestQueue;
 		PagedAtomicArenaAllocator<IOThread, 16> m_ioThreadAllocator;

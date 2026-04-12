@@ -18,13 +18,15 @@ namespace VoltSharpmake
             conf.ExportDefines.Add("TRACY_ENABLE");
 			conf.ExportDefines.Add("TRACY_FIBERS");
 			conf.ExportDefines.Add("TRACY_ON_DEMAND");
+			conf.ExportDefines.Add("TRACY_NO_CALLSTACK");
 
             conf.Defines.Add("TRACY_ENABLE");
 			conf.Defines.Add("TRACY_FIBERS");
 			conf.Defines.Add("TRACY_ON_DEMAND");
             conf.Defines.Add("TRACY_EXPORTS");
+			conf.Defines.Add("TRACY_NO_CALLSTACK");
 
-            SourceFilesFilters = new Sharpmake.Strings("public/TracyClient.cpp"); // Add specific .cpp file
+			SourceFilesFilters = new Sharpmake.Strings("public/TracyClient.cpp"); // Add specific .cpp file
 
             conf.IncludePaths.Add("public");
             conf.IncludePaths.Add("public/tracy");

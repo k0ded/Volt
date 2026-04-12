@@ -20,6 +20,8 @@
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Atomics/Latch.h>
 
+#include <semaphore>
+
 namespace Volt
 {
 	class AppTickEvent;
@@ -81,8 +83,7 @@ namespace Volt
 			WorkerScratch scratch;
 			Job* currentlyExecutingJob = nullptr;
 
-			VT_PROFILE_DECLARE_MUTEX(std::mutex, wakeMutex);
-			std::condition_variable_any wakeCondition;
+			std::counting_semaphore<> workItemsAvailable{ 0 };
 			JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> workQueues;
 		};
 
@@ -136,16 +137,13 @@ namespace Volt
 		alignas(std::hardware_constructive_interference_size) std::atomic_bool m_isRunning = true;
 		alignas(std::hardware_constructive_interference_size) std::atomic_uint32_t m_nextQueueToPush = 0;
 
-		std::condition_variable_any m_waitingListManangerCondition;
-		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_waitingListManagerMutex, "JobSystemWaitingListManagerMutex");
-
 		InlineVector<JobWorker*, 16> m_workers;
 
 		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
 		JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> m_yieldedJobsReadyToRun;
 		JobPriorityQueue<WaitingListEntry, QueueThreadingPolicy::MPSC> m_waitingLists;
 
-		std::atomic_bool m_waitingListRequiresFlush = false;
+		std::counting_semaphore<> m_waitingListSemaphore{ 0 };
 		std::thread m_waitingListManagerThread;
 
 		PagedAtomicArenaAllocator<JobWorker, 16> m_workerAllocator;

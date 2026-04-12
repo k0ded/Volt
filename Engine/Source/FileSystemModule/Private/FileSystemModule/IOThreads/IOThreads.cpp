@@ -31,10 +31,11 @@ namespace Volt
 	void IOThreads::Shutdown()
 	{
 		m_isRunning = false;
-		m_wakeCondition.notify_all();
 
 		for (IOThread* ioThread : m_ioThreads)
 		{
+			m_workAvailableSemaphore.release();
+
 			ioThread->thread.join();
 			m_ioThreadAllocator.Free(ioThread);
 		}
@@ -58,8 +59,6 @@ namespace Volt
 	{
 		Threads::InitializeThreadConfig(false, true);
 
-		IOThread& workerData = *m_ioThreads[workerId];
-
 		while (m_isRunning.load(std::memory_order::relaxed))
 		{
 			QueuedIORequest request;
@@ -69,13 +68,7 @@ namespace Volt
 				ExecuteIORequest(std::move(request));
 			}
 
-			std::unique_lock lock(workerData.wakeMutex);
-			VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-			m_wakeCondition.wait(lock, [this]()
-			{
-				return !m_isRunning.load(std::memory_order::relaxed) ||
-					m_ioRequestQueue.Size() > 0;
-			});
+			m_workAvailableSemaphore.acquire();
 		}
 	}
 
@@ -104,7 +97,7 @@ namespace Volt
 		else
 		{
 			m_ioRequestQueue.Emplace(request);
-			m_wakeCondition.notify_all();
+			m_workAvailableSemaphore.release();
 		}
 	}
 

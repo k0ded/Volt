@@ -222,11 +222,10 @@ namespace Volt
 	void JobSystem::Shutdown()
 	{
 		m_isRunning = false;
-		m_waitingListManangerCondition.notify_all();
 
 		for (auto worker : m_workers)
 		{
-			worker->wakeCondition.notify_one();
+			worker->workItemsAvailable.release();
 
 			if (worker->thread.joinable())
 			{
@@ -236,6 +235,7 @@ namespace Volt
 			m_workerAllocator.Free(worker);
 		}
 
+		m_waitingListSemaphore.release();
 		m_waitingListManagerThread.join();
 	}
 
@@ -370,14 +370,7 @@ namespace Volt
 			if (!successfullyRanJob)
 			{
 				workerData.currentlyExecutingJob = nullptr;
-
-				std::unique_lock lock(workerData.wakeMutex);
-				VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-				workerData.wakeCondition.wait(lock, [this, workerId]()
-				{
-					return !m_isRunning.load(std::memory_order::relaxed) ||
-						HasWorkAvailable(workerId);
-				});
+				workerData.workItemsAvailable.acquire();
 			}
 		}
 	}
@@ -398,8 +391,6 @@ namespace Volt
 
 			// Loop through the priorities in reverse to make sure we start with the
 			// highest priority.
-			m_waitingListRequiresFlush.store(false, std::memory_order::relaxed);
-
 			bool anyJobRun = false;
 			for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
 			{
@@ -411,24 +402,17 @@ namespace Volt
 				// Notify all workers.
 				for (JobWorker* worker : m_workers)
 				{
-					worker->wakeCondition.notify_one();
+					worker->workItemsAvailable.release();
 				}
 			}
 
-			std::unique_lock lock(m_waitingListManagerMutex);
-			VT_PROFILE_LOCK_MARK(m_waitingListManagerMutex);
-			m_waitingListManangerCondition.wait(lock, [this]()
-			{
-				return !m_isRunning.load(std::memory_order::relaxed) || 
-					m_waitingListRequiresFlush.load(std::memory_order::relaxed);
-			});
+			m_waitingListSemaphore.acquire();
 		}
 	}
 
 	void JobSystem::NotifyCounterReady()
 	{
-		m_waitingListRequiresFlush.store(true, std::memory_order::relaxed);
-		m_waitingListManangerCondition.notify_one();
+		m_waitingListSemaphore.release();
 	}
 
 	bool JobSystem::HasWorkAvailable(uint32_t workerId)
@@ -501,8 +485,9 @@ namespace Volt
 			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
 			{
 				const uint32_t nextQueueToPush = m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % m_numWorkers;
+
 				m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
-				m_workers[nextQueueToPush]->wakeCondition.notify_one();
+				m_workers[nextQueueToPush]->workItemsAvailable.release();
 			}
 			else
 			{
