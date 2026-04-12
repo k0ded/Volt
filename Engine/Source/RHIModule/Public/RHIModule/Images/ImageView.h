@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHIModule/Descriptors/BindlessIndex.h"
+
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
@@ -27,12 +29,14 @@ namespace Volt::RHI
 
 		virtual PixelFormat GetFormat() const = 0;
 		virtual ImageAspect GetImageAspect() const = 0;
-		virtual uint64_t GetDeviceAddress() const = 0;
 		virtual ImageUsage GetImageUsage() const = 0;
 		virtual ImageViewType GetViewType() const = 0;
 		virtual const ImageViewDesc& GetDesc() const = 0;
 		virtual RawPtr<Image> GetImage() const = 0;
 		virtual bool IsSwapchainView() const = 0;
+
+		virtual uint64_t GetDeviceAddress() const = 0;
+		virtual BindlessIndex GetBindlessIndex() const = 0;
 
 	protected:
 		ImageView() = default;

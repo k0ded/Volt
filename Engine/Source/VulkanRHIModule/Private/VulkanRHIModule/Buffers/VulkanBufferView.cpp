@@ -35,7 +35,7 @@ namespace Volt::RHI
 	{
 	}
 
-	const uint64_t VulkanBufferView::GetDeviceAddress() const
+	uint64_t VulkanBufferView::GetDeviceAddress() const
 	{
 		return m_resource->GetDeviceAddress();
 	}
@@ -106,5 +106,10 @@ namespace Volt::RHI
 			m_srvDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize;
 		}
+	}
+
+	BindlessIndex VulkanBufferView::GetBindlessIndex() const
+	{
+		return m_bindlessIndex;
 	}
 }

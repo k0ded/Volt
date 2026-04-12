@@ -131,4 +131,9 @@ namespace Volt::RHI
 		m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
 		m_uavDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
 	}
+
+	BindlessIndex VulkanImageView::GetBindlessIndex() const
+	{
+		return m_bindlessIndex;
+	}
 }

@@ -6,7 +6,6 @@
 
 #include <AssetSystem/Asset.h>
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Images/Image.h>
 

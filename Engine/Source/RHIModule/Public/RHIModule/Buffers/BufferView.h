@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHIModule/Descriptors/BindlessIndex.h"
+
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
@@ -24,9 +26,11 @@ namespace Volt::RHI
 
 		static IntRef<BufferView> Create(const BufferViewDesc& desc, RawPtr<Buffer> buffer);
 		static IntRef<BufferView> Create(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
-		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual bool IsTexelBufferView() const = 0;
 		virtual const BufferViewDesc& GetDesc() const = 0;
+
+		virtual uint64_t GetDeviceAddress() const = 0;
+		virtual BindlessIndex GetBindlessIndex() const = 0;
 
 	protected:
 		BufferView() = default;

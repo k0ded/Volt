@@ -3,10 +3,8 @@
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
 
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+#include <RHIModule/Descriptors/BindlessIndex.h>
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
-
-#include <glm/glm.hpp>
 #include <cstdint>
 
 namespace Volt
@@ -62,17 +60,6 @@ namespace Volt
 		uint32_t RT_indexBuffer;
 	};
 
-	struct GPUMeshSDF
-	{
-		ResourceHandle sdfTexture;
-		glm::vec3 size;
-
-		glm::vec3 min;
-		glm::vec3 max;
-		ResourceHandle bricksBuffer;
-		uint32_t brickCount;
-	};
-
 	struct PrimitiveDrawData
 	{
 		GPUTransform transform;
@@ -108,8 +95,8 @@ namespace Volt
 
 	struct GPUMaterial
 	{
-		ResourceHandle textures[16];
-		ResourceHandle samplers[16];
+		RHI::BindlessIndex textures[16];
+		RHI::BindlessIndex samplers[16];
 
 		uint32_t textureCount = 0;
 		uint32_t materialFlags = 0;

@@ -24,12 +24,14 @@ namespace Volt::RHI
 
 		PixelFormat GetFormat() const override;
 		ImageAspect GetImageAspect() const override;
-		uint64_t GetDeviceAddress() const override;
 		ImageUsage GetImageUsage() const override;
 		ImageViewType GetViewType() const override;
 		const ImageViewDesc& GetDesc() const override;
 		RawPtr<Image> GetImage() const override;
 		bool IsSwapchainView() const override;
+
+		uint64_t GetDeviceAddress() const override;
+		BindlessIndex GetBindlessIndex() const override;
 
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }
@@ -44,6 +46,8 @@ namespace Volt::RHI
 
 		VkImageView_T* m_imageView = nullptr;
 		RawPtr<Image> m_image;
+
+		BindlessIndex m_bindlessIndex;
 
 		PixelFormat m_format;
 		ImageAspect m_imageAspect;

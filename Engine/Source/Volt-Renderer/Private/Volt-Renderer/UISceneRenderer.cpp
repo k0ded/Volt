@@ -75,7 +75,7 @@ namespace Volt
 		glm::vec4 position;
 		glm::vec2 texCoords;
 		glm::vec4 color;
-		ResourceHandle imageHandle = Resource::Invalid;
+		RHI::BindlessIndex imageHandle;
 		uint32_t id;
 	};
 

@@ -23,7 +23,8 @@ namespace Volt::RHI
 		VulkanBufferView(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		~VulkanBufferView() override;
 
-		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
+		VT_NODISCARD uint64_t GetDeviceAddress() const override;
+		BindlessIndex GetBindlessIndex() const override;
 
 		RawPtr<RHIResource> GetResource() const { return m_resource; }
 		bool IsTexelBufferView() const override;
@@ -40,6 +41,7 @@ namespace Volt::RHI
 
 		BufferViewDesc m_desc;
 		RawPtr<RHIResource> m_resource;
+		BindlessIndex m_bindlessIndex;
 
 		DescriptorDescription m_srvDescriptor;
 		DescriptorDescription m_uavDescriptor;

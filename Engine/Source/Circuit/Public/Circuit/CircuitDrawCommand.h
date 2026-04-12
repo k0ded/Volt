@@ -2,8 +2,6 @@
 #include "Circuit/Config.h"
 #include "Circuit/CircuitColor.h"
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
-
 #include <glm/vec2.hpp>
 
 namespace Circuit

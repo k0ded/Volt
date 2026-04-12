@@ -8,7 +8,6 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
-#include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Images/Image.h>
 
 #include <filesystem>
