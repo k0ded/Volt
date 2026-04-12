@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
@@ -12,7 +13,7 @@ struct VkPipelineLayout_T;
 
 namespace Volt::RHI
 {
-	class VulkanRenderPipeline : public RenderPipeline
+	class VulkanRenderPipeline final : public RenderPipeline, public LastSubmissionTracker
 	{
 	public:
 		VulkanRenderPipeline(const RenderPipelineCreateInfo& createInfo);

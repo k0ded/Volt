@@ -25,6 +25,8 @@
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
+#include "VulkanRHIModule/Synchronization/VulkanFence.h"
+
 #include "VulkanRHIModule/VulkanResourceCast.h"
 #include "VulkanRHIModule/Utility/TracyExtension.h"
 
@@ -301,6 +303,18 @@ namespace Volt::RHI
 		}
 	}
 
+	template<typename T>
+	void VulkanCommandBuffer::RegisterUsage(RawPtr<T> resource)
+	{
+		m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(IntRef<T>::Attach(resource.GetRaw())));
+	}
+
+	template<typename T>
+	void VulkanCommandBuffer::RegisterUsage(IntRef<T> resource)
+	{
+		m_lastSubmissionTrackerManager.TryRegisterResource(ResourceCast(resource));
+	}
+
 	VulkanCommandBuffer::VulkanCommandBuffer(QueueType queueType)
 		: m_queueType(queueType)
 	{
@@ -403,6 +417,7 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawIndexedIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
+		RegisterUsage(commandsBuffer);
 	}
 
 	void VulkanCommandBuffer::DrawIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
@@ -412,6 +427,7 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
+		RegisterUsage(commandsBuffer);
 	}
 
 	void VulkanCommandBuffer::DrawIndexedIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
@@ -421,6 +437,8 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawIndexedIndirectCount(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
+		RegisterUsage(commandsBuffer);
+		RegisterUsage(countBuffer);
 	}
 
 	void VulkanCommandBuffer::DrawIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
@@ -430,6 +448,8 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawIndirectCount(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
+		RegisterUsage(commandsBuffer);
+		RegisterUsage(countBuffer);
 	}
 
 	void VulkanCommandBuffer::Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
@@ -448,6 +468,7 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDispatchIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset);
+		RegisterUsage(commandsBuffer);
 	}
 
 	void VulkanCommandBuffer::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
@@ -466,6 +487,7 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawMeshTasksIndirectEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
+		RegisterUsage(commandsBuffer);
 	}
 
 	void VulkanCommandBuffer::DispatchMeshTasksIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
@@ -475,6 +497,8 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawMeshTasksIndirectCountEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
+		RegisterUsage(commandsBuffer);
+		RegisterUsage(countBuffer);
 	}
 
 	void VulkanCommandBuffer::TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -515,6 +539,7 @@ namespace Volt::RHI
 		VkStridedDeviceAddressRegionKHR callableTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetCallableData(), vulkanSBT.GetCallableTable());
 
 		vkCmdTraceRaysKHR(m_commandBufferData.commandBuffer, &rayGenTable, &missTable, &hitGroupTable, &callableTable, width, height, depth);
+		RegisterUsage(shaderBindingTable);
 	}
 
 	void VulkanCommandBuffer::SetViewports(const InlineVector<Viewport, MAX_VIEWPORT_COUNT>& viewports)
@@ -538,6 +563,8 @@ namespace Volt::RHI
 		m_activeRenderPipeline = pipeline;
 		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetHandle<VkPipeline>());
+		
+		RegisterUsage(pipeline);
 	}
 
 	void VulkanCommandBuffer::BindPipeline(RawPtr<ComputePipeline> pipeline)
@@ -551,6 +578,8 @@ namespace Volt::RHI
 		m_activeComputePipeline = pipeline;
 		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->GetHandle<VkPipeline>());
+
+		RegisterUsage(pipeline);
 	}
 
 	void VulkanCommandBuffer::BindPipeline(RawPtr<RayTracingPipeline> pipeline)
@@ -564,6 +593,8 @@ namespace Volt::RHI
 		m_activeRayTracingPipeline = pipeline;
 		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetHandle<VkPipeline>());
+
+		RegisterUsage(pipeline);
 	}
 
 	void VulkanCommandBuffer::BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding)
@@ -575,6 +606,8 @@ namespace Volt::RHI
 		{
 			vkBuffers.emplace_back() = vertexBuffers[i].buffer->GetHandle<VkBuffer>();
 			offsets.emplace_back(vertexBuffers[i].offset);
+
+			RegisterUsage(vertexBuffers[i].buffer);
 		}
 
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());
@@ -584,6 +617,7 @@ namespace Volt::RHI
 	{
 		constexpr VkDeviceSize offset = 0;
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, indexType == IndexType::UInt16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+		RegisterUsage(indexBuffer);
 	}
 
 	void VulkanCommandBuffer::BeginRendering(const RenderingInfo& renderingInfo)
@@ -601,6 +635,8 @@ namespace Volt::RHI
 			newInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
 			memcpy_s(&newInfo.clearValue, sizeof(uint32_t) * 4, &colorAtt.clearColor, sizeof(uint32_t) * 4);
+
+			RegisterUsage(colorAtt.view);
 		}
 
 		const bool hasDepth = renderingInfo.depthAttachmentInfo.view;
@@ -614,6 +650,8 @@ namespace Volt::RHI
 			depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
 			memcpy_s(&depthAttachmentInfo.clearValue.depthStencil, sizeof(uint32_t) * 2, &renderingInfo.depthAttachmentInfo.clearColor, sizeof(uint32_t) * 2);
+
+			RegisterUsage(renderingInfo.depthAttachmentInfo.view);
 		}
 
 		VkRenderingInfo vkRenderingInfo{};
@@ -779,22 +817,39 @@ namespace Volt::RHI
 			switch (resourceBarrier.type)
 			{
 				case BarrierType::Global:
+				{
 					AddGlobalBarrier(resourceBarrier.globalBarrier(), memoryBarriers.emplace_back());
 					break;
+				}
 
 				case BarrierType::Buffer:
+				{
 					AddBufferBarrier(resourceBarrier.bufferBarrier(), bufferBarriers.emplace_back());
+
+					RawPtr<RHIResource> resource = resourceBarrier.bufferBarrier().resource;
+					ResourceType resourceType = resource->GetType();
+
+					if (resourceType == RHI::ResourceType::Buffer)
+					{
+						RegisterUsage(resource.As<Buffer>());
+					}
+					else
+					{
+						RegisterUsage(resource.As<UniformBuffer>());
+					}
+
 					break;
+				}
 
 				case BarrierType::Image:
 				{
 					AddImageBarrier(resourceBarrier.imageBarrier(), imageBarriers.emplace_back());
 
-					Image& image = resourceBarrier.imageBarrier().resource->AsRef<Image>();
-					if (image.IsSwapchainImage())
+					RawPtr<Image> image = resourceBarrier.imageBarrier().resource.As<Image>();
+					if (image->IsSwapchainImage())
 					{
 						// Since only non transient images can be swapchain images, this is a safe cast to do.
-						VulkanImage& vulkanImage = image.AsRef<VulkanImage>();
+						VulkanImage& vulkanImage = image->AsRef<VulkanImage>();
 						VulkanSwapchain& swapchain = vulkanImage.m_swapchainImageData.swapchain->AsRef<VulkanSwapchain>();
 					
 						VulkanSemaphore* vkSemaphore = ResourceCast(swapchain.GetAcquireSemaphore().GetRaw());
@@ -804,6 +859,8 @@ namespace Volt::RHI
 							m_waitSemaphores.emplace_back(vkSemaphore->GetHandle<VkSemaphore>());
 						}
 					}
+
+					RegisterUsage(image);
 
 					break;
 				}
@@ -862,6 +919,9 @@ namespace Volt::RHI
 					triangles.transformData.deviceAddress = 0;
 
 					primitiveCounts.emplace_back(geometryInfo.indexCount / 3u);
+
+					RegisterUsage(geometryInfo.vertexPositionsBuffer);
+					RegisterUsage(geometryInfo.indexBuffer);
 				}
 				else if (geometryInfo.geometryType == AccelerationStructureGeometryType::Instances)
 				{
@@ -874,6 +934,8 @@ namespace Volt::RHI
 					instances.data.deviceAddress = geometryInfo.instancesBuffer->GetDeviceAddress();
 
 					primitiveCounts.emplace_back(static_cast<uint32_t>(geometryInfo.instancesBuffer->GetNumElements()));
+
+					RegisterUsage(geometryInfo.instancesBuffer);
 				}
 			}
 
@@ -930,6 +992,8 @@ namespace Volt::RHI
 			scratchBuffers.push_back(scratchBuffer);
 
 			vulkanBuildInfo.scratchData.deviceAddress = ::Utility::Align(scratchBuffer->GetDeviceAddress(), accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment);
+
+			RegisterUsage(scratchBuffer);
 		}
 
 		Vector<VkAccelerationStructureBuildRangeInfoKHR> vulkanBuildRanges;
@@ -1060,6 +1124,7 @@ namespace Volt::RHI
 		const BufferViewDesc& viewDesc = vkBufferView.GetDesc();
 
 		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, clearValue);
+		RegisterUsage(bufferView);
 	}
 
 	void VulkanCommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue)
@@ -1071,6 +1136,7 @@ namespace Volt::RHI
 
 		const uint32_t uintClearValue = std::bit_cast<uint32_t>(clearValue);
 		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, uintClearValue);
+		RegisterUsage(bufferView);
 	}
 
 	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue)
@@ -1107,6 +1173,7 @@ namespace Volt::RHI
 
 			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
+		RegisterUsage(imageView);
 	}
 
 	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue)
@@ -1144,6 +1211,7 @@ namespace Volt::RHI
 
 			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
+		RegisterUsage(imageView);
 	}
 
 	void VulkanCommandBuffer::CopyBufferRegion(RawPtr<Buffer> srcBuffer, const size_t srcOffset, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const size_t size)
@@ -1154,6 +1222,8 @@ namespace Volt::RHI
 		copy.size = size;
 
 		vkCmdCopyBuffer(m_commandBufferData.commandBuffer, srcBuffer->GetHandle<VkBuffer>(), dstBuffer->GetHandle<VkBuffer>(), 1, &copy);
+		RegisterUsage(srcBuffer);
+		RegisterUsage(dstBuffer);
 	}
 
 	void VulkanCommandBuffer::CopyBufferToImage(RawPtr<Buffer> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
@@ -1182,6 +1252,8 @@ namespace Volt::RHI
 
 		const ResourceState& currentState = dstImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, srcBuffer->GetHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), 1, &region);
+		RegisterUsage(srcBuffer);
+		RegisterUsage(dstImage);
 	}
 
 	void VulkanCommandBuffer::CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
@@ -1206,6 +1278,8 @@ namespace Volt::RHI
 
 		const ResourceState& currentState = srcImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetHandle<VkBuffer>(), 1, &region);
+		RegisterUsage(srcImage);
+		RegisterUsage(dstBuffer);
 	}
 
 	void VulkanCommandBuffer::CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip)
@@ -1230,6 +1304,8 @@ namespace Volt::RHI
 
 		const ResourceState& currentState = srcImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetHandle<VkBuffer>(), 1, &region);
+		RegisterUsage(srcImage);
+		RegisterUsage(dstBuffer);
 	}
 
 	void VulkanCommandBuffer::CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -1273,6 +1349,9 @@ namespace Volt::RHI
 		cpyInfo.regionCount = 1;
 
 		vkCmdCopyImage2(m_commandBufferData.commandBuffer, &cpyInfo);
+
+		RegisterUsage(srcImage);
+		RegisterUsage(dstImage);
 	}
 
 	void VulkanCommandBuffer::UploadTextureData(RawPtr<Image> dstImage, RawPtr<Buffer> stagingAllocation, const ImageCopyData& copyData)
@@ -1308,6 +1387,8 @@ namespace Volt::RHI
 
 		const ResourceState& currentState = dstImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAllocation->GetHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+		RegisterUsage(dstImage);
+		RegisterUsage(stagingAllocation);
 	}
 
 	const QueueType VulkanCommandBuffer::GetQueueType() const
@@ -1904,6 +1985,17 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::Reset()
 	{
+		m_lastSubmissionTrackerManager.Reset();
 		m_submissionFence = nullptr;
+	}
+
+	void VulkanCommandBuffer::AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VulkanFence& vkFence = m_submissionFence->AsRef<VulkanFence>();
+		vkFence.AssignSemaphore(semaphore, value);
+
+		m_lastSubmissionTrackerManager.AssignSemaphore(semaphore, value);
 	}
 }

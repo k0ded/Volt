@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
 
@@ -9,7 +10,7 @@
 namespace Volt::RHI
 {
 	class Allocation;
-	class VulkanUniformBuffer final : public UniformBuffer
+	class VulkanUniformBuffer final : public UniformBuffer, public LastSubmissionTracker
 	{
 	public:
 		VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData);

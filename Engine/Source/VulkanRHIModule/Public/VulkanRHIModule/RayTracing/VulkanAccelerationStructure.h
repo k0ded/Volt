@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
 struct VkAccelerationStructureKHR_T;
@@ -7,7 +9,7 @@ struct VkAccelerationStructureKHR_T;
 namespace Volt::RHI
 {
 	class Buffer;
-	class VulkanAccelerationStructure : public AccelerationStructure
+	class VulkanAccelerationStructure final : public AccelerationStructure, public LastSubmissionTracker
 	{
 	public:
 		VulkanAccelerationStructure(const AccelerationStructureCreateInfo& createInfo);

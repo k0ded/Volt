@@ -175,8 +175,7 @@ namespace Volt::RHI
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
 		{
 			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
-			VulkanFence& vkSubmissionFence = vkCmdBuffer.m_submissionFence->AsRef<VulkanFence>();
-			vkSubmissionFence.AssignSemaphore(m_queueSemaphore, submitSemaphoreValue);
+			vkCmdBuffer.AssignSemaphore(m_queueSemaphore, submitSemaphoreValue);
 		}
 	}
 

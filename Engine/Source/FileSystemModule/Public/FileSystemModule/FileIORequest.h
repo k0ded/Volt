@@ -89,7 +89,6 @@ namespace Volt
 	private:
 		FileWriter m_fileWriter;
 		IORequestResultCode m_resultCode;
-		bool m_result;
 	};
 
 	class IORequestWriteFile_String : public IORequest
@@ -108,7 +107,6 @@ namespace Volt
 		Filesystem::Path m_filepath;
 		String m_string;
 		IORequestResultCode m_resultCode;
-		bool m_result;
 	};
 
 	class IORequestWriteFile_Binary : public IORequest
@@ -127,7 +125,6 @@ namespace Volt
 		const void* m_data;
 		uint64_t m_dataSize;
 		IORequestResultCode m_resultCode;
-		bool m_result;
 		bool m_createCopy;
 	};
 }

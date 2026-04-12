@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
 
 #include <RHIModule/Images/SamplerState.h>
 
@@ -10,7 +11,7 @@ struct VkSampler_T;
 
 namespace Volt::RHI
 {
-	class VulkanSamplerState : public SamplerState
+	class VulkanSamplerState final : public SamplerState, public LastSubmissionTracker
 	{
 	public:
 		struct DescriptorDescription

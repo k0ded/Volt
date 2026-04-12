@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/Images/TransientImage.h>
 #include <RHIModule/ResourceViewCache.h>
 
@@ -7,7 +9,7 @@ struct VkImage_T;
 
 namespace Volt::RHI
 {
-	class VulkanTransientImage final : public TransientImage
+	class VulkanTransientImage final : public TransientImage, public LastSubmissionTracker
 	{
 	public:
 		VulkanTransientImage(const ImageDesc& desc);

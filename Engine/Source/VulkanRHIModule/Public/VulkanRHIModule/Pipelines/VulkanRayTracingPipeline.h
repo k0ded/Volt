@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
 
 #include <RHIModule/Pipelines/RayTracingPipeline.h>
 
@@ -9,7 +10,7 @@ struct VkPipeline_T;
 
 namespace Volt::RHI
 {
-	class VulkanRayTracingPipeline final : public RayTracingPipeline
+	class VulkanRayTracingPipeline final : public RayTracingPipeline, public LastSubmissionTracker
 	{
 	public:
 		struct RayTracingShaderData

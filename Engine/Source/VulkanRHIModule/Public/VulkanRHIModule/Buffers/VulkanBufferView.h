@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/Buffers/BufferView.h>
 
 #include <vulkan/vulkan.h>
@@ -9,7 +11,7 @@ struct VkBufferView_T;
 
 namespace Volt::RHI
 {
-	class VulkanBufferView final : public BufferView
+	class VulkanBufferView final : public BufferView, public LastSubmissionTracker
 	{
 	public:
 		struct DescriptorDescription

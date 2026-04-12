@@ -1,12 +1,14 @@
 #pragma once
 
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/Buffers/TransientBuffer.h>
 
 struct VkBuffer_T;
 
 namespace Volt::RHI
 {
-	class VulkanTransientBuffer final : public TransientBuffer
+	class VulkanTransientBuffer final : public TransientBuffer, public LastSubmissionTracker
 	{
 	public:
 		VulkanTransientBuffer(const BufferDesc& desc);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTrackerManager.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 
 #include <RHIModule/Descriptors/ResourceTable.h>
@@ -123,6 +123,14 @@ namespace Volt::RHI
 		void ClearActivePipeline();
 		void ValidateInlineParameters();
 
+		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
+
+		template<typename T>
+		void RegisterUsage(RawPtr<T> resource);
+
+		template<typename T>
+		void RegisterUsage(IntRef<T> resource);
+
 		VkPipelineLayout_T* GetActivePipelineLayout();
 		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();
 
@@ -162,5 +170,8 @@ namespace Volt::RHI
 		RenderingAttachmentDeclaration m_renderingAttachmentDeclaraion;
 		bool m_hasRenderingAttachmentDeclaration = false;
 		const CommandBuffer* m_parentCommandBuffer;
+
+		// Submission tracking
+		LastSubmissionTrackerManager m_lastSubmissionTrackerManager;
 	};
 }

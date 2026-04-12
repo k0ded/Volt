@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/ResourceViewCache.h>
 
@@ -10,7 +12,7 @@ namespace Volt::RHI
 	class Allocation;
 	class GPUAllocator;
 
-	class VulkanImage final : public Image
+	class VulkanImage final : public Image, public LastSubmissionTracker
 	{
 	public:
 		VulkanImage(const ImageDesc& specification, const void* data);

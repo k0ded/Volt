@@ -1,12 +1,14 @@
 #pragma once
 
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/RayTracing/ShaderBindingTable.h>
 #include <RHIModule/Buffers/Buffer.h>
 
 namespace Volt::RHI
 {
 	class Buffer;
-	class VulkanShaderBindingTable final : public ShaderBindingTable
+	class VulkanShaderBindingTable final : public ShaderBindingTable, public LastSubmissionTracker
 	{
 	public:
 		VulkanShaderBindingTable(IntRef<RayTracingPipeline> pipeline);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
 
 #include <RHIModule/Buffers/Buffer.h>
 
@@ -11,7 +12,7 @@ namespace Volt::RHI
 	class Allocation;
 	class GPUAllocator;
 
-	class VulkanBuffer final : public Buffer
+	class VulkanBuffer final : public Buffer, public LastSubmissionTracker
 	{
 	public:
 		VulkanBuffer(const BufferDesc& desc);

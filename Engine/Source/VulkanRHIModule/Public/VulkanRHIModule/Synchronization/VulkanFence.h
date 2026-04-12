@@ -22,6 +22,8 @@ namespace Volt::RHI
 	private:
 		friend class VulkanDeviceQueue;
 		friend class VulkanRHISubmissionThread;
+		friend class LastSubmissionTracker;
+		friend class VulkanCommandBuffer;
 
 		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
 	

@@ -36,8 +36,7 @@ namespace Volt
 	IORequestWriteFile_FileWriter::IORequestWriteFile_FileWriter(StringView name, FileWriter&& fileWriter)
 		: IORequest(name),
 		m_fileWriter(std::move(fileWriter)),
-		m_resultCode(IORequestResultCode::Undefined),
-		m_result(false)
+		m_resultCode(IORequestResultCode::Undefined)
 	{
 		VT_ENSURE_MSG(!m_fileWriter.IsClosed(), "FileWriter must be open!");
 	}
@@ -45,7 +44,6 @@ namespace Volt
 	void IORequestWriteFile_FileWriter::Execute()
 	{
 		m_fileWriter.Close();
-		m_result = true;
 		m_resultCode = IORequestResultCode::Success;
 	}
 
@@ -89,8 +87,7 @@ namespace Volt
 		: IORequest(name),
 		m_filepath(filepath),
 		m_string(std::move(string)),
-		m_resultCode(IORequestResultCode::Undefined),
-		m_result(false)
+		m_resultCode(IORequestResultCode::Undefined)
 	{
 	}
 
@@ -98,8 +95,7 @@ namespace Volt
 		: IORequest(name),
 		m_filepath(filepath),
 		m_string(string),
-		m_resultCode(IORequestResultCode::Undefined),
-		m_result(false)
+		m_resultCode(IORequestResultCode::Undefined)
 	{}
 
 	void IORequestWriteFile_String::Execute()
@@ -160,7 +156,6 @@ namespace Volt
 		m_data(data),
 		m_dataSize(dataSize),
 		m_resultCode(IORequestResultCode::Undefined),
-		m_result(false),
 		m_createCopy(createCopyOfData)
 	{
 		if (createCopyOfData)

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/LastSubmissionTracker.h"
+
 #include <RHIModule/Images/ImageView.h>
 	
 #include <vulkan/vulkan.h>
@@ -9,7 +11,7 @@ struct VkImageView_T;
 
 namespace Volt::RHI
 {
-	class VulkanImageView final : public ImageView
+	class VulkanImageView final : public ImageView, public LastSubmissionTracker
 	{
 	public:
 		struct DescriptorDescription
