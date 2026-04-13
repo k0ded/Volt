@@ -1,17 +1,14 @@
 #include "cupch.h"
 
 #include "CoreUtilities/Malloc.h"
+#include "CoreUtilities/MemoryTracker.h"
+#include "CoreUtilities/MemoryUtility.h"
 #include "CoreUtilities/Profiling/Profiling.h"
 
-#define USE_MIMALLOC 1
-
-#if USE_MIMALLOC
 #include <mimalloc.h>
-#endif
 
 namespace Memory
 {
-#if USE_MIMALLOC
 	static void InitializeMiMalloc()
 	{
 		static bool initialized = false;
@@ -21,13 +18,10 @@ namespace Memory
 			initialized = true;
 		}
 	}
-#endif
 
 	void Initialize()
 	{
-#if USE_MIMALLOC
 		InitializeMiMalloc();
-#endif
 	}
 
 	void* Malloc(size_t size, size_t alignment)
@@ -35,59 +29,86 @@ namespace Memory
 		VT_PROFILE_FUNCTION();
 
 		constexpr size_t DefaultAlignment = 8;
+		alignment = std::max(size_t(size >= 16u ? 16u : DefaultAlignment), alignment);
+		
+		uint64_t toAllocSize = size;
 
-		void* resultPtr = nullptr;
-
-		if (alignment != DefaultAlignment)
-		{
-			alignment = std::max(size_t(size >= 16u ? 16u : 8u), alignment);
-#if USE_MIMALLOC
-			resultPtr = mi_malloc_aligned(size, alignment);
-#else
-			resultPtr = _aligned_malloc(size, alignment);
+#ifdef VT_ENABLE_MEMORY_TRACKER
+		toAllocSize += sizeof(MemoryTrackerHeader) + alignment;
 #endif
-		}
-		else
-		{
-			alignment = size_t(size >= 16u ? 16u : DefaultAlignment);
-#if USE_MIMALLOC
-			resultPtr = mi_malloc_aligned(size, alignment);
-#else
-			resultPtr = _aligned_malloc(size, alignment);
-#endif
-		}
+		void* basePtr = mi_malloc_aligned(toAllocSize, alignment);
+		uintptr_t userPointer = reinterpret_cast<uintptr_t>(basePtr);
 
+#ifdef VT_ENABLE_MEMORY_TRACKER
+		userPointer = Utility::Align(userPointer + sizeof(MemoryTrackerHeader), alignment);
+
+		MemoryTrackerHeader* header = reinterpret_cast<MemoryTrackerHeader*>(userPointer - sizeof(MemoryTrackerHeader));
+		header->basePtr = basePtr;
+		header->alignment = alignment;
+		header->size = size;
+
+		MemoryTracker::OnAllocate(header);
+#endif
 		//VT_PROFILE_ALLOC(resultPtr, size);
-		return resultPtr;
+		return reinterpret_cast<void*>(userPointer);
 	}
 
 	void* Realloc(void* original, size_t size, size_t alignment /*= 0*/)
 	{
 		constexpr size_t DefaultAlignment = 8;
 
+		uint64_t toAllocSize = size;
+
+		if (!original)
+		{
+			return Malloc(toAllocSize, alignment);
+		}
+
+#ifdef VT_ENABLE_MEMORY_TRACKER
+		MemoryTrackerHeader* header = GetHeader(original);
+
+		const uint64_t oldSize = header->size;
+		alignment = header->alignment;
+		original = header->basePtr;
+
+		toAllocSize += sizeof(MemoryTrackerHeader) + alignment;
+#endif
+
+		if (size == 0)
+		{
+			mi_free(original);
+			return nullptr;
+		}
+
 		void* resultPtr = nullptr;
 
 		if (alignment != DefaultAlignment)
 		{
 			alignment = std::max(size_t(size >= 16u ? 16u : 8u), alignment);
-#if USE_MIMALLOC
-			resultPtr = mi_realloc_aligned(original, size, alignment);
-#else
-			resultPtr = _aligned_malloc(size, alignment);
-#endif
+			resultPtr = mi_realloc_aligned(original, toAllocSize, alignment);
 		}
 		else
 		{
-			alignment = size_t(size >= 16u ? 16u : DefaultAlignment);
-#if USE_MIMALLOC
-			resultPtr = mi_realloc_aligned(original, size, alignment);
-#else
-			resultPtr = _aligned_malloc(size, alignment);
-#endif
+			resultPtr = mi_realloc(original, toAllocSize);
 		}
 
-#if !USE_MIMALLOC
-		Free(original);
+#ifdef VT_ENABLE_MEMORY_TRACKER
+		if (!resultPtr)
+		{
+			return nullptr;
+		}
+
+		uintptr_t userPointer = reinterpret_cast<uintptr_t>(resultPtr) + sizeof(MemoryTrackerHeader);
+		userPointer = Utility::Align(userPointer, alignment);
+
+		MemoryTrackerHeader* newHeader = reinterpret_cast<MemoryTrackerHeader*>(userPointer - sizeof(MemoryTrackerHeader));
+		newHeader->alignment = alignment;
+		newHeader->basePtr = resultPtr;
+		newHeader->size = size;
+		
+		resultPtr = reinterpret_cast<void*>(userPointer);
+
+		MemoryTracker::OnReallocate(newHeader, oldSize);
 #endif
 
 		//VT_PROFILE_FREE(original);
@@ -102,12 +123,21 @@ namespace Memory
 			return;
 		}
 
-#if USE_MIMALLOC
-		mi_free(ptr);
-#else
-		_aligned_free(ptr);
-#endif
-
 		//VT_PROFILE_FREE(ptr);
+
+#ifdef VT_ENABLE_MEMORY_TRACKER
+		MemoryTrackerHeader* header = GetHeader(ptr);
+		MemoryTracker::OnFree(header);
+		mi_free(header->basePtr);
+#else
+		mi_free(ptr);
+#endif
 	}
+
+#ifdef VT_ENABLE_MEMORY_TRACKER
+	MemoryTrackerHeader* GetHeader(void* ptr)
+	{
+		return reinterpret_cast<MemoryTrackerHeader*>(reinterpret_cast<uintptr_t>(ptr) - sizeof(MemoryTrackerHeader));
+	}
+#endif
 }

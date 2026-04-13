@@ -26,5 +26,5 @@ namespace Volt::RHI
 	}
 }
 
-//#define VT_VULKAN_ALLOCATOR Volt::RHI::GetAllocationCallbacks()
-#define VT_VULKAN_ALLOCATOR nullptr
+#define VT_VULKAN_ALLOCATOR Volt::RHI::GetAllocationCallbacks()
+//#define VT_VULKAN_ALLOCATOR nullptr

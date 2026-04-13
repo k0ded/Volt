@@ -21,7 +21,7 @@ namespace Volt::RHI
 
 	void* VulkanCPUAllocator::Alloc(void* userData, size_t size, size_t alignment, VkSystemAllocationScope allocScope)
 	{
-		VT_ENSURE(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
+		VT_ASSERT(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
 		return Memory::Malloc(size, alignment);
 	}
 	
@@ -32,17 +32,17 @@ namespace Volt::RHI
 	
 	void* VulkanCPUAllocator::Realloc(void* userData, void* original, size_t size, size_t alignment, VkSystemAllocationScope allocScope)
 	{
-		VT_ENSURE(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
+		VT_ASSERT(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
 		return Memory::Realloc(original, size, alignment);
 	}
 	
 	void VulkanCPUAllocator::InternalAllocationNotification(void* userData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocScope)
 	{
-		VT_ENSURE(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
+		VT_ASSERT(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
 	}
 	
 	void VulkanCPUAllocator::InternalFreeNotification(void* userData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocScope)
 	{
-		VT_ENSURE(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
+		VT_ASSERT(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
 	}
 }

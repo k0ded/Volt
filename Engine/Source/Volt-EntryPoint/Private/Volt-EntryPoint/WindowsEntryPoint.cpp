@@ -9,6 +9,7 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/ThreadConfig.h>
+#include <CoreUtilities/MemoryTracker.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -109,6 +110,7 @@ namespace Volt
 		int32_t result = 0;
 
 		PlatformMisc::SetupExceptionHandlers();
+		MemoryTracker::Initialize();
 		Threads::InitializeThreadConfig(false, false, true);
 
 		if (ShouldHandleApplicationCrashes())

@@ -9,5 +9,4 @@ namespace Utility
 	{
 		return (T)(((uint64_t)value + alignment - 1) & ~(alignment - 1));
 	}
-
 }
