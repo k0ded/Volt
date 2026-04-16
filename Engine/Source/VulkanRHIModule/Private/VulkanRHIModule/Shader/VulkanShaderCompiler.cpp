@@ -266,7 +266,7 @@ namespace Volt::RHI
 			//arguments.push_back(DXC_ARG_DEBUG_NAME_FOR_SOURCE);
 			//arguments.push_back(DXC_ARG_SKIP_OPTIMIZATIONS);
 			//arguments.push_back(L"-Qembed_debug");
-			arguments.push_back(L"-fspv-debug=vulkan-with-source");
+			//arguments.push_back(L"-fspv-debug=vulkan-with-source");
 		}
 
 		const ShaderStage shaderStage = sourceEntry.shaderStage;

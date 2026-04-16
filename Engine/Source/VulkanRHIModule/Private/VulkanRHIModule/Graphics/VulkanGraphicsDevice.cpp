@@ -41,6 +41,7 @@ namespace Volt::RHI
 		VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR physicalDeviceRayTracingMaintenance1FeaturesKHR{};
 		VkPhysicalDeviceMaintenance7FeaturesKHR physicalDeviceMaintenance7FeaturesKHR{};
 		VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT physicalDeviceSwapchainMaintenance1FeaturesEXT{};
+		VkPhysicalDeviceShaderObjectFeaturesEXT physicalDeviceShaderObjectEXT{};
 	};
 
 	static EnabledFeatures s_enabledFeatures{};
@@ -220,6 +221,15 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.physicalDeviceSwapchainMaintenance1FeaturesEXT;
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_SHADER_OBJECT_EXTENSION_NAME))
+			{
+				s_enabledFeatures.physicalDeviceShaderObjectEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
+				s_enabledFeatures.physicalDeviceShaderObjectEXT.pNext = chainEntryPoint;
+				s_enabledFeatures.physicalDeviceShaderObjectEXT.shaderObject = VK_TRUE;
+
+				chainEntryPoint = &s_enabledFeatures.physicalDeviceShaderObjectEXT;
+			}
+
 #ifdef VT_ENABLE_NV_AFTERMATH
 			if (physicalDevice->IsExtensionAvailable(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME))
 			{
@@ -348,6 +358,11 @@ namespace Volt::RHI
 			if (physicalDevice->IsExtensionAvailable(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME))
 			{
 				enabledExtensions.emplace_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_SHADER_OBJECT_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
 			}
 
 			return enabledExtensions;

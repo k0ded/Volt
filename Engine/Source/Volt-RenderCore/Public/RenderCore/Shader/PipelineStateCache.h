@@ -62,7 +62,7 @@ namespace Volt
 			Entry& Get(size_t hash)
 			{
 				uint64_t outValue;
-				VT_ENSURE(m_hashTable.Insert(hash, outValue));
+				VT_CHECK(m_hashTable.Insert(hash, outValue));
 
 				return m_cache.at(outValue);
 			}

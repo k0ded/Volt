@@ -2,6 +2,10 @@
 #include "VulkanCPUAllocator.h"
 
 #include <CoreUtilities/Malloc.h>
+#include <CoreUtilities/MemoryTracker.h>
+
+VT_DECLARE_MEMORY_TAG(VulkanCPU);
+VT_REGISTER_MEMORY_TAG(VulkanCPU);
 
 namespace Volt::RHI
 {
@@ -22,6 +26,7 @@ namespace Volt::RHI
 	void* VulkanCPUAllocator::Alloc(void* userData, size_t size, size_t alignment, VkSystemAllocationScope allocScope)
 	{
 		VT_ASSERT(allocScope < VK_SYSTEM_ALLOCATION_SCOPE_RANGE_SIZE);
+		VT_MEMORY_SCOPE(MemoryTag::VulkanCPU);
 		return Memory::Malloc(size, alignment);
 	}
 	

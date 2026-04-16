@@ -35,7 +35,7 @@ namespace Volt
 			outStackBasePointers[i].stackBase = stackBasePtr;
 
 			DWORD old;
-			BOOL ok = VirtualProtect(guardPtr, GuardSize, PAGE_READWRITE | PAGE_GUARD, &old);
+			VT_MAYBE_UNUSED BOOL ok = VirtualProtect(guardPtr, GuardSize, PAGE_READWRITE | PAGE_GUARD, &old);
 			VT_ENSURE(ok);
 		}
 

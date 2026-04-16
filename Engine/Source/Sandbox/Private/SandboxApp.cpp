@@ -15,6 +15,8 @@
 
 #include <CoreModule/JSON/JSONReader.h>
 
+#include <fstream>
+
 Filesystem::Path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Filesystem::Path projectFilepath;

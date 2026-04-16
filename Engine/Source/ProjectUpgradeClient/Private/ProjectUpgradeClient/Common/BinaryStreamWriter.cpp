@@ -3,6 +3,7 @@
 #include "zlib.h"
 
 #include <filesystem>
+#include <fstream>
 
 void BinaryStreamWriter::WriteToDisk(const Filesystem::Path& targetFilepath, bool compress, size_t compressedDataOffset)
 {

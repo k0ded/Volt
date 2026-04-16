@@ -42,6 +42,7 @@ namespace Volt
 		SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWTexture)
 	END_SHADER_PARAMETER_STRUCT()
 
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 	void ValidateTextureCopy(RGTextureRef src, RGTextureRef dst)
 	{
 		const RGTextureDesc& srcDesc = src->GetDesc();
@@ -66,10 +67,13 @@ namespace Volt
 		VT_ENSURE_MSG((srcByteSize - srcOffset) >= size, "Source size - Source offset must be greater than, or equal to the copied size!");
 		VT_ENSURE_MSG((dstByteSize - dstOffset) >= size, "Destination size - Destination offset must be greater than, or equal to the copied size!");
 	}
+#endif
 
 	void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, size_t srcOffset, RGBufferRef dst, size_t dstOffset, size_t size)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateBufferCopy(src, srcOffset, dst, dstOffset, size);
+#endif
 
 		CopyBufferParameters* parameters = renderGraph.AllocParameters<CopyBufferParameters>();
 		parameters->CopySrc = src;
@@ -88,7 +92,9 @@ namespace Volt
 
 	void AddCopyTexturePass(RenderGraph& renderGraph, RGTextureRef src, RGTextureRef dst)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateTextureCopy(src, dst);
+#endif
 
 		CopyTextureParameters* parameters = renderGraph.AllocParameters<CopyTextureParameters>();
 		parameters->CopySrc = src;

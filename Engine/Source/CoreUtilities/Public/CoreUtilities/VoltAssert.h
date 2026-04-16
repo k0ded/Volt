@@ -63,6 +63,7 @@ VTCOREUTIL_API void ExitProgram();
 
 #define VT_ENSURE(expression)
 #define VT_ENSURE_MSG(expression, message)
+#define VT_ENSURE_NO_ENTRY()
 
 #endif
 
@@ -98,6 +99,6 @@ VTCOREUTIL_API void ExitProgram();
 	#define VT_CHECK_MSG(expression, message) \
 		_VT_CHECK_INTERNAL(expression, message)
 #else
-	#define VT_CHECK(expression) expression
-	#define VT_CHECK_MSG(expression, message) expression
+	#define VT_CHECK(expression) (expression)
+	#define VT_CHECK_MSG(expression, message) (expression)
 #endif

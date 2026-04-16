@@ -12,11 +12,13 @@
 
 namespace Volt
 {
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 	void ValidateClearUAV(RGPassRef pass)
 	{
 		const RenderGraphPassFlags passFlags = pass->GetFlags();
 		VT_ENSURE(EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Clear));
 	}
+#endif
 
 	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_commandBuffer(commandBuffer),
@@ -202,25 +204,33 @@ namespace Volt
 
 	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::uvec4& clearValues)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateClearUAV(m_currentPass);
+#endif
 		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<uint32_t, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
 	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::vec4& clearValues)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateClearUAV(m_currentPass);
+#endif
 		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<float, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
 	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateClearUAV(m_currentPass);
+#endif
 		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
 	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue)
 	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		ValidateClearUAV(m_currentPass);
+#endif
 		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 

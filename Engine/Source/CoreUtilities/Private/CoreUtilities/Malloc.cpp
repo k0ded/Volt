@@ -14,7 +14,7 @@ namespace Memory
 		static bool initialized = false;
 		if (!initialized)
 		{
-			mi_option_set(mi_option_reset_delay, 10000);
+			mi_option_set(mi_option_reset_delay, 100);
 			initialized = true;
 		}
 	}
@@ -26,7 +26,7 @@ namespace Memory
 
 	void* Malloc(size_t size, size_t alignment)
 	{
-		VT_PROFILE_FUNCTION();
+		//VT_PROFILE_FUNCTION();
 
 		constexpr size_t DefaultAlignment = 8;
 		alignment = std::max(size_t(size >= 16u ? 16u : DefaultAlignment), alignment);
@@ -49,7 +49,7 @@ namespace Memory
 
 		MemoryTracker::OnAllocate(header);
 #endif
-		//VT_PROFILE_ALLOC(resultPtr, size);
+		VT_PROFILE_ALLOC(basePtr, size);
 		return reinterpret_cast<void*>(userPointer);
 	}
 
@@ -92,6 +92,9 @@ namespace Memory
 			resultPtr = mi_realloc(original, toAllocSize);
 		}
 
+		VT_PROFILE_FREE(original);
+		VT_PROFILE_ALLOC(resultPtr, size);
+
 #ifdef VT_ENABLE_MEMORY_TRACKER
 		if (!resultPtr)
 		{
@@ -110,9 +113,6 @@ namespace Memory
 
 		MemoryTracker::OnReallocate(newHeader, oldSize);
 #endif
-
-		//VT_PROFILE_FREE(original);
-		//VT_PROFILE_ALLOC(resultPtr, size);
 		return resultPtr;
 	}
 
@@ -123,13 +123,16 @@ namespace Memory
 			return;
 		}
 
-		//VT_PROFILE_FREE(ptr);
 
 #ifdef VT_ENABLE_MEMORY_TRACKER
 		MemoryTrackerHeader* header = GetHeader(ptr);
 		MemoryTracker::OnFree(header);
+
+		VT_PROFILE_FREE(header->basePtr);
 		mi_free(header->basePtr);
+
 #else
+		VT_PROFILE_FREE(ptr);
 		mi_free(ptr);
 #endif
 	}

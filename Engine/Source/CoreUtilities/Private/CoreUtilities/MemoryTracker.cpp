@@ -4,6 +4,8 @@
 
 VT_REGISTER_MEMORY_TAG(Unknown);
 
+bool MemoryTracker::s_isInitialized = false;
+
 thread_local Vector<uint32_t> g_activeMemoryTag;
 thread_local uint32_t g_depth = 0; // Used to ensure that we do not end up in a recursive state adding to the above vector.
 
@@ -11,6 +13,14 @@ MemoryTagRegistry& MemoryTagRegistry::Get()
 {
 	static MemoryTagRegistry instance;
 	return instance;
+}
+
+void MemoryTagRegistry::AddTagToTrackerIfRequired(size_t tagHash, uint32_t tagIndex)
+{
+	if (MemoryTracker::s_isInitialized)
+	{
+		MemoryTracker::Get().AddTag(tagHash, tagIndex);
+	}
 }
 
 void MemoryTracker::Initialize()
@@ -107,6 +117,16 @@ MemoryTracker& MemoryTracker::Get()
 {
 	static MemoryTracker instance;
 	return instance;
+}
+
+void MemoryTracker::AddTag(size_t tagHash, uint32_t tagIndex)
+{
+	g_depth++;
+
+	m_tagHashToTagIndex[tagHash] = tagIndex;
+	m_memoryTagCounters.resize(tagIndex + 1);
+
+	g_depth--;
 }
 
 void MemoryTracker::PushMemoryTagInternal(size_t tagHash)

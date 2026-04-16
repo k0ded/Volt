@@ -16,10 +16,12 @@ public:
 	template<typename T> void RegisterMemoryTag() requires(std::is_base_of_v<MemoryTagBase, T>);
 	template<typename T> void UnregisterMemoryTag() requires(std::is_base_of_v<MemoryTagBase, T>);
 
-	static MemoryTagRegistry& Get();
+	VTCOREUTIL_API static MemoryTagRegistry& Get();
 
 private:
 	friend class MemoryTracker;
+
+	VTCOREUTIL_API void AddTagToTrackerIfRequired(size_t tagHash, uint32_t tagIndex);
 
 	struct MemoryTagInfo
 	{
@@ -37,30 +39,37 @@ public:
 	VTCOREUTIL_API static void Initialize();
 
 	template<typename T> static void PushMemoryTag() requires(std::is_base_of_v<MemoryTagBase, T>);
-	static void PopMemoryTag();
+	VTCOREUTIL_API static void PopMemoryTag();
 
 	static void OnAllocate(MemoryTrackerHeader* header);
 	static void OnFree(MemoryTrackerHeader* header);
 	static void OnReallocate(MemoryTrackerHeader* header, uint64_t oldSize);
 
-	static MemoryTracker& Get();
+	VTCOREUTIL_API static MemoryTracker& Get();
 
 public:
-	// Since the counters never will be moved or copied,
-	// it's fine that those constructors doesn't do anything.
+	friend class MemoryTagRegistry;
+
+	void AddTag(size_t tagHash, uint32_t tagIndex);
+
 	struct alignas(std::hardware_destructive_interference_size) AtomicContainer
 	{
 		AtomicContainer() = default;
-		AtomicContainer(const AtomicContainer&) noexcept {}
-		AtomicContainer(AtomicContainer&&) noexcept {}
+		AtomicContainer(const AtomicContainer& other) noexcept
+			: counter(other.counter.load(std::memory_order::acquire))
+		{}
+
+		AtomicContainer(AtomicContainer&& other) noexcept 
+			: counter(other.counter.load(std::memory_order::acquire))
+		{}
 
 		std::atomic<uint64_t> counter;
 	};
 
-	void PushMemoryTagInternal(size_t tagHash);
+	VTCOREUTIL_API void PushMemoryTagInternal(size_t tagHash);
 	void PopMemoryTagInternal();
 
-	inline static bool s_isInitialized = false;
+	VTCOREUTIL_API static bool s_isInitialized;
 
 	Map<size_t, uint32_t> m_tagHashToTagIndex;
 	Vector<AtomicContainer> m_memoryTagCounters;
@@ -79,6 +88,8 @@ inline void MemoryTagRegistry::RegisterMemoryTag() requires(std::is_base_of_v<Me
 	MemoryTagInfo& tagInfo = instance.m_memoryTagInfos[hash.hash];
 	tagInfo.name = name;
 	tagInfo.tagIndex = instance.m_nextTagIndex++;
+
+	AddTagToTrackerIfRequired(hash.hash, tagInfo.tagIndex);
 }
 
 template<typename T>
@@ -127,5 +138,19 @@ inline void MemoryTracker::PushMemoryTag() requires(std::is_base_of_v<MemoryTagB
 			MemoryTagRegistry::Get().UnregisterMemoryTag<MemoryTag::tagName>(); \
 		} \
 	} g_memoryTagRegistrar_##tagName \
+
+#define VT_MEMORY_SCOPE(tag) \
+	class MemoryTagScope \
+	{ \
+	public: \
+		VT_INLINE MemoryTagScope() \
+		{ \
+			MemoryTracker::PushMemoryTag<tag>(); \
+		} \
+		VT_INLINE ~MemoryTagScope() \
+		{ \
+			MemoryTracker::PopMemoryTag(); \
+		} \
+	} zzMemoryTagScope \
 
 VT_DECLARE_MEMORY_TAG(Unknown)

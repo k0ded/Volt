@@ -27,7 +27,7 @@ public:
 		constexpr TypeTraits::TypeIndex envTypeIndex = TypeTraits::TypeIndex::FromType<EnvType>();
 
 		auto it = std::find_if(m_registeredEnvironmentDefinitions.begin(), m_registeredEnvironmentDefinitions.end(), [envTypeIndex](const auto& def) { return def.typeIndex == envTypeIndex; });
-		const bool hasBeenRegistered = it != m_registeredEnvironmentDefinitions.end();
+		VT_MAYBE_UNUSED const bool hasBeenRegistered = it != m_registeredEnvironmentDefinitions.end();
 		VT_ENSURE_MSG(!hasBeenRegistered, "Type can not be registered more than once!");
 
 		auto& newDefinition = m_registeredEnvironmentDefinitions.emplace_back();

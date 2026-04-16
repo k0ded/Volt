@@ -290,7 +290,7 @@ namespace Volt::RHI
 			VT_PROFILE_LOCK_MARK(m_executeMutex);
 
 			swapchainMutex->lock();
-			VkResult presentResult = vkQueuePresentKHR(m_queue, &presentInfo);
+			VT_MAYBE_UNUSED VkResult presentResult = vkQueuePresentKHR(m_queue, &presentInfo);
 			swapchainMutex->unlock();
 
 			VT_ENSURE(presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || presentResult == VK_SUCCESS);

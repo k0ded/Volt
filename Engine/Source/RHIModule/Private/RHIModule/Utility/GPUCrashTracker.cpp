@@ -28,7 +28,7 @@ inline String GetAftermathErrorMessage(GFSDK_Aftermath_Result result)
 #define VT_AFTERMATH_CHECK(x) \
 	[&]() \
 	{ \
-		GFSDK_Aftermath_Result _res = x; \
+		VT_MAYBE_UNUSED GFSDK_Aftermath_Result _res = x; \
 		VT_ENSURE_MSG(GFSDK_Aftermath_SUCCEED(_res), GetAftermathErrorMessage(_res)); \
 	}(); \
 

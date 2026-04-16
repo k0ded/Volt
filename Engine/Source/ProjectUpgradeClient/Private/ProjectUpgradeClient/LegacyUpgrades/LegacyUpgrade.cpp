@@ -871,7 +871,7 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 
 		for (AssetReference<EntityDesc>& entityDesc : entityDescs)
 		{
-			bool succeded = entityDesc->UpdateComponentData();
+			VT_MAYBE_UNUSED bool succeded = entityDesc->UpdateComponentData();
 			VT_ENSURE(succeded);
 
 			resultAssets.emplace_back(entityDesc);

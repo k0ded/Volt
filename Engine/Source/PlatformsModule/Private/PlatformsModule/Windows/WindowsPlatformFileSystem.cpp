@@ -92,7 +92,7 @@ namespace Volt
 	void WindowsPlatformFileSystem::CloseFile(FileHandle fileHandle)
 	{
 		VT_ASSERT(fileHandle.IsValid());
-		BOOL result = CloseHandle(fileHandle.Get());
+		VT_MAYBE_UNUSED BOOL result = CloseHandle(fileHandle.Get());
 		VT_ASSERT(result == TRUE);
 	}
 
@@ -283,7 +283,7 @@ namespace Volt
 		info->FileNameLength = static_cast<DWORD>(newPath.ToWString().size() * sizeof(wchar_t));
 		memcpy(info->FileName, newPath.CStr(), info->FileNameLength);
 
-		BOOL result = SetFileInformationByHandle(
+		VT_MAYBE_UNUSED BOOL result = SetFileInformationByHandle(
 			handle,
 			FileRenameInfo,
 			info,
@@ -300,7 +300,7 @@ namespace Volt
 		VT_ASSERT(fileHandle.IsValid());
 
 		wchar_t buffer[MAX_PATH];
-		DWORD length = GetFinalPathNameByHandleW(
+		VT_MAYBE_UNUSED DWORD length = GetFinalPathNameByHandleW(
 			fileHandle.Get(),
 			buffer,
 			MAX_PATH,
