@@ -5,6 +5,7 @@
 #include <Circuit/Widgets/TextWidget.h>
 #include <Circuit/Widgets/Layout/LayoutWidget.h>
 #include <Circuit/Widgets/ListViewWidget.h>
+#include <Circuit/Widgets/ScrollBoxWidget.h>
 
 #include <CoreModule/Project/ProjectManager.h>
 #include <CoreModule/Algorithms.h>

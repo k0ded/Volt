@@ -7,6 +7,8 @@
 
 #include "Circuit/Rendering/CircuitRenderer.h"
 
+#include "Circuit/CircuitManager.h"
+#include "Circuit/CircuitInputHandler.h"
 #include "Circuit/ConsoleVars.h"
 
 #include <WindowModule/WindowManager_New.h>
@@ -86,8 +88,26 @@ namespace Circuit
 
 					const Volt::Rect& screenBounds = checkingWidget->GetBounds();
 					const Volt::Rect localBounds(screenBounds.GetPosition() - static_cast<glm::vec2>(GetPosition()), screenBounds.GetSize());
-					const CircuitColor boundsColor = 0xff000050;
-					basePainter.AddRect(localBounds.GetPosition().x, localBounds.GetPosition().y, localBounds.GetSize().x, localBounds.GetSize().y, boundsColor);
+					const CircuitColor boundsColor = 0xff2222ff;
+					basePainter.AddRectOutline(localBounds.GetPosition().x, localBounds.GetPosition().y, localBounds.GetSize().x, localBounds.GetSize().y, boundsColor, 1.f);
+				}
+			}
+
+			if (s_cvarCircuitShowHoveredWidgetBounds.GetValue())
+			{
+				Vector<Ref<Widget>> widgetsUnderCursor = CircuitManager::Get().GetInputHandler().GetWidgetsUnderCursor();
+				Ref<Widget> hoveredWidget = CircuitManager::Get().GetInputHandler().GetHoveredWidget();
+
+				for (Ref<Widget> widget : widgetsUnderCursor)
+				{
+					const Volt::Rect& screenBounds = widget->GetBounds();
+					const Volt::Rect localBounds(screenBounds.GetPosition() - static_cast<glm::vec2>(GetPosition()), screenBounds.GetSize());
+					CircuitColor boundsColor = 0xff2222ff;
+					if (widget == hoveredWidget)
+					{
+						boundsColor = 0x2222ffff;
+					}
+					basePainter.AddRectOutline(localBounds.GetPosition().x, localBounds.GetPosition().y, localBounds.GetSize().x, localBounds.GetSize().y, boundsColor, 1.f);
 				}
 			}
 		}

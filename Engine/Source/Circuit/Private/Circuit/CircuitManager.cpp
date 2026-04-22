@@ -139,6 +139,11 @@ namespace Circuit
 		return circuitWindow;
 	}
 
+	CircuitInputHandler& CircuitManager::GetInputHandler()
+	{
+		return *InputHandler;
+	}
+
 	//CircuitWindow& CircuitManager::OpenWindow(OpenWindowParams& params)
 	//{
 	//	//const size_t startWindowCount = m_windows.size();

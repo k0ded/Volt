@@ -104,6 +104,7 @@ namespace Volt
 
 		m_size.x = glm::max(otherMax.x, thisMax.x);
 		m_size.y = glm::max(otherMax.y, thisMax.y);
+		m_size -= m_position;
 	}
 
 	// Destructor

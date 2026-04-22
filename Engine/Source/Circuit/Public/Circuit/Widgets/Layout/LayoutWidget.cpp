@@ -13,6 +13,17 @@ namespace Circuit
 
 	void LayoutWidget::OnPaint(CircuitPainter& painter)
 	{
+		float orientationAllotted = -1;
+		switch (m_orientation)
+		{
+			case Circuit::LayoutOrientation::Horizontal:
+				orientationAllotted = painter.GetAllottedSize().x;
+				break;
+			case Circuit::LayoutOrientation::Vertical:
+				orientationAllotted = painter.GetAllottedSize().y;
+				break;
+		}
+
 		float determinedSize = 0;
 		int numUndeterminedSlices = 0;
 
@@ -34,19 +45,26 @@ namespace Circuit
 				continue;
 			}
 
-
-
 			if (slice.isFlexible)
 			{
+				float orientationSize = -1;
 				switch (m_orientation)
 				{
 					case Circuit::LayoutOrientation::Horizontal:
-						widgetAllotedSizes[i] = widgetSize.x;
+						orientationSize = widgetSize.x;
 						break;
 					case Circuit::LayoutOrientation::Vertical:
-						widgetAllotedSizes[i] = widgetSize.y;
+						orientationSize = widgetSize.y;
 						break;
 				}
+
+				if (determinedSize + orientationSize > orientationAllotted)
+				{
+					const float unitsOverAllotted = (determinedSize + orientationSize) - orientationAllotted;
+					orientationSize -= unitsOverAllotted;
+				}
+
+				widgetAllotedSizes[i] = orientationSize;
 			}
 			else
 			{

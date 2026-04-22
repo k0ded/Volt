@@ -42,6 +42,7 @@ namespace Circuit
 		CIRCUIT_API Vector<Weak<CircuitWindow>> GetWindows();
 
 		CIRCUIT_API Weak<CircuitWindow> CreateWindow(Ref<Widget> contentWidget);
+		CIRCUIT_API CircuitInputHandler& GetInputHandler();
 
 
 

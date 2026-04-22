@@ -56,6 +56,8 @@ namespace Circuit
 		virtual void OnDrag(const WidgetInteractionData& interactionData){}
 		virtual void OnEndDrag(const WidgetInteractionData& interactionData){}
 
+		virtual void OnScrolled(const WidgetInteractionData& interactionData) {}
+
 
 		void SetLocalPosition(const glm::vec2& localPos);
 	protected:

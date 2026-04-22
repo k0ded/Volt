@@ -22,44 +22,14 @@ namespace Circuit
 
 		Volt::Rect bounds = Volt::Rect(allotedLocalArea.GetPosition(), glm::vec2(0.f, 0.f));
 
-		for (const CircuitDrawCommand& command : commands)
+
+		if (commands.size() > 0)
 		{
-			switch (command.type)
-			{
-				case CircuitPrimitiveType::Rect:
-				{
-					bounds.MergeRectIntoThis(Volt::Rect(command.position, command.halfSize * 2.f));
-					break;
-				}
-
-				case CircuitPrimitiveType::CircleSegment:
-				case CircuitPrimitiveType::Circle:
-				{
-					bounds.MergeRectIntoThis(Volt::Rect(command.position - glm::vec2(command.radius), command.radius * 2.f));
-					break;
-				}
-
-				case CircuitPrimitiveType::Image:
-				case CircuitPrimitiveType::TextCharacter:
-				{
-					bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
-					break;
-				}
-
-				case CircuitPrimitiveType::Line:
-				{
-					const glm::vec2 minPos = glm::min(command.lineA, command.lineB);
-					const glm::vec2 maxPos = glm::max(command.lineA, command.lineB);
-					bounds.MergeRectIntoThis(Volt::Rect(minPos, maxPos - minPos));
-					break;
-				}
-
-				default:
-				{
-					VT_ENSURE_NO_ENTRY();
-					break;
-				}
-			}
+			bounds.SetPosition(commands[0].position);
+		}
+		for (CircuitDrawCommand& command : commands)
+		{
+			bounds.MergeRectIntoThis(Volt::Rect(command.bounds.x, command.bounds.y, command.bounds.z - command.bounds.x, command.bounds.w - command.bounds.y));
 		}
 
 		//bounds are local here, transform them into screen bounds
@@ -83,10 +53,10 @@ namespace Circuit
 
 		command.position += command.halfSize;
 
-		command.bounds = 
-		{ 
+		command.bounds =
+		{
 			command.position - command.halfSize,
-			command.position + command.halfSize 
+			command.position + command.halfSize
 		};
 
 		command.color = color;
@@ -297,22 +267,22 @@ namespace Circuit
 				planeBounds.top += fontMetrics.ascenderY + fontMetrics.descenderY;
 				planeBounds.bottom += fontMetrics.ascenderY + fontMetrics.descenderY;
 
-				planeBounds.left *= fsScale; 
+				planeBounds.left *= fsScale;
 				planeBounds.bottom *= fsScale;
-				planeBounds.right *= fsScale; 
+				planeBounds.right *= fsScale;
 				planeBounds.top *= fsScale;
 
-				planeBounds.left += sX; 
-				planeBounds.bottom += sY; 
-				planeBounds.right += sX; 
+				planeBounds.left += sX;
+				planeBounds.bottom += sY;
+				planeBounds.right += sX;
 				planeBounds.top += sY;
 
 				double texelWidth = 1.0 / font->GetAtlas()->GetWidth();
 				double texelHeight = 1.0 / font->GetAtlas()->GetHeight();
 
-				atlasBounds.left *= texelWidth; 
-				atlasBounds.bottom *= texelHeight; 
-				atlasBounds.right *= texelWidth; 
+				atlasBounds.left *= texelWidth;
+				atlasBounds.bottom *= texelHeight;
+				atlasBounds.right *= texelWidth;
 				atlasBounds.top *= texelHeight;
 
 				CircuitDrawCommand command = CircuitDrawCommand::Initialize();
@@ -330,8 +300,8 @@ namespace Circuit
 				command.minMaxUV.x = static_cast<float>(atlasBounds.left);
 				command.minMaxUV.y = static_cast<float>(atlasBounds.bottom);
 				command.minMaxUV.z = static_cast<float>(atlasBounds.right);
-				command.minMaxUV.w = static_cast<float>(atlasBounds.top	);
-				
+				command.minMaxUV.w = static_cast<float>(atlasBounds.top);
+
 				command.textureIndex = textureIndex;
 				command.dimensions = dimensions;
 
@@ -373,7 +343,7 @@ namespace Circuit
 		command.minMaxPx.y = pixelPos.y;
 		command.minMaxPx.z = pixelPos.x + width;
 		command.minMaxPx.w = pixelPos.y + height;
-	
+
 		command.minMaxUV.x = uv0x;
 		command.minMaxUV.y = uv0y;
 		command.minMaxUV.z = uv1x;
@@ -405,6 +375,12 @@ namespace Circuit
 		//	drawCommandsToAppendTo = &m_basePainter->m_drawCommands;
 		//}
 		//drawCommandsToAppendTo->push_back(command);
+
+		command.clipRect = {
+			ToPixelPos({0,0}),
+			ToPixelPos(m_allottedScreenArea.GetSize())
+		};
+
 
 		//TODO: extremely wasteful to add to 3 different lists, need to refactor this whole paiting system
 		m_drawCommands.emplace_back(command);

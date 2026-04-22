@@ -35,11 +35,11 @@ namespace Circuit
 		void RegisterWindowInput(Volt::Window_New& window);
 		void DeregisterWindowInput(Volt::Window_New& window);
 
-	private:
-
 		Vector<Ref<Widget>> GetWidgetsUnderCursor();
 		Ref<CircuitWindow> GetHoveredWindow();
 		Ref<Widget> GetHoveredWidget();
+	private:
+
 
 		void MouseMove(const glm::vec2 mouseScreenPos);
 

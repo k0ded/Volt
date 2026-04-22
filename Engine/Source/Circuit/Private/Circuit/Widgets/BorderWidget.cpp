@@ -32,7 +32,6 @@ void Circuit::BorderWidget::OnPaint(CircuitPainter& painter)
 
 	if (m_content)
 	{
-
 		painter.AddWidget(m_content, left, top, size.x - left - right, size.y - top - bottom);
 	}
 }

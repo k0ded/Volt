@@ -326,7 +326,18 @@ namespace Circuit
 	}
 
 	void CircuitInputHandler::OnMouseScroll(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
-	{}
+	{
+		WidgetInteractionData interactionData;
+		interactionData.mousePos = m_mousePos;
+		interactionData.scrollDelta = { mouseEvent.GetX(), mouseEvent.GetY() };
+
+		Vector<Ref<Widget>> widgetsUnderCursor = GetWidgetsUnderCursor();
+
+		for (int32_t i = static_cast<int32_t>(widgetsUnderCursor.size()) - 1; i >= 0; i--)
+		{
+			widgetsUnderCursor[i]->OnScrolled(interactionData);
+		}
+	}
 
 	void CircuitInputHandler::OnMouseLeaveWindow(const Volt::MouseEvent& mouseEvent, Volt::WindowHandle windowHandle)
 	{}

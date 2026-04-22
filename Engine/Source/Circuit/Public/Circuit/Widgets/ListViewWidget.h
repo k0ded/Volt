@@ -3,6 +3,8 @@
 #include "Circuit/Widgets/CompoundWidget.h"
 #include "Circuit/Widgets/BorderWidget.h"
 #include "Circuit/Widgets/TextWidget.h"
+#include "Circuit/Widgets/ScrollBoxWidget.h"
+
 #include "Circuit/CircuitPainter.h"
 #include "Circuit/WidgetInteractionData.h"
 
@@ -145,6 +147,21 @@ namespace Circuit
 			m_itemsSource = args._ItemsSource;
 			m_onGenerateRow = args._OnGenerateRow;
 			m_onRowDoubleClicked = args._OnRowDoubleClicked;
+
+			m_scrollBox = CreateWidget(Circuit::ScrollBoxWidget)
+				.AllowVerticalScroll(true)
+				.AllowHorizontalScroll(false)
+				.BackgroundColor(CircuitColor(40, 40, 40))
+				.ScrollBarTrackColor(CircuitColor(50, 50, 50))
+				.ScrollBarThumbColor(CircuitColor(100, 100, 100))
+				.ScrollBarThumbHoverColor(CircuitColor(140, 140, 140))
+				.ContentSize_Lambda([this]() 
+			{
+				return GetDesiredSize();
+			});
+
+			AddChildWidget(m_scrollBox);
+
 			RegenerateRows();
 		}
 
@@ -156,7 +173,16 @@ namespace Circuit
 
 		virtual glm::vec2 GetDesiredSize() override
 		{
-			return { -1, -1 };
+			float totalHeight = 0.f;
+			for (size_t i = 0; i < m_rowWidgets.size(); i++)
+			{
+				if (m_rowWidgets[i])
+				{
+					const glm::vec2 desiredSize = m_rowWidgets[i]->GetDesiredSize();
+					totalHeight += desiredSize.y > 0.f ? desiredSize.y : s_defaultRowHeight;
+				}
+			}
+			return { -1, totalHeight > 0.f ? totalHeight : -1 };
 		}
 
 		virtual void OnPaint(CircuitPainter& painter) override
@@ -171,18 +197,18 @@ namespace Circuit
 				RegenerateRows();
 			}
 
-			const glm::vec2 allotedSize = painter.GetAllottedSize();
-			const float rowHeight = allotedSize.y / static_cast<float>(m_rowWidgets.size());
-			float currentOffset = 0.f;
+			const glm::vec2 allottedSize = painter.GetAllottedSize();
+			painter.AddWidget(m_scrollBox, 0, 0, allottedSize.x, allottedSize.y);
 
+			float currentOffset = m_scrollBox->GetHorizontalScrollOffset();
 			for (size_t i = 0; i < m_rowWidgets.size(); i++)
 			{
 				if (m_rowWidgets[i])
 				{
 					const glm::vec2 desiredSize = m_rowWidgets[i]->GetDesiredSize();
-					const float height = desiredSize.y > 0.f ? desiredSize.y : rowHeight;
+					const float height = desiredSize.y > 0.f ? desiredSize.y : s_defaultRowHeight;
 
-					painter.AddWidget(m_rowWidgets[i], 0.f, currentOffset, allotedSize.x, height);
+					painter.AddWidget(m_rowWidgets[i], 0.f, currentOffset, allottedSize.x, height);
 					currentOffset += height;
 				}
 			}
@@ -287,5 +313,8 @@ namespace Circuit
 		OnGenerateRowDelegate m_onGenerateRow;
 		OnRowInteractDelegate m_onRowDoubleClicked;
 		Vector<Ref<IListViewRow<ItemType>>> m_rowWidgets;
+		Ref<ScrollBoxWidget> m_scrollBox;
+
+		static constexpr float s_defaultRowHeight = 24.f;
 	};
 }

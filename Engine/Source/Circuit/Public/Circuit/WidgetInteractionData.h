@@ -11,6 +11,8 @@ namespace Circuit
 
 		glm::vec2 mouseDragDelta = { 0, 0 };
 
+		glm::vec2 scrollDelta = { 0, 0 };
+
 		Volt::InputCode mouseButton = Volt::InputCode::Unknown;
 	};
 }

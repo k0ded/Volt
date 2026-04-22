@@ -14,10 +14,9 @@ namespace Circuit
 		Vector<Ref<Widget>> GetChildren() override { return m_childWidgets; }
 		bool HasChildren() const override { return !m_childWidgets.empty(); }
 
-	protected:
+		void ClearChildWidgets();
 		void AddChildWidget(Ref<Widget> childWidget);
 		void RemoveChildWidget(Ref<Widget> childWidget);
-		void ClearChildWidgets();
 	private:
 		Vector<Ref<Widget>> m_childWidgets;
 	};
