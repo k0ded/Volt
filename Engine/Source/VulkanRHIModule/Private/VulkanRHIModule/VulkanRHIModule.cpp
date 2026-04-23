@@ -36,6 +36,8 @@ namespace Volt::RHI
 {
 	VulkanRHIModule::VulkanRHIModule()
 	{
+		VT_UNUSED(m_frameIndex);
+
 		s_instance = this;
 
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
