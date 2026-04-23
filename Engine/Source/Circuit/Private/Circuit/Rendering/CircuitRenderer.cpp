@@ -139,7 +139,7 @@ namespace Circuit
 		const uint32_t swapchainWidth = m_targetWindow.GetSwapchain().GetWidth();
 		const uint32_t swapchainHeight = m_targetWindow.GetSwapchain().GetHeight();
 
-		ArrayView<Circuit::CircuitDrawCommand> commands = m_targetCircuitWindow.GetDrawCommands();
+		Vector<Circuit::CircuitDrawCommand> commands = m_targetCircuitWindow.GetDrawCommands();
 
 		if (commands.empty())
 		{

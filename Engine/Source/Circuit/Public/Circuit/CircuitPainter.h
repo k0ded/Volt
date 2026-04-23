@@ -9,27 +9,35 @@
 #include <AssetSystem/AssetReference.h>
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Math/2DShapes/Rect.h>
+
+#include <memory>
 
 namespace Circuit
 {
 	class Widget;
+	class PainterPool;
+
 	class CIRCUIT_API CircuitPainter
 	{
 	public:
-		CircuitPainter(const Volt::Rect& allotedScreenArea, IntRef<Volt::RHI::ResourceTable> resourceTable)
-			: m_allottedScreenArea(allotedScreenArea), 
-			m_basePainter(this),
-			m_resourceTable(resourceTable)
-		{};
+		CircuitPainter(const glm::vec2& windowOrigin, IntRef<Volt::RHI::ResourceTable> resourceTable, PainterPool* pool = nullptr);
 
-		~CircuitPainter() = default;
+		~CircuitPainter();
+		CircuitPainter(const CircuitPainter&) = delete;
+		CircuitPainter& operator=(const CircuitPainter&) = delete;
+		CircuitPainter(CircuitPainter&&) noexcept;
+		CircuitPainter& operator=(CircuitPainter&&) noexcept;
 
+		void SetAllottedScreenArea(const Volt::Rect& allottedScreenArea);
+		const Volt::Rect& GetAllottedScreenArea() const { return m_allottedScreenArea; }
 		glm::vec2 GetAllottedSize() const;
 
-		VT_INLINE void AddWidget(Ref<Widget> widget, float x, float y, float width, float height) { AddWidget(widget,Volt::Rect(x, y, width, height)); }
-		VT_INLINE void AddWidget(Ref<Widget> widget, const glm::vec2& position, const glm::vec2& size){AddWidget(widget, Volt::Rect(position, size));}
-		void AddWidget(Ref<Widget> widget, const Volt::Rect& allotedArea);
+		VT_INLINE void AddWidget(Ref<Widget> widget, float x, float y, float width, float height) { AddWidget(widget, Volt::Rect(x, y, width, height)); }
+		VT_INLINE void AddWidget(Ref<Widget> widget, const glm::vec2& position, const glm::vec2& size) { AddWidget(widget, Volt::Rect(position, size)); }
+		void AddWidget(Ref<Widget> widget, const Volt::Rect& allottedLocalArea);
 
 		void AddRect(float x, float y, float width, float height, CircuitColor color, float rotation = 0, float scale = 1);
 		void AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rotation = 0, float scale = 1);
@@ -41,27 +49,61 @@ namespace Circuit
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float scale = 1.f);
 		void AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
 
-		ArrayView<CircuitDrawCommand> GetCommands();
+		// Walk subtree, splice draw commands into out in paint order, resolve image slot indices,
+		// set bounds + alloted screen area on every child widget. Returns screen-space bounds of subtree.
+		Volt::Rect Consolidate(Vector<CircuitDrawCommand>& out);
 
 	private:
-		CircuitPainter(CircuitPainter* basePainter, CircuitPainter* parentPainter, const Volt::Rect& allotedScreenArea, IntRef<Volt::RHI::ResourceTable> resourceTable)
-			: m_allottedScreenArea(allotedScreenArea),
-			m_basePainter(basePainter),
-			m_parentPainter(parentPainter),
-			m_resourceTable(resourceTable)
-		{};
+		struct PendingDrawCommand
+		{
+			CircuitDrawCommand cmd;
+			IntRef<Volt::RHI::Image> image;
+		};
 
-		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedScreenArea) { return CircuitPainter(m_basePainter ? m_basePainter : this, this, allotedScreenArea, m_resourceTable); }
+		struct ChildSlot
+		{
+			size_t insertBefore = 0;
+			Ref<Widget> widget;
+			Volt::Rect allottedScreenArea;
+			CircuitPainter* painter = nullptr;
+		};
 
-		glm::vec2 ToPixelPos(const glm::vec2& localPos);
-		void AddDrawCommand(CircuitDrawCommand&& command);
+		glm::vec2 ToPixelPos(const glm::vec2& localPos) const;
+		void AddDrawCommand(CircuitDrawCommand&& command, IntRef<Volt::RHI::Image> image = nullptr);
 
-		Vector<CircuitDrawCommand> m_drawCommands;
+		Vector<PendingDrawCommand> m_ownCommands;
+		Vector<ChildSlot> m_childSlots;
 
 		Volt::Rect m_allottedScreenArea;
-
-		CircuitPainter* m_basePainter = nullptr;
-		CircuitPainter* m_parentPainter = nullptr;
+		glm::vec2 m_windowOrigin;
 		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
+		PainterPool* m_pool = nullptr;
+	};
+
+	// Owns a CircuitPainter per widget for the duration of a single window paint pass.
+	// Reserve(root) walks the widget tree and pre-allocates a painter for every widget,
+	// recording widgets in topological order (parent before children) so the caller can
+	// drive OnPaint manually.
+	class CIRCUIT_API PainterPool
+	{
+	public:
+		PainterPool(const glm::vec2& windowOrigin, IntRef<Volt::RHI::ResourceTable> resourceTable);
+		~PainterPool();
+
+		PainterPool(const PainterPool&) = delete;
+		PainterPool& operator=(const PainterPool&) = delete;
+
+		void Reserve(const Ref<Widget>& root);
+
+		bool Contains(const Ref<Widget>& widget) const;
+		CircuitPainter& GetFor(const Ref<Widget>& widget);
+
+		const Vector<Ref<Widget>>& GetReservedWidgets() const { return m_orderedWidgets; }
+
+	private:
+		glm::vec2 m_windowOrigin;
+		IntRef<Volt::RHI::ResourceTable> m_resourceTable;
+		Map<Widget*, std::unique_ptr<CircuitPainter>> m_painters;
+		Vector<Ref<Widget>> m_orderedWidgets;
 	};
 }

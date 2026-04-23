@@ -218,8 +218,11 @@ namespace Circuit
 
 		void RegenerateRows()
 		{
+			for (auto& oldRow : m_rowWidgets)
+			{
+				RemoveChildWidget(oldRow);
+			}
 			m_rowWidgets.clear();
-			ClearChildWidgets();
 
 			if (!m_itemsSource || !m_onGenerateRow.IsBound())
 			{

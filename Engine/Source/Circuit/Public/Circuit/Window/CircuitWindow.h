@@ -33,7 +33,7 @@ namespace Circuit
 		CIRCUIT_API glm::u32vec2 GetSize() const;
 		CIRCUIT_API void Resize(const glm::vec2& size);
 
-		CIRCUIT_API ArrayView<CircuitDrawCommand> GetDrawCommands();
+		CIRCUIT_API Vector<CircuitDrawCommand> GetDrawCommands();
 
 		//takes ownership of the widget
 		CIRCUIT_API void SetWidget(Ref<WindowWidget> widget);

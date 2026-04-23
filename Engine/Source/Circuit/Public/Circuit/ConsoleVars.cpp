@@ -13,4 +13,9 @@ namespace Circuit
 		"Circuit.Debug.ShowHoveredWidgetBounds",
 		0,
 		"Whether to show the bounds of the hovered widget.");
+
+	Volt::ConsoleVariable<int32_t> s_cvarCircuitLogPaint(
+		"Circuit.Debug.LogPaint",
+		0,
+		"Whether to log OnPaint.");
 }
