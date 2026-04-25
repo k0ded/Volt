@@ -35,6 +35,7 @@ namespace Circuit
 
 	void CircuitPainter::AddWidget(Ref<Widget> widget, const Volt::Rect& allottedLocalArea)
 	{
+		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_pool);
 
 		if (!m_pool->Contains(widget))
@@ -59,6 +60,7 @@ namespace Circuit
 
 	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color, float rotation, float scale)
 	{
+		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Rect;
 
@@ -84,6 +86,7 @@ namespace Circuit
 
 	void CircuitPainter::AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rotation, float scale)
 	{
+		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Rect;
 
@@ -111,6 +114,7 @@ namespace Circuit
 
 	void CircuitPainter::AddCircle(float x, float y, float radius, CircuitColor color, float scale)
 	{
+		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Circle;
 		command.position = ToPixelPos({ x,y });
@@ -130,6 +134,7 @@ namespace Circuit
 
 	void CircuitPainter::AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale /*= 1*/)
 	{
+		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::CircleSegment;
 		command.position = ToPixelPos({ x,y });
@@ -152,6 +157,7 @@ namespace Circuit
 
 	void CircuitPainter::AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color)
 	{
+		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Line;
 		command.color = color;
@@ -170,6 +176,7 @@ namespace Circuit
 
 	void CircuitPainter::AddText(float inX, float inY, const String& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale)
 	{
+		VT_PROFILE_FUNCTION();
 		using namespace Volt;
 
 		const glm::vec2 pixelPos = ToPixelPos({ inX, inY });
@@ -338,6 +345,7 @@ namespace Circuit
 
 	void CircuitPainter::AddImage(float x, float y, float width, float height, IntRef<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale /*= 1.f*/)
 	{
+		VT_PROFILE_FUNCTION();
 		const glm::vec2 pixelPos = ToPixelPos({ x, y });
 
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
@@ -363,6 +371,7 @@ namespace Circuit
 
 	Volt::Rect CircuitPainter::Consolidate(Vector<CircuitDrawCommand>& out)
 	{
+		VT_PROFILE_FUNCTION();
 		const bool log = s_cvarCircuitLogPaint.GetValue() != 0;
 
 		// BFS-collect all painters reachable from this one via child slots.
@@ -507,6 +516,7 @@ namespace Circuit
 
 	void PainterPool::Reserve(const Ref<Widget>& root)
 	{
+		VT_PROFILE_FUNCTION();
 		const bool log = s_cvarCircuitLogPaint.GetValue() != 0;
 
 		// Breadth-first walk so m_orderedWidgets ends up parent-before-children.

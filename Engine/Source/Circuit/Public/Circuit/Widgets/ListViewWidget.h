@@ -192,6 +192,8 @@ namespace Circuit
 				return;
 			}
 
+			VT_PROFILE_FUNCTION();
+
 			if (m_rowWidgets.size() != m_itemsSource->size())
 			{
 				RegenerateRows();

@@ -13,6 +13,8 @@ namespace Circuit
 
 	void LayoutWidget::OnPaint(CircuitPainter& painter)
 	{
+		VT_PROFILE_FUNCTION();
+
 		float orientationAllotted = -1;
 		switch (m_orientation)
 		{
@@ -94,6 +96,7 @@ namespace Circuit
 					sizeLeftForUndeterminedFlexibleSlices = painter.GetAllottedSize().y - determinedSize;
 					break;
 			}
+
 			VT_ASSERT(sizeLeftForUndeterminedFlexibleSlices >= 0);
 
 			const float undeterminedSliceAllotedSize = sizeLeftForUndeterminedFlexibleSlices / numUndeterminedSlices;
