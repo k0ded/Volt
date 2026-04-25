@@ -31,7 +31,7 @@ namespace Volt
 		void DetachFromActor() override;
 
 	protected:
-		inline void* GetHandleImpl() const { return m_shape; }
+		inline void* GetHandleImpl() const override { return m_shape; }
 
 	private:
 		BoxColliderCreateInfo m_createInfo;
@@ -60,7 +60,7 @@ namespace Volt
 		void DetachFromActor() override;
 
 	protected:
-		inline void* GetHandleImpl() const { return m_shape; }
+		inline void* GetHandleImpl() const override { return m_shape; }
 
 	private:
 		SphereColliderCreateInfo m_createInfo;
@@ -91,7 +91,7 @@ namespace Volt
 		void DetachFromActor() override;
 
 	protected:
-		inline void* GetHandleImpl() const { return m_shape; }
+		inline void* GetHandleImpl() const override { return m_shape; }
 
 	private:
 		CapsuleColliderCreateInfo m_createInfo;
