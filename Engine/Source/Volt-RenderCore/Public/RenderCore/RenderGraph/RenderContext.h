@@ -133,6 +133,8 @@ namespace Volt
 		void SetResourceTableParameter(IntRef<RHI::ResourceTable> resourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 
+		void SetBindlessResourceParameter(RHI::BindlessIndex index, const RHI::ShaderResourceBinding* resourceBinding, const RHI::ShaderParameterMap& shaderParameterMap);
+
 		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);

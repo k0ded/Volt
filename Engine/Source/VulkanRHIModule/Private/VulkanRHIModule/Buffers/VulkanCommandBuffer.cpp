@@ -17,6 +17,7 @@
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 #include "VulkanRHIModule/Images/VulkanImageView.h"
@@ -43,6 +44,7 @@
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/RHIHelpers.h>
+#include <RHIModule/Globals.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
@@ -1901,6 +1903,13 @@ namespace Volt::RHI
 			vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, bindingInfo.setIndex, 1, &bufferIndex, &offset);
 		}
 
+		if (RHICanUseBindless())
+		{
+			const uint32_t bindlessBufferIndex = 1;
+			const uint64_t bindlessOffset = 0;
+			vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, Globals::SHADER_BINDLESS_SPACE, 1, &bindlessBufferIndex, &bindlessOffset);
+		}
+
 		if (activePipelineDescriptorSets.accessesResourceTable)
 		{
 			IntRef<ResourceTable> rayTracingResourceTable = shaderBindingsMap.GetResourceTable();
@@ -1909,7 +1918,7 @@ namespace Volt::RHI
 				VulkanResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanResourceTable>();
 
 				const uint64_t rayTracingResourceDescriptorOffset = vkRayTracingResourceTable.GetBaseOffset();
-				const uint32_t rayTracingBufferIndex = 1;
+				const uint32_t rayTracingBufferIndex = RHICanUseBindless() ? 2 : 1;
 
 				vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, ResourceTableDescriptorSetManager::Set, 1, &rayTracingBufferIndex, &rayTracingResourceDescriptorOffset);
 			}
@@ -1959,7 +1968,7 @@ namespace Volt::RHI
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
 
-		constexpr uint32_t NumMaxDescriptorBuffers = 2;
+		constexpr uint32_t NumMaxDescriptorBuffers = 3;
 		uint32_t numDescriptorBuffersToBind = 1;
 
 		Array<VkDescriptorBufferBindingInfoEXT, NumMaxDescriptorBuffers> bindingInfo;
@@ -1972,11 +1981,22 @@ namespace Volt::RHI
 			vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 		}
 
+		if (RHICanUseBindless())
+		{
+			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[numDescriptorBuffersToBind];
+			vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+			vkBindingInfo.pNext = nullptr;
+			vkBindingInfo.address = VulkanBindlessDescriptorManager::Get().GetDescriptorBufferAddress();
+			vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+			numDescriptorBuffersToBind++;
+		}
+
 		if (rayTracingResourceTable)
 		{
 			VulkanResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanResourceTable>();
 
-			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[1];
+			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[numDescriptorBuffersToBind];
 			vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
 			vkBindingInfo.pNext = nullptr;
 			vkBindingInfo.address = vkRayTracingResourceTable.GetDeviceAddress();

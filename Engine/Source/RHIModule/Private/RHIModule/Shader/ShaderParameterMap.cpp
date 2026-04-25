@@ -130,6 +130,18 @@ namespace Volt::RHI
 		resourceBinding.hash = StringHash::Construct(name);
 	}
 
+	void ShaderParameterMap::AddBindlessResource(const String& name, ShaderStage shaderStage, ShaderResourceType resourceType, ShaderRegisterType registerType)
+	{
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.registerType = registerType;
+		resourceBinding.binding.resourceType = resourceType;
+		resourceBinding.binding.name = name;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.isBindless = true;
+		resourceBinding.binding.bindlessHash = StringHash::Construct("BindlessIndex_" + name);
+		resourceBinding.hash = StringHash::Construct(name);
+	}
+
 	void ShaderParameterMap::AddParameter(const String& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
 	{
 		auto& parameter = m_shaderParameters[StringHash::Construct(name)];

@@ -3,6 +3,7 @@
 
 #include <RHIModule/Shader/ShaderParameterMap.h>
 #include <RHIModule/Globals.h>
+#include <RHIModule/RHIFeatures.h>
 
 namespace Volt
 {
@@ -52,12 +53,58 @@ namespace Volt
 				}
 			}
 		}
+
+		if (RHI::RHICanUseBindless())
+		{
+			PopulateShaderParameterUniformBuffersBindless(shaderParameterMaps, outShaderParameters);
+		}
 	}
 
-	void BatchedShaderParameters::BindShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings)
+	void BatchedShaderParameters::BindToShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings)
 	{
 		VT_PROFILE_FUNCTION();
-		
+
+		if (RHI::RHICanUseBindless())
+		{
+			BindToShaderBindingsBindlessInternal(shaderParameterMaps, shaderBindings);
+		}
+		else
+		{
+			BindToShaderBindingsInternal(shaderParameterMaps, shaderBindings);
+		}
+	}
+
+	void BatchedShaderParameters::BindToShaderBindingsBindlessInternal(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings)
+	{
+		VT_PROFILE_FUNCTION();
+
+		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+		{
+			if (!parameterMap.HasShaderBindings())
+			{
+				continue;
+			}
+
+			for (const BatchedShaderBinding* binding : m_bindings)
+			{
+				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(binding->bindingName);
+
+				// We only care about uniform buffers when bindless is enabled.
+				if (resourceBinding &&
+					resourceBinding->resourceType == binding->resourceType &&
+					resourceBinding->resourceType == RHI::ShaderResourceType::UniformBuffer)
+				{
+					const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
+					shaderBindings.SetUniformBuffer(parameterMap.GetShaderStage(), resourceBinding->binding, bufferParameter->bufferView);
+				}
+			}
+		}
+	}
+
+	void BatchedShaderParameters::BindToShaderBindingsInternal(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings)
+	{
+		VT_PROFILE_FUNCTION();
+
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
 			if (!parameterMap.HasShaderBindings())
@@ -84,7 +131,7 @@ namespace Volt
 						{
 							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
 							shaderBindings.SetStructuredBufferSRV(parameterMap.GetShaderStage(), resourceBinding->binding, bufferParameter->bufferView);
-							
+
 							break;
 						}
 
@@ -95,7 +142,7 @@ namespace Volt
 
 							break;
 						}
-						
+
 						case RHI::ShaderResourceType::UniformBuffer:
 						{
 							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
@@ -110,6 +157,87 @@ namespace Volt
 							shaderBindings.SetSampler(parameterMap.GetShaderStage(), resourceBinding->binding, samplerParameter->sampler);
 						}
 					}
+				}
+			}
+		}
+	}
+
+	void BatchedShaderParameters::PopulateShaderParameterUniformBuffersBindless(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters)
+	{
+		VT_PROFILE_FUNCTION();
+
+		auto SetBindlessIndex = [&](RHI::BindlessIndex bindlessIndex, const RHI::ShaderResourceBinding* resourceBinding)
+		{
+			VT_ENSURE(bindlessIndex.IsValid());
+
+			for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+			{
+				const RHI::ShaderUniform* shaderParameter = parameterMap.GetParameterFromName(resourceBinding->bindlessHash);
+				if (shaderParameter)
+				{
+					for (const auto& perStageParameters : outShaderParameters)
+					{
+						if (perStageParameters.shaderStage == parameterMap.GetShaderStage())
+						{
+							uint32_t tempIndex = bindlessIndex.Get();
+							memcpy(perStageParameters.mappedPtr + shaderParameter->offset, &tempIndex, sizeof(tempIndex));
+							break;
+						}
+					}
+				}
+			}
+		};
+
+		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+		{
+			if (!parameterMap.HasShaderBindings())
+			{
+				continue;
+			}
+
+			for (const BatchedShaderBinding* binding : m_bindings)
+			{
+				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(binding->bindingName);
+				if (resourceBinding && resourceBinding->resourceType == binding->resourceType)
+				{
+					if (binding->resourceType == RHI::ShaderResourceType::UniformBuffer)
+					{
+						continue;
+					}
+
+					RHI::BindlessIndex bindlessIndex{};
+
+					switch (binding->resourceType)
+					{
+						case RHI::ShaderResourceType::Texture:
+						{
+							const BatchedTextureShaderBinding* textureParameter = reinterpret_cast<const BatchedTextureShaderBinding*>(binding);
+							bindlessIndex = textureParameter->imageView->GetSRVBindlessIndex();
+							break;
+						}
+
+						case RHI::ShaderResourceType::StructuredBuffer:
+						{
+							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
+							bindlessIndex = bufferParameter->bufferView->GetSRVBindlessIndex();
+							break;
+						}
+
+						case RHI::ShaderResourceType::TexelBuffer:
+						{
+							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
+							bindlessIndex = bufferParameter->bufferView->GetSRVBindlessIndex();
+							break;
+						}
+
+						case RHI::ShaderResourceType::Sampler:
+						{
+							const BatchedSamplerShaderBinding* samplerParameter = reinterpret_cast<const BatchedSamplerShaderBinding*>(binding);
+							bindlessIndex = samplerParameter->sampler->GetBindlessIndex();
+						}
+					}
+
+					SetBindlessIndex(bindlessIndex, resourceBinding);
 				}
 			}
 		}

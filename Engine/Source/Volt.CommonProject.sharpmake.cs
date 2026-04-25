@@ -325,6 +325,9 @@ namespace VoltSharpmake
             conf.IncludePrivatePaths.Add("Public/" + Name);
             conf.IncludePrivatePaths.Add("Private/" + Name);
 
+			string shadersSharedDirectory = Path.Combine(Globals.EngineDirectory, "Engine", "Shaders", "Shared");
+			conf.IncludePaths.Add(shadersSharedDirectory);
+
             conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings("4005", "4100", "4201", "4251", "4275", "4505", "4324"));
             conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4006", "4099", "4075", "4098", "4217"));   
 		}

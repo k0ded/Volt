@@ -29,6 +29,7 @@ struct ViewData
     uint lightCount;
 
     uint frameIndex;
+    uint padding;
 };
 
 ConstantBuffer<ViewData> View;

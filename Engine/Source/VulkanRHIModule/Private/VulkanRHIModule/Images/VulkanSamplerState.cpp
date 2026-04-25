@@ -5,9 +5,11 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <RHIModule/RHIModule.h>
 
@@ -47,14 +49,26 @@ namespace Volt::RHI
 		m_descriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_SAMPLER;
 		m_descriptor.vkDescriptorInfo.data.pSampler = &m_sampler;
 		m_descriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize;
+
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateSamplerIndex();
+			VulkanBindlessDescriptorManager::Get().UpdateSamplerDescriptor(m_bindlessIndex, m_descriptor.vkDescriptorInfo, m_descriptor.descriptorSize);
+		}
 	}
 
 	VulkanSamplerState::~VulkanSamplerState()
 	{
-		RHIModule::GetInstance().DestroyResource([sampler = m_sampler]() 
+		RHIModule::GetInstance().DestroyResource([sampler = m_sampler, bindlessIndex = m_bindlessIndex]() 
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, VT_VULKAN_ALLOCATOR);
+
+			if (RHI::RHICanUseBindless())
+			{
+				VulkanBindlessDescriptorManager::Get().FreeSamplerIndex(bindlessIndex);
+			}
+
 		}, GetLastSubmissionTrackerFence());
 
 		m_sampler = nullptr;
@@ -63,5 +77,10 @@ namespace Volt::RHI
 	void* VulkanSamplerState::GetHandleImpl() const
 	{
 		return m_sampler;
+	}
+
+	BindlessIndex VulkanSamplerState::GetBindlessIndex() const
+	{
+		return m_bindlessIndex;
 	}
 }

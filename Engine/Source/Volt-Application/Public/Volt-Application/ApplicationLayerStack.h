@@ -2,6 +2,7 @@
 #include "Volt-Application/Config.h"
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 namespace Volt
 {
@@ -22,7 +23,7 @@ namespace Volt
 
 		void Clear();
 
-		Vector<ApplicationLayer*> GetLayerStack() { return m_layers; }
+		ArrayView<ApplicationLayer*> GetLayerStack() { return m_layers; }
 
 		Vector<ApplicationLayer*>::iterator begin() { return m_layers.begin(); }
 		Vector<ApplicationLayer*>::iterator end() { return m_layers.end(); }

@@ -3,8 +3,8 @@
 static const float4 m_positions[] =
 {
     float4(-1.f, -1.f, 0.f, 1.f),
-    float4(-1.f, 3.f, 0.f, 1.f),
     float4(3.f, -1.f, 0.f, 1.f),
+    float4(-1.f, 3.f, 0.f, 1.f)
 };
 
 static const float2 m_uvs[] =

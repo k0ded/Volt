@@ -5,6 +5,7 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
@@ -32,6 +33,11 @@ namespace Volt::RHI
 
 		for (const auto& [binding, nameHash] : resourceBindings)
 		{
+			if (binding.isBindless)
+			{
+				continue;
+			}
+
 			auto& descriptorBinding = descriptorSetBindings[binding.set].emplace_back();
 			descriptorBinding.binding = binding.binding;
 			descriptorBinding.descriptorCount = 1;
@@ -152,6 +158,19 @@ namespace Volt::RHI
 
 			result.pipelineLayoutDescriptorSetLayouts.resize(StaticSamplerDescriptorSetManager::Set + 1);
 			result.pipelineLayoutDescriptorSetLayouts[StaticSamplerDescriptorSetManager::Set] = StaticSamplerDescriptorSetManager::Get().GetDescriptorSetLayout();
+		}
+
+		// Bindless
+		if (RHICanUseBindless())
+		{
+			// Add all 'in-between' descriptor set layouts.
+			for (size_t i = result.pipelineLayoutDescriptorSetLayouts.size(); i < Globals::SHADER_BINDLESS_SPACE; ++i)
+			{
+				result.pipelineLayoutDescriptorSetLayouts.emplace_back(vulkanGraphicsContext->GetEmptyDescriptorSetLayout());
+			}
+
+			result.pipelineLayoutDescriptorSetLayouts.resize(Globals::SHADER_BINDLESS_SPACE + 1);
+			result.pipelineLayoutDescriptorSetLayouts[Globals::SHADER_BINDLESS_SPACE] = VulkanBindlessDescriptorManager::Get().GetDescriptorSetLayout();
 		}
 
 		return result;

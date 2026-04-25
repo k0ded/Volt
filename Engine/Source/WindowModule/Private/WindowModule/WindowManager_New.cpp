@@ -43,6 +43,7 @@ namespace Volt
 		if (m_windows.contains(handle))
 		{
 			VT_LOGC(Trace, LogWindowManagement, "Destroying Window with Title: '{}' ({})", m_windows[handle]->GetTitle(), handle);
+			m_windows.erase(handle);
 		}
 		else
 		{

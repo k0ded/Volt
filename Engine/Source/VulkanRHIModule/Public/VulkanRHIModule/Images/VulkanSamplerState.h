@@ -23,6 +23,8 @@ namespace Volt::RHI
 		VulkanSamplerState(const SamplerStateDesc& createInfo);
 		~VulkanSamplerState() override;
 
+		BindlessIndex GetBindlessIndex() const override;
+
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetDescriptor() const { return m_descriptor; }
 
 	protected:
@@ -31,5 +33,7 @@ namespace Volt::RHI
 	private:
 		VkSampler_T* m_sampler = nullptr;
 		DescriptorDescription m_descriptor;
+
+		BindlessIndex m_bindlessIndex;
 	};
 }

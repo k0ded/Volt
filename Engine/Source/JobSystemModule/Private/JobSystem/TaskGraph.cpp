@@ -24,6 +24,11 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (m_tasks.empty())
+		{
+			return;
+		}
+
 		// Compile the graph, this fills the m_jobs member.
 		Compile();
 		VT_ENSURE(m_jobs.size() == m_tasks.size());
@@ -39,7 +44,12 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		Execute();
-		m_graphCounter->IncRef();
+
+		if (m_graphCounter)
+		{
+			m_graphCounter->IncRef();
+		}
+
 		return m_graphCounter;
 	}
 
@@ -53,6 +63,11 @@ namespace Volt
 
 	void TaskGraph::Wait()
 	{
+		if (!m_graphCounter)
+		{
+			return;
+		}
+
 		VT_ENSURE_MSG(m_isExecuted, "Waiting on a graph without executing it will cause an eternal wait!");
 		JobSystem::WaitForCounter(m_graphCounter);
 	}

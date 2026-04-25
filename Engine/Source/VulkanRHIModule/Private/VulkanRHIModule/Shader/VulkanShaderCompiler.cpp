@@ -16,6 +16,8 @@
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Globals.h>
 #include <RHIModule/RHICapabilities.h>
+#include <RHIModule/RHIFeatures.h>
+#include <RHIModule/HLSL/HLSLTokenizer.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Pointers/Unique.h>
@@ -166,26 +168,28 @@ namespace Volt::RHI
 			return {};
 		}
 
-		CompilationResultData result = CompileShader(specification);
+		Vector<ShaderResourceBinding> bindlessResourceBindings;
+
+		CompilationResultData result = CompileShader(specification, bindlessResourceBindings);
 		if (result.result != ShaderCompiler::CompilationResult::Success)
 		{
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
 			return cachedResult.data;
 		}
 
-		ReflectShader(specification, result);
-		
+		ReflectShader(specification, bindlessResourceBindings, result);
+
 		if (ShouldDumpShaderDebugInfo())
 		{
 			DumpSpirv(specification, result);
 		}
-		
+
 		m_shaderCache->CacheShader(specification, result);
 
 		return result;
 	}
 
-	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification)
+	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification, Vector<ShaderResourceBinding>& outBindlessResourceBindings)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -194,7 +198,7 @@ namespace Volt::RHI
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 		String processedSource = specification.shaderSourceInfo.source;
 
-		if (!PreprocessSource(specification, processedSource, result))
+		if (!PreprocessSource(specification, processedSource, result, outBindlessResourceBindings))
 		{
 			result.result = ShaderCompiler::CompilationResult::PreprocessFailed;
 			return result;
@@ -307,7 +311,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult)
+	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult, Vector<ShaderResourceBinding>& outBindlessResourceBindings)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -434,13 +438,25 @@ namespace Volt::RHI
 				compilationResult.instanceLayout = preProcessorResult.instanceLayout;
 			}
 
+			if (RHICanUseBindless())
+			{
+				HLSLTokenizer tokenizer;
+				Vector<HLSLToken> tokens = tokenizer.Tokenize(preProcessorResult.preProcessedResult);
+
+				HLSLParser parser;
+				Vector<HLSLNode> nodes = parser.Parse(std::move(tokens));
+
+				HLSLBindlessRewriter rewriter;
+				rewriter.Rewrite(std::move(nodes), sourceEntry.entryPoint, preProcessorResult.preProcessedResult, outBindlessResourceBindings);
+			}
+
 			outProcessedSource = preProcessorResult.preProcessedResult;
 		}
 
 		return succeded;
 	}
 
-	void VulkanShaderCompiler::ReflectShader(const Specification& specification, CompilationResultData& inOutData)
+	void VulkanShaderCompiler::ReflectShader(const Specification& specification, ArrayView<ShaderResourceBinding> bindlessResourceBindings, CompilationResultData& inOutData)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -449,6 +465,14 @@ namespace Volt::RHI
 		inOutData.shaderBinary = std::move(optimizedSpirv);
 
 		ReflectAndRewriteSpirv(specification.shaderSourceInfo.sourceEntry.shaderStage, inOutData.shaderBinary, inOutData.shaderParameterMap);
+
+		if (RHICanUseBindless())
+		{
+			for (const ShaderResourceBinding& binding : bindlessResourceBindings)
+			{
+				inOutData.shaderParameterMap.AddBindlessResource(binding.name, specification.shaderSourceInfo.sourceEntry.shaderStage, binding.resourceType, binding.registerType);
+			}
+		}
 	}
 
 	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const Filesystem::Path& sourceFilepath, const String& source, HLSLIncluder* includer)
@@ -475,7 +499,7 @@ namespace Volt::RHI
 
 		HRESULT hStatus;
 		dxcCompilationOutput->GetStatus(&hStatus);
-		 
+
 		const bool failed = FAILED(hResult) || FAILED(hStatus);
 
 		DxcCompilationResult result{};
@@ -489,25 +513,26 @@ namespace Volt::RHI
 		}
 
 		sourceBlob->Release();
-	
+
 		return result;
 	}
 
 	void VulkanShaderCompiler::OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv)
 	{
-		spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_3);
+		VT_PROFILE_FUNCTION();
+
+		spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_4);
 		tools.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message)
 		{
 			VT_LOG(Error, "{}", message);
 		});
 
-
 		bool result = tools.Validate(inOutData.shaderBinary.data(), inOutData.shaderBinary.size());
 
 		VT_ENSURE(result);
 
-		spvtools::Optimizer optimizer(SPV_ENV_VULKAN_1_3);
-		optimizer.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message) 
+		spvtools::Optimizer optimizer(SPV_ENV_VULKAN_1_4);
+		optimizer.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message)
 		{
 			VT_LOG(Error, "{}", message);
 		});
@@ -537,6 +562,8 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
+		GlobalMemoryStackMark memMark;
+
 		SpvReflectShaderModule spirvModule{};
 		SpvReflectResult result = spvReflectCreateShaderModule(spirv.size() * sizeof(uint32_t), spirv.data(), &spirvModule);
 		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
@@ -545,18 +572,18 @@ namespace Volt::RHI
 		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, nullptr);
 		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
-		Vector<SpvReflectDescriptorSet*> sets(count);
+		GlobalMemoryStackVector<SpvReflectDescriptorSet*> sets(count);
 		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, sets.data());
 		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
-		Vector<SpvReflectDescriptorBinding*> uniformBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageBuffers;
-		Vector<SpvReflectDescriptorBinding*> uniformTexelBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageTexelBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageImages;
-		Vector<SpvReflectDescriptorBinding*> images;
-		Vector<SpvReflectDescriptorBinding*> samplers;
-		Vector<SpvReflectDescriptorBinding*> accelerationStructures;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> uniformBuffers;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> storageBuffers;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> uniformTexelBuffers;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> storageTexelBuffers;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> storageImages;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> images;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> samplers;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> accelerationStructures;
 
 		for (size_t i = 0; i < sets.size(); ++i)
 		{
@@ -610,7 +637,8 @@ namespace Volt::RHI
 			}
 		}
 
-		Vector<SpvReflectDescriptorBinding*> allBindings;
+		GlobalMemoryStackVector<SpvReflectDescriptorBinding*> allBindings;
+
 		allBindings.append(uniformBuffers);
 		allBindings.append(storageBuffers);
 		allBindings.append(uniformTexelBuffers);
@@ -633,6 +661,27 @@ namespace Volt::RHI
 			if (binding->set == StaticSamplerDescriptorSetManager::Set)
 			{
 				continue;
+			}
+
+			if (RHICanUseBindless())
+			{
+				// No normal resource bindings survives the rewrite step,
+				// which means that the only non UB bindings left are the
+				// ResourceDescriptorHeap/SamplerDescriptorHeap bindings.
+				if (binding->descriptor_type != SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				{
+					uint32_t bindlessHeapBindingIndex = 0;
+
+					if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER)
+					{
+						bindlessHeapBindingIndex = 1;
+					}
+
+					result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindlessHeapBindingIndex, Globals::SHADER_BINDLESS_SPACE);
+					VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+					continue;
+				}
 			}
 
 			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
@@ -661,6 +710,9 @@ namespace Volt::RHI
 			}
 		}
 
+		const bool isBindlessEnabled = RHICanUseBindless();
+
+		// Only add resources if bindless is disabled.
 		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
 			// Special case for ray tracing resource table
@@ -668,25 +720,10 @@ namespace Volt::RHI
 			{
 				shaderParameterMap.SetAccessesResourceTable();
 			}
-			else
+			else if (!isBindlessEnabled)
 			{
 				shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
 			}
-		}
-
-		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
-		{
-			shaderParameterMap.AddTexelBufferSRV(uniformTexelBuffer->name, uniformTexelBuffer->set, uniformTexelBuffer->binding, currentShaderStage);
-		}
-
-		for (SpvReflectDescriptorBinding* storageTexelBuffer : storageTexelBuffers)
-		{
-			shaderParameterMap.AddTexelBufferUAV(storageTexelBuffer->name, storageTexelBuffer->set, storageTexelBuffer->binding, currentShaderStage);
-		}
-
-		for (SpvReflectDescriptorBinding* storageImage : storageImages)
-		{
-			shaderParameterMap.AddTextureUAV(storageImage->name, storageImage->set, storageImage->binding, currentShaderStage);
 		}
 
 		for (SpvReflectDescriptorBinding* image : images)
@@ -696,24 +733,42 @@ namespace Volt::RHI
 			{
 				shaderParameterMap.SetAccessesResourceTable();
 			}
-			else
+			else if (!isBindlessEnabled)
 			{
 				shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
 			}
 		}
 
-		for (SpvReflectDescriptorBinding* sampler : samplers)
+		if (!isBindlessEnabled)
 		{
-			// Make sure static samplers aren't included.
-			if (sampler->set != StaticSamplerDescriptorSetManager::Set)
+			for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
 			{
-				shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+				shaderParameterMap.AddTexelBufferSRV(uniformTexelBuffer->name, uniformTexelBuffer->set, uniformTexelBuffer->binding, currentShaderStage);
 			}
-		}
 
-		for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)
-		{
-			shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
+			for (SpvReflectDescriptorBinding* storageTexelBuffer : storageTexelBuffers)
+			{
+				shaderParameterMap.AddTexelBufferUAV(storageTexelBuffer->name, storageTexelBuffer->set, storageTexelBuffer->binding, currentShaderStage);
+			}
+
+			for (SpvReflectDescriptorBinding* storageImage : storageImages)
+			{
+				shaderParameterMap.AddTextureUAV(storageImage->name, storageImage->set, storageImage->binding, currentShaderStage);
+			}
+
+			for (SpvReflectDescriptorBinding* sampler : samplers)
+			{
+				// Make sure static samplers aren't included.
+				if (sampler->set != StaticSamplerDescriptorSetManager::Set)
+				{
+					shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+				}
+			}
+
+			for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)
+			{
+				shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
+			}
 		}
 
 		// "InlineParameterBlock"
@@ -748,13 +803,37 @@ namespace Volt::RHI
 			Filesystem::CreateDirectories(dumpDirectory);
 		}
 
-		const Filesystem::Path filepath = dumpDirectory / specification.shaderSourceInfo.sourceEntry.filepath.Stem() + ".spv";
+		Filesystem::Path filepath = dumpDirectory / specification.shaderSourceInfo.sourceEntry.filepath.Stem() + ".spv";
 
 		// We only need to copy the data if we are not on an IO thread.
 		const bool createCopyOfData = !Threads::GetThreadConfig().isIOThread;
-		IORequestResult<IORequestWriteFile_Binary> ioResult = IOThreads::SubmitRequest<IORequestWriteFile_Binary>("Write Shader Dump (Text)", filepath, data.shaderBinary.data(), data.shaderBinary.byte_size(), createCopyOfData);
+
+		// Binary
+		{
+			IORequestResult<IORequestWriteFile_Binary> ioResult = IOThreads::SubmitRequest<IORequestWriteFile_Binary>("Write Shader Dump (SPIRV)", filepath, data.shaderBinary.data(), data.shaderBinary.byte_size(), createCopyOfData);
+		}
+
+		// Binary
+		{
+			spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_4);
+			tools.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message)
+			{
+				VT_LOG(Error, "{}", message);
+			});
+
+			std::string resultStr;
+			bool result = tools.Disassemble(data.shaderBinary.data(), data.shaderBinary.size(), &resultStr);
+
+			if (result)
+			{
+				filepath += ".asm";
+
+				String str = String(resultStr.data(), resultStr.size());
+				IORequestResult<IORequestWriteFile_String> ioResult = IOThreads::SubmitRequest<IORequestWriteFile_String>("Write Shader Dump (SPIRV ASM)", filepath, str);
+			}
+		}
 	}
-	
+
 	void VulkanShaderCompiler::DumpShaderText(const Specification& specification, StringView shaderText)
 	{
 		const Filesystem::Path dumpDirectory = GetShaderDumpDirectory(specification);

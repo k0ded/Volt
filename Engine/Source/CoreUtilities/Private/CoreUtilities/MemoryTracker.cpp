@@ -131,7 +131,11 @@ void MemoryTracker::AddTag(size_t tagHash, uint32_t tagIndex)
 
 void MemoryTracker::PushMemoryTagInternal(size_t tagHash)
 {
+	g_depth++;
+
 	g_activeMemoryTag.push_back(m_tagHashToTagIndex.at(tagHash));
+
+	g_depth--;
 }
 
 void MemoryTracker::PopMemoryTagInternal()

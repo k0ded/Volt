@@ -31,6 +31,8 @@ namespace Volt::RHI
 		void AddTextureUAV(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddAccelerationStructure(const String& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 
+		void AddBindlessResource(const String& name, ShaderStage shaderStage, ShaderResourceType resourceType, ShaderRegisterType registerType);
+
 		void AddParameter(const String& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
 		void AddInlineParameter(const String& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
 

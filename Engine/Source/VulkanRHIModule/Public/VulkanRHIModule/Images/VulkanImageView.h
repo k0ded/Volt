@@ -33,7 +33,8 @@ namespace Volt::RHI
 		bool IsSwapchainView() const override;
 
 		uint64_t GetDeviceAddress() const override;
-		BindlessIndex GetBindlessIndex() const override;
+		BindlessIndex GetSRVBindlessIndex() const override;
+		BindlessIndex GetUAVBindlessIndex() const override;
 
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }
@@ -49,7 +50,8 @@ namespace Volt::RHI
 		VkImageView_T* m_imageView = nullptr;
 		RawPtr<Image> m_image;
 
-		BindlessIndex m_bindlessIndex;
+		BindlessIndex m_srvBindlessIndex;
+		BindlessIndex m_uavBindlessIndex;
 
 		PixelFormat m_format;
 		ImageAspect m_imageAspect;

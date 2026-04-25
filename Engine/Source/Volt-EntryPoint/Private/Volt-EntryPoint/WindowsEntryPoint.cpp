@@ -109,6 +109,11 @@ namespace Volt
 
 		int32_t result = 0;
 
+		if (commandLineBuilder.IsArgDefined("waitfordebugger"))
+		{
+			while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
+		}
+
 		PlatformMisc::SetupExceptionHandlers();
 		MemoryTracker::Initialize();
 		Threads::InitializeThreadConfig(false, false, true);

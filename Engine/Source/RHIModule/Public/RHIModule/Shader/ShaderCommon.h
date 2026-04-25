@@ -87,6 +87,7 @@ namespace Volt::RHI
 		UniformBuffer,
 		StructuredBuffer,
 		TexelBuffer,
+		ByteAddressBuffer,
 		Texture,
 		Sampler,
 		AccelerationStructure
@@ -273,12 +274,16 @@ namespace Volt::RHI
 		uint32_t set = std::numeric_limits<uint32_t>::max();
 		uint32_t binding = std::numeric_limits<uint32_t>::max();
 		uint32_t arraySize = 1;
-		ShaderRegisterType registerType;
-		ShaderResourceType resourceType;
 		ShaderStage shaderStage;
 		String name;
+		StringHash bindlessHash;
 
-		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
+		ShaderRegisterType registerType;
+		ShaderResourceType resourceType;
+
+		bool isBindless = false;
+
+		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max() || isBindless; }
 
 		friend Archive& operator<<(Archive& archive, ShaderResourceBinding& value);
 	};

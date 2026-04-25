@@ -1,13 +1,14 @@
 #pragma once
 
 #include <CoreUtilities/Archive/Archive.h>
+#include <CoreUtilities/Math/Hash.h>
 
 #include <string>
 
 
 namespace Volt::RHI
 {
-	enum class InputUsage
+	enum class InputUsage : uint8_t
 	{
 		PerVertex,
 		PerInstance
@@ -48,9 +49,6 @@ namespace Volt::RHI
 		Float2,
 		Float3,
 		Float4,
-
-		Float3x3,
-		Float4x4
 	};
 
 	struct BufferElement
@@ -59,6 +57,7 @@ namespace Volt::RHI
 		BufferElement(ElementType aElementType, const String& aName, uint32_t aArrayIndex = 0, InputUsage aUsage = InputUsage::PerVertex, uint32_t aInputSlot = 0)
 			: name(aName), size(GetSizeFromType(aElementType)), arrayIndex(aArrayIndex), inputSlot(aInputSlot), type(aElementType), usage(aUsage)
 		{
+			CalculateHash();
 		}
 
 		static uint32_t GetSizeFromType(ElementType type)
@@ -96,9 +95,6 @@ namespace Volt::RHI
 				case ElementType::Float2: return 4 * 2;
 				case ElementType::Float3: return 4 * 3;
 				case ElementType::Float4: return 4 * 4;
-
-				case ElementType::Float3x3: return 4 * 3 * 3;
-				case ElementType::Float4x4: return 4 * 4 * 4;
 			}
 
 			return 0;
@@ -139,9 +135,6 @@ namespace Volt::RHI
 				case ElementType::Float2: return 2;
 				case ElementType::Float3: return 3;
 				case ElementType::Float4: return 4;
-
-				case ElementType::Float3x3: return 3 * 3;
-				case ElementType::Float4x4: return 4 * 4;
 			}
 
 			return 0;
@@ -156,11 +149,18 @@ namespace Volt::RHI
 			archive << value.inputSlot;
 			archive << value.type;
 			archive << value.usage;
+
+			if (archive.IsLoading())
+			{
+				value.hash = value.CalculateHash();
+			}
+
 			return archive;
 		}
 
 		String name;
 		size_t offset;
+		uint64_t hash;
 
 		uint32_t size;
 		uint32_t arrayIndex;
@@ -168,6 +168,19 @@ namespace Volt::RHI
 
 		ElementType type;
 		InputUsage usage;
+	
+	private:
+		uint64_t CalculateHash()
+		{
+			uint64_t resultHash = Math::HashCombine(std::hash<String>()(name), std::hash<size_t>()(offset));
+			resultHash = Math::HashCombine(resultHash, std::hash<uint32_t>()(size));
+			resultHash = Math::HashCombine(resultHash, std::hash<uint32_t>()(arrayIndex));
+			resultHash = Math::HashCombine(resultHash, std::hash<uint32_t>()(inputSlot));
+			resultHash = Math::HashCombine(resultHash, std::hash<std::underlying_type_t<ElementType>>()(std::to_underlying(type)));
+			resultHash = Math::HashCombine(resultHash, std::hash<std::underlying_type_t<InputUsage>>()(std::to_underlying(usage)));
+
+			return resultHash;
+		}
 	};
 
 	class BufferLayout
@@ -225,17 +238,16 @@ namespace Volt::RHI
 				case ElementType::Float2: return "Float2";
 				case ElementType::Float3: return "Float3";
 				case ElementType::Float4: return "Float4";
-
-				case ElementType::Float3x3: return "Float3x3";
-				case ElementType::Float4x4: return "Float4x4";
 			}
 
 			return "None";
 		}
 
-		VT_NODISCARD VT_INLINE const uint32_t GetStride() const { return m_stride; }
+		VT_NODISCARD VT_INLINE uint32_t GetStride() const { return m_stride; }
+		VT_NODISCARD VT_INLINE bool IsValid() const { return !m_elements.empty(); }
+		VT_NODISCARD VT_INLINE uint64_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const Vector<BufferElement>& GetElements() const { return m_elements; }
-		VT_NODISCARD VT_INLINE const bool IsValid() const { return !m_elements.empty(); }
+
 
 		friend Archive& operator<<(Archive& archive, BufferLayout& value)
 		{
@@ -250,6 +262,7 @@ namespace Volt::RHI
 			size_t offset = 0;
 			uint32_t lastInputSlot = 0;
 			m_stride = 0;
+			m_hash = 0;
 
 			for (auto& element : m_elements)
 			{
@@ -261,11 +274,14 @@ namespace Volt::RHI
 				element.offset = offset;
 				offset += element.size;
 				m_stride += element.size;
+
+				m_hash = Math::HashCombine(m_hash, element.hash);
 			}
 		}
 
 		Vector<BufferElement> m_elements;
 		uint32_t m_stride = 0;
+		uint64_t m_hash = 0;
 	};
 
 	using BufferLayoutMap = Map<uint32_t, BufferLayout>;

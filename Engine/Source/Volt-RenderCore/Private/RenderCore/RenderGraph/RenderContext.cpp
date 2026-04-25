@@ -8,6 +8,7 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/ImageView.h>
+#include <RHIModule/RHIFeatures.h>
 #include <RHIModule/Globals.h>
 
 namespace Volt
@@ -388,15 +389,23 @@ namespace Volt
 			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
 			
 			IntRef<RHI::BufferView> rhiView = bufferSRV->GetRHIView();
-			const bool isTexelBufferView = rhiView->IsTexelBufferView();
 
-			if (isTexelBufferView)
+			if (RHI::RHICanUseBindless())
 			{
-				m_shaderBindingMap.SetTexelBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				SetBindlessResourceParameter(rhiView->GetSRVBindlessIndex(), resourceBinding, shaderParameterMap);
 			}
 			else
 			{
-				m_shaderBindingMap.SetStructuredBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+				if (isTexelBufferView)
+				{
+					m_shaderBindingMap.SetTexelBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				}
+				else
+				{
+					m_shaderBindingMap.SetStructuredBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				}
 			}
 		}
 	}
@@ -409,15 +418,23 @@ namespace Volt
 			VT_ENSURE_MSG(bufferUAV, "Buffer SRV must not be null!");
 
 			IntRef<RHI::BufferView> rhiView = bufferUAV->GetRHIView();
-			const bool isTexelBufferView = rhiView->IsTexelBufferView();
-
-			if (isTexelBufferView)
+			
+			if (RHI::RHICanUseBindless())
 			{
-				m_shaderBindingMap.SetTexelBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				SetBindlessResourceParameter(rhiView->GetUAVBindlessIndex(), resourceBinding, shaderParameterMap);
 			}
 			else
 			{
-				m_shaderBindingMap.SetStructuredBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+				if (isTexelBufferView)
+				{
+					m_shaderBindingMap.SetTexelBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				}
+				else
+				{
+					m_shaderBindingMap.SetStructuredBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+				}
 			}
 		}
 	}
@@ -428,7 +445,17 @@ namespace Volt
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
-			m_shaderBindingMap.SetTextureSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureSRV->GetRHIView());
+
+			IntRef<RHI::ImageView> rhiView = textureSRV->GetRHIView();
+
+			if (RHI::RHICanUseBindless())
+			{
+				SetBindlessResourceParameter(rhiView->GetSRVBindlessIndex(), resourceBinding, shaderParameterMap);
+			}
+			else
+			{
+				m_shaderBindingMap.SetTextureSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
 		}
 	}
 
@@ -438,7 +465,17 @@ namespace Volt
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
-			m_shaderBindingMap.SetTextureUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureUAV->GetRHIView());
+
+			IntRef<RHI::ImageView> rhiView = textureUAV->GetRHIView();
+
+			if (RHI::RHICanUseBindless())
+			{
+				SetBindlessResourceParameter(rhiView->GetUAVBindlessIndex(), resourceBinding, shaderParameterMap);
+			}
+			else
+			{
+				m_shaderBindingMap.SetTextureUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureUAV->GetRHIView());
+			}
 		}
 	}
 
@@ -456,7 +493,14 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
-			m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
+			if (RHI::RHICanUseBindless())
+			{
+				SetBindlessResourceParameter(sampler->GetBindlessIndex(), resourceBinding, shaderParameterMap);
+			}
+			else
+			{
+				m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
+			}
 		}
 	}
 
@@ -465,7 +509,14 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
-			m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
+			if (RHI::RHICanUseBindless())
+			{
+				SetBindlessResourceParameter(accelerationStructure->GetBindlessIndex(), resourceBinding, shaderParameterMap);
+			}
+			else
+			{
+				m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
+			}
 		}
 	}
 
@@ -486,6 +537,27 @@ namespace Volt
 				if (perStageParameters.shaderStage == shaderParameterMap.GetShaderStage())
 				{
 					memcpy(perStageParameters.mappedPtr + shaderParameter->offset, data, parameterDesc.GetSize());
+					break;
+				}
+			}
+		}
+	}
+
+	void RenderContext::SetBindlessResourceParameter(RHI::BindlessIndex index, const RHI::ShaderResourceBinding* resourceBinding, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		VT_ENSURE(index.IsValid());
+
+		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(resourceBinding->bindlessHash);
+		if (shaderParameter)
+		{
+			VT_ENSURE(shaderParameter->size == sizeof(uint32_t));
+
+			for (const auto& perStageParameters : m_perStageShaderParameters)
+			{
+				if (perStageParameters.shaderStage == shaderParameterMap.GetShaderStage())
+				{
+					uint32_t tempIndex = index.Get();
+					memcpy(perStageParameters.mappedPtr + shaderParameter->offset, &tempIndex, sizeof(tempIndex));
 					break;
 				}
 			}

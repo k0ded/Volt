@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	IntRef<CommandBuffer> CommandBuffer::Create(QueueType queueType)
+	IntRef<CommandBuffer> CommandBuffer::Create(QueueType queueType) 
 	{
 		return RHIModule::GetInstance().CreateCommandBuffer(queueType);
 	}

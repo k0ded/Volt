@@ -5,6 +5,8 @@
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Shader/ShaderCompiler.h>
 
+#include <CoreUtilities/Containers/ArrayView.h>
+
 struct IDxcCompiler3;
 struct IDxcUtils;
 struct IDxcRewriter;
@@ -35,12 +37,12 @@ namespace Volt::RHI
 			bool succeded;
 		};
 
-		CompilationResultData CompileShader(const Specification& specification);
-		bool PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult);
+		CompilationResultData CompileShader(const Specification& specification, Vector<ShaderResourceBinding>& outBindlessResourceBindings);
+		bool PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult, Vector<ShaderResourceBinding>& outBindlessResourceBindings);
 
 		void OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv);
 		void ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap);
-		void ReflectShader(const Specification& specification, CompilationResultData& inOutData);
+		void ReflectShader(const Specification& specification, ArrayView<ShaderResourceBinding> bindlessResourceBindings, CompilationResultData& inOutData);
 
 		void DumpSpirv(const Specification& specification, const CompilationResultData& data);
 		void DumpShaderText(const Specification& specification, StringView shaderText);

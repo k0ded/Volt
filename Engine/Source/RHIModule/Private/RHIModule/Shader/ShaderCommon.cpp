@@ -17,6 +17,8 @@ namespace Volt::RHI
 		archive << value.resourceType;
 		archive << value.shaderStage;
 		archive << value.name;
+		archive << value.isBindless;
+		archive << value.bindlessHash;
 
 		return archive;
 	}

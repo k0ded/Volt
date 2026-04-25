@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
+#include "RHIModule/Descriptors/BindlessIndex.h"
 
 namespace Volt::RHI
 {
@@ -24,6 +25,8 @@ namespace Volt::RHI
 	{
 	public:
 		static IntRef<SamplerState> Create(const SamplerStateDesc& createInfo);
+
+		virtual BindlessIndex GetBindlessIndex() const = 0;
 
 	protected:
 		SamplerState() = default;

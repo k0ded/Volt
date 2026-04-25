@@ -198,6 +198,7 @@ namespace Volt::RHI
 
 		outResult.preProcessedResult = data.shaderSource;
 		ErasePreProcessData(outResult);
+
 		return true;
 	}
 
@@ -544,14 +545,6 @@ namespace Volt::RHI
 		{
 			return ElementType::UInt4;
 		}
-		else if (str.find(" float3x3 ") != StringView::npos)
-		{
-			return ElementType::Float3x3;
-		}
-		else if (str.find(" float4x4 ") != StringView::npos)
-		{
-			return ElementType::Float4x4;
-		}
 
 		return ElementType::Bool;
 	}
@@ -658,15 +651,6 @@ namespace Volt::RHI
 		else if (str.find("[[vt::uint4]]") != StringView::npos)
 		{
 			return ElementType::UInt4;
-		}
-
-		else if (str.find("[[vt::float3x3]]") != StringView::npos)
-		{
-			return ElementType::Float3x3;
-		}
-		else if (str.find("[[vt::float4x4]]") != StringView::npos)
-		{
-			return ElementType::Float4x4;
 		}
 
 		return ElementType::Invalid;

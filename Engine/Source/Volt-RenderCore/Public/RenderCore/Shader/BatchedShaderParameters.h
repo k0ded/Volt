@@ -107,9 +107,14 @@ namespace Volt
 		VT_INLINE ArrayView<BatchedShaderBinding*> GetShaderBindings() const { return m_bindings; }
 
 		void PopulateShaderParameterUniformBuffers(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters);
-		void BindShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings);
+		void BindToShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings);
 
 	private:
+		void BindToShaderBindingsBindlessInternal(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings);
+		void BindToShaderBindingsInternal(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings);
+
+		void PopulateShaderParameterUniformBuffersBindless(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters);
+
 		InlineVector<BatchedShaderBinding*, NumMaxShaderBindings> m_bindings;
 		InlineVector<BatchedShaderParameter*, NumMaxShaderParameters> m_parameters;
 		BatchedShaderParameterAllocator m_allocator;

@@ -60,8 +60,6 @@ namespace Volt
 	{
 		{
 			RHI::ShaderCacheCreateInfo info{};
-			info.cacheDirectory = "Engine/Shaders/Cache";
-
 			m_shaderCache = IntRef<RHI::ShaderCache>::Create(info);
 		}
 

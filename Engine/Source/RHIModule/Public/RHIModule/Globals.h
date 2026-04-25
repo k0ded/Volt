@@ -5,8 +5,7 @@
 //		 to define that the resource is a special type.
 namespace Volt::RHI::Globals
 {
-	inline static constexpr uint32_t PUSH_CONSTANTS_BINDING = 999;
 	inline static constexpr uint32_t SHADER_GLOBALS_BINDING = 0;
 	inline static constexpr uint32_t SHADER_GLOBALS_SPACE = 0;
-	inline static constexpr uint32_t ACCELERATION_STRUCTURE_BINDING = 997;
+	inline static constexpr uint32_t SHADER_BINDLESS_SPACE = 11;
 }

@@ -16,6 +16,7 @@ namespace Volt::RHI
 		~VulkanAccelerationStructure() override;
 
 		uint64_t GetDeviceAddress() const override;
+		BindlessIndex GetBindlessIndex() const override;
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -26,5 +27,6 @@ namespace Volt::RHI
 		IntRef<Buffer> m_backingBuffer;
 		VkAccelerationStructureKHR_T* m_handle = nullptr;
 		uint64_t m_deviceAddress = 0;
+		BindlessIndex m_bindlessIndex;
 	};
 }

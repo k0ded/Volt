@@ -3,6 +3,9 @@
 #include "RHIModule/Shader/ShaderCache.h"
 #include "RHIModule/Graphics/GraphicsContext.h"
 #include "RHIModule/Utility/HashUtility.h"
+#include "RHIModule/RHIFeatures.h"
+
+#include <CoreModule/Project/ProjectManager.h>
 
 #include <FileSystemModule/FileArchive.h>
 
@@ -17,6 +20,8 @@ VT_DEFINE_LOG_CATEGORY(LogShaderCache);
 
 namespace Volt::RHI
 {
+	constexpr uint32_t ShaderCacheVersion = 1;
+
 	namespace Utility
 	{
 		inline static Filesystem::Path GetShaderCacheSubDirectory()
@@ -41,6 +46,7 @@ namespace Volt::RHI
 		enum Type
 		{
 			BaseVersion = 0,
+			AddedInternalShaderCacheVersion,
 
 			VersionPlusOne,
 			LatestVersion = VersionPlusOne - 1
@@ -56,10 +62,18 @@ namespace Volt::RHI
 	struct CachedShaderHeader
 	{
 		uint64_t timeSinceLastCompile;
+		uint32_t shaderCacheVersion;
 
 		friend Archive& operator<<(Archive& archive, CachedShaderHeader& value)
 		{
+			archive.UseVersion(CachedShaderArchiveVersion::guid);
+
 			archive << value.timeSinceLastCompile;
+			if (archive.IsLoading() && archive.GetVersion(CachedShaderArchiveVersion::guid) < CachedShaderArchiveVersion::AddedInternalShaderCacheVersion)
+			{
+				value.shaderCacheVersion = 0;
+			}
+
 			return archive;
 		}
 	};
@@ -140,7 +154,8 @@ namespace Volt::RHI
 		CachedShader cachedShader;
 		fileReader << cachedShader;
 
-		if (cachedShader.header.timeSinceLastCompile < lastWriteTime)
+		if (cachedShader.header.timeSinceLastCompile < lastWriteTime ||
+			cachedShader.header.shaderCacheVersion < ShaderCacheVersion)
 		{
 			return {};
 		}
@@ -180,6 +195,7 @@ namespace Volt::RHI
 
 		CachedShader cachedShader;
 		cachedShader.header.timeSinceLastCompile = TimeUtility::GetTimeSinceEpoch();
+		cachedShader.header.shaderCacheVersion = ShaderCacheVersion;
 		cachedShader.serializedShaderData = { compilationResult.shaderBinary, shaderSpec.shaderSourceInfo.sourceEntry.shaderStage };
 		cachedShader.outputFormats = compilationResult.outputFormats;
 		cachedShader.vertexLayout = compilationResult.vertexLayout;
@@ -195,15 +211,29 @@ namespace Volt::RHI
 	Filesystem::Path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const
 	{
 		const size_t hash = Math::HashCombine(std::hash<Filesystem::Path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<String>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
-
-		const auto cacheDir = m_info.cacheDirectory / Utility::GetShaderCacheSubDirectory();
+		const auto cacheDir = ProjectManager::GetGeneratedDirectory() / "ShaderCache" / Utility::GetShaderCacheSubDirectory();
 		
-		const WString filename = FormatString(
-			L"{}_{}_{}_{}.vtscache",
-			shaderSpec.shaderSourceInfo.sourceEntry.filepath.Stem(),
-			shaderSpec.shaderSourceInfo.sourceEntry.entryPoint,
-			hash,
-			shaderSpec.permutationConfig.GetPermutationIndex());
+		WString filename;
+
+		if (RHICanUseBindless())
+		{
+			filename = FormatString(
+				L"{}_{}_{}_{}_{}.vtscache",
+				shaderSpec.shaderSourceInfo.sourceEntry.filepath.Stem(),
+				shaderSpec.shaderSourceInfo.sourceEntry.entryPoint,
+				hash,
+				L"Bindless",
+				shaderSpec.permutationConfig.GetPermutationIndex());
+		}
+		else
+		{
+			filename = FormatString(
+				L"{}_{}_{}_{}.vtscache",
+				shaderSpec.shaderSourceInfo.sourceEntry.filepath.Stem(),
+				shaderSpec.shaderSourceInfo.sourceEntry.entryPoint,
+				hash,
+				shaderSpec.permutationConfig.GetPermutationIndex());
+		}
 
 		const auto cachePath = cacheDir / filename;
 

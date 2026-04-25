@@ -24,11 +24,6 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 CircuitSandboxApp::CircuitSandboxApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
 	: Volt::Application_New(commandLineBuilder, appInfo)
 {
-	if (commandLineBuilder.IsArgDefined("waitfordebugger"))
-	{
-		while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
-	}
-
 	CircuitSandbox* sandbox = new CircuitSandbox();
 	PushLayer(sandbox);
 }

@@ -5,6 +5,7 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
 #include "VulkanRHIModule/Utility/PushConstantsBuilder.h"
 
@@ -402,6 +403,12 @@ namespace Volt::RHI
 				if (descriptorSetLayout != StaticSamplerDescriptorSetManager::Get().GetDescriptorSetLayout() &&
 					descriptorSetLayout != vulkanGraphicsContext->GetEmptyDescriptorSetLayout())
 				{
+					if (RHICanUseBindless() &&
+						descriptorSetLayout == VulkanBindlessDescriptorManager::Get().GetDescriptorSetLayout())
+					{
+						continue;
+					}
+
 					vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
 				}
 			}

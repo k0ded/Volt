@@ -82,6 +82,7 @@ namespace Volt::RHI
 
 	void GPUCrashTracker::HandleGPUCrash()
 	{
+#ifdef VT_ENABLE_NV_AFTERMATH
 		// Wait for the driver.
 		auto tdrTerminationTimeout = std::chrono::seconds(3);
 		auto start = std::chrono::steady_clock::now();
@@ -101,6 +102,7 @@ namespace Volt::RHI
 		}
 
 		VT_FATAL_MSG(status == GFSDK_Aftermath_CrashDump_Status_Finished, "Unexpected crash dump status!");
+#endif
 	}
 
 	void GPUCrashTracker::Shutdown()

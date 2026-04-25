@@ -206,7 +206,7 @@ namespace Volt
 						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(drawCommandPipeline);
 
 						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(drawCommandPipeline);
-						 batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
+						 batchedShaderParameters.BindToShaderBindings(shaderParametersMaps, shaderBindings);
 						 batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
 
 						 for (auto& shaderParameters : perShaderStageParameters)

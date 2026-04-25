@@ -36,7 +36,8 @@ namespace Volt::RHI
 		virtual bool IsSwapchainView() const = 0;
 
 		virtual uint64_t GetDeviceAddress() const = 0;
-		virtual BindlessIndex GetBindlessIndex() const = 0;
+		virtual BindlessIndex GetSRVBindlessIndex() const = 0;
+		virtual BindlessIndex GetUAVBindlessIndex() const = 0;
 
 	protected:
 		ImageView() = default;

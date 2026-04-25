@@ -15,6 +15,8 @@
 
 #include <RHIModule/RHIModule.h>
 
+#include <CoreUtilities/EnumUtils.h>
+
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
@@ -51,24 +53,31 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
 
-		CreateDescriptors();
-
-		if (RHICanUseBindless())
+		// Swapchain images doesn't support neither sampled or storage.
+		if (!m_image->IsSwapchainImage())
 		{
-			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+			CreateDescriptors();
 		}
 	}
 
 	VulkanImageView::~VulkanImageView()
 	{
-		RHIModule::GetInstance().DestroyResource([imageView = m_imageView, bindlessIndex = m_bindlessIndex]()
+		RHIModule::GetInstance().DestroyResource([imageView = m_imageView, srvBindlessIndex = m_srvBindlessIndex, uavBindlessIndex = m_uavBindlessIndex]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, VT_VULKAN_ALLOCATOR);
 
 			if (RHICanUseBindless())
 			{
-				VulkanBindlessDescriptorManager::Get().FreeIndex(bindlessIndex);
+				if (srvBindlessIndex.IsValid())
+				{
+					VulkanBindlessDescriptorManager::Get().FreeIndex(srvBindlessIndex);
+				}
+
+				if (uavBindlessIndex.IsValid())
+				{
+					VulkanBindlessDescriptorManager::Get().FreeIndex(uavBindlessIndex);
+				}
 			}
 
 		}, GetLastSubmissionTrackerFence());
@@ -143,10 +152,28 @@ namespace Volt::RHI
 
 		m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
 		m_uavDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
+
+		if (RHICanUseBindless())
+		{
+			m_srvBindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+			VulkanBindlessDescriptorManager::Get().UpdateDescriptor(m_srvBindlessIndex, m_srvDescriptor.vkDescriptorInfo, m_srvDescriptor.descriptorSize);
+
+			if (m_imageUsage == ImageUsage::Storage ||
+				m_imageUsage == ImageUsage::AttachmentStorage)
+			{
+				m_uavBindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+				VulkanBindlessDescriptorManager::Get().UpdateDescriptor(m_uavBindlessIndex, m_uavDescriptor.vkDescriptorInfo, m_uavDescriptor.descriptorSize);
+			}
+		}
 	}
 
-	BindlessIndex VulkanImageView::GetBindlessIndex() const
+	BindlessIndex VulkanImageView::GetSRVBindlessIndex() const
 	{
-		return m_bindlessIndex;
+		return m_srvBindlessIndex;
+	}
+
+	BindlessIndex VulkanImageView::GetUAVBindlessIndex() const
+	{
+		return m_uavBindlessIndex;
 	}
 }

@@ -149,9 +149,6 @@ namespace Volt::RHI
 				case ElementType::Float2: return DXGI_FORMAT_R32G32_FLOAT;
 				case ElementType::Float3: return DXGI_FORMAT_R32G32B32_FLOAT;
 				case ElementType::Float4: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-
-				case ElementType::Float3x3: return DXGI_FORMAT_R32G32B32_FLOAT;
-				case ElementType::Float4x4: return DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 
 			return DXGI_FORMAT_R8G8B8A8_UNORM;

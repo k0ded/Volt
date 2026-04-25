@@ -6,11 +6,13 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorManager.h"
 
 #include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
-
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <vulkan/vulkan.h>
 
@@ -28,10 +30,16 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([handle = m_handle]() 
+		RHIModule::GetInstance().DestroyResource([handle = m_handle, bindlessIndex = m_bindlessIndex]() 
 		{
 			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
 			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, VT_VULKAN_ALLOCATOR);
+
+			if (RHI::RHICanUseBindless())
+			{
+				VulkanBindlessDescriptorManager::Get().FreeIndex(bindlessIndex);
+			}
+
 		}, GetLastSubmissionTrackerFence());
 	}
 
@@ -139,5 +147,24 @@ namespace Volt::RHI
 		deviceAddressInfo.accelerationStructure = m_handle;
 
 		m_deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device->GetHandle<VkDevice>(), &deviceAddressInfo);
+
+		if (RHICanUseBindless())
+		{
+			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+
+			VkDescriptorGetInfoEXT descriptorInfo{};
+			descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+			descriptorInfo.pNext = nullptr;
+			descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			descriptorInfo.data.accelerationStructure = m_deviceAddress;
+
+			const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
+			VulkanBindlessDescriptorManager::Get().UpdateDescriptor(m_bindlessIndex, descriptorInfo, descriptorSize);
+		}
+	}
+
+	BindlessIndex VulkanAccelerationStructure::GetBindlessIndex() const
+	{
+		return m_bindlessIndex;
 	}
 }

@@ -37,9 +37,15 @@ namespace Volt::RHI
 	{
 		if (RHICanUseBindless())
 		{
-			RHIModule::GetInstance().DestroyResource([bindlessIndex = m_bindlessIndex]()
+			RHIModule::GetInstance().DestroyResource([srvBindlessIndex = m_srvBindlessIndex, uavBindlessIndex = m_uavBindlessIndex]()
 			{
-				VulkanBindlessDescriptorManager::Get().FreeIndex(bindlessIndex);
+				VulkanBindlessDescriptorManager::Get().FreeIndex(srvBindlessIndex);
+
+				if (uavBindlessIndex.IsValid())
+				{
+					VulkanBindlessDescriptorManager::Get().FreeIndex(uavBindlessIndex);
+				}
+
 			}, GetLastSubmissionTrackerFence());
 		}
 	}
@@ -118,12 +124,26 @@ namespace Volt::RHI
 
 		if (RHICanUseBindless())
 		{
-			m_bindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+			m_srvBindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+
+			VulkanBindlessDescriptorManager::Get().UpdateDescriptor(m_srvBindlessIndex, m_srvDescriptor.vkDescriptorInfo, m_srvDescriptor.descriptorSize);
+
+			if (bufferType != ResourceType::UniformBuffer)
+			{
+				m_uavBindlessIndex = VulkanBindlessDescriptorManager::Get().AllocateIndex();
+
+				VulkanBindlessDescriptorManager::Get().UpdateDescriptor(m_uavBindlessIndex, m_uavDescriptor.vkDescriptorInfo, m_uavDescriptor.descriptorSize);
+			}
 		}
 	}
 
-	BindlessIndex VulkanBufferView::GetBindlessIndex() const
+	BindlessIndex VulkanBufferView::GetSRVBindlessIndex() const
 	{
-		return m_bindlessIndex;
+		return m_srvBindlessIndex;
+	}
+
+	BindlessIndex VulkanBufferView::GetUAVBindlessIndex() const
+	{
+		return m_uavBindlessIndex;
 	}
 }
