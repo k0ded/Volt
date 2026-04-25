@@ -26,12 +26,12 @@ namespace Volt
 
 		// Compile the graph, this fills the m_jobs member.
 		Compile();
+		VT_ENSURE(m_jobs.size() == m_tasks.size());
 		
 		JobSystem::RunJobs(m_jobs);
 
 		m_isExecuted = true;
 
-		VT_ENSURE(m_jobs.size() == m_tasks.size());
 	}
 
 	JobCounterRef TaskGraph::ExecuteAndExtractCounter()
