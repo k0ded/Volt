@@ -37,8 +37,6 @@ namespace Volt
 		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 		template<typename Func> VT_NODISCARD static Job* CreateJob(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(StringView jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter*& counter);
@@ -47,6 +45,7 @@ namespace Volt
 		static void RunJobs(ArrayView<Job*> jobs);
 		static void YieldFromJob();
 
+		static void WaitForJob(Job* job);
 		static void WaitForCounter(JobCounter* counter);
 		static void WaitForAndDestroyCounter(JobCounter*& counter);
 
@@ -60,6 +59,7 @@ namespace Volt
 		friend class JobCounter;
 		friend class Job;
 		friend class JobFiber;
+		friend class TaskGraph;
 
 		friend void ExecuteFiber(void* userdata);
 		friend void OnFiberSwitch_PushToQueue(void* userdata);
@@ -95,6 +95,8 @@ namespace Volt
 
 		void Initialize() override;
 		void Shutdown() override;
+
+		template<typename Func> VT_NODISCARD static Job* CreateJobNoCounters(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 
 		void AllocateWaitingLists();
 

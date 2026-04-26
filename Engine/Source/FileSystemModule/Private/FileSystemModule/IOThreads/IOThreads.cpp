@@ -32,9 +32,10 @@ namespace Volt
 	{
 		m_isRunning = false;
 
+		m_workAvailableSemaphore.release(m_ioThreads.size());
+
 		for (IOThread* ioThread : m_ioThreads)
 		{
-			m_workAvailableSemaphore.release();
 
 			ioThread->thread.join();
 			m_ioThreadAllocator.Free(ioThread);

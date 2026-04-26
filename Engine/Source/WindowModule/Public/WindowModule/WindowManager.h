@@ -6,8 +6,6 @@
 
 #include "WindowModule/Config.h"
 
-#include <EventSystem/EventListener.h>
-
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
 
@@ -23,7 +21,7 @@ namespace Volt
 	class Window;
 	class Monitor;
 
-	class WINDOWMODULE_API WindowManager : public SubSystem, public EventListener
+	class WINDOWMODULE_API WindowManager : public SubSystem
 	{
 	public:
 		WindowManager();

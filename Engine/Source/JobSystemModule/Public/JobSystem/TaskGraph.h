@@ -76,8 +76,8 @@ namespace Volt
 
 		protected:
 			friend class TaskGraph;
-			virtual JobRef CreateJob(ExecutionPriority priority, JobCounterRef counter) = 0;
-			virtual JobRef CreateJobAsDependency(ExecutionPriority priority, JobRef dependant) = 0;
+			virtual JobRef CreateJob(ExecutionPriority priority, JobCounterRef associatedCounter, JobCounterRef waitCounter) = 0;
+			virtual JobRef CreateJob(ExecutionPriority priority) = 0;
 
 			StringView m_name;
 			uint32_t m_referenceCount = 0;
@@ -115,14 +115,14 @@ namespace Volt
 
 			~TaskImpl() override = default;
 			
-			JobRef CreateJob(ExecutionPriority priority, JobCounterRef counter) override
+			JobRef CreateJob(ExecutionPriority priority, JobCounterRef associatedCounter, JobCounterRef waitCounter) override
 			{
-				return JobSystem::CreateJob(m_name, priority, counter, std::move(func), stackSize);
+				return JobSystem::CreateJob(m_name, priority, ExecutionPolicy::WorkerThread, associatedCounter, waitCounter, std::move(func), stackSize);
 			}
 
-			JobRef CreateJobAsDependency(ExecutionPriority priority, JobRef dependant) override
+			JobRef CreateJob(ExecutionPriority priority) override
 			{
-				return JobSystem::CreateJobAsDependency(m_name, dependant, std::move(func), stackSize);
+				return JobSystem::CreateJobNoCounters(m_name, priority, ExecutionPolicy::WorkerThread, std::move(func), stackSize);
 			}
 
 			Func func;

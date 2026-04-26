@@ -43,6 +43,11 @@ namespace Volt::RHI
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
+	VulkanRHIModule::~VulkanRHIModule()
+	{
+		m_submissionThread.Shutdown();
+	}
+
 	IntRef<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const
 	{
 		IntRef<BufferView> bufferView = IntRef<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));

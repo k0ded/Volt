@@ -29,6 +29,7 @@ namespace Volt::RHI
 	{
 	public:
 		VulkanRHIModule();
+		~VulkanRHIModule() override;
 
 		IntRef<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const override;
 		IntRef<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const override;

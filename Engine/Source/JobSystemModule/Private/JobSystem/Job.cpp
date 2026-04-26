@@ -26,8 +26,8 @@ namespace Volt
 	void Job::Reset()
 	{
 		m_allocated = false;
-		m_counter = nullptr;
 		m_waitCounter = nullptr;
+		m_associatedCounters.set_capacity(0);
 	}
 
 	void Job::DecRef()
@@ -53,5 +53,18 @@ namespace Volt
 
 		// Destroy the function.
 		funcPtr->~JobFuncBase();
+	}
+
+	void Job::AddAssociatedCounter(JobCounterRef counter)
+	{
+		counter->Increment();
+		counter->IncRef();
+
+		m_associatedCounters.emplace_back(counter);
+	}
+
+	void Job::SetWaitCounter(JobCounterRef counter)
+	{
+		m_waitCounter = counter;
 	}
 }

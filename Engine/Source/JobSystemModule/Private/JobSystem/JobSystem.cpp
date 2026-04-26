@@ -125,6 +125,14 @@ namespace Volt
 		}
 	}
 
+	void JobSystem::WaitForJob(Job* job)
+	{
+		for (JobCounterRef counter : job->GetAssociatedCounters())
+		{
+			WaitForCounter(counter);
+		}
+	}
+
 	void JobSystem::WaitForCounter(JobCounter* counter)
 	{
 		if (!counter)
@@ -619,17 +627,20 @@ namespace Volt
 	{
 		VT_ENSURE(g_workerId != 0xFFFFFFFF);
 
-		JobCounter* counter = job->GetCounter();
-		JobCounter* waitCounter = job->GetWaitCounter();
+		ArrayView<JobCounterRef> associatedCounters = job->GetAssociatedCounters();
+		JobCounterRef waitCounter = job->GetWaitCounter();
 	
-		int32_t oldCount = counter->Decrement();
-		if (oldCount == 1)
+		for (JobCounterRef counter : associatedCounters)
 		{
-			// Mark as freed by setting value to < 0.
-			counter->Decrement();
+			int32_t oldCount = counter->Decrement();
+			if (oldCount == 1)
+			{
+				// Mark as freed by setting value to < 0.
+				counter->Decrement();
+			}
+			counter->DecRef();
 		}
 
-		counter->DecRef();
 		waitCounter->DecRef();
 		job->DecRef();
 

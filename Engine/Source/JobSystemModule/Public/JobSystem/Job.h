@@ -5,6 +5,8 @@
 #include "JobSystem/FiberContext.h"
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Containers/ArrayView.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <string_view>
 #include <new>
@@ -114,7 +116,7 @@ namespace Volt
 		void Reset();
 
 		VT_NODISCARD VT_INLINE StringView GetName() const { return m_jobName; }
-		VT_NODISCARD VT_INLINE JobCounter* GetCounter() const { return m_counter; }
+		VT_NODISCARD VT_INLINE ArrayView<JobCounterRef> GetAssociatedCounters() const { return m_associatedCounters; }
 		VT_NODISCARD VT_INLINE JobCounter* GetWaitCounter() const { return m_waitCounter; }
 		VT_NODISCARD VT_INLINE JobFiber* GetAssignedFiber() const { return m_assignedFiber; }
 		VT_NODISCARD VT_INLINE ExecutionPolicy GetExecutionPolicy() const { return m_executionPolicy; }
@@ -134,6 +136,7 @@ namespace Volt
 		friend void ExecuteFiber(void* userData);
 		friend class JobSystem;
 		friend class JobFiber;
+		friend class TaskGraph;
 
 		struct JobFuncBase
 		{
@@ -157,17 +160,20 @@ namespace Volt
 		VT_NODISCARD VT_INLINE JobFuncBase* GetJobFunction() { return reinterpret_cast<JobFuncBase*>(&m_funcStorage); }
 
 		void ExecuteInternal();
+		void AddAssociatedCounter(JobCounterRef counter);
+		void SetWaitCounter(JobCounterRef counter);
 
 		bool m_allocated : 1 = false;
 
 		ExecutionPolicy m_executionPolicy = ExecutionPolicy::WorkerThread;
 		ExecutionPriority m_priority = ExecutionPriority::Critical;
+		FiberStackSize m_stackSize;
+
 		std::atomic_int32_t m_referenceCount = 0;
 
-		JobCounter* m_counter = nullptr;
+		InlineVector<JobCounter*, 1> m_associatedCounters;
 		JobCounter* m_waitCounter = nullptr;
 		JobFiber* m_assignedFiber = nullptr;
-		FiberStackSize m_stackSize;
 
 		StringView m_jobName;
 
@@ -183,7 +189,12 @@ namespace Volt
 		static_assert(sizeof(Func) <= Job::MaxJobFuncSize);
 
 		m_jobName = name;
-		m_counter = counter;
+
+		if (counter)
+		{
+			m_associatedCounters = { counter };
+		}
+
 		m_waitCounter = waitCounter;
 		m_executionPolicy = executionPolicy;
 		m_priority = priority;

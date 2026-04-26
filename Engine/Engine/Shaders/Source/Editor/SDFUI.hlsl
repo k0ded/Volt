@@ -8,6 +8,7 @@
 #include "UICommandCulling.hlsli"
 
 #include "ResourceTable.hlsli"
+#include "BindlessResources.hlsli"
 #include "StaticSamplerStates.hlsli"
 
 float3 SDF_Glow(float sdf, float glowDistance, float glowStrength, float3 glowColor, float3 prevColor)
@@ -235,7 +236,7 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				
 				// Sample UV
 				#if BINDLESS_ENABLED
-				Texture2D fontAtlas = ResourceDescriptorHeap[NonUniformResourceIndex(command.textureIndex)];
+				Texture2D fontAtlas = BindlessResources::Get<Texture2D>(command.textureIndex);
 				#else
 				Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
 				#endif				
@@ -269,7 +270,7 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				const float2 texUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
 				
 				#if BINDLESS_ENABLED
-				Texture2D texture = ResourceDescriptorHeap[NonUniformResourceIndex(command.textureIndex)];
+				Texture2D texture = BindlessResources::Get<Texture2D>(command.textureIndex);
 				#else
 				Texture2D texture = ResourceTable::LoadTexture(command.textureIndex);
 				#endif			

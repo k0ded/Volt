@@ -77,6 +77,7 @@ namespace Volt
 
 		// Correct working directory should have been setup at this point.
 		m_currentEngineDirectory = Filesystem::GetWorkingDirectory();
+		m_engineAssetsDirectory = m_currentEngineDirectory / "Engine";
 
 		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
 		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
@@ -160,7 +161,6 @@ namespace Volt
 			VT_LOGC(Error, LogProject, "The loaded project is deprecated!");
 		}
 
-		m_engineAssetsDirectory = m_currentEngineDirectory / "Engine";
 		m_currentProject->assetsDirectory = GetProjectDirectory() / GetAssetsDirectoryName();
 		m_currentProject->generatedDirectory = GetProjectDirectory() / "Generated";
 	}

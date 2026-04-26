@@ -58,16 +58,12 @@ namespace Volt
 		return newJob;
 	}
 
-	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJobAsDependency(StringView jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize)
-	{
-		// Inherit the priority.
-		return CreateJob(jobName, dependantJob->GetPriority(), dependantJob->GetWaitCounter(), std::move(func), stackSize);
-	}
 
 	template<typename Func>
-	VT_NODISCARD Job* JobSystem::CreateJobWithDependency(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize)
+	VT_NODISCARD Job* Volt::JobSystem::CreateJobNoCounters(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize)
 	{
-		return CreateJob(jobName, priority, executionPolicy, nullptr, dependencyJob->GetCounter(), std::move(func), stackSize);
+		Job* newJob = s_instance->AllocateJob();
+		newJob->Create(jobName, nullptr, nullptr, priority, executionPolicy, stackSize, std::move(func));
+		return newJob;
 	}
 }

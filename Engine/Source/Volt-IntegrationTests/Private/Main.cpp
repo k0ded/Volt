@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <PlatformsModule/Platform.h>
+
 #include <CoreUtilities/Filesystem/Path.h>
+#include <CoreUtilities/ThreadConfig.h>
+#include <CoreUtilities/MemoryTracker.h>
 
 Filesystem::Path g_workingDirectoryFilepath;
 
@@ -22,6 +26,9 @@ int main(int argc, char** argv)
 			}
 		}
 	}
+
+	Volt::PlatformMisc::SetupExceptionHandlers();
+	Threads::InitializeThreadConfig(false, false, true);
 
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

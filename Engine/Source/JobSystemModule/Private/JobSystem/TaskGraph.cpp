@@ -31,8 +31,6 @@ namespace Volt
 
 		// Compile the graph, this fills the m_jobs member.
 		Compile();
-		VT_ENSURE(m_jobs.size() == m_tasks.size());
-		
 		JobSystem::RunJobs(m_jobs);
 
 		m_isExecuted = true;
@@ -76,60 +74,69 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		struct StackEntry
-		{
-			JobRef dependantJob = nullptr;
-			Task* task = nullptr;
-		};
-
-		// Create the graphs counter that is waitable.
 		m_graphCounter = JobSystem::CreateCounter();
 
-		// Find all unreferenced tasks, aka all tasks
-		// that no other task depends on.
-		Vector<Task*> unreferencedTasks;
+		GlobalMemoryStackMark memMark;
+		std::unordered_set<Task*> visited;
+
+		GlobalMemoryStackVector<Task*> sortedTasks;
+		sortedTasks.reserve(m_tasks.size());
+
+		// DFS order
+		auto insertFunc = [&](Task* task, auto& insertFunc)
+		{
+			if (!visited.insert(task).second)
+			{
+				return;
+			}
+
+			for (Task* dependency : task->GetDependencies())
+			{
+				insertFunc(dependency, insertFunc);
+			}
+
+			sortedTasks.emplace_back(task);
+		};
+
 		for (Task* task : m_tasks)
 		{
-			if (task->GetRefCount() == 0)
-			{
-				unreferencedTasks.emplace_back(task);
-			}
+			insertFunc(task, insertFunc);
 		}
 
-		m_jobs.reserve(m_numExpectedTasks);
+		Map<Task*, size_t> taskToIndex;
+		taskToIndex.reserve(sortedTasks.size());
 
-		// Now iterate through all unreferenced tasks and 
-		// iterate though their dependency trees, creating
-		// the jobs as we go.
-		for (Task* unreferencedTask : unreferencedTasks)
+		// Create all jobs without any counters
+		for (size_t i = 0; i < sortedTasks.size(); ++i)
 		{
-			JobRef initialJob = unreferencedTask->CreateJob(m_priority, m_graphCounter);
-			m_jobs.emplace_back(initialJob);
+			Task* task = sortedTasks[i];
+			m_jobs.emplace_back(task->CreateJob(m_priority));
+			taskToIndex[task] = i;
+		}
 
-			Vector<StackEntry> dependencyStack;
-			dependencyStack.reserve(unreferencedTask->GetDependencies().size());
+		// Build in topological order
+		// Note: index in sortedTasks matches job in m_jobs
+		for (size_t i = 0; i < sortedTasks.size(); ++i)
+		{
+			Task* task = sortedTasks[i];
+			JobRef job = m_jobs[i];
 
-			for (Task* initialDependency : unreferencedTask->GetDependencies())
+			JobCounterRef waitCounter = JobSystem::CreateCounter();
+			job->SetWaitCounter(waitCounter);
+
+			// Add wait counter as an associated counter to dependencies.
+			for (Task* dependency : task->GetDependencies())
 			{
-				auto& newEntry = dependencyStack.emplace_back();
-				newEntry.task = initialDependency;
-				newEntry.dependantJob = initialJob;
+				const size_t dependencyIndex = taskToIndex[dependency];
+				JobRef dependencyJob = m_jobs[dependencyIndex];
+
+				dependencyJob->AddAssociatedCounter(waitCounter);
 			}
 
-			while (!dependencyStack.empty())
+			// Root job, add graph counter as associated counter
+			if (task->GetRefCount() == 0)
 			{
-				StackEntry currentEntry = dependencyStack.back();
-				dependencyStack.pop_back();
-
-				JobRef job = currentEntry.task->CreateJobAsDependency(m_priority, currentEntry.dependantJob);
-				m_jobs.emplace_back(job);
-
-				for (Task* dependency : currentEntry.task->GetDependencies())
-				{
-					auto& newEntry = dependencyStack.emplace_back();
-					newEntry.task = dependency;
-					newEntry.dependantJob = job;
-				}
+				job->AddAssociatedCounter(m_graphCounter);
 			}
 		}
 	}

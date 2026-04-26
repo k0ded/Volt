@@ -16,7 +16,7 @@ namespace Volt
 		void Free(Type* job);
 
 	private:
-		PagedAtomicArenaAllocator<Type, 1024> m_allocator;
+		PagedAtomicArenaAllocator<Type, 1024, DefaultHeapAllocator, true> m_allocator;
 	};
 
 	template<typename Type>

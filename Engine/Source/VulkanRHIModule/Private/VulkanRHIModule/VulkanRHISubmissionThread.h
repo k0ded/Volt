@@ -24,6 +24,8 @@ namespace Volt::RHI
 		VulkanRHISubmissionThread();
 		~VulkanRHISubmissionThread() override;
 
+		void Shutdown();
+
 		void QueueSubmit(DeviceQueueExecuteInfo&& executeInfo, QueueType queueType) override;
 		std::thread::id GetSubmissionThreadId() const override;
 

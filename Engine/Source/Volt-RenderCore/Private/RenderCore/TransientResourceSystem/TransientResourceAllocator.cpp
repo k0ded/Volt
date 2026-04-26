@@ -83,8 +83,24 @@ namespace Volt
 
 	TransientResourceAllocator::~TransientResourceAllocator()
 	{
+		for (TransientBufferResourceRef buffer : m_bufferCache)
+		{
+			m_transientBufferAllocator.Free(buffer);
+		}
+
+		for (TransientTextureResourceRef texture : m_textureCache)
+		{
+			m_transientTextureAllocator.Free(texture);
+		}
+
+		for (TransientUniformBufferResourceRef uniformBuffer : m_uniformBufferCache)
+		{
+			m_transientUniformBufferAllocator.Free(uniformBuffer);
+		}
+
 		m_bufferCache.clear();
 		m_textureCache.clear();
+		m_uniformBufferCache.clear();
 		s_instance = nullptr;
 	}
 

@@ -23,9 +23,7 @@ namespace Volt::RHI
 
 	VulkanRHISubmissionThread::~VulkanRHISubmissionThread()
 	{
-		m_isRunning = false;
-		m_workAvailableSemaphore.release();
-		m_thread->join();
+		VT_ASSERT(!m_isRunning);
 	}
 
 	void VulkanRHISubmissionThread::QueueSubmit(DeviceQueueExecuteInfo&& executeInfo, QueueType queueType)
@@ -102,6 +100,7 @@ namespace Volt::RHI
 
 			VT_PROFILE_FRAME_END("RHI Submission");
 
+			submissionData = {};
 			m_workAvailableSemaphore.acquire();
 		}
 	}
@@ -171,5 +170,12 @@ namespace Volt::RHI
 			VulkanFence& vkFence = executeInfo.executionFence->AsRef<VulkanFence>();
 			vkFence.m_hasBeenSubmitted.store(true, std::memory_order::relaxed);
 		}
+	}
+
+	void VulkanRHISubmissionThread::Shutdown()
+	{
+		m_isRunning = false;
+		m_workAvailableSemaphore.release();
+		m_thread->join();
 	}
 }

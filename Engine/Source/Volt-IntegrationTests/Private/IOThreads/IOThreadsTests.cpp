@@ -4,6 +4,7 @@
 #include <FileSystemModule/Filesystem.h>
 
 #include <CoreUtilities/Containers/Array.h>
+#include <CoreUtilities/ThreadConfig.h>
 
 #include <thread>
 #include <atomic>
@@ -83,6 +84,8 @@ namespace IntegrationTests
 		{
 			threads[t] = std::thread([&]()
 			{
+				Threads::InitializeThreadConfig(false, false, false);
+
 				syncPoint.arrive_and_wait();
 
 				for (uint32_t i = 0; i < NumReadsPerThread; ++i)
@@ -138,6 +141,8 @@ namespace IntegrationTests
 		{
 			threads[t] = std::thread([&, t]()
 			{
+				Threads::InitializeThreadConfig(false, false, false);
+
 				syncPoint.arrive_and_wait();
 
 				for (uint32_t i = 0; i < NumReadsPerThread; ++i)
@@ -188,6 +193,8 @@ namespace IntegrationTests
 		{
 			readerThreads[t] = std::thread([&]()
 			{
+				Threads::InitializeThreadConfig(false, false, false);
+
 				syncPoint.arrive_and_wait();
 
 				for (uint32_t i = 0; i < NumOpsPerThread; ++i)
@@ -207,6 +214,8 @@ namespace IntegrationTests
 		{
 			writerThreads[t] = std::thread([&, t]()
 			{
+				Threads::InitializeThreadConfig(false, false, false);
+
 				syncPoint.arrive_and_wait();
 
 				for (uint32_t i = 0; i < NumOpsPerThread; ++i)
@@ -255,6 +264,8 @@ namespace IntegrationTests
 		{
 			threads[t] = std::thread([&, t]()
 			{
+				Threads::InitializeThreadConfig(false, false, false);
+
 				syncPoint.arrive_and_wait();
 
 				for (uint32_t i = 0; i < NumReadsPerThread; ++i)

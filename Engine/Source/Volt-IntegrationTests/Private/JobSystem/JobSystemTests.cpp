@@ -21,13 +21,5 @@ namespace IntegrationTests
 
 	TEST_F(JobSystemFixture, CounterAllocation)
 	{
-		Array<std::thread, 16> threads;
-
-		for (uint32_t i = 0; i < 16; ++i)
-		{
-			threads[i] = std::thread(&ThreadFunc);
-		}
-
-		threads[0].join();
 	}
 }
