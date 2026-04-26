@@ -283,7 +283,7 @@ namespace Volt::RHI
 
 		bool isBindless = false;
 
-		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max() || isBindless; }
+		inline const bool IsValid() const { return (set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max()) || isBindless; }
 
 		friend Archive& operator<<(Archive& archive, ShaderResourceBinding& value);
 	};

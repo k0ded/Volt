@@ -120,6 +120,7 @@ namespace Volt::RHI
 	ShaderCache::ShaderCache(const ShaderCacheCreateInfo& cacheInfo)
 		: m_info(cacheInfo)
 	{
+		VT_UNUSED(m_info);
 	}
 
 	ShaderCache::~ShaderCache()

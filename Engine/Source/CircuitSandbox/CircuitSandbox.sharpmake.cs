@@ -56,6 +56,8 @@ namespace VoltSharpmake
 				conf.AddPrivateDependency(target, gameProjectType);
 			}
 
+			conf.AddPrivateDependency<CrashReportClient>(target, DependencySetting.OnlyBuildOrder);
+
             conf.AdditionalDebuggerCommands = Path.Combine(Globals.VtProjectDirectory, @"Project.vtproj");
 
 

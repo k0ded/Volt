@@ -473,9 +473,9 @@ namespace Volt::RHI
 	bool HLSLParser::IsFunctionDeclaration()
 	{
 		const bool hasReturnType = Peek() != nullptr &&
-			Peek()->tokenType == HLSLTokenType::PrimitiveType ||
+			(Peek()->tokenType == HLSLTokenType::PrimitiveType ||
 			Peek()->tokenType == HLSLTokenType::BuiltinResourceType ||
-			Peek()->tokenType == HLSLTokenType::Unknown; // User type
+			Peek()->tokenType == HLSLTokenType::Unknown); // User type
 
 		const bool hasIdentifier = Peek(1) != nullptr &&
 			Peek(1)->tokenType == HLSLTokenType::Unknown;
