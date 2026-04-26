@@ -185,10 +185,10 @@ void LogPanel::RenderBottomBar()
 			auto strings = Utility::SplitStringsByCharacter(query, ' ');
 			if (!strings.empty())
 			{
-				if (Volt::ConsoleVariableRegistry::VariableExists(strings[0]))
+				if (ConsoleVariableRegistry::VariableExists(strings[0]))
 				{
-					Weak<Volt::RegisteredConsoleVariableBase> weakVariable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
-					Ref<Volt::RegisteredConsoleVariableBase> variable = weakVariable.Lock();
+					Weak<RegisteredConsoleVariableBase> weakVariable = ConsoleVariableRegistry::GetVariable(strings[0]);
+					Ref<RegisteredConsoleVariableBase> variable = weakVariable.Lock();
 
 					String message = String(variable->GetName()) + " = ";
 

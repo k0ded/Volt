@@ -13,7 +13,7 @@
 
 VT_DEFINE_LOG_CATEGORY(LogRenderDoc);
 
-static Volt::ConsoleVariable<int32_t> s_rdcCaptureFrame("r.rdc.capture", 0, "Trigger a capture");
+static ConsoleVariable<int32_t> s_rdcCaptureFrame("r.rdc.capture", 0, "Trigger a capture");
 
 RenderDocPlugin::RenderDocPlugin()
 {

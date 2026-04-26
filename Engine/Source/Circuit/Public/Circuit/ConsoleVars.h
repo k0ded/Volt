@@ -5,7 +5,7 @@
 
 namespace Circuit
 {
-	extern Volt::ConsoleVariable<int32_t> s_cvarCircuitShowWidgetBounds;
-	extern Volt::ConsoleVariable<int32_t> s_cvarCircuitShowHoveredWidgetBounds;
-	extern Volt::ConsoleVariable<int32_t> s_cvarCircuitLogPaint;
+	extern ConsoleVariable<int32_t> s_cvarCircuitShowWidgetBounds;
+	extern ConsoleVariable<int32_t> s_cvarCircuitShowHoveredWidgetBounds;
+	extern ConsoleVariable<int32_t> s_cvarCircuitLogPaint;
 }

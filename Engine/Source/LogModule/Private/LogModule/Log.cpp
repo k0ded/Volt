@@ -1,5 +1,7 @@
 #include "Log.h"
 
+#include <CoreUtilities/ConsoleVariableRegistry.h>
+
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/fmt/ostr.h>
@@ -9,6 +11,16 @@
 #include <spdlog/sinks/msvc_sink.h>
 
 #include <filesystem>
+
+ConsoleVariable<int32_t> s_cvarLogMaxVerbosity(
+	"log.MaxVerbosity",
+	0,
+	"The maximum allowed verbosity level.\n"
+	"0. Trace\n"
+	"1. Info\n"
+	"2. Warning\n"
+	"3. Error\n"
+	"4. Critical\n");
 
 Log::Log()
 {
@@ -88,6 +100,11 @@ Log& Log::Get()
 void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, const String& message)
 {
 	if (!m_isEnabled)
+	{
+		return;
+	}
+
+	if (static_cast<int32_t>(severity) < s_cvarLogMaxVerbosity.GetValue())
 	{
 		return;
 	}

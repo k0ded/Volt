@@ -25,6 +25,7 @@ namespace Volt::RHI
 	static ConsoleVariable<int32_t> g_rhiUseBindless(
 		"rhi.UseBindless",
 		0,
+		ConsoleVariableFlags::ReadOnly,
 		"Whether or not the RHI should use bindless"
 	);
 

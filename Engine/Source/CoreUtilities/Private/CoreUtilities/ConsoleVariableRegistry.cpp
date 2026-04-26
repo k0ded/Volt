@@ -3,36 +3,31 @@
 #include "CoreUtilities/ConsoleVariableRegistry.h"
 #include "CoreUtilities/String/StringUtility.h"
 
-namespace Volt
+ConsoleVariableRegistry::ConsoleVariableRegistry()
+{}
+
+ConsoleVariableRegistry::~ConsoleVariableRegistry()
+{}
+
+Map<String, Ref<RegisteredConsoleVariableBase>>& ConsoleVariableRegistry::GetRegisteredVariables()
 {
-	ConsoleVariableRegistry::ConsoleVariableRegistry()
-	{
-	}
+	return ConsoleVariableRegistry::Get().m_registeredVariables;
+}
 
-	ConsoleVariableRegistry::~ConsoleVariableRegistry()
-	{
-	}
+ConsoleVariableRegistry& ConsoleVariableRegistry::Get()
+{
+	static ConsoleVariableRegistry registry;
+	return registry;
+}
 
-	Map<String, Ref<RegisteredConsoleVariableBase>>& ConsoleVariableRegistry::GetRegisteredVariables()
-	{
-		return ConsoleVariableRegistry::Get().m_registeredVariables;
-	}
+bool ConsoleVariableRegistry::VariableExists(const String& variableName)
+{
+	String tempVarName = ::Utility::ToLower(variableName);
+	return ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName);
+}
 
-	ConsoleVariableRegistry& ConsoleVariableRegistry::Get()
-	{
-		static ConsoleVariableRegistry registry;
-		return registry;
-	}
-
-	bool ConsoleVariableRegistry::VariableExists(const String& variableName)
-	{
-		String tempVarName = ::Utility::ToLower(variableName);
-		return ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName);
-	}
-
-	Weak<RegisteredConsoleVariableBase> ConsoleVariableRegistry::GetVariable(const String& variableName)
-	{
-		const String tempVarName = ::Utility::ToLower(variableName);
-		return ConsoleVariableRegistry::Get().m_registeredVariables.at(tempVarName);
-	}
+Weak<RegisteredConsoleVariableBase> ConsoleVariableRegistry::GetVariable(const String& variableName)
+{
+	const String tempVarName = ::Utility::ToLower(variableName);
+	return ConsoleVariableRegistry::Get().m_registeredVariables.at(tempVarName);
 }
