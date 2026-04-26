@@ -3,14 +3,14 @@
 #include "Sandbox/SceneRendererExtensions/ObjectIDPassMeshProcessor.h"
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 void ObjectIDPassMeshProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive)
 {
-	auto vertexShader = Volt::ShaderMap::Get<ObjectIDVS>();
-	auto pixelShader = Volt::ShaderMap::Get<ObjectIDPS>();
+	auto vertexShader = Volt::GlobalShaderMap::Get<ObjectIDVS>();
+	auto pixelShader = Volt::GlobalShaderMap::Get<ObjectIDPS>();
 
 	Volt::RHI::RenderPipelineCreateInfo pipelineInfo;
 	pipelineInfo.depthMode = Volt::RHI::DepthMode::Read;

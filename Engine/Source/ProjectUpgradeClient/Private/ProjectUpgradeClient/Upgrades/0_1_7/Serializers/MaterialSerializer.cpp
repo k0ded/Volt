@@ -15,7 +15,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>

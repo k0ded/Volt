@@ -11,7 +11,7 @@
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>
 
 #include <RHIModule/Globals.h>
@@ -215,8 +215,8 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[0] = dstTexture;
 		passParameters->PS.renderTargets.depthTarget = depthTexture;
 
-		auto vertexShader = ShaderMap::Get<DrawDebugLinesVS>();
-		auto pixelShader = ShaderMap::Get<DrawDebugLinesPS>();
+		auto vertexShader = GlobalShaderMap::Get<DrawDebugLinesVS>();
+		auto pixelShader = GlobalShaderMap::Get<DrawDebugLinesPS>();
 
 		renderGraph.AddPass("Draw Debug Lines",
 			RenderGraphPassFlags::None,
@@ -301,8 +301,8 @@ namespace Volt
 
 	void DebugRenderer::RenderDebugBillboards(RenderGraph& renderGraph, const RenderView& view, RGTextureRef dstTexture, RGTextureRef depthTexture)
 	{
-		auto vertexShader = ShaderMap::Get<DrawDebugBillboardsVS>();
-		auto pixelShader = ShaderMap::Get<DrawDebugBillboardsPS>();
+		auto vertexShader = GlobalShaderMap::Get<DrawDebugBillboardsVS>();
+		auto pixelShader = GlobalShaderMap::Get<DrawDebugBillboardsPS>();
 
 		ShaderParameterRenderTargetBindings renderTargets;
 		renderTargets.renderTargets[0] = dstTexture;
@@ -399,7 +399,7 @@ namespace Volt
 		passParameters->VS.BillboardInstances = renderGraph.CreateSRV(billboardInstances);
 		passParameters->renderTargets = renderTargets;
 
-		auto vertexShader = ShaderMap::Get<DrawDebugBillboardsVS>();
+		auto vertexShader = GlobalShaderMap::Get<DrawDebugBillboardsVS>();
 
 		renderGraph.AddPass("Draw Debug Billboards",
 			RenderGraphPassFlags::Raster,

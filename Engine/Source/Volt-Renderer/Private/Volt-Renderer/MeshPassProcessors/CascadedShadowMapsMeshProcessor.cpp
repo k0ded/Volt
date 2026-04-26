@@ -3,14 +3,14 @@
 #include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
 #include "Volt-Renderer/RenderingTechniques/CascadedShadowMapsTechnique.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 namespace Volt
 {
 	void CascadedShadowMapMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
-		auto vertexShader = ShaderMap::Get<CascadedDirectionalShadowVS>();
-		auto pixelShader = ShaderMap::Get<CascadedDirectionalShadowPS>();
+		auto vertexShader = GlobalShaderMap::Get<CascadedDirectionalShadowVS>();
+		auto pixelShader = GlobalShaderMap::Get<CascadedDirectionalShadowPS>();
 
 		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
 		pipelineCreateInfo.depthCompareOperator = RHI::CompareOperator::LessEqual;

@@ -14,7 +14,7 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 
 using namespace Volt;

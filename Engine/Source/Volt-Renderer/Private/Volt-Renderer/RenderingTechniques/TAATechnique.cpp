@@ -10,7 +10,7 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/SamplerStateCache.h>
 
@@ -71,8 +71,8 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[0] = outputTexture;
 		passParameters->PS.renderTargets.renderTargets[1] = accumulationTexture;
 
-		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		auto pixelShader = ShaderMap::Get<TAAResolvePS>();
+		auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = GlobalShaderMap::Get<TAAResolvePS>();
 
 		m_renderGraph.AddPass("TAA Resolve",
 			RenderGraphPassFlags::None,

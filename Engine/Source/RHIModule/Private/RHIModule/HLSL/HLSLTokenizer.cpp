@@ -588,16 +588,6 @@ namespace Volt::RHI
 		// Start at the shader entry point
 		workList.emplace_back(entryPoint);
 
-#if 0
-		for (const HLSLNode_FunctionDeclaration* funcDecl : functionDecls)
-		{
-			if (!calledFunctions.contains(funcDecl->name))
-			{
-				workList.emplace_back(funcDecl->name);
-			}
-		}
-#endif
-
 		// BFS over call graph
 		while (!workList.empty())
 		{

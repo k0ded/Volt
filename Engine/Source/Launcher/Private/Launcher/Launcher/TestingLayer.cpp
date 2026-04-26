@@ -9,7 +9,7 @@
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
 
 #include <WindowModule/WindowManager.h>

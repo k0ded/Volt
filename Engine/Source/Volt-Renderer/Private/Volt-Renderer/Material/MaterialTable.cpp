@@ -2,7 +2,7 @@
 #include "Volt-Renderer/Material/MaterialTable.h"
 
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 namespace Volt
 {

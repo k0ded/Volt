@@ -5,7 +5,7 @@
 #include "Volt-Renderer/MainMaterialShaders.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 namespace Volt
 {
@@ -17,7 +17,7 @@ namespace Volt
 			return;
 		}
 
-		auto vertexShader = ShaderMap::Get<DepthPrePassVS>();
+		auto vertexShader = GlobalShaderMap::Get<DepthPrePassVS>();
 		auto pixelShader = renderPrimitive->material->GetPixelShader<DepthPrePassMaterialShader>();
 
 		RHI::RenderPipelineCreateInfo pipelineInfo{};

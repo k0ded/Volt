@@ -10,7 +10,7 @@
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderSubSystem.h>
@@ -190,7 +190,7 @@ namespace Volt
 
 			const uint32_t groupCount = Math::DivideRoundUp(CubeMapSize, ConversionThreadGroupSize);
 
-			auto shader = ShaderMap::Get<EquirectangularToCubemapCS>();
+			auto shader = GlobalShaderMap::Get<EquirectangularToCubemapCS>();
 			ComputeShaderUtils::AddPass<EquirectangularToCubemapCS>(renderGraph,
 				"Convert to Equirectangular",
 				shader,
@@ -228,7 +228,7 @@ namespace Volt
 
 				const uint32_t numGroups = glm::max(1u, Math::DivideRoundUp(size, 32u));
 
-				auto shader = ShaderMap::Get<IntegrateSpecularCubeCS>();
+				auto shader = GlobalShaderMap::Get<IntegrateSpecularCubeCS>();
 				ComputeShaderUtils::AddPass<IntegrateSpecularCubeCS>(renderGraph,
 					"Integrate Specular",
 					shader,
@@ -257,7 +257,7 @@ namespace Volt
 
 			const uint32_t groupCount = Math::DivideRoundUp(DiffuseMapSize, ConversionThreadGroupSize);
 
-			auto shader = ShaderMap::Get<IntegrateDiffuseCubeCS>();
+			auto shader = GlobalShaderMap::Get<IntegrateDiffuseCubeCS>();
 			ComputeShaderUtils::AddPass<IntegrateDiffuseCubeCS>(renderGraph,
 				"Integrate Diffuse",
 				shader,
@@ -383,8 +383,8 @@ namespace Volt
 		GeneratePreIntegratedBRDFPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedBRDFPS::Parameters>();
 		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
 
-		IntRef<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		IntRef<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedBRDFPS>();
+		IntRef<RHI::Shader> vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+		IntRef<RHI::Shader> pixelShader = GlobalShaderMap::Get<GeneratePreIntegratedBRDFPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
 			RenderGraphPassFlags::Raster,

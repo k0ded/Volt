@@ -3,7 +3,7 @@
 #include "Volt-Renderer/Material/MaterialShaderMap.h"
 #include "Volt-Renderer/Material/MaterialShaderRegistry.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/IORequestCompileShader.h>
 
 #include <FileSystemModule/IOThreads/IOThreads.h>
@@ -37,7 +37,7 @@ namespace Volt
 		{
 			isDefaultShader = true;
 			const MaterialShaderRegistry::ShaderRegistrationInfo& registrationInfo = MaterialShaderRegistry::Get().GetShaderRegistrationInfoForShader(shaderType);
-			return ShaderMap::Get(registrationInfo.defaultShaderClass);
+			return GlobalShaderMap::Get(registrationInfo.defaultShaderClass);
 		}
 
 		const ShaderBucket& shaderBucket = it->second;
@@ -62,7 +62,7 @@ namespace Volt
 		if (!shaderBucket.defaultShader)
 		{
 			const MaterialShaderRegistry::ShaderRegistrationInfo& registrationInfo = MaterialShaderRegistry::Get().GetShaderRegistrationInfoForShader(shaderType);
-			shaderBucket.defaultShader = ShaderMap::Get(registrationInfo.defaultShaderClass);
+			shaderBucket.defaultShader = GlobalShaderMap::Get(registrationInfo.defaultShaderClass);
 		}
 
 		IntRef<RHI::Shader> shader;

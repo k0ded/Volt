@@ -17,7 +17,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/SamplerStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
@@ -73,7 +73,7 @@ RGTextureRef DebugSceneRendererExtension::OnRender(RenderGraph& renderGraph, Ren
 	renderTargets.depthTarget = m_depthTexture;
 
 	{
-		auto pixelShader = ShaderMap::Get<EditorGizmoPS>();
+		auto pixelShader = GlobalShaderMap::Get<EditorGizmoPS>();
 		m_debugRenderer.RenderBillboards(renderGraph, pixelShader, view, renderTargets, false);
 	}
 
@@ -229,8 +229,8 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 			passParameters->Revealage = renderGraph.CreateSRV(revealage);
 			passParameters->renderTargets.renderTargets[0] = prevOutputImage;
 
-			auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-			auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
+			auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+			auto pixelShader = GlobalShaderMap::Get<TranslucencyCompositePS>();
 
 			renderGraph.AddPass("TranslucencyComposite",
 				RenderGraphPassFlags::Raster,

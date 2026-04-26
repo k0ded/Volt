@@ -9,7 +9,7 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/PermutationCollection.h>
 
 namespace Volt
@@ -80,7 +80,7 @@ namespace Volt
 		glm::uvec2 sourceResolution = { sourceTexture->GetDesc().width, sourceTexture->GetDesc().height };
 		glm::uvec2 targetResolution = { width, height };
 
-		auto shader = ShaderMap::Get<BloomDownsampleCS>();
+		auto shader = GlobalShaderMap::Get<BloomDownsampleCS>();
 
 		for (uint32_t i = 0; i < BloomTechnique::NumMips; ++i)
 		{
@@ -148,7 +148,7 @@ namespace Volt
 			BloomUpsampleCS::PermutationVector permutationVector;
 			permutationVector.Set<BloomUpsampleCS::BloomComposite>(i == 0);
 
-			auto shader = ShaderMap::Get<BloomUpsampleCS>(permutationVector);
+			auto shader = GlobalShaderMap::Get<BloomUpsampleCS>(permutationVector);
 
 			ComputeShaderUtils::AddPass<BloomUpsampleCS>(m_renderGraph,
 				"BloomUpsampleCS",

@@ -18,14 +18,26 @@ namespace Volt
 		typename T::PermutationVector;
 	};
 
+	template<typename T>
+	concept HasShouldCompilePermutationFunc = requires(const GlobalShaderPermutationParameters& permutationParameters)
+	{
+		{ T::ShouldCompilePermutation(permutationParameters) } -> std::convertible_to<bool>;
+	};
+
 	class VTRC_API ShaderRegistry
 	{
 	public:
+		using IterPermutationsCallback = std::function<void(RHI::ShaderPermutationConfig&&, size_t)>;
+		using ShouldCompilePermutationFuncPtr = bool (*)(const GlobalShaderPermutationParameters&);
+
 		struct ShaderStageInfo
 		{
 			Filesystem::Path filePath;
 			String entryPoint;
 			RHI::ShaderStage shaderStage;
+
+			ShouldCompilePermutationFuncPtr shouldCompilePermutationFunc = nullptr;
+			std::function<void(IterPermutationsCallback&&)> iteratePermutationsFunc;
 			bool hasPermutations;
 		};
 
@@ -54,6 +66,26 @@ namespace Volt
 			if constexpr (HasshaderPermutations<T>)
 			{
 				registrationInfo.stageInfos.hasPermutations = true;
+				registrationInfo.stageInfos.iteratePermutationsFunc = [](IterPermutationsCallback&& callback)
+				{
+					constexpr size_t numPermutations = T::PermutationVector::GetTotalPermutationCount();
+
+					for (size_t i = 0; i < numPermutations; ++i)
+					{
+						typename T::PermutationVector permutationVector;
+						permutationVector.InitializeWithPermutationIndex(i);
+
+						RHI::ShaderPermutationConfig permutationConfig;
+						permutationVector.ResolvePermutations(permutationConfig);
+
+						callback(std::move(permutationConfig), i);
+					}
+				};
+			}
+
+			if constexpr (HasShouldCompilePermutationFunc<T>)
+			{
+				registrationInfo.stageInfos.shouldCompilePermutationFunc = T::ShouldCompilePermutation;
 			}
 		}
 

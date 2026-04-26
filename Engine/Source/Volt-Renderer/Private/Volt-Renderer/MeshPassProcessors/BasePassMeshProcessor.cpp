@@ -6,7 +6,7 @@
 #include "Volt-Renderer/RendererUtilities.h"
 #include "Volt-Renderer/MainMaterialShaders.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 namespace Volt
 {
@@ -17,7 +17,7 @@ namespace Volt
 			return;
 		}
 
-		auto vertexShader = ShaderMap::Get<BasePassVS>();
+		auto vertexShader = GlobalShaderMap::Get<BasePassVS>();
 		auto pixelShader = renderPrimitive->material->GetPixelShader<BasePassMaterialShader>();
 
 		RHI::RenderPipelineCreateInfo pipelineInfo{};

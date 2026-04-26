@@ -12,7 +12,7 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/DefaultBlendStates.h>
 
@@ -55,8 +55,8 @@ RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph
 	passParameters->PS.renderTargets.renderTargets[0] = prevOutputImage;
 	passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
-	auto vertexShader = ShaderMap::Get<EditorGridVS>();
-	auto pixelShader = ShaderMap::Get<EditorGridPS>();
+	auto vertexShader = GlobalShaderMap::Get<EditorGridVS>();
+	auto pixelShader = GlobalShaderMap::Get<EditorGridPS>();
 
 	renderGraph.AddPass("Editor Grid",
 		RenderGraphPassFlags::Raster,

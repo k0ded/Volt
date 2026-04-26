@@ -34,7 +34,7 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/DefaultBlendStates.h>
@@ -337,8 +337,8 @@ namespace Volt
 		passParameters->Revealage = renderGraph.CreateSRV(translucencyTextures.revealage);
 		passParameters->renderTargets.renderTargets[0] = sceneTextures.sceneColor;
 
-		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
+		auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = GlobalShaderMap::Get<TranslucencyCompositePS>();
 
 		renderGraph.AddPass("TranslucencyComposite",
 			RenderGraphPassFlags::Raster,
@@ -462,8 +462,8 @@ namespace Volt
 		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
 		passParameters->renderTargets.renderTargets[0] = outputTexture;
 
-		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		auto pixelShader = ShaderMap::Get<TonemapPS>();
+		auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = GlobalShaderMap::Get<TonemapPS>();
 
 		renderGraph.AddPass("Tonemap",
 			RenderGraphPassFlags::Raster,
@@ -621,8 +621,8 @@ namespace Volt
 
 		const uint32_t indexCount = static_cast<uint32_t>(m_skyboxMesh->GetIndexCount());
 
-		auto vertexShader = ShaderMap::Get<SkyboxVS>();
-		auto pixelShader = ShaderMap::Get<SkyboxPS>();
+		auto vertexShader = GlobalShaderMap::Get<SkyboxVS>();
+		auto pixelShader = GlobalShaderMap::Get<SkyboxPS>();
 
 		renderGraph.AddPass("Skybox",
 			RenderGraphPassFlags::Raster,
@@ -725,7 +725,7 @@ namespace Volt
 			passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
 			passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
 
-			auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
+			auto shader = GlobalShaderMap::Get<RenderDeferredShadingCS>();
 			ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
 				"RenderDeferredShading",
 				shader,
@@ -744,7 +744,7 @@ namespace Volt
 			passParameters->RWSceneColor = sceneColorUAV;
 			passParameters->IndirectLight = renderGraph.CreateSRV(indirectLightTexture);
 
-			auto shader = ShaderMap::Get<CompositeLightingCS>();
+			auto shader = GlobalShaderMap::Get<CompositeLightingCS>();
 			ComputeShaderUtils::AddPass<CompositeLightingCS>(renderGraph,
 				"CompositeLighting",
 				shader,

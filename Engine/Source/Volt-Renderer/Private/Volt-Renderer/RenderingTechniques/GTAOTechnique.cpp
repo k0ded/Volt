@@ -9,7 +9,7 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/SamplerStateCache.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -102,7 +102,7 @@ namespace Volt
 		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 16u);
 		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 16u);
 
-		auto shader = ShaderMap::Get<GTAODepthPrefilterCS>();
+		auto shader = GlobalShaderMap::Get<GTAODepthPrefilterCS>();
 		ComputeShaderUtils::AddPass<GTAODepthPrefilterCS>(
 			m_renderGraph,
 			"GTAO.PrefilterDepth",
@@ -132,7 +132,7 @@ namespace Volt
 		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 16u);
 		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 16u);
 
-		auto shader = ShaderMap::Get<GTAOMainPassCS>();
+		auto shader = GlobalShaderMap::Get<GTAOMainPassCS>();
 		ComputeShaderUtils::AddPass<GTAOMainPassCS>(
 			m_renderGraph,
 			"GTAO.MainPass",
@@ -157,7 +157,7 @@ namespace Volt
 		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 8u);
 		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 8u);
 
-		auto shader = ShaderMap::Get<GTAODenoiseCS>();
+		auto shader = GlobalShaderMap::Get<GTAODenoiseCS>();
 #if 0
 		ComputeShaderUtils::AddPass<GTAODenoiseCS>(
 			m_renderGraph,

@@ -14,7 +14,7 @@
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/CopyToSwapchainShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 
 #include <WindowModule/WindowManager_New.h>
@@ -84,8 +84,8 @@ void GameLayer::RenderWindow(Volt::Window_New& window)
 	passParameters->SrcColor = renderGraph.CreateSRV(renderGraph.RegisterExternalTexture(m_sceneRenderer->GetFinalImage()));
 	passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(swapchain.GetCurrentImage());
 
-	auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-	auto pixelShader = ShaderMap::Get<CopyToSwapchain_SDR>();
+	auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+	auto pixelShader = GlobalShaderMap::Get<CopyToSwapchain_SDR>();
 
 	const uint32_t width = swapchain.GetWidth();
 	const uint32_t height = swapchain.GetHeight();

@@ -104,7 +104,7 @@ namespace Volt
 			m_shaderCompiler = RHI::ShaderCompiler::Create(shaderCompilerInfo);
 		}
 
-		m_shaderMap = CreateUnique<ShaderMap>();
+		m_shaderMap = CreateUnique<GlobalShaderMap>();
 		m_pipelineStateCache = CreateUnique<PipelineStateCache>();
 		LoadRegisteredShaders();
 	}
@@ -126,18 +126,75 @@ namespace Volt
 
 		auto compileFunc = [=](TypeTraits::TypeIndex typeIndex, ShaderRegistry::ShaderRegistrationInfo registrationInfo)
 		{
-			RHI::ShaderCreateInfo createInfo;
-			createInfo.name = registrationInfo.name;
-			createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
-			createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
-			createInfo.stage = registrationInfo.stageInfos.shaderStage;
-			createInfo.forceCompile = false;
-
-			IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Create Shader", createInfo);
-			
-			if (result.GetResultCode() == IORequestResultCode::Success)
+			if (registrationInfo.stageInfos.hasPermutations)
 			{
-				ShaderMap::RegisterShader(typeIndex, result.GetResult(), registrationInfo.stageInfos.hasPermutations);
+				Vector<RHI::ShaderCreateInfo> createInfos;
+
+				registrationInfo.stageInfos.iteratePermutationsFunc([&](RHI::ShaderPermutationConfig&& permutationConfig, size_t permutationIndex) 
+				{
+					bool shouldCompilePermutation = true;
+					if (registrationInfo.stageInfos.shouldCompilePermutationFunc)
+					{
+						GlobalShaderPermutationParameters parameters;
+						parameters.permutationIndex = permutationIndex;
+
+						shouldCompilePermutation = registrationInfo.stageInfos.shouldCompilePermutationFunc(parameters);
+					}
+
+					if (shouldCompilePermutation)
+					{
+						RHI::ShaderCreateInfo& createInfo = createInfos.emplace_back();
+						createInfo.name = registrationInfo.name;
+						createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
+						createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
+						createInfo.stage = registrationInfo.stageInfos.shaderStage;
+						createInfo.permutationConfig = std::move(permutationConfig);
+						createInfo.forceCompile = false;
+					}
+				});
+
+				IORequestResult<IORequestCompileShader_Multiple> result = IOThreads::SubmitRequest<IORequestCompileShader_Multiple>("Create Shaders", std::move(createInfos));
+
+				if (result.GetResultCode() == IORequestResultCode::Success)
+				{
+					Map<size_t, IntRef<RHI::Shader>> permutationMap;
+
+					for (const IORequestCompileShader_Multiple::Result& shaderResult : result.GetResult())
+					{
+						permutationMap[shaderResult.permutationIndex] = shaderResult.shader;
+					}
+
+					GlobalShaderMap::RegisterShader(typeIndex, permutationMap);
+				}
+			}
+			else
+			{
+				bool shouldCompilePermutation = true;
+
+				if (registrationInfo.stageInfos.shouldCompilePermutationFunc)
+				{
+					GlobalShaderPermutationParameters parameters;
+					parameters.permutationIndex = 0;
+
+					shouldCompilePermutation = registrationInfo.stageInfos.shouldCompilePermutationFunc(parameters);
+				}
+
+				if (shouldCompilePermutation)
+				{
+					RHI::ShaderCreateInfo createInfo;
+					createInfo.name = registrationInfo.name;
+					createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
+					createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
+					createInfo.stage = registrationInfo.stageInfos.shaderStage;
+					createInfo.forceCompile = false;
+
+					IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Create Shader", createInfo);
+
+					if (result.GetResultCode() == IORequestResultCode::Success)
+					{
+						GlobalShaderMap::RegisterShader(typeIndex, result.GetResult());
+					}
+				}
 			}
 		};
 

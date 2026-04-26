@@ -12,7 +12,7 @@
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 using namespace Volt;
 

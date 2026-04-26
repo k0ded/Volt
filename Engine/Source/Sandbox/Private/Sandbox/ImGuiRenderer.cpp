@@ -18,7 +18,7 @@
 
 #include <EventSystem/EventSystem.h>
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -678,7 +678,7 @@ void Sandbox::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("Recompile all shaders"))
 			{
-				Volt::ShaderMap::ReloadAll();
+				Volt::GlobalShaderMap::ReloadAll();
 			}
 
 			if (ImGui::MenuItem("Clear Collider Cache"))

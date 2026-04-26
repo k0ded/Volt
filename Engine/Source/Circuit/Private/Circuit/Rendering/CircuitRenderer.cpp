@@ -11,7 +11,7 @@
 #include <RenderCore/RenderGraph/ShaderTypes.h>
 
 #include <RenderCore/RenderGraph/Resources/RenderGraphBuffer.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/SamplerStateCache.h>
@@ -171,7 +171,7 @@ namespace Circuit
 			passParameters->NumTiles = numTiles;
 			passParameters->NumCommands = numCommands;
 		
-			auto shader = ShaderMap::Get<CountUIElementsCS>();
+			auto shader = GlobalShaderMap::Get<CountUIElementsCS>();
 			ComputeShaderUtils::AddPass<CountUIElementsCS>(renderGraph,
 				"CountUIElementsCS",
 				shader,
@@ -191,7 +191,7 @@ namespace Circuit
 			passParameters->NumTiles = numTiles;
 			passParameters->NumCommands = numCommands;
 		
-			auto shader = ShaderMap::Get<CullUIElementsCS>();
+			auto shader = GlobalShaderMap::Get<CullUIElementsCS>();
 			ComputeShaderUtils::AddPass<CullUIElementsCS>(renderGraph,
 				"CullUIElementsCS",
 				shader,
@@ -210,8 +210,8 @@ namespace Circuit
 		passParameters->PS.ResourceTable = m_resourceTable;
 		passParameters->PS.renderTargets.renderTargets[0] = renderTarget;
 
-		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		auto pixelShader = ShaderMap::Get<CircuitPrimitivesPS>();
+		auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = GlobalShaderMap::Get<CircuitPrimitivesPS>();
 
 		renderGraph.AddPass("Test UI",
 			RenderGraphPassFlags::Raster,

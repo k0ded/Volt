@@ -10,7 +10,7 @@
 //#include "Volt/GameUI/UIComponents.h"
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #if 0
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>

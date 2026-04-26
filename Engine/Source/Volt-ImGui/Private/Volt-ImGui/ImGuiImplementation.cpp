@@ -9,7 +9,7 @@
 
 #include <RenderCore/CommandBufferPool.h>
 #include <RenderCore/CopyToSwapchainShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 
@@ -200,16 +200,16 @@ namespace Volt
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
-			IntRef<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+			IntRef<RHI::Shader> vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
 			IntRef<RHI::Shader> pixelShader;
 
 			if (swapchain.IsHDREnabled())
 			{
-				pixelShader = ShaderMap::Get<CopyToSwapchain_HDR>();
+				pixelShader = GlobalShaderMap::Get<CopyToSwapchain_HDR>();
 			}
 			else
 			{
-				pixelShader = ShaderMap::Get<CopyToSwapchain_SDR>();
+				pixelShader = GlobalShaderMap::Get<CopyToSwapchain_SDR>();
 			}
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};

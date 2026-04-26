@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderCore/Config.h"
-#include "RenderCore/Shader/ShaderMap.h"
+#include "RenderCore/Shader/GlobalShaderMap.h"
 #include "RenderCore/Shader/PipelineStateCache.h"
 
 #include <RHIModule/Shader/ShaderCache.h>
@@ -31,7 +31,7 @@ namespace Volt
 
 		IntRef<RHI::ShaderCompiler> m_shaderCompiler;
 		IntRef<RHI::ShaderCache> m_shaderCache;
-		Unique<ShaderMap> m_shaderMap;
+		Unique<GlobalShaderMap> m_shaderMap;
 		Unique<PipelineStateCache> m_pipelineStateCache;
 	};
 }

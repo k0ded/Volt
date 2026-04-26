@@ -6,7 +6,7 @@
 #include <Volt-Renderer/Material/MaterialShaderRegistry.h>
 
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>
 
 using namespace Volt;
@@ -42,7 +42,7 @@ void ForwardLitDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial
 {
 	const EditorDrawInterfaceUserData unpackedUserData = EditorDrawInterfaceUserData::Unpack(userData);
 
-	auto vertexShader = ShaderMap::Get<ForwardLitDebugVS>();
+	auto vertexShader = GlobalShaderMap::Get<ForwardLitDebugVS>();
 	auto pixelShader = renderMaterial->GetPixelShader<ForwardLitDebugMaterialShader>();
 
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
@@ -66,7 +66,7 @@ void TranslucencyDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMateri
 {
 	const EditorDrawInterfaceUserData unpackedUserData = EditorDrawInterfaceUserData::Unpack(userData);
 
-	auto vertexShader = ShaderMap::Get<ForwardLitDebugVS>();
+	auto vertexShader = GlobalShaderMap::Get<ForwardLitDebugVS>();
 	auto pixelShader = renderMaterial->GetPixelShader<TranslucencyDebugMaterialShader>();
 
 	RHI::RenderPipelineCreateInfo pipelineInfo{};

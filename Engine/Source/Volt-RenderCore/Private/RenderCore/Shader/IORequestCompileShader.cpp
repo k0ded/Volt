@@ -35,11 +35,41 @@ namespace Volt
 		{
 			m_resultCode = IORequestResultCode::Failure;
 		}
-
-		m_resultCode = IORequestResultCode::Success;
+		else
+		{
+			m_resultCode = IORequestResultCode::Success;
+		}
 	}
 
 	IORequestResultCode IORequestCompileShader::GetResultCode() const
+	{
+		return m_resultCode;
+	}
+
+	IORequestCompileShader_Multiple::IORequestCompileShader_Multiple(StringView name, Vector<RHI::ShaderCreateInfo>&& createInfos)
+		: IORequest(name),
+		m_createInfos(std::move(createInfos)),
+		m_resultCode(IORequestResultCode::Undefined)
+	{
+	}
+
+	void IORequestCompileShader_Multiple::Execute()
+	{
+		VT_PROFILE_FUNCTION();
+
+		for (const RHI::ShaderCreateInfo& createInfo : m_createInfos)
+		{
+			IntRef<RHI::Shader> shader = RHI::Shader::Create(createInfo);
+			if (shader)
+			{
+				m_resultShaders.emplace_back(shader, createInfo.permutationConfig.GetPermutationIndex());
+			}
+		}
+
+		m_resultCode = m_resultShaders.empty() ? IORequestResultCode::Failure : IORequestResultCode::Success;
+	}
+
+	IORequestResultCode IORequestCompileShader_Multiple::GetResultCode() const
 	{
 		return m_resultCode;
 	}

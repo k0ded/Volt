@@ -15,7 +15,7 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/SamplerStateCache.h>
@@ -135,8 +135,8 @@ RGTextureRef OutlineTechnique::AddJumpFloodInitPass(RGTextureRef outlineGeometry
 	passParameters->RenderSize = { view.width, view.height };
 	passParameters->renderTargets.renderTargets[0] = jumpFloodInitTexture;
 
-	auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-	auto pixelShader = ShaderMap::Get<JumpFloodInitPS>();
+	auto vertexShader = GlobalShaderMap::Get<FullscreenTriangleVS>();
+	auto pixelShader = GlobalShaderMap::Get<JumpFloodInitPS>();
 
 	m_renderGraph.AddPass("JumpFlood Init",
 		RenderGraphPassFlags::Raster,
@@ -196,8 +196,8 @@ RGTextureRef OutlineTechnique::AddJumpFloodPass(RGTextureRef prevImage, const Vo
 	passParameters->PS.PointSampler = SamplerStateCache::GetPointSampler();
 	passParameters->PS.renderTargets.renderTargets[0] = jumpFloodTexture;
 
-	auto vertexShader = ShaderMap::Get<JumpFloodVS>();
-	auto pixelShader = ShaderMap::Get<JumpFloodPS>();
+	auto vertexShader = GlobalShaderMap::Get<JumpFloodVS>();
+	auto pixelShader = GlobalShaderMap::Get<JumpFloodPS>();
 
 	m_renderGraph.AddPass("JumpFlood",
 		RenderGraphPassFlags::Raster,
@@ -241,7 +241,7 @@ void OutlineTechnique::AddOutlineCompositePass(RGTextureRef dstImage, const Volt
 	passParameters->RenderSize = { view.width, view.height };
 	passParameters->OutlineColor = glm::vec3(1.f, 0.5f, 0.f);
 
-	auto computeShader = ShaderMap::Get<OutlineCompositeCS>();
+	auto computeShader = GlobalShaderMap::Get<OutlineCompositeCS>();
 	ComputeShaderUtils::AddPass<OutlineCompositeCS>(m_renderGraph,
 		"Outline Composite",
 		computeShader,

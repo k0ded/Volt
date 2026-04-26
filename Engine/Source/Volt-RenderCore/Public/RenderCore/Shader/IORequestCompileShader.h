@@ -29,4 +29,29 @@ namespace Volt
 		IntRef<RHI::Shader> m_resultShader;
 		IORequestResultCode m_resultCode;
 	};
+
+	class IORequestCompileShader_Multiple : public IORequest
+	{
+	public:
+		struct Result
+		{
+			IntRef<RHI::Shader> shader;
+			size_t permutationIndex;
+		};
+
+		using ResultType = Vector<Result>;
+
+		VTRC_API IORequestCompileShader_Multiple(StringView name, Vector<RHI::ShaderCreateInfo>&& createInfos);
+		~IORequestCompileShader_Multiple() override = default;
+
+		void Execute() override;
+		IORequestResultCode GetResultCode() const override;
+
+		Vector<Result>& GetResult() { return m_resultShaders; }
+
+	private:
+		Vector<RHI::ShaderCreateInfo> m_createInfos;
+		Vector<Result> m_resultShaders;
+		IORequestResultCode m_resultCode;
+	};
 }

@@ -20,9 +20,11 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/SamplerStateCache.h>
+
+#include <RHIModule/RHIFeatures.h>
 
 namespace Volt
 {
@@ -121,6 +123,11 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(WorldRadianceCacheParameters, WRCParameters)
 			SHADER_PARAMETER_STRUCT_INCLUDE(IrradianceVolumeParameters, IrrVolumeParameters)
 		END_SHADER_PARAMETER_STRUCT()
+
+		static bool ShouldCompilePermutation(const GlobalShaderPermutationParameters& permutationParameters)
+		{
+			return RHI::RHICanUseRayTracing();
+		}
 	};
 	VT_REGISTER_SHADER(FinalGatherCS, "Engine/Shaders/Source/GlobalIllumination/FinalGather.hlsl", "FinalGatherCS", Compute);
 
@@ -164,6 +171,11 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(BlueNoiseShaderParameters, BlueNoise)
 			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 		END_SHADER_PARAMETER_STRUCT()
+		
+		static bool ShouldCompilePermutation(const GlobalShaderPermutationParameters& permutationParameters)
+		{
+			return RHI::RHICanUseRayTracing();
+		}
 	};
 	VT_REGISTER_SHADER(IrradianceVolumeTraceCascadeCS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeTraceCascadeCS.hlsl", "TraceIrradianceVolumeCascadeCS", Compute);
 
@@ -189,6 +201,11 @@ namespace Volt
 			SHADER_PARAMETER_ACCELERATION_STRUCTURE(TLAS)
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 		END_SHADER_PARAMETER_STRUCT()
+
+		static bool ShouldCompilePermutation(const GlobalShaderPermutationParameters& permutationParameters)
+		{
+			return RHI::RHICanUseRayTracing();
+		}
 	};
 	VT_REGISTER_SHADER(WorldRadianceCacheShadeCellsCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheShadeCellsCS.hlsl", "WorldRadianceCacheShadeCellsCS", Compute);
 
@@ -421,7 +438,7 @@ namespace Volt
 			passParameters->SpatialHashTableParams = spatialHashTableParameters;
 			passParameters->WRCParameters = worldRadianceCacheParameters;
 
-			auto shader = ShaderMap::Get<WorldRadianceCacheVisualizeCS>();
+			auto shader = GlobalShaderMap::Get<WorldRadianceCacheVisualizeCS>();
 			ComputeShaderUtils::AddPass<WorldRadianceCacheVisualizeCS>(renderGraph,
 				"VisualizeSpatialHashTable",
 				shader,
@@ -452,8 +469,8 @@ namespace Volt
 				passParameters->PS.ProbeAtlas = renderGraph.CreateSRV(renderGraph.RegisterExternalTexture(m_irradianceVolumeProbeRadianceAtlas));
 				passParameters->PS.IrradianceVolumeCascadeIndex = i;
 
-				auto vertexShader = ShaderMap::Get<VisualizeIrradianceVolumeVS>();
-				auto pixelShader = ShaderMap::Get<VisualizeIrradianceVolumePS>();
+				auto vertexShader = GlobalShaderMap::Get<VisualizeIrradianceVolumeVS>();
+				auto pixelShader = GlobalShaderMap::Get<VisualizeIrradianceVolumePS>();
 
 				renderGraph.AddPass("VisualizeIrradianceVolume",
 					RenderGraphPassFlags::None,
@@ -531,7 +548,7 @@ namespace Volt
 			passParameters->RWWorldRadianceCacheCellInfo = worldRadianceCacheCellInfoUAV;
 			passParameters->SpatialHashTableParams = spatialHashTableParameters;
 
-			auto shader = ShaderMap::Get<WorldRadianceCacheUpdateCS>();
+			auto shader = GlobalShaderMap::Get<WorldRadianceCacheUpdateCS>();
 			ComputeShaderUtils::AddPass<WorldRadianceCacheUpdateCS>(renderGraph,
 				"WorldRadianceCacheUpdateCS",
 				shader,
@@ -569,7 +586,7 @@ namespace Volt
 			passParameters->IrradianceVolumeCascadeIndex = cascadeToUpdateIndex;
 			passParameters->BlueNoise = blueNoiseParameters;
 
-			auto shader = ShaderMap::Get<IrradianceVolumeTraceCascadeCS>();
+			auto shader = GlobalShaderMap::Get<IrradianceVolumeTraceCascadeCS>();
 			ComputeShaderUtils::AddPass<IrradianceVolumeTraceCascadeCS>(renderGraph,
 				"TraceIrradianceVolumeCascadeCS",
 				shader,
@@ -602,7 +619,7 @@ namespace Volt
 
 			passParameters->TLAS = view.renderScene->GetRayTracingScene()->GetAccelerationStructure();
 
-			auto shader = ShaderMap::Get<WorldRadianceCacheShadeCellsCS>();
+			auto shader = GlobalShaderMap::Get<WorldRadianceCacheShadeCellsCS>();
 			ComputeShaderUtils::AddPass<WorldRadianceCacheShadeCellsCS>(renderGraph,
 				"WorldRadianceCacheShadeCellsCS",
 				shader,
@@ -628,7 +645,7 @@ namespace Volt
 			passParameters->WRCParameters = worldRadianceCacheParameters;
 			passParameters->IrradianceVolumeCascadeIndex = cascadeToUpdateIndex;
 
-			auto shader = ShaderMap::Get<PropagateRaysFromWorldRadianceCacheCS>();
+			auto shader = GlobalShaderMap::Get<PropagateRaysFromWorldRadianceCacheCS>();
 			ComputeShaderUtils::AddPass<PropagateRaysFromWorldRadianceCacheCS>(renderGraph,
 				"PropagateRaysFromWorldRadianceCacheCS",
 				shader,
@@ -644,7 +661,7 @@ namespace Volt
 			passParameters->IrrVolumeParameters = irradianceVolumeParameters;
 			passParameters->IrradianceVolumeCascadeIndex = cascadeToUpdateIndex;
 		
-			auto shader = ShaderMap::Get<IrradianceVolumeFillProbeBordersCS>();
+			auto shader = GlobalShaderMap::Get<IrradianceVolumeFillProbeBordersCS>();
 			ComputeShaderUtils::AddPass<IrradianceVolumeFillProbeBordersCS>(renderGraph,
 				"IrradianceVolumeFillProbeBordersCS",
 				shader,
@@ -680,7 +697,7 @@ namespace Volt
 			passParameters->WRCParameters = worldRadianceCacheParameters;
 			passParameters->IrrVolumeParameters = irradianceVolumeParameters;
 
-			auto shader = ShaderMap::Get<FinalGatherCS>();
+			auto shader = GlobalShaderMap::Get<FinalGatherCS>();
 			ComputeShaderUtils::AddPass<FinalGatherCS>(renderGraph,
 				"GI.FinalGather",
 				shader,
@@ -710,7 +727,7 @@ namespace Volt
 			passParameters->RWPrevFrameIndirectLight = prevIndirectLightUAV;
 			passParameters->AccumulationAlpha = 0.1f;
 
-			auto shader = ShaderMap::Get<TemporalAccumulationCS>();
+			auto shader = GlobalShaderMap::Get<TemporalAccumulationCS>();
 			ComputeShaderUtils::AddPass<TemporalAccumulationCS>(renderGraph,
 				"GI.TemporalAccumulation",
 				shader,

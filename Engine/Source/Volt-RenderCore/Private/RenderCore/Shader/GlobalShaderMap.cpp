@@ -1,5 +1,5 @@
 #include "rcpch.h"
-#include "RenderCore/Shader/ShaderMap.h"
+#include "RenderCore/Shader/GlobalShaderMap.h"
 #include "RenderCore/Shader/PipelineStateCache.h"
 #include "RenderCore/Shader/IORequestCompileShader.h"
 
@@ -63,13 +63,13 @@ namespace Volt
 		}
 	}
 
-	ShaderMap::ShaderMap()
+	GlobalShaderMap::GlobalShaderMap()
 	{
 		VT_ASSERT(s_instance == nullptr);
 		s_instance = this;
 	}
 
-	ShaderMap::~ShaderMap()
+	GlobalShaderMap::~GlobalShaderMap()
 	{
 		m_rayTracingPipelineCache.clear();
 		m_shaderBindingTableCache.clear();
@@ -77,12 +77,12 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void ShaderMap::ReloadAll()
+	void GlobalShaderMap::ReloadAll()
 	{
 
 	}
 
-	bool ShaderMap::ReloadAllWithReferenceToFile(const Filesystem::Path& filepath)
+	bool GlobalShaderMap::ReloadAllWithReferenceToFile(const Filesystem::Path& filepath)
 	{
 		const bool isSourceFile = filepath.Extension() == L".hlsl";
 
@@ -160,16 +160,26 @@ namespace Volt
 		return true;
 	}
 
-	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader, bool hasPermutations)
+	void GlobalShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader)
 	{
 		ScopedLock lock{ s_instance->m_registerMutex };
 
 		ShaderBucket& shaderBucket = s_instance->m_shaderMap[typeIndex];
-		shaderBucket.hasPermutations = hasPermutations;
+		shaderBucket.hasPermutations = false;
 		shaderBucket.baseShader = shader;
 	}
 	  
-	IntRef<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
+	void GlobalShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, Map<size_t, IntRef<RHI::Shader>> shaderPermutations)
+	{
+		ScopedLock lock{ s_instance->m_registerMutex };
+
+		ShaderBucket& shaderBucket = s_instance->m_shaderMap[typeIndex];
+		shaderBucket.hasPermutations = true;
+		shaderBucket.baseShader = shaderPermutations[0];
+		shaderBucket.permutationMap = shaderPermutations;
+	}
+
+	IntRef<RHI::RayTracingPipeline> GlobalShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
 		std::scoped_lock lock{ s_instance->m_rayTracingCacheMutex };
 		const size_t hash = Utility::GetRayTracingPipelineHash(pipelineInfo);
@@ -189,7 +199,7 @@ namespace Volt
 		return pipeline;
 	}
 
-	IntRef<RHI::ShaderBindingTable> ShaderMap::GetShaderBindingTable(IntRef<RHI::RayTracingPipeline> pipeline)
+	IntRef<RHI::ShaderBindingTable> GlobalShaderMap::GetShaderBindingTable(IntRef<RHI::RayTracingPipeline> pipeline)
 	{
 		std::scoped_lock lock{ s_instance->m_shaderBindingTableMutex };
 		const size_t hash = Utility::GetShaderBindingTableHash(pipeline);
@@ -206,7 +216,7 @@ namespace Volt
 		return sbt;
 	}
 
-	IntRef<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
+	IntRef<RHI::Shader> GlobalShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
 	{
 		VT_ENSURE(m_shaderMap.contains(typeIndex));
 	
@@ -229,30 +239,5 @@ namespace Volt
 		{
 			return shaderBucket.baseShader;
 		}
-	}
-
-	IntRef<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
-	{
-		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
-		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
-
-		IntRef<RHI::Shader> shader;
-		{
-			RHI::ShaderCreateInfo createInfo;
-			createInfo.name = shaderBucket.baseShader->GetName();
-			createInfo.entryPoint = sourceInfo.sourceEntry.entryPoint;
-			createInfo.sourceFilepath = sourceInfo.sourceEntry.filepath;
-			createInfo.stage = sourceInfo.sourceEntry.shaderStage;
-			createInfo.permutationConfig = std::move(permutationConfig);
-			createInfo.forceCompile = false;
-
-			IORequestResult<IORequestCompileShader> result = IOThreads::SubmitRequest<IORequestCompileShader>("Compile Shader Permutation", createInfo);
-
-			VT_ASSERT(result.GetResultCode() == IORequestResultCode::Success);
-			shader = result.GetResult();
-		}
-
-		m_shaderMap.at(typeIndex).permutationMap[permutationIndex] = shader;
-		return shader;
 	}
 }

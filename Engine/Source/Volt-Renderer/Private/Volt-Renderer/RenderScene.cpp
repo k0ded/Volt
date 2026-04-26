@@ -863,7 +863,7 @@ namespace Volt
 
 		constexpr uint32_t workGroupCount = 64;
 
-		auto shader = ShaderMap::Get<CompactValidDrawCallCS>();
+		auto shader = GlobalShaderMap::Get<CompactValidDrawCallCS>();
 		ComputeShaderUtils::AddPass<CompactValidDrawCallCS>(renderGraph,
 			"Compact Valid Primitive Draw Datas",
 			shader,

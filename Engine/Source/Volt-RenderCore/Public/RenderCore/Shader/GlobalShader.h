@@ -4,6 +4,11 @@
 
 namespace Volt
 {
+	struct GlobalShaderPermutationParameters
+	{
+		size_t permutationIndex;
+	};
+
 	// Base class for all Volt engine shaders.
 	class GlobalShader
 	{

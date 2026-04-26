@@ -11,7 +11,7 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <RenderCore/Shader/DefaultShaders.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>

@@ -3,14 +3,14 @@
 #include "Sandbox/SceneRendererExtensions/OutlineMeshPassProcessor.h"
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 void OutlineMeshPassProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive)
 {
-	auto vertexShader = Volt::ShaderMap::Get<OutlineGeometryVS>();
-	auto pixelShader = Volt::ShaderMap::Get<OutlineGeometryPS>();
+	auto vertexShader = Volt::GlobalShaderMap::Get<OutlineGeometryVS>();
+	auto pixelShader = Volt::GlobalShaderMap::Get<OutlineGeometryPS>();
 
 	Volt::RHI::RenderPipelineCreateInfo pipelineInfo;
 	pipelineInfo.depthMode = Volt::RHI::DepthMode::Read;

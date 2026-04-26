@@ -4,7 +4,7 @@
 
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -54,7 +54,7 @@ namespace Volt
 		passParameters->RWStateBuffer = m_renderGraph.CreateUAV(stateBuffer);
 		passParameters->ValueCount = numValues;
 
-		auto shader = ShaderMap::Get<PrefixSumCS>();
+		auto shader = GlobalShaderMap::Get<PrefixSumCS>();
 		ComputeShaderUtils::AddPass<PrefixSumCS>(m_renderGraph,
 			"PrefixSum",
 			shader,

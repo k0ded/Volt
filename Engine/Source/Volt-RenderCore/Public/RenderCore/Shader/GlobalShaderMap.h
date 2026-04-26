@@ -21,16 +21,17 @@ namespace Volt
 		struct RayTracingPipelineCreateInfo;
 	}
 
-	class VTRC_API ShaderMap
+	class VTRC_API GlobalShaderMap
 	{
 	public:
-		ShaderMap();
-		~ShaderMap();
+		GlobalShaderMap();
+		~GlobalShaderMap();
 
 		static void ReloadAll();
 		static bool ReloadAllWithReferenceToFile(const Filesystem::Path& filepath);
 
-		static void RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader, bool hasPermutations);
+		static void RegisterShader(TypeTraits::TypeIndex typeIndex, IntRef<RHI::Shader> shader);
+		static void RegisterShader(TypeTraits::TypeIndex typeIndex, Map<size_t, IntRef<RHI::Shader>> shaderPermutations);
 
 		static IntRef<RHI::RayTracingPipeline> GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo);
 		static IntRef<RHI::ShaderBindingTable> GetShaderBindingTable(IntRef<RHI::RayTracingPipeline> pipeline);
@@ -50,15 +51,6 @@ namespace Volt
 
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 			IntRef<RHI::Shader> shader = s_instance->GetInternal(typeIndex, permutationIndex, true);
-		
-			if (!shader)
-			{
-
-				RHI::ShaderPermutationConfig permutationConfig;
-				permutationVector.ResolvePermutations(permutationConfig);
-
-				shader = s_instance->CompileShaderPermutation(typeIndex, permutationIndex, std::move(permutationConfig));
-			}
 
 			return shader;
 		}
@@ -77,10 +69,9 @@ namespace Volt
 			bool hasPermutations = false;
 		};
 		
-		inline static ShaderMap* s_instance = nullptr;
+		inline static GlobalShaderMap* s_instance = nullptr;
 
 		IntRef<RHI::Shader> GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined);
-		IntRef<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig);
 
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 

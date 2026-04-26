@@ -3,7 +3,7 @@
 
 #include "Sandbox/EditorAssetManager.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -89,7 +89,7 @@ void Sandbox::CreateMovedWatch()
 			// It's a shader file.
 			if (newPath.ExtensionView() == L".hlsl" || newPath.ExtensionView() == L".hlsli")
 			{
-				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
+				Volt::GlobalShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 			else
 			{

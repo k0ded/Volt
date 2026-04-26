@@ -4,7 +4,7 @@
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -98,7 +98,7 @@ namespace Volt
 
 		const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * passParameters->CopyCount), 64u);
 
-		auto shader = ShaderMap::Get<ScatterUploadCS>();
+		auto shader = GlobalShaderMap::Get<ScatterUploadCS>();
 		ComputeShaderUtils::AddPass<ScatterUploadCS>(renderGraph,
 			"Scatter Buffer Upload",
 			shader,

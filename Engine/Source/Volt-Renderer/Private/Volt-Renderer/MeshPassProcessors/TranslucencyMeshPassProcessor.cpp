@@ -5,7 +5,7 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/MainMaterialShaders.h"
 
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>
 
 namespace Volt
@@ -17,7 +17,7 @@ namespace Volt
 			return;
 		}
 
-		auto vertexShader = ShaderMap::Get<TranslucencyPassVS>();
+		auto vertexShader = GlobalShaderMap::Get<TranslucencyPassVS>();
 		auto pixelShader = renderPrimitive->material->GetPixelShader<TranslucencyPassMaterialShader>();
 
 		// Enable the correct blend states.

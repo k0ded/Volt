@@ -10,7 +10,7 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShaderMap.h>
 
 namespace Volt
 {
@@ -50,7 +50,7 @@ namespace Volt
 		passParameters->GPUScene = view.renderScene->GetGPUSceneParameters(m_renderGraph);
 		passParameters->TileCount = { numTilesX, numTilesY };
 
-		auto shader = ShaderMap::Get<LightTileBinningCS>();
+		auto shader = GlobalShaderMap::Get<LightTileBinningCS>();
 		ComputeShaderUtils::AddPass<LightTileBinningCS>(m_renderGraph,
 			"LightTileBinning",
 			shader,
