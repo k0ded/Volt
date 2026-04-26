@@ -413,17 +413,16 @@ namespace Volt
 		
 		if (fileAttribs == INVALID_FILE_ATTRIBUTES)
 		{
-			return false;
-		}
+			DWORD lastError = GetLastError();
 
-		DWORD lastError = GetLastError();
-
-		if (lastError == ERROR_PATH_NOT_FOUND ||
-			lastError == ERROR_INVALID_NAME || 
-			lastError == ERROR_BAD_PATHNAME ||
-			lastError == ERROR_BAD_NETPATH)
-		{
-			return false;
+			if (lastError == ERROR_PATH_NOT_FOUND ||
+				lastError == ERROR_FILE_NOT_FOUND ||
+				lastError == ERROR_INVALID_NAME ||
+				lastError == ERROR_BAD_PATHNAME ||
+				lastError == ERROR_BAD_NETPATH)
+			{
+				return false;
+			}
 		}
 
 		return true;
