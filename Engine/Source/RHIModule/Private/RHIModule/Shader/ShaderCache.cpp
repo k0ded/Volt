@@ -69,7 +69,12 @@ namespace Volt::RHI
 			archive.UseVersion(CachedShaderArchiveVersion::guid);
 
 			archive << value.timeSinceLastCompile;
-			if (archive.IsLoading() && archive.GetVersion(CachedShaderArchiveVersion::guid) < CachedShaderArchiveVersion::AddedInternalShaderCacheVersion)
+
+			if (!archive.IsLoading() || archive.GetVersion(CachedShaderArchiveVersion::guid) >= CachedShaderArchiveVersion::AddedInternalShaderCacheVersion)
+			{
+				archive << value.shaderCacheVersion;
+			}
+			else
 			{
 				value.shaderCacheVersion = 0;
 			}
@@ -129,6 +134,8 @@ namespace Volt::RHI
 
 	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
+		VT_PROFILE_FUNCTION();
+
 		const Filesystem::Path cachedPath = GetCachedFilePath(shaderSpecification);
 	
 		if (shaderSpecification.shaderSourceInfo.sourceEntry.filepath.IsEmpty() || Filesystem::Exists(cachedPath) == false)

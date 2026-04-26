@@ -37,7 +37,7 @@ namespace Volt::RHI
 			bool succeded;
 		};
 
-		CompilationResultData CompileShader(const Specification& specification, Vector<ShaderResourceBinding>& outBindlessResourceBindings);
+		CompilationResultData CompileShader(const Specification& specification, String&& shaderSource, Vector<ShaderResourceBinding>& outBindlessResourceBindings);
 		bool PreprocessSource(const Specification& specification, String& outProcessedSource, CompilationResultData& compilationResult, Vector<ShaderResourceBinding>& outBindlessResourceBindings);
 
 		void OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv);

@@ -7,9 +7,11 @@
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <CoreModule/Project/ProjectManager.h>
+
 #include <FileSystemModule/Filesystem.h>
 #include <FileSystemModule/FileIORequest.h>
 #include <FileSystemModule/IOThreads/IOThreads.h>
+#include <FileSystemModule/FileUtility.h>
 
 #include <RHIModule/Shader/ShaderUtility.h>
 #include <RHIModule/Shader/ShaderPreProcessor.h>
@@ -162,7 +164,19 @@ namespace Volt::RHI
 			}
 		}
 
-		if (specification.shaderSourceInfo.source.empty())
+		String shaderSource = specification.shaderSourceInfo.source;
+
+		if (shaderSource.empty() &&
+			!specification.shaderSourceInfo.sourceEntry.filepath.IsEmpty())
+		{
+			if (!FileUtility::ReadStringFromFile(specification.shaderSourceInfo.sourceEntry.filepath, shaderSource))
+			{
+				VT_LOGC(Error, LogVulkanRHI, "Failed to read source file!");
+				return {};
+			}
+		}
+
+		if (shaderSource.empty())
 		{
 			VT_LOGC(Error, LogVulkanRHI, "Trying to compile a shader without a source!");
 			return {};
@@ -170,7 +184,7 @@ namespace Volt::RHI
 
 		Vector<ShaderResourceBinding> bindlessResourceBindings;
 
-		CompilationResultData result = CompileShader(specification, bindlessResourceBindings);
+		CompilationResultData result = CompileShader(specification, std::move(shaderSource), bindlessResourceBindings);
 		if (result.result != ShaderCompiler::CompilationResult::Success)
 		{
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
@@ -189,14 +203,14 @@ namespace Volt::RHI
 		return result;
 	}
 
-	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification, Vector<ShaderResourceBinding>& outBindlessResourceBindings)
+	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification, String&& shaderSource, Vector<ShaderResourceBinding>& outBindlessResourceBindings)
 	{
 		VT_PROFILE_FUNCTION();
 
 		CompilationResultData result;
 
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
-		String processedSource = specification.shaderSourceInfo.source;
+		String processedSource = shaderSource;
 
 		if (!PreprocessSource(specification, processedSource, result, outBindlessResourceBindings))
 		{

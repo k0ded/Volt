@@ -3,8 +3,6 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
-#include <FileSystemModule/FileUtility.h>
-
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
@@ -74,20 +72,7 @@ namespace Volt::RHI
 
 	void VulkanShader::LoadAndCompileShader(bool forceCompile)
 	{
-		if (!m_sourceInfo.sourceEntry.filepath.IsEmpty())
-		{
-			if (!FileUtility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath, m_sourceInfo.source))
-			{
-				return;
-			}
-		}
-	
-		if (m_sourceInfo.source.empty())
-		{
-			VT_LOGC(Error, LogVulkanRHI, "Filepath for shader {} not found!", m_name);
-			VT_ENSURE(false);
-			return;
-		}
+		VT_PROFILE_FUNCTION();
 
 		ShaderCompiler::Specification compileSpec;
 		compileSpec.forceCompile = forceCompile;
@@ -117,12 +102,6 @@ namespace Volt::RHI
 		// Create shader module
 		CreateShader(compilationResult.shaderBinary);
 		GenerateHash();
-
-		// Clean up
-		if (!m_sourceInfo.sourceEntry.filepath.IsEmpty())
-		{
-			m_sourceInfo.source.clear();
-		}
 	}
 
 	void VulkanShader::Release()
@@ -137,6 +116,8 @@ namespace Volt::RHI
 
 	void VulkanShader::CreateShader(const Vector<uint32_t>& shaderBinary)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VkShaderModuleCreateInfo moduleInfo{};
 		moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		moduleInfo.codeSize = shaderBinary.size() * sizeof(uint32_t);
