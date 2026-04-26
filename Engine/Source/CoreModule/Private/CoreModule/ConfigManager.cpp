@@ -74,12 +74,12 @@ namespace Volt
 				if (value.Is<float>())
 				{
 					const float tempVal = value.Get<float>();
-					refConsoleVar->Set(&tempVal);
+					refConsoleVar->SetOverride(&tempVal);
 				}
 				else if (value.Is<int32_t>())
 				{
 					const float tempVal = static_cast<float>(value.Get<int32_t>());
-					refConsoleVar->Set(&tempVal);
+					refConsoleVar->SetOverride(&tempVal);
 				}
 			}
 			else if (refConsoleVar->IsInteger())
@@ -87,12 +87,12 @@ namespace Volt
 				if (value.Is<float>())
 				{
 					const int32_t tempVal = static_cast<int32_t>(value.Get<float>());
-					refConsoleVar->Set(&tempVal);
+					refConsoleVar->SetOverride(&tempVal);
 				}
 				else if (value.Is<int32_t>())
 				{
 					const int32_t tempVal = value.Get<int32_t>();
-					refConsoleVar->Set(&tempVal);
+					refConsoleVar->SetOverride(&tempVal);
 				}
 			}
 			else if (refConsoleVar->IsString())
@@ -100,7 +100,7 @@ namespace Volt
 				if (value.Is<String>())
 				{
 					const String tempVal = value.Get<String>();
-					refConsoleVar->Set(&tempVal);
+					refConsoleVar->SetOverride(&tempVal);
 				}
 			}
 		}

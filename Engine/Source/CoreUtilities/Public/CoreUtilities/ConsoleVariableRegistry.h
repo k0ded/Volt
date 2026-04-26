@@ -19,6 +19,7 @@ public:
 	virtual ~RegisteredConsoleVariableBase() = default;
 	virtual const void* Get() const = 0;
 	virtual void Set(const void* value) = 0;
+	virtual void SetOverride(const void* value) = 0;
 
 	virtual StringView GetName() const = 0;
 	virtual StringView GetDescription() const = 0;
@@ -40,6 +41,7 @@ public:
 
 	VT_NODISCARD const void* Get() const override;
 	void Set(const void* value) override;
+	void SetOverride(const void* value) override;
 
 	VT_NODISCARD inline StringView GetName() const override { return m_variableName; }
 	VT_NODISCARD inline StringView GetDescription() const override { return m_description; }

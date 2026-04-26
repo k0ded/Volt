@@ -24,6 +24,10 @@ namespace Volt
 		{ T::ShouldCompilePermutation(permutationParameters) } -> std::convertible_to<bool>;
 	};
 
+	template<typename T>
+	concept IsGlobalShader = std::is_base_of_v<GlobalShader, T>
+		&& requires { { T::shaderName } -> std::convertible_to<StringView>; };
+
 	class VTRC_API ShaderRegistry
 	{
 	public:
@@ -47,11 +51,9 @@ namespace Volt
 			StringView name;
 		};
 
-		template<typename T>
+		template<IsGlobalShader T>
 		void RegisterShader(const Filesystem::Path& filepath, const String& entryPoint, RHI::ShaderStage shaderStage)
 		{
-			static_assert(std::is_base_of_v<GlobalShader, T>);
-
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 			VT_ENSURE(!m_shaderRegistrationInfo.contains(typeIndex));
 

@@ -2,9 +2,9 @@
 
 #include "GPUScene.hlsli"
 
-#define BINDLESS_ENABLED 0
+#define BINDLESS_ENABLED_ 0
 
-#if BINDLESS_ENABLED
+#if BINDLESS_ENABLED_
 struct GPUMaterial
 {
     vt::Tex2D<float4> textures[16];

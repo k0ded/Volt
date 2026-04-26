@@ -234,7 +234,12 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
 				
 				// Sample UV
+				#if BINDLESS_ENABLED
+				Texture2D fontAtlas = ResourceDescriptorHeap[NonUniformResourceIndex(command.textureIndex)];
+				#else
 				Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
+				#endif				
+
 				const float3 msd = fontAtlas.Sample(StaticTrilinearSamplerClamp, textTexUv).rgb;
 				
 				const float4 color = UnpackUIntToFloat4(command.color);
@@ -263,7 +268,12 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				
 				const float2 texUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
 				
+				#if BINDLESS_ENABLED
+				Texture2D texture = ResourceDescriptorHeap[NonUniformResourceIndex(command.textureIndex)];
+				#else
 				Texture2D texture = ResourceTable::LoadTexture(command.textureIndex);
+				#endif			
+
 				const float4 color = texture.Sample(StaticTrilinearSamplerClamp, texUv);
 				resultColor = lerp(resultColor, color.rgb, color.a);
 

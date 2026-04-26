@@ -11,6 +11,7 @@
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <JobSystem/TaskGraph.h>
 
@@ -46,12 +47,6 @@ namespace Volt
 		"r.Shader.WarningsAsErrors",
 		1,
 		"Whether or not to use warnings as errors."
-	);
-
-	static ConsoleVariable<String> s_shaderDebugInfoPath(
-		"r.Shader.ShaderDebugInfoPath",
-		"Engine/Shaders/Debug/",
-		"Where to output shader debug info."
 	);
 
 	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine);
@@ -91,7 +86,6 @@ namespace Volt
 			}
 
 			shaderCompilerInfo.shaderCache = m_shaderCache;
-			shaderCompilerInfo.shaderDebugInfoPath = s_shaderDebugInfoPath.GetValue();
 
 			const Filesystem::Path engineShaderIncludeDirectory = "Engine/Shaders/Source/Includes";
 			const Filesystem::Path engineShaderDirectory = "Engine/Shaders/Source/";
@@ -100,6 +94,11 @@ namespace Volt
 				engineShaderIncludeDirectory,
 				engineShaderDirectory
 			};
+
+			if (RHI::RHICanUseBindless())
+			{
+				shaderCompilerInfo.initialMacros.emplace_back("BINDLESS_ENABLED=1");
+			}
 
 			m_shaderCompiler = RHI::ShaderCompiler::Create(shaderCompilerInfo);
 		}

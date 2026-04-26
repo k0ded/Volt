@@ -39,7 +39,6 @@ namespace Volt::RHI
 		IntRef<ShaderCache> shaderCache;
 		ShaderCompilerFlags flags = ShaderCompilerFlags::None;
 		ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::Disable;
-		Filesystem::Path shaderDebugInfoPath;
 	};
 
 	class VTRHI_API ShaderCompiler : public RHIInterface

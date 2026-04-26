@@ -25,6 +25,13 @@ inline void RegisteredConsoleVariable<T>::Set(const void* value)
 	m_value = *reinterpret_cast<const T*>(value);
 }
 
+
+template<ValidConsoleVariableType T>
+void RegisteredConsoleVariable<T>::SetOverride(const void* value)
+{
+	m_value = *reinterpret_cast<const T*>(value);
+}
+
 template<ValidConsoleVariableType T>
 inline ConsoleVariable<T>::ConsoleVariable(StringView variableName, const T& defaultValue, StringView description)
 {

@@ -253,6 +253,19 @@ namespace Volt::RHI
 			arguments.push_back(permutationStr.c_str());
 		}
 
+		// Append global macros
+		Vector<WString> wMacros;
+		for (const auto& macro : m_macros)
+		{
+			wMacros.emplace_back(WString::CtorConvert(), macro);
+		}
+
+		for (const auto& macro : wMacros)
+		{
+			arguments.push_back(L"-D");
+			arguments.push_back(macro.c_str());
+		}
+
 		if (g_rhiCapabilities.supportsNative16BitOperations)
 		{
 			arguments.push_back(L"-enable-16bit-types");

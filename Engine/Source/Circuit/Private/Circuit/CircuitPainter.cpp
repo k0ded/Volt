@@ -7,6 +7,8 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
+#include <RHIModule/RHIFeatures.h>
+
 #include <LogModule/Log.h>
 
 namespace Circuit
@@ -450,7 +452,15 @@ namespace Circuit
 
 					if (pending.image)
 					{
-						cmd.textureIndex = p->m_resourceTable->GetOrAddTextureSlotIndex(pending.image);
+						if (Volt::RHI::RHICanUseBindless())
+						{
+							cmd.textureIndex = pending.image->GetView()->GetSRVBindlessIndex().Get();
+						}
+						else
+						{
+							cmd.textureIndex = p->m_resourceTable->GetOrAddTextureSlotIndex(pending.image);
+						}
+
 						cmd.dimensions = { pending.image->GetWidth(), pending.image->GetHeight() };
 					}
 
