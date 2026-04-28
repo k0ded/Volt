@@ -61,8 +61,7 @@ namespace Volt
 		Filesystem::Path m_projectDirectoryPath;
 		StringView m_assetsDirectoryName;
 
-		AtomicHashTable<> m_hashTable;
-		Vector<AssetMetadata*> m_metadataIndirection;
+		AtomicHashTable<AssetMetadata*> m_hashTable;
 		AssetMetadataAllocator m_metadata;
 		JobCounterRef m_metadataLoadingCounter;
 		std::atomic_int m_numMetadata;

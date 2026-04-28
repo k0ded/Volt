@@ -5,6 +5,8 @@
 #include <CoreUtilities/Containers/AtomicHashTable.h>
 #include <CoreUtilities/Pointers/IntRef.h>
 
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
+
 namespace Volt
 {
 	class AssetCache
@@ -42,7 +44,7 @@ namespace Volt
 
 		void Initialize();
 
-		AtomicHashTable<> m_hashTable;
-		Vector<Container> m_cache;
+		AtomicHashTable<Container*> m_hashTable;
+		PagedAtomicArenaAllocator<Container, 1024> m_allocator;
 	};
 }

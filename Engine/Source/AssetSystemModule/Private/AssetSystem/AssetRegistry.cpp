@@ -44,10 +44,11 @@ namespace Volt
 	{
 		VT_ENSURE(assetHandle != Asset::Null());
 
-		uint64_t metadataIndirectionIndex;
-		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
+		Optional<AssetMetadata*> metadata = m_hashTable.Find(assetHandle);
+
+		if (metadata.HasValue())
 		{
-			return m_metadataIndirection[metadataIndirectionIndex];
+			return metadata.Get();
 		}
 
 		return nullptr;
@@ -57,10 +58,11 @@ namespace Volt
 	{
 		VT_ENSURE(assetHandle != Asset::Null());
 
-		uint64_t metadataIndirectionIndex;
-		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
+		Optional<AssetMetadata*> metadata = m_hashTable.Find(assetHandle);
+
+		if (metadata.HasValue())
 		{
-			return m_metadataIndirection[metadataIndirectionIndex];
+			return metadata.Get();
 		}
 
 		return nullptr;
@@ -68,15 +70,13 @@ namespace Volt
 
 	bool AssetRegistry::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
-		uint64_t temp;
-		return assetHandle != Asset::Null() && m_hashTable.Get(assetHandle, temp);
+		return assetHandle != Asset::Null() && m_hashTable.Find(assetHandle).HasValue();
 	}
 
 	void AssetRegistry::Initialize()
 	{
 		// Initialization
 		m_hashTable.Reserve(s_assetRegistryNumMaxAssets.GetValue());
-		m_metadataIndirection.resize_uninitialized(s_assetRegistryNumMaxAssets.GetValue());
 		LoadAssetMetadata();
 	}
 
@@ -191,15 +191,13 @@ namespace Volt
 
 	void AssetRegistry::InsertAssetMetadata(AssetMetadata&& assetMetadata)
 	{
-		uint64_t metadataIndex = UINT64_MAX;
-		if (m_hashTable.Insert(assetMetadata.handle, metadataIndex))
-		{
-			AssetMetadata* allocatedAssetMetadata = m_metadata.Allocate();
-			*allocatedAssetMetadata = std::move(assetMetadata);
+		AssetMetadata* allocatedAssetMetadata = m_metadata.Allocate();
+		*allocatedAssetMetadata = std::move(assetMetadata);
 
-			m_metadataIndirection[metadataIndex] = allocatedAssetMetadata;
-			m_numMetadata.fetch_add(1);
-		}
+		VT_MAYBE_UNUSED bool success = m_hashTable.Insert(assetMetadata.handle, allocatedAssetMetadata);
+		VT_ENSURE(success);
+
+		m_numMetadata.fetch_add(1, std::memory_order::relaxed);
 	}
 
 	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex)
@@ -208,16 +206,19 @@ namespace Volt
 
 		// Remove the metadata from the hash table and get it's indirection index.
 		// It should now be safe to release the mutex and remove the references.
-		uint64_t metadataIndex = UINT64_MAX;
-		if (m_hashTable.GetAndRemove(assetHandle, metadataIndex))
+
+		Optional<AssetMetadata*> metadataOptional = m_hashTable.GetAndErase(assetHandle);
+		if (metadataOptional.HasValue())
 		{
+			AssetMetadata* metadata = metadataOptional.Get();
+
 			if (unlockMutex)
 			{
-				m_metadataIndirection.at(metadataIndex)->m_assetMetadataMutex.unlock();
+				metadata->m_assetMetadataMutex.unlock();
 			}
-			m_metadata.Free(m_metadataIndirection.at(metadataIndex));
-			m_metadataIndirection[metadataIndex] = nullptr;
-			m_numMetadata.fetch_sub(1);
+
+			m_metadata.Free(metadata);
+			m_numMetadata.fetch_sub(1, std::memory_order::relaxed);
 		}
 		else
 		{

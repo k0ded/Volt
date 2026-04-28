@@ -220,6 +220,9 @@ namespace Volt
 
 		int32_t globalVertexOffset = 0;
 		int32_t globalIndexOffset = 0;
+
+		IntRef<RHI::BufferView> globalsView = renderContext.globalsUniformBuffer->GetView();
+
 		for (int32_t n = 0; n < drawData->CmdListsCount; ++n)
 		{
 			const ImDrawList* drawList = drawData->CmdLists[n];
@@ -254,7 +257,7 @@ namespace Volt
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
 				RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(renderPipeline);
-				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView(), renderContext.globalsUniformBuffer->GetSize(), 0);
+				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Vertex, 0, globalsView, renderContext.globalsUniformBuffer->GetSize(), 0);
 				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, textureResourceBinding->binding, imageView);
 				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, samplerResourceBinding->binding, m_textureSampler);
 

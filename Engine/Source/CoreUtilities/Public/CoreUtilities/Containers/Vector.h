@@ -96,7 +96,8 @@ public:
 
 	constexpr void assign(std::initializer_list<value_type> initList);
 
-	constexpr iterator append(const Vector<T, AllocatorType>& other) noexcept;
+	template<typename OtherAllocator>
+	constexpr iterator append(const Vector<T, OtherAllocator>& other) noexcept;
 
 	template<typename InputIterator>
 	constexpr iterator append(InputIterator first, InputIterator last) noexcept;
@@ -406,7 +407,8 @@ inline constexpr void Vector<T, AllocatorType>::assign(std::initializer_list<val
 }
 
 template<typename T, typename AllocatorType>
-inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(const Vector<T, AllocatorType>& other) noexcept
+template<typename OtherAllocator>
+inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(const Vector<T, OtherAllocator>& other) noexcept
 {
 	return insert(end(), other.begin(), other.end());
 }

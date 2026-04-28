@@ -1,163 +1,71 @@
 #pragma once
 
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
+#include "CoreUtilities/Optional.h"
 
-template<typename AllocatorType = DefaultHeapAllocator>
+template<typename ValueType, typename AllocatorType = DefaultHeapAllocator>
 class AtomicHashTable
 {
 public:
 	AtomicHashTable() = default;
+	~AtomicHashTable() = default;
 
-	~AtomicHashTable()
-	{
+	AtomicHashTable(const AtomicHashTable&) = delete;
+	AtomicHashTable& operator=(const AtomicHashTable&) = delete;
 
-	}
+	/*
+		Inserts a value, will override if the key already exists.
+	*/
+	template<typename KeyType> bool Insert(const KeyType& key, const ValueType& value);
 
-	void Reserve(uint32_t numEntries)
-	{
-		VT_ENSURE_MSG(m_checksum.empty(), "HashTable may only be reserved once, as otherwise all hashes become invalid.");
+	/*
+		Inserts a value if it doesn't exist, otherwise returns the value in the table.
+	*/
+	template<typename KeyType> Optional<ValueType> GetOrInsert(const KeyType& key, const ValueType& value);
+	template<typename KeyType> Optional<ValueType> GetAndErase(const KeyType& key);
+	template<typename KeyType> bool Erase(const KeyType& key);
+	template<typename KeyType> Optional<ValueType> Find(const KeyType& key) const;
 
-		m_checksum.resize(numEntries);
-	}
+	size_t GetSize() const;
+	bool IsEmpty() const;
 
-	template<typename KeyType>
-	bool Insert(const KeyType& key, uint64_t& outIndex)
-	{
-		uint64_t hash = std::hash<KeyType>()(key);
-		outIndex = hash % m_checksum.size();
-
-		uint64_t checksum = 0;
-
-		constexpr uint32_t NumMaxIterations = 32;
-
-		uint32_t iteration = 0;
-		while (iteration++ < NumMaxIterations)
-		{
-			checksum = shiftxor(hash);
-
-			uint64_t expected = 0;
- 			bool replaced = m_checksum[outIndex].atomic.compare_exchange_strong(expected, checksum, std::memory_order::relaxed);
-
-			if (replaced || expected == checksum)
-			{
-				break;
-			}
-			else
-			{
-				hash = std::hash<uint64_t>()(hash);
-				outIndex = hash % m_checksum.size();
-			}
-		}
-		VT_ENSURE(iteration <= NumMaxIterations);
-
-		return iteration <= NumMaxIterations;
-	}
-
-	template<typename KeyType>
-	bool GetAndRemove(const KeyType& key, uint64_t& outIndex)
-	{
-		uint64_t hash = std::hash<KeyType>()(key);
-		outIndex = hash % m_checksum.size();
-
-		uint64_t checksum = 0;
-
-		constexpr uint32_t NumMaxIterations = 32;
-
-		uint32_t iteration = 0;
-		while (iteration++ < NumMaxIterations)
-		{
-			checksum = shiftxor(hash);
-
-			uint64_t expected = checksum;
-
-			bool replaced = m_checksum[outIndex].atomic.compare_exchange_strong(expected, 0ull, std::memory_order::relaxed);
-			if (replaced)
-			{
-				return true;
-			}
-			else if (expected == 0)
-			{
-				return false;
-			}
-			else
-			{
-				hash = std::hash<uint64_t>()(hash);
-				outIndex = hash % m_checksum.size();
-			}
-		}
-		VT_ENSURE(iteration <= NumMaxIterations);
-
-		return iteration <= NumMaxIterations;
-	}
-
-	template<typename KeyType>
-	bool Get(const KeyType& key, uint64_t& outIndex) const
-	{
-		uint64_t hash = std::hash<KeyType>()(key);
-		outIndex = hash % m_checksum.size();
-
-		uint64_t checksum = 0;
-
-		constexpr uint32_t NumMaxIterations = 32;
-
-		uint32_t iteration = 0;
-		while (iteration++ < NumMaxIterations)
-		{
-			checksum = shiftxor(hash);
-
-			uint64_t storedChecksum = m_checksum[outIndex].atomic.load(std::memory_order::relaxed);
-
-			if (storedChecksum == checksum)
-			{
-				return true;
-			}
-			else if (storedChecksum == 0)
-			{
-				return false;
-			}
-			else
-			{
-				hash = std::hash<uint64_t>()(hash);
-				outIndex = hash % m_checksum.size();
-			}
-		}
-		VT_ENSURE(iteration <= NumMaxIterations);
-
-		return iteration <= NumMaxIterations;
-	}
+	void Reserve(uint64_t num);
+	void Clear();
 
 private:
-	uint64_t shiftxor(uint64_t seed) const
+	inline static constexpr uint64_t EmptySlot = 0;
+	inline static constexpr uint64_t TombstoneSlot = std::numeric_limits<uint64_t>::max();
+	inline static constexpr size_t NoTombstone = std::numeric_limits<size_t>::max();
+
+	inline static constexpr bool ValueTypeCanBeAtomic = std::is_trivially_constructible_v<ValueType> &&
+		std::is_copy_constructible_v<ValueType> &&
+		std::is_move_constructible_v<ValueType> &&
+		std::is_copy_assignable_v<ValueType> &&
+		std::is_move_assignable_v<ValueType>;
+
+	using StoredValueType = std::conditional_t<ValueTypeCanBeAtomic, std::atomic<ValueType>, ValueType>;
+
+	struct alignas(64) Slot
 	{
-		seed ^= (seed << 13);
-		seed ^= (seed >> 7);
-		seed ^= (seed << 17);
-		return seed;
-	}
+		Slot() {}
+		~Slot() {}
 
-	struct AtomicWrapper
-	{
-		AtomicWrapper()
-			: atomic(0)
-		{}
+		Slot(const Slot&) {}
+		Slot(Slot&&) {}
 
-		AtomicWrapper(const AtomicWrapper& other)
-		{
-			atomic.store(other.atomic);
-		}
+		void Store(const ValueType& inValue, std::memory_order memoryOrder);
+		ValueType Get(std::memory_order memoryOrder) const;
+		ValueType Exchange(const ValueType& inValue, std::memory_order memoryOrder);
 
-		AtomicWrapper& operator=(const AtomicWrapper& other)
-		{
-			if (this != &other)
-			{
-				atomic.store(other.atomic);
-			}
-
-			return *this;
-		}
-
-		std::atomic_uint64_t atomic;
+		std::atomic<uint64_t> key;
+		StoredValueType value;
 	};
 
-	Vector<AtomicWrapper, AllocatorType> m_checksum;
+	size_t GetStartIndex(uint64_t hash) const;
+	template<typename KeyType> uint64_t HashKey(const KeyType& key) const;
+
+	Vector<Slot> m_slots;
+	std::atomic<uint64_t> m_size;
 };
+
+#include "CoreUtilities/Containers/AtomicHashTable.inl"

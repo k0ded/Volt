@@ -21,8 +21,7 @@ public:
 private:
 	void Initialize();
 
-	AtomicHashTable<> m_hashTable;
-	Vector<IntRef<Volt::Asset>> m_cache;
+	AtomicHashTable<IntRef<Volt::Asset>> m_hashTable;
 };
 
 class EditorAssetManager

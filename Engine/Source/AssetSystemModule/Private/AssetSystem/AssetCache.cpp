@@ -26,23 +26,21 @@ namespace Volt
 
 	AssetCache::~AssetCache()
 	{
-		VT_ENSURE_MSG(m_cache.empty(), "Cache should have been cleared before destruction!");
+		VT_ENSURE_MSG(m_hashTable.IsEmpty(), "Cache should have been cleared before destruction!");
 	}
 
 	void AssetCache::Clear()
 	{
-		m_cache.clear();
+		m_hashTable.Clear();
 	}
 
 	bool AssetCache::TryPublish(AssetHandle assetHandle, IntRef<Asset> asset, uint64_t generation)
 	{
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
-		uint64_t hashIndex;
-		const bool inserted = m_hashTable.Insert(hash, hashIndex);
-		if (inserted)
+		auto InsertIntoContainer = [&](Container* container) 
 		{
-			m_cache[hashIndex].asset.store(asset.GetRaw(), std::memory_order::relaxed);
+			container->asset.store(asset.GetRaw(), std::memory_order::relaxed);
 
 			if (s_assetCacheLog.GetValue())
 			{
@@ -53,13 +51,30 @@ namespace Volt
 					asset->GetType()->GetName(),
 					generation);
 			}
-		}
-		else
+		};
+
+		Optional<Container*> value = m_hashTable.Find(hash);
+		if (value.HasValue())
 		{
-			VT_LOGC(Error, LogAssetSystem, "Unable to cache asset with handle '{}'", assetHandle);
+			InsertIntoContainer(value.Get());
+			return true;
 		}
 
-		return inserted;
+		Container* newContainer = m_allocator.Allocate();
+		value = m_hashTable.GetOrInsert(hash, newContainer);
+
+		if (value.HasValue())
+		{
+			if (value.Get() != newContainer)
+			{
+				m_allocator.Free(newContainer);
+			}
+
+			InsertIntoContainer(value.Get());
+			return true;
+		}
+
+		return false;
 	}
 
 	bool AssetCache::TryRemove(AssetHandle assetHandle, uint64_t generation)
@@ -68,11 +83,11 @@ namespace Volt
 
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
-		uint64_t hashIndex;
-		const bool found = m_hashTable.GetAndRemove(hash, hashIndex);
-		if (found)
+		Optional<Container*> container = m_hashTable.GetAndErase(hash);
+
+		if (container.HasValue())
 		{
-			Asset* asset = m_cache[hashIndex].asset.exchange(nullptr, std::memory_order::relaxed);
+			Asset* asset = container.Get()->asset.exchange(nullptr, std::memory_order::relaxed);
 
 			if (asset)
 			{
@@ -92,18 +107,17 @@ namespace Volt
 			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
 		}
 
-		return found;
+		return container.HasValue();
 	}
 
 	bool AssetCache::TryGet(AssetHandle assetHandle, uint64_t generation, IntRef<Asset>& outAsset)
 	{
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
-		uint64_t hashIndex;
-		bool found = m_hashTable.Get(hash, hashIndex);
-		if (found)
+		Optional<Container*> container = m_hashTable.Find(hash);
+		if (container.HasValue())
 		{
-			Asset* assetPtr = m_cache[hashIndex].asset.load(std::memory_order::relaxed);
+			Asset* assetPtr = container.Get()->asset.load(std::memory_order::relaxed);
 
 			// Asset hasn't been stored yet.
 			if (assetPtr == nullptr)
@@ -116,7 +130,7 @@ namespace Volt
 			{
 				return false;
 			}
-	
+
 			if (assetPtr->GetRefCount() > 0)
 			{
 				outAsset = IntRef<Asset>::Attach(assetPtr);
@@ -127,12 +141,11 @@ namespace Volt
 			}
 		}
 
-		return found;
+		return container.HasValue();
 	}
 
 	void AssetCache::Initialize()
 	{
 		m_hashTable.Reserve(AssetRegistry::GetNumMaxAssets());
-		m_cache.resize(AssetRegistry::GetNumMaxAssets());
 	}
 }

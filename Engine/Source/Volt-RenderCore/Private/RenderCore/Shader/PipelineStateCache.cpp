@@ -148,28 +148,28 @@ namespace Volt
 	{
 		if (shader->GetShaderStage() == RHI::ShaderStage::Compute)
 		{
-			for (const auto& entry : s_instance->m_computePipelineCache.GetCache())
+			for (auto it = s_instance->m_computePipelineCache.GetIterator(); it; ++it)
 			{
-				if (entry.pipeline)
+				if (it->pipeline)
 				{
-					if (entry.pipeline->GetShader() == shader)
+					if (it->pipeline->GetShader() == shader)
 					{
-						entry.pipeline->Invalidate();
+						it->pipeline->Invalidate();
 					}
 				}
 			}
 		}
 		else
 		{
-			for (const auto& entry : s_instance->m_renderPipelineCache.GetCache())
+			for (auto it = s_instance->m_renderPipelineCache.GetIterator(); it; ++it)
 			{
-				if (entry.pipeline)
+				if (it->pipeline)
 				{
-					for (const auto& pipelineShader : entry.pipeline->GetShaders())
+					for (const auto& pipelineShader : it->pipeline->GetShaders())
 					{
 						if (pipelineShader == shader)
 						{
-							entry.pipeline->Invalidate();
+							it->pipeline->Invalidate();
 							break;
 						}
 					}

@@ -192,24 +192,19 @@ EditorAssetCache::EditorAssetCache()
 
 EditorAssetCache::~EditorAssetCache()
 {
-	VT_ENSURE_MSG(m_cache.empty(), "Cache should have been cleared before destruction!");
+	VT_ENSURE_MSG(m_hashTable.IsEmpty(), "Cache should have been cleared before destruction!");
 }
 
 void EditorAssetCache::Clear()
 {
-	m_cache.clear();
+	m_hashTable.Clear();
 }
 
 void EditorAssetCache::AddAsset(IntRef<Volt::Asset> asset)
 {
 	VT_ENSURE(asset->GetAssetHandle() != Volt::Asset::Null());
 
-	uint64_t hashIndex;
-	if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
-	{
-		m_cache[hashIndex] = asset;
-	}
-	else
+	if (!m_hashTable.Insert(asset->GetAssetHandle(), asset))
 	{
 		VT_LOG(Error, "Unable to cache asset with handle '{}'", asset->GetAssetHandle());
 	}
@@ -219,12 +214,7 @@ void EditorAssetCache::RemoveAsset(Volt::AssetHandle assetHandle)
 {
 	VT_ENSURE(assetHandle != Volt::Asset::Null());
 
-	uint64_t hashIndex;
-	if (m_hashTable.GetAndRemove(assetHandle, hashIndex))
-	{
-		m_cache[hashIndex].Reset();
-	}
-	else
+	if (!m_hashTable.Erase(assetHandle))
 	{
 		VT_LOG(Warning, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
 	}
@@ -234,10 +224,11 @@ IntRef<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
 {
 	VT_ENSURE(assetHandle != Volt::Asset::Null());
 
-	uint64_t hashIndex;
-	if (m_hashTable.Get(assetHandle, hashIndex))
+	Optional<IntRef<Volt::Asset>> value = m_hashTable.Find(assetHandle);
+
+	if (value.HasValue())
 	{
-		return m_cache[hashIndex];
+		return value.Get();
 	}
 
 	return nullptr;
@@ -245,25 +236,18 @@ IntRef<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
 
 bool EditorAssetCache::TryGetAsset(Volt::AssetHandle assetHandle, IntRef<Volt::Asset>& outAsset)
 {
-	uint64_t hashIndex;
-	bool found = m_hashTable.Get(assetHandle, hashIndex);
-	if (found)
+	Optional<IntRef<Volt::Asset>> value = m_hashTable.Find(assetHandle);
+
+	if (value.HasValue())
 	{
-		if (m_cache[hashIndex]->GetRefCount() > 0)
-		{
-			outAsset = m_cache[hashIndex];
-		}
-		else
-		{
-			return false;
-		}
+		outAsset = value.Get();
+		return true;
 	}
 
-	return found;
+	return false;
 }
 
 void EditorAssetCache::Initialize()
 {
 	m_hashTable.Reserve(Volt::AssetRegistry::GetNumMaxAssets());
-	m_cache.resize(Volt::AssetRegistry::GetNumMaxAssets());
 }
