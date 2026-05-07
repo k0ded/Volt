@@ -28,6 +28,14 @@ namespace Volt
 
 	SceneContainer* SceneManager::LoadScene(AssetHandle handle)
 	{
+		for (SceneContainer* container : m_sceneContainers)
+		{
+			if (container->GetScene()->GetAssetHandle() == handle)
+			{
+				return container;
+			}
+		}
+
 		AssetReference<Scene> newScene;
 
 		bool result = g_assetManager->TryGetAsset<Scene>(handle, newScene);
