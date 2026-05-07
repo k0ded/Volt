@@ -10,6 +10,7 @@ namespace Volt
 		: m_priority(priority),
 		m_numExpectedTasks(numExpectedTasks)
 	{
+		VT_UNUSED(m_numExpectedTasks);
 	}
 
 	TaskGraph::~TaskGraph()

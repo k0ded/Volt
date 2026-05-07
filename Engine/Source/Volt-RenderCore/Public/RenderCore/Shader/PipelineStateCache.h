@@ -86,7 +86,7 @@ namespace Volt
 				return *value.Get();
 			}
 			
-			VT_INLINE EntryAllocator::Iterator GetIterator() const { return EntryAllocator::Iterator(m_entryAllocator); }
+			VT_INLINE EntryAllocator::Iterator GetIterator() const { return typename EntryAllocator::Iterator(m_entryAllocator); }
 
 		private:
 			AtomicHashTable<Entry*> m_hashTable;
