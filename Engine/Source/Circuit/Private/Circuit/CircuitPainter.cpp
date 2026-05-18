@@ -60,7 +60,7 @@ namespace Circuit
 		m_childSlots.push_back(std::move(slot));
 	}
 
-	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color, float rotation, float scale)
+	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color,float rounding, RectCorners roundingCorners, float rotation, float scale)
 	{
 		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
@@ -72,6 +72,9 @@ namespace Circuit
 
 		command.halfSize.x = width / 2;
 		command.halfSize.y = height / 2;
+
+		//TODO: Use roundingCorners 
+		command.rounding = rounding;
 
 		command.position += command.halfSize;
 
@@ -86,7 +89,7 @@ namespace Circuit
 		AddDrawCommand(std::move(command));
 	}
 
-	void CircuitPainter::AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rotation, float scale)
+	void CircuitPainter::AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rounding, RectCorners roundingCorners, float rotation, float scale)
 	{
 		VT_PROFILE_FUNCTION();
 		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
@@ -98,6 +101,9 @@ namespace Circuit
 
 		command.halfSize.x = width / 2;
 		command.halfSize.y = height / 2;
+
+		//TODO: Use roundingCorners 
+		command.rounding = rounding;
 
 		command.position += command.halfSize;
 

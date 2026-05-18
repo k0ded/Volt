@@ -20,6 +20,22 @@ namespace Circuit
 	class Widget;
 	class PainterPool;
 
+	enum class RectCorners : uint8_t
+	{
+		None = 0,
+		TopLeft = 1 << 0,
+		TopRight = 1 << 1,
+		BottomLeft = 1 << 2,
+		BottomRight = 1 << 3,
+
+		Top = TopLeft | TopRight,
+		Bottom = BottomLeft | BottomRight,
+		Left = TopLeft | BottomLeft,
+		Right = TopRight | TopLeft,
+
+		All = TopLeft | TopRight | BottomLeft | BottomRight
+	};
+
 	class CIRCUIT_API CircuitPainter
 	{
 	public:
@@ -39,8 +55,8 @@ namespace Circuit
 		VT_INLINE void AddWidget(Ref<Widget> widget, const glm::vec2& position, const glm::vec2& size) { AddWidget(widget, Volt::Rect(position, size)); }
 		void AddWidget(Ref<Widget> widget, const Volt::Rect& allottedLocalArea);
 
-		void AddRect(float x, float y, float width, float height, CircuitColor color, float rotation = 0, float scale = 1);
-		void AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rotation = 0, float scale = 1);
+		void AddRect(float x, float y, float width, float height, CircuitColor color, float rounding = 0,RectCorners roundingCorners = RectCorners::All, float rotation = 0, float scale = 1);
+		void AddRectOutline(float x, float y, float width, float height, CircuitColor color, float lineThickness, float rounding = 0, RectCorners roundingCorners = RectCorners::All, float rotation = 0, float scale = 1);
 
 		void AddCircle(float x, float y, float radius, CircuitColor color, float scale = 1);
 		void AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale = 1);
