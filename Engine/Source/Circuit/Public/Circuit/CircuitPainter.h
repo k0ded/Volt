@@ -20,22 +20,6 @@ namespace Circuit
 	class Widget;
 	class PainterPool;
 
-	enum class RectCorners : uint8_t
-	{
-		None = 0,
-		TopLeft = 1 << 0,
-		TopRight = 1 << 1,
-		BottomLeft = 1 << 2,
-		BottomRight = 1 << 3,
-
-		Top = TopLeft | TopRight,
-		Bottom = BottomLeft | BottomRight,
-		Left = TopLeft | BottomLeft,
-		Right = TopRight | TopLeft,
-
-		All = TopLeft | TopRight | BottomLeft | BottomRight
-	};
-
 	class CIRCUIT_API CircuitPainter
 	{
 	public:
