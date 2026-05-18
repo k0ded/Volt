@@ -85,7 +85,11 @@ namespace Volt
 		const double fsScale = 1.0 / (m_metrics.ascenderY - m_metrics.descenderY);
 
 		double maxLineWidth = 0.0;
+		float maxHeight = 0.0;
+
 		double sX = 0.0;
+		double sY = -fsScale * m_metrics.ascenderY;
+
 		int32_t lineCount = 1;
 
 		for (int32_t i = 0; i < static_cast<int32_t>(utf32string.size()); i++)
@@ -93,8 +97,8 @@ namespace Volt
 			char32_t character = utf32string[i];
 			if (character == '\n')
 			{
-				maxLineWidth = glm::max(maxLineWidth, sX);
 				sX = 0.0;
+				sY += fsScale * m_metrics.lineHeight;
 				lineCount++;
 				continue;
 			}
@@ -106,18 +110,33 @@ namespace Volt
 			}
 			VT_ENSURE(glyph);
 
+			GlyphGeometry::Bounds planeBounds = glyph->GetPlaneBounds();
+
+			planeBounds.top = m_metrics.ascenderY - planeBounds.top;
+			planeBounds.bottom = m_metrics.ascenderY - planeBounds.bottom;
+
+			planeBounds.top += m_metrics.ascenderY + m_metrics.descenderY;
+			planeBounds.bottom += m_metrics.ascenderY + m_metrics.descenderY;
+
+			planeBounds.left *= fsScale;
+			planeBounds.bottom *= fsScale;
+			planeBounds.right *= fsScale;
+			planeBounds.top *= fsScale;
+
+			planeBounds.left += sX;
+			planeBounds.bottom += sY;
+			planeBounds.right += sX;
+			planeBounds.top += sY;
+
+			const float height = (static_cast<float>(planeBounds.top) * size) - (static_cast<float>(planeBounds.bottom) * size);
+			maxHeight = glm::min(maxHeight, height);
+
 			double advance = glyph->GetAdvance();
-			if (i + 1 < static_cast<int32_t>(utf32string.size()))
-			{
-				m_fontGeometry.GetAdvance(advance, character, utf32string[i + 1]);
-			}
+			m_fontGeometry.GetAdvance(advance, character, utf32string[i + 1]);
 			sX += fsScale * advance;
 		}
 		maxLineWidth = glm::max(maxLineWidth, sX);
 
-		const double lineHeight = fsScale * m_metrics.lineHeight;
-		const double totalHeight = 1.0 + (lineCount - 1) * lineHeight;
-
-		return glm::vec2(static_cast<float>(maxLineWidth) * size, static_cast<float>(totalHeight) * size);
+		return glm::vec2(static_cast<float>(maxLineWidth) * size, -maxHeight);
 	}
 }
