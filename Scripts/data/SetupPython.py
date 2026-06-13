@@ -1,5 +1,9 @@
 import subprocess
-import pkg_resources
+try:
+    import pkg_resources
+except ImportError:
+    subprocess.check_call(['python', '-m', 'pip', 'install', 'setuptools==81.0.0'])
+    import pkg_resources
 
 class Python:
     @staticmethod

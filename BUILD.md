@@ -5,7 +5,7 @@
 * Git
 * Git-LFS
 * Python 3
-* Visual Studio 2022
+* Visual Studio 2026
 * .NET Framework 4.7.2
 
 #### Fetching

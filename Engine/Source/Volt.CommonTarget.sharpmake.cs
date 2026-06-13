@@ -141,67 +141,67 @@ namespace VoltSharpmake
             return result.ToArray();
         }
 
-        private static bool IsDevEnvInstalled(DevEnv devEnv)
-        {
-            int majorVersion;
-            switch (devEnv)
-            {
-                case DevEnv.vs2022: majorVersion = 17; break;
-                case DevEnv.vs2026: majorVersion = 18; break;
-                default: return false;
-            }
+        //private static bool IsDevEnvInstalled(DevEnv devEnv)
+        //{
+        //    int majorVersion;
+        //    switch (devEnv)
+        //    {
+        //        case DevEnv.vs2022: majorVersion = 17; break;
+        //        case DevEnv.vs2026: majorVersion = 18; break;
+        //        default: return false;
+        //    }
 
-            try
-            {
-                string programFilesX86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-                if (string.IsNullOrEmpty(programFilesX86))
-                {
-                    return false;
-                }
+        //    try
+        //    {
+        //        string programFilesX86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+        //        if (string.IsNullOrEmpty(programFilesX86))
+        //        {
+        //            return false;
+        //        }
 
-                string vswhere = Path.Combine(programFilesX86, @"Microsoft Visual Studio\Installer\vswhere.exe");
-                if (!File.Exists(vswhere))
-                {
-                    return false;
-                }
+        //        string vswhere = Path.Combine(programFilesX86, @"Microsoft Visual Studio\Installer\vswhere.exe");
+        //        if (!File.Exists(vswhere))
+        //        {
+        //            return false;
+        //        }
 
-                var psi = new ProcessStartInfo
-                {
-                    FileName = vswhere,
-                    Arguments = "-version [" + majorVersion + ".0," + (majorVersion + 1) + ".0) -property installationPath",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
+        //        var psi = new ProcessStartInfo
+        //        {
+        //            FileName = vswhere,
+        //            Arguments = "-version [" + majorVersion + ".0," + (majorVersion + 1) + ".0) -property installationPath",
+        //            RedirectStandardOutput = true,
+        //            UseShellExecute = false,
+        //            CreateNoWindow = true,
+        //        };
 
-                using (var p = Process.Start(psi))
-                {
-                    string output = p.StandardOutput.ReadToEnd();
-                    p.WaitForExit();
-                    return !string.IsNullOrWhiteSpace(output);
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        //        using (var p = Process.Start(psi))
+        //        {
+        //            string output = p.StandardOutput.ReadToEnd();
+        //            p.WaitForExit();
+        //            return !string.IsNullOrWhiteSpace(output);
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
 
         public static CommonTarget[] GetWin64Targets()
         {
-			DevEnv devEnv = 0;
-			foreach (DevEnv candidate in new[] { DevEnv.vs2022, DevEnv.vs2026 })
-			{
-				if (IsDevEnvInstalled(candidate))
-				{
-					devEnv |= candidate;
-				}
-			}
+			DevEnv devEnv = DevEnv.vs2026;
+			//foreach (DevEnv candidate in new[] { DevEnv.vs2022, DevEnv.vs2026 })
+			//{
+			//	if (IsDevEnvInstalled(candidate))
+			//	{
+			//		devEnv |= candidate;
+			//	}
+			//}
 
-			if (devEnv == 0)
-			{
-				throw new Exception("No supported Visual Studio install found (vs2022 or vs2026).");
-			}
+			//if (devEnv == 0)
+			//{
+			//	throw new Exception("No supported Visual Studio install found (vs2022 or vs2026).");
+			//}
 
 			List<CommonTarget> result = new List<CommonTarget>();
 
