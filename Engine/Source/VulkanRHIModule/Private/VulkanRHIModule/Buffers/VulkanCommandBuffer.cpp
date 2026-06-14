@@ -2048,8 +2048,13 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanFence& vkFence = m_submissionFence->AsRef<VulkanFence>();
-		vkFence.AssignSemaphore(semaphore, value);
+		// #TODO_Vulkan: Need to revisit this check. It should not be required, but for some reason
+		//				 when taking a capture with RenderDoc 'm_submissionFence' can be null...?
+		if (m_submissionFence)
+		{
+			VulkanFence& vkFence = m_submissionFence->AsRef<VulkanFence>();
+			vkFence.AssignSemaphore(semaphore, value);
+		}
 
 		m_lastSubmissionTrackerManager.AssignSemaphore(semaphore, value);
 	}

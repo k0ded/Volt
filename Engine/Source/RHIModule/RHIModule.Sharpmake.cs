@@ -32,8 +32,8 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<NsightAftermath>(target);
 
-			conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
-			conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
+			//conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
+			//conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
 		}
     }
 }
