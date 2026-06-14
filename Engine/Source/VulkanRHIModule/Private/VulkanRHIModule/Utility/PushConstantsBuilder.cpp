@@ -16,7 +16,7 @@ namespace Volt::RHI
 		{
 			if (shaderParameterMap.HasInlineParameterBlock())
 			{
-				VT_ENSURE_MSG(range.size == 0, "Currently only one inline parameter block is supported!");
+				//VT_ENSURE_MSG(range.size == 0, "Currently only one inline parameter block is supported!");
 
 				range.size = shaderParameterMap.GetInlineParameterBlockSize();
 				range.stageFlags |= Utility::VoltToVulkanShaderStage(shaderParameterMap.GetShaderStage());

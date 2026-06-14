@@ -48,6 +48,8 @@
 
 #include <CoreUtilities/Math/Math.h>
 
+#include "RenderingTechniques/HBAOTechnique.h"
+
 namespace Volt
 {
 	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
@@ -103,6 +105,7 @@ namespace Volt
 
 	void SceneRenderer::Resize(const uint32_t width, const uint32_t height)
 	{
+		VT_ENSURE(width <= 16384 && height <= 16384 && "Can't render to a texture that is larger than 16K");
 		m_resizeWidth = width;
 		m_resizeHeight = height;
 
@@ -179,8 +182,10 @@ namespace Volt
 		AddBasePass(renderGraph, blackboard, renderView);
 
 		// Requires GBuffer normals.
-		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
-		gtaoTechnique.Execute(renderView);
+		//GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
+		//gtaoTechnique.Execute(renderView);
+		HBAOTechnique hbaoTechnique{ renderGraph, blackboard };
+		hbaoTechnique.Execute(renderView);
 
 		CascadedShadowMapsTechnique::Result directionalShadowMap{};
 

@@ -54,6 +54,7 @@ namespace Volt
 
 	void Scene::SetRenderSize(uint32_t aWidth, uint32_t aHeight)
 	{
+		VT_ENSURE(aWidth <= 16384 && aHeight <= 16384 && "Can't render to a texture that is larger than 16K");
 		m_viewportWidth = aWidth;
 		m_viewportHeight = aHeight;
 	}
