@@ -1252,6 +1252,21 @@ namespace Volt
 							activeBarrier = &compiledPass.GetGlobalBarrierInfo();
 						}
 					}
+					else if (activeBarrier->type != RHI::BarrierType::Global)
+					{
+						uint32_t mipIndex, layerIndex, planeIndex;
+						RHI::GetSubResourceFromIndex(subResourceIndex, textureDesc.mips, textureDesc.layers, mipIndex, layerIndex, planeIndex);
+
+						auto subresource = activeBarrier->imageBarrier().subResource;
+						if (subresource.baseArrayLayer + subresource.layerCount == layerIndex)
+						{
+							activeBarrier->imageBarrier().subResource.layerCount++;
+						}
+						else if (subresource.baseMipLevel + subresource.levelCount == mipIndex)
+						{
+							activeBarrier->imageBarrier().subResource.levelCount++;
+						}
+					}
 
 					if (activeBarrier->type == RHI::BarrierType::Image)
 					{
@@ -1997,7 +2012,7 @@ namespace Volt
 				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges, executePassRangeFunc]()
 				{
 					executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
-				}, FiberStackSize::KB64);
+				}, FiberStackSize::KB128);
 				index++;
 			}
 
