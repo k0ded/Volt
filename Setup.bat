@@ -2,13 +2,14 @@
 
 REM Check if Python is installed
 where /q python
+set "pythonExecutable=python"
 IF ERRORLEVEL 1 (
 	where /q py
 	IF ERRORLEVEL 1 (
 		ECHO Python is missing.
 		exit /b 1
 	)
-	call py data/Setup.py
+	set "pythonExecutable=py"
 	exit /b 1
 )
 
@@ -21,9 +22,9 @@ set "projectDir=%*"
 
 REM Call Python with the appropriate parameters
 IF "%projectDir%"=="" (
-	call python Scripts/data/Setup.py
+	call %pythonExecutable% Scripts/data/Setup.py
 ) ELSE (
-	call python Scripts/data/Setup.py -p="%projectDir%"
+	call %pythonExecutable% Scripts/data/Setup.py -p="%projectDir%"
 )
 
 REM Pause to view any messages

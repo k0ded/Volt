@@ -6,7 +6,10 @@
 #include <type_traits>
 #include <concepts>
 
-#include <glm/glm.hpp>
+//#include <glm/glm.hpp>
+#include <glm/ext/scalar_constants.hpp>
+#include <glm/gtc/epsilon.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace Math
 {
@@ -50,19 +53,17 @@ namespace Math
 
 	VT_INLINE static bool Decompose(const glm::mat4& transform, glm::vec3& translation, glm::vec3& rotation, glm::vec3& scale)
 	{
-		using namespace glm;
-
-		mat4 LocalMatrix(transform);
+		glm::mat4 LocalMatrix(transform);
 
 		// Normalize the matrix.
-		if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<float>()))
+		if (glm::epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), glm::epsilon<float>()))
 			return false;
 
 		// First, isolate perspective.  This is the messiest.
 		if (
-			epsilonNotEqual(LocalMatrix[0][3], static_cast<float>(0), epsilon<float>()) ||
-			epsilonNotEqual(LocalMatrix[1][3], static_cast<float>(0), epsilon<float>()) ||
-			epsilonNotEqual(LocalMatrix[2][3], static_cast<float>(0), epsilon<float>()))
+			glm::epsilonNotEqual(LocalMatrix[0][3], static_cast<float>(0), glm::epsilon<float>()) ||
+			glm::epsilonNotEqual(LocalMatrix[1][3], static_cast<float>(0), glm::epsilon<float>()) ||
+			glm::epsilonNotEqual(LocalMatrix[2][3], static_cast<float>(0), glm::epsilon<float>()))
 		{
 			// Clear the perspective partition
 			LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<float>(0);
@@ -70,10 +71,10 @@ namespace Math
 		}
 
 		// Next take care of translation (easy).
-		translation = vec3(LocalMatrix[3]);
-		LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
+		translation = glm::vec3(LocalMatrix[3]);
+		LocalMatrix[3] = glm::vec4(0, 0, 0, LocalMatrix[3].w);
 
-		vec3 Row[3];
+		glm::vec3 Row[3];
 
 		// Now get scale and shear.
 		for (uint32_t i = 0; i < 3; ++i)
