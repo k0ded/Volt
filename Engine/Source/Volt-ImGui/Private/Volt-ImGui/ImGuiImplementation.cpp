@@ -144,6 +144,11 @@ namespace Volt
 		{
 			auto& swapchain = window->GetSwapchain();
 
+			if (!swapchain.GetCurrentImage())
+			{
+				continue;
+			}
+
 			{
 				RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::None;

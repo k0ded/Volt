@@ -205,6 +205,13 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
+		// #Note: This can happen because windows may be created after begin frame,
+		//		  but before present, meaning that the swapchain images has not beem created yet.
+		if (m_perImageData[m_currentImageIndex].imageReference == nullptr)
+		{
+			return;
+		}
+
 		m_commandBuffers.at(m_currentFrameIndex)->Begin();
 
 		{
@@ -224,7 +231,6 @@ namespace Volt::RHI
 		{
 			return;
 		}
-
 
 		PerFrameInFlightData& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
 		PerImageData& imageData = m_perImageData.at(m_currentImageIndex);
@@ -369,6 +375,11 @@ namespace Volt::RHI
 			tempData[i].presentSemaphore = m_perImageData[i].renderSemaphore;
 		}
 
+		for (auto& perFrameInFlightData : m_perFrameInFlightData)
+		{
+			perFrameInFlightData.acquireSemaphore.Reset();
+		}
+
 		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempData, swapchain = m_swapchain, surface = m_surface]() mutable
 		{
 			auto device = GraphicsContext::GetDevice();
@@ -386,7 +397,6 @@ namespace Volt::RHI
 
 			for (auto& perFrameData : perFrameInFlightData)
 			{
-				perFrameData.acquireSemaphore.Reset();
 				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
 				vkDestroyFence(vkDevice, perFrameData.presentFence, VT_VULKAN_ALLOCATOR);
 			}
@@ -657,7 +667,10 @@ namespace Volt::RHI
 			auto device = GraphicsContext::GetDevice();
 			VkDevice vkDevice = device->GetHandle<VkDevice>();
 
-			vkWaitForFences(vkDevice, 1, &presentFence, VK_TRUE, UINT64_MAX);
+			if (presentFence)
+			{
+				vkWaitForFences(vkDevice, 1, &presentFence, VK_TRUE, UINT64_MAX);
+			}
 
 			for (VkSemaphore presentSemaphore : tempData)
 			{

@@ -136,13 +136,15 @@ inline Optional<ValueType> AtomicHashTable<ValueType, AllocatorType>::GetOrInser
 		// We need to do a brief wait to ensure the value has bee written.
 		if (claimExpected == keyHash)
 		{
+			std::atomic_thread_fence(std::memory_order::acquire);
+
 			ValueType v{};
 
 			for (int32_t spin = 0; spin < 1024; ++spin)
 			{
 				v = claimSlot.Get(std::memory_order::acquire);
-				break;
 			}
+
 
 			return v;
 		}
