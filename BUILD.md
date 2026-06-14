@@ -5,7 +5,8 @@
 * Git
 * Git-LFS
 * Python 3
-* Visual Studio 2026
+* Visual Studio 2022
+* Windows 11 SDK (10.0.22621.0)
 * .NET Framework 4.7.2
 
 #### Fetching
