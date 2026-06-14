@@ -418,14 +418,7 @@ namespace Volt::RHI
 			deviceInfo.pQueueCreateInfos = deviceQueueInfos.data();
 			deviceInfo.pEnabledFeatures = nullptr;
 			deviceInfo.enabledLayerCount = 0;
-
-#ifdef VT_ENABLE_VALIDATION
-			if (enableDebugLayer)
-			{
-				deviceInfo.enabledLayerCount = 1u;
-				deviceInfo.ppEnabledLayerNames = &s_validationLayer;
-			}
-#endif
+			deviceInfo.ppEnabledLayerNames = nullptr;
 
 			//VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME), "Mesh Shader support is required!");
 			//VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME), "Mutable descriptor type support is required!");

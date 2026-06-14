@@ -2,6 +2,7 @@
 
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
 #include "CoreUtilities/Optional.h"
+#include "CoreUtilities/Containers/Vector.h"
 
 template<typename ValueType, typename AllocatorType = DefaultHeapAllocator>
 class AtomicHashTable
