@@ -9,12 +9,10 @@ namespace Volt
 		: m_viewCache(this),
 		m_buffer(buffer)
 	{
-
 	}
 
 	PersistantBufferResource::~PersistantBufferResource()
 	{
-
 	}
 
 	PersistantTextureResource::PersistantTextureResource(IntRef<RHI::Image> image)

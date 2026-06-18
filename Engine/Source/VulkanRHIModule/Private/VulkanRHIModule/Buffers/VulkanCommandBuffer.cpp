@@ -2057,6 +2057,12 @@ namespace Volt::RHI
 		}
 
 		m_lastSubmissionTrackerManager.AssignSemaphore(semaphore, value);
+
+		RHIModule::GetInstance().DestroyResource([extractedTrackers = m_lastSubmissionTrackerManager.ExtractTrackers()]() 
+		{
+			VT_UNUSED(extractedTrackers);
+
+		}, m_submissionFence);
 	}
 
 	void VulkanCommandBuffer::MarkAsSubmitted()
