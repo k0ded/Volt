@@ -12,11 +12,19 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/ThreadConfig.h>
+#include <CoreUtilities/ConsoleVariableRegistry.h>
 
 namespace Volt
 {
 	static thread_local uint32_t g_workerId = 0xFFFFFFFF;
 	static uint32_t g_mainThreadWorkerId = 0xFFFFFFFF;
+
+	static ConsoleVariable<int32_t> g_jobSystemUseFibers(
+		"JobSystem.UseFibers",
+		0,
+		ConsoleVariableFlags::ReadOnly,
+		"Whether to use fibers to execute jobs."
+	);
 
 	VT_REGISTER_SUBSYSTEM(JobSystem, Minimal, PreEngine);
 
@@ -60,6 +68,7 @@ namespace Volt
 	}
 
 	JobSystem::JobSystem()
+		: m_useFibersForExecution(g_jobSystemUseFibers.GetValue())
 	{
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
@@ -69,7 +78,11 @@ namespace Volt
 		AllocateWaitingLists();
 		m_mainThreadQueue.Allocate(NumMaxMainThreadJobs);
 
-		m_fiberPool.Initialize(NumFibers);
+		// Only initialize fibers if we are going to use them.
+		if (IsUsingFibers())
+		{
+			m_fiberPool.Initialize(NumFibers);
+		}
 	}
 
 	JobSystem::~JobSystem()
@@ -113,15 +126,19 @@ namespace Volt
 	{
 		VT_ASSERT(g_workerId != 0xFFFFFFFF);
 		
-		JobWorker& workerData = *s_instance->m_workers[g_workerId];
-		if (VT_CHECK(workerData.currentlyExecutingJob != nullptr))
+		// Yielding is only supported for fibers.
+		if (s_instance->IsUsingFibers())
 		{
-			Job* job = workerData.currentlyExecutingJob;
+			JobWorker& workerData = *s_instance->m_workers[g_workerId];
+			if (VT_CHECK(workerData.currentlyExecutingJob != nullptr))
+			{
+				Job* job = workerData.currentlyExecutingJob;
 
-			Threads::SetFiberExecutionID(-1);
+				Threads::SetFiberExecutionID(-1);
 
-			// Swap back to the worker context
-			FiberSwapContext(&job->m_assignedFiber->m_executionContext, &workerData.fiberContext, OnFiberSwitch_PushToQueue, job);
+				// Swap back to the worker context
+				FiberSwapContext(&job->m_assignedFiber->m_executionContext, &workerData.fiberContext, OnFiberSwitch_PushToQueue, job);
+			}
 		}
 	}
 
@@ -140,27 +157,13 @@ namespace Volt
 			return;
 		}
 
-		const bool isWorkerThread = g_workerId != 0xFFFFFFFF;
-		const bool isMainThread = g_workerId == g_mainThreadWorkerId;
-
-		if (!counter->IsCompleted())
+		if (s_instance->IsUsingFibers())
 		{
-			// If we're in a worker thread let's switch tasks,
-			// otherwise just wait.
-			if (isWorkerThread && !isMainThread)
-			{
-				auto& worker = *s_instance->m_workers[g_workerId];
-				worker.scratch.toQueueWaitCounter = counter;
-
-				Threads::SetFiberExecutionID(-1);
-
-				Job* job = worker.currentlyExecutingJob;
-				FiberSwapContext(&job->m_assignedFiber->m_executionContext, &worker.fiberContext, OnFiberSwitch_PushToWaitingList, job);
-			}
-			else
-			{
-				counter->WaitForCounterLocking();
-			}
+			s_instance->WaitForCounter_FiberMode(counter);
+		}
+		else
+		{
+			s_instance->WaitForCounter_ThreadMode(counter);
 		}
 	}
 
@@ -198,7 +201,15 @@ namespace Volt
 		for (uint32_t i = 0; i < hardwareConcurrency; ++i)
 		{
 			JobWorker* worker = m_workers.emplace_back(AllocateWorker(i));
-			worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker, this, i));
+			if (IsUsingFibers())
+			{
+				worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker_FiberMode, this, i));
+			}
+			else
+			{
+				worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker_ThreadMode, this, i));
+			}
+
 			worker->workQueues.Allocate(NumMaxJobsPerQueue);
 
 			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
@@ -308,11 +319,33 @@ namespace Volt
 
 	bool JobSystem::OnTick(AppTickEvent& event)
 	{
-		ExecuteMainThreadJobs();
+		if (IsUsingFibers())
+		{
+			ExecuteMainThreadJobs_FiberMode();
+		}
+		else
+		{
+			ExecuteMainThreadJobs_ThreadMode();
+		}
 		return false;
 	}
 
-	void JobSystem::ExecuteMainThreadJobs()
+	void JobSystem::ExecuteMainThreadJobs_ThreadMode()
+	{
+		JobWorker& workerData = *m_workers[g_workerId];
+		Job* jobPtr;
+		while (m_mainThreadQueue.Pop(jobPtr))
+		{
+			workerData.currentlyExecutingJob = jobPtr;
+			jobPtr->ExecuteInternal();
+
+			FinishJob(/* no fiber */nullptr, jobPtr);
+		}
+
+		workerData.currentlyExecutingJob = nullptr;
+	}
+
+	void JobSystem::ExecuteMainThreadJobs_FiberMode()
 	{
 		JobWorker& workerData = *m_workers[g_workerId];
 		Job* jobPtr;
@@ -343,7 +376,40 @@ namespace Volt
 		workerData.currentlyExecutingJob = nullptr;
 	}
 
-	void JobSystem::SpawnWorker(uint32_t workerId)
+	bool JobSystem::IsUsingFibers() const
+	{
+		return m_useFibersForExecution;
+	}
+
+	void JobSystem::SpawnWorker_ThreadMode(uint32_t workerId)
+	{
+		Threads::InitializeThreadConfig(true, false, false);
+
+		g_workerId = workerId;
+		JobWorker& workerData = *m_workers[workerId];
+
+		// Wait here for all threads to be created.
+		m_startWorkersLatch.ArriveAndWait();
+		
+		while (m_isRunning.load(std::memory_order::relaxed))
+		{
+			Job* job = TryGetJob(workerId);
+			if (job)
+			{
+				workerData.currentlyExecutingJob = job;
+				job->ExecuteInternal();
+
+				FinishJob(/* no fiber */nullptr, job);
+			}
+			else
+			{
+				workerData.currentlyExecutingJob = nullptr;
+				workerData.workItemsAvailable.acquire();
+			}
+		}
+	}
+
+	void JobSystem::SpawnWorker_FiberMode(uint32_t workerId)
 	{
 		Threads::InitializeThreadConfig(true, false, false);
 
@@ -516,6 +582,40 @@ namespace Volt
 		}
 	}
 
+	void JobSystem::WaitForCounter_ThreadMode(JobCounterRef counter)
+	{
+		if (!counter->IsCompleted())
+		{
+			counter->WaitForCounterLocking();
+		}
+	}
+
+	void JobSystem::WaitForCounter_FiberMode(JobCounterRef counter)
+	{
+		const bool isWorkerThread = g_workerId != 0xFFFFFFFF;
+		const bool isMainThread = g_workerId == g_mainThreadWorkerId;
+
+		if (!counter->IsCompleted())
+		{
+			// If we're in a worker thread let's switch tasks,
+			// otherwise just wait.
+			if (isWorkerThread && !isMainThread)
+			{
+				auto& worker = *s_instance->m_workers[g_workerId];
+				worker.scratch.toQueueWaitCounter = counter;
+
+				Threads::SetFiberExecutionID(-1);
+
+				Job* job = worker.currentlyExecutingJob;
+				FiberSwapContext(&job->m_assignedFiber->m_executionContext, &worker.fiberContext, OnFiberSwitch_PushToWaitingList, job);
+			}
+			else
+			{
+				counter->WaitForCounterLocking();
+			}
+		}
+	}
+
 	Job* JobSystem::TryGetJob(uint32_t workerId)
 	{
 		VT_PROFILE_FUNCTION();
@@ -644,9 +744,13 @@ namespace Volt
 		waitCounter->DecRef();
 		job->DecRef();
 
-		Threads::SetFiberExecutionID(-1);
+		// Only switch fiber if we are using fibers.
+		if (fiber)
+		{
+			Threads::SetFiberExecutionID(-1);
 
-		// Move back to the worker fiber
-		FiberSwapContext(&fiber->m_executionContext, &m_workers[g_workerId]->fiberContext, OnFiberSwitch_FreeFiber, fiber);
+			// Move back to the worker fiber
+			FiberSwapContext(&fiber->m_executionContext, &m_workers[g_workerId]->fiberContext, OnFiberSwitch_FreeFiber, fiber);
+		}
 	}
 }

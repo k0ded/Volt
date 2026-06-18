@@ -104,10 +104,15 @@ namespace Volt
 		bool FlushWaitingList(ExecutionPriority priority);
 
 		bool OnTick(AppTickEvent& event);
-		void ExecuteMainThreadJobs();
+		void ExecuteMainThreadJobs_ThreadMode();
+		void ExecuteMainThreadJobs_FiberMode();
+
+		bool IsUsingFibers() const;
 
 		///// Worker management /////
-		void SpawnWorker(uint32_t workerId);
+		void SpawnWorker_ThreadMode(uint32_t workerId);
+		void SpawnWorker_FiberMode(uint32_t workerId);
+
 		JobWorker* AllocateWorker(uint32_t workerId);
 
 		void SpawnWaitingListManager();
@@ -125,6 +130,9 @@ namespace Volt
 
 		void RunJobInternal(Job* job);
 		void RunJobsInternal(ArrayView<Job*> jobs);
+
+		void WaitForCounter_ThreadMode(JobCounterRef counter);
+		void WaitForCounter_FiberMode(JobCounterRef counter);
 
 		///// Worker functions /////
 		Job* TryGetJob(uint32_t workerId);
@@ -156,6 +164,8 @@ namespace Volt
 
 		JobStackAllocator m_stackAllocator;
 		FiberPool m_fiberPool;
+
+		const bool m_useFibersForExecution;
 	};
 }
 
