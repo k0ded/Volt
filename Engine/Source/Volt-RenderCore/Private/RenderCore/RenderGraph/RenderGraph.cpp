@@ -109,6 +109,7 @@ namespace Volt
 		VT_ENSURE(resource->GetResourceType() == RGResourceType::Texture);
 
 		RGTextureRef renderGraphTexture = ResourceCast<RGTexture>(resource);
+		VT_ENSURE(renderGraphTexture->GetDesc().depth > 0);
 
 		RHI::ResourceState resultState;
 
@@ -247,36 +248,6 @@ namespace Volt
 		m_nextResourceId(other.m_nextResourceId),
 		m_isCompiled(other.m_isCompiled)
 	{
-	}
-
-	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
-	{
-		if (this == &other)
-		{
-			return *this;
-		}
-
-		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
-		m_resourceAllocator = std::move(other.m_resourceAllocator);
-		m_resourceAccessorAllocator = std::move(other.m_resourceAccessorAllocator);
-		m_passParametersAllocator = std::move(other.m_passParametersAllocator);
-		m_passAllocator = std::move(other.m_passAllocator);
-		m_renderPasses = std::move(other.m_renderPasses);
-		m_resources = std::move(other.m_resources);
-		m_compiledRenderPasses = std::move(other.m_compiledRenderPasses);
-		m_executionFence = std::move(other.m_executionFence);
-		m_textureExtractions = std::move(other.m_textureExtractions);
-		m_bufferExtractions = std::move(other.m_bufferExtractions);
-		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
-		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
-		m_dataAllocator = std::move(other.m_dataAllocator);
-		m_resourceSRVs = std::move(other.m_resourceSRVs);
-		m_resourceUAVs = std::move(other.m_resourceUAVs);
-		m_resourceManager = std::move(other.m_resourceManager);
-		m_resourceLifetimes = std::move(other.m_resourceLifetimes);
-		m_isCompiled = other.m_isCompiled;
-
-		return *this;
 	}
 
 	RGBuffer* RenderGraph::CreateBuffer(const RGBufferDesc& desc)
@@ -992,7 +963,6 @@ namespace Volt
 				// Add unreferenced passes to stack.
 				if (passDep->m_refCount == 0)
 				{
-					passDep->m_isCulled = true;
 					unreferencedPasses.emplace_back(passDep);
 				}
 			}
@@ -1951,7 +1921,7 @@ namespace Volt
 
 				{
 					VT_PROFILE_SCOPE(pass->m_name.data());
-					RenderContext renderContext(*renderGraphPtr, pass, commandBuffer, shaderParameterUniformBuffer);
+					RenderContext renderContext(pass, commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
 
@@ -1967,11 +1937,11 @@ namespace Volt
 			commandBuffer->End();
 		};
 
-		shaderParameterUniformBuffer->Unmap();
-
 		// This function is responsible for executing the recorded command buffers.
 		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<IntRef<PooledCommandBuffer>>& commandBuffers, IntRef<RHI::Fence> executionFence)
 		{
+			shaderParameterUniformBuffer->Unmap();
+
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
 
@@ -2252,8 +2222,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr uint64_t TotalShaderParametersByteSize = 1 * 1024 * 1024;
-
 		RGUniformBufferDesc desc{};
 		desc.size = TotalShaderParametersByteSize;
 		desc.debugName = "ShaderParameters";
@@ -2282,8 +2250,10 @@ namespace Volt
 
 	uint64_t RenderGraphShaderParameterUniformBuffer::Allocate(uint64_t size)
 	{
-		const uint64_t alignedSize = size + g_rhiCapabilities.minUniformBufferAlignment;
+		const uint64_t alignedSize = Utility::Align(size, g_rhiCapabilities.minUniformBufferAlignment);
 		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
+
+		VT_FATAL(allocOffset + size <= TotalShaderParametersByteSize);
 		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
 	}
 

@@ -35,7 +35,7 @@ namespace Volt
 	class RenderGraphShaderParameterUniformBuffer
 	{
 	public:
-		inline static constexpr uint64_t PerStageUniformBufferSize = 1024;
+		inline static constexpr uint64_t TotalShaderParametersByteSize = 1 * 1024 * 1024;
 
 		RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph);
 
@@ -62,7 +62,6 @@ namespace Volt
 		~RenderGraph();
 
 		RenderGraph(RenderGraph&& other) noexcept;
-		RenderGraph& operator=(RenderGraph&& other) noexcept;
 
 		RenderGraph(const RenderGraph& other) = delete;
 		RenderGraph& operator=(const RenderGraph& other) = delete;

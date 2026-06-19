@@ -61,7 +61,7 @@ namespace Volt
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
+		RenderContext(RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
 		void Flush(IntRef<RHI::Fence> fence);
 
@@ -157,7 +157,6 @@ namespace Volt
 
 		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 
-		RenderGraph& m_renderGraph;
 		RGPassRef m_currentPass;
 		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
 		RenderingInfo m_activeRenderingInfo{};
