@@ -71,6 +71,7 @@ namespace Volt
 			}
 
 			InsertIntoContainer(value.Get());
+
 			return true;
 		}
 
@@ -117,33 +118,41 @@ namespace Volt
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
 		Optional<Container*> container = m_hashTable.Find(hash);
-		if (container.HasValue())
+		if (!container.HasValue())
 		{
-			Asset* assetPtr = container.Get()->asset.load(std::memory_order::relaxed);
-
-			// Asset hasn't been stored yet.
-			if (assetPtr == nullptr)
-			{
-				return false;
-			}
-
-			// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
-			if (assetPtr->m_generation < generation)
-			{
-				return false;
-			}
-
-			if (assetPtr->GetRefCount() > 0)
-			{
-				outAsset = IntRef<Asset>::Attach(assetPtr);
-			}
-			else
-			{
-				return false;
-			}
+			return false;
 		}
 
-		return container.HasValue();
+		Container* containerPtr = container.Get();
+		if (containerPtr == nullptr)
+		{
+			return false;
+		}
+
+		Asset* assetPtr = containerPtr->asset.load(std::memory_order::relaxed);
+
+		// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
+		if (assetPtr->m_generation != generation)
+		{
+			return false;
+		}
+
+		while (true)
+		{
+			int32_t currRefCount = assetPtr->m_refCount.load(std::memory_order::acquire);
+			if (currRefCount == 0)
+			{
+				return false;
+			}
+
+			if (assetPtr->m_refCount.compare_exchange_weak(currRefCount, currRefCount + 1,
+				std::memory_order::release,
+				std::memory_order::acquire))
+			{
+				outAsset = IntRef<Asset>::AttachNoRef(assetPtr);
+				return true;
+			}
+		}
 	}
 
 	void AssetCache::Initialize()

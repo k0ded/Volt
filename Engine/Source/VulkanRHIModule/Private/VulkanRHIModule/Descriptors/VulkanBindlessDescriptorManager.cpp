@@ -69,6 +69,8 @@ namespace Volt::RHI
 			m_descriptorBuffer->Unmap();
 			m_descriptorBufferPtr = nullptr;
 		}
+
+		vkDestroyDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), m_bindlessDescriptorSetLayout, VT_VULKAN_ALLOCATOR);
 	}
 
 	BindlessIndex VulkanBindlessDescriptorManager::AllocateIndex()

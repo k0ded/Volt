@@ -150,7 +150,7 @@ namespace Volt
 
 			if (assetMetadata->filepath.IsEmpty())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
+				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetName(), asset->GetAssetHandle());
 				return;
 			}
 		}
@@ -638,8 +638,9 @@ namespace Volt
 
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
 
-		// This is an old instance, it shouldn't change any state on the metadata.
-		if (asset->m_generation < assetMetadata->GetGeneration())
+		// The metadata may have been removed (e.g. via RemoveAsset) while this instance
+		// was still referenced, or this may be an old instance.
+		if (assetMetadata == nullptr || asset->m_generation < assetMetadata->GetGeneration())
 		{
 			// We'll just queue it for destruction.
 			m_assetDestructionQueue.Emplace(assetRefCounter);
@@ -985,7 +986,7 @@ namespace Volt
 			return true;
 		});
 
-		return { AssetMetadataInit::Null };
+		return resultAssetMetadata;
 	}
 
 	AssetHandle AssetManager::GetAssetHandleFromFilepath(const Filesystem::Path& filepath) const

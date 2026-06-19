@@ -194,7 +194,7 @@ namespace Volt
 		AssetMetadata* allocatedAssetMetadata = m_metadata.Allocate();
 		*allocatedAssetMetadata = std::move(assetMetadata);
 
-		VT_MAYBE_UNUSED bool success = m_hashTable.Insert(assetMetadata.handle, allocatedAssetMetadata);
+		VT_MAYBE_UNUSED bool success = m_hashTable.Insert(allocatedAssetMetadata->handle, allocatedAssetMetadata);
 		VT_ENSURE(success);
 
 		m_numMetadata.fetch_add(1, std::memory_order::relaxed);

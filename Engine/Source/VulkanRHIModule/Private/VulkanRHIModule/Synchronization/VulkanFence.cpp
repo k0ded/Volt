@@ -48,6 +48,11 @@ namespace Volt::RHI
 
 	bool VulkanFence::IsSignaled() const
 	{
+		if (m_hasBeenSubmitted.load(std::memory_order::relaxed) && !m_referencedSemaphore)
+		{
+			return false;
+		}
+
 		if (m_referencedSemaphore)
 		{
 			uint64_t value;

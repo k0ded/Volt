@@ -32,8 +32,6 @@ namespace Volt
 			auto oldCount = m_refCount.fetch_sub(1, std::memory_order::release);
 			VT_ASSERT(oldCount > 0);
 
-			// In the case of assets, the asset manager should always keep a reference,
-			// meaning that when there is one reference left, the asset should be unloaded and destroyed.
 			if (oldCount == 1)
 			{
 				std::atomic_thread_fence(std::memory_order::acquire);
@@ -56,6 +54,7 @@ namespace Volt
 
 	private:
 		friend class AssetManager;
+		friend class AssetCache;
 
 		VTAS_API void Unload() const;
 
