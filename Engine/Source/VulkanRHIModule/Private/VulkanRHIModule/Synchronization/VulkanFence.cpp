@@ -10,12 +10,10 @@ namespace Volt::RHI
 {
 	VulkanFence::VulkanFence()
 	{
-
 	}
 
 	VulkanFence::~VulkanFence()
 	{
-
 	}
 
 	void VulkanFence::WaitUntilSignaled() const

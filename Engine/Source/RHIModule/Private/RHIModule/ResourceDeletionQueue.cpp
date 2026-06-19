@@ -71,6 +71,19 @@ namespace Volt::RHI
 
 	void ResourceDeletionQueue::FlushAll()
 	{
-		FlushQueue(true);
+		// Since new resource destructions may be queued during a destruction,
+		// we need to continously flush it, until it is empty post flush.
+		while (true)
+		{
+			FlushQueue(true);
+
+			{
+				std::scoped_lock lock{ m_queueMutex };
+				if (m_queue.empty())
+				{
+					break;
+				}
+			}
+		}
 	}
 }

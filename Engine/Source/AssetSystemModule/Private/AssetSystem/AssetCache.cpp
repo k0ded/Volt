@@ -101,6 +101,8 @@ namespace Volt
 						generation);
 				}
 			}
+
+			m_allocator.Free(container.Get());
 		}
 		else
 		{

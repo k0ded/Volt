@@ -77,6 +77,7 @@ namespace Volt::RHI
 		void RequestApplicationClose() override;
 		void BeginFrame() override;
 		void EndFrame() override;
+		void Shutdown() override;
 		void FlushResourceDeletionQueue() override;
 
 	protected:

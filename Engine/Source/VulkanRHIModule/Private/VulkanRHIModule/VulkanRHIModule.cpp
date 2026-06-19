@@ -45,7 +45,6 @@ namespace Volt::RHI
 
 	VulkanRHIModule::~VulkanRHIModule()
 	{
-		m_submissionThread.Shutdown();
 	}
 
 	IntRef<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const
@@ -271,6 +270,13 @@ namespace Volt::RHI
 		semaphore->SetArena(&m_semaphoreArena);
 
 		return semaphore;
+	}
+
+	void VulkanRHIModule::Shutdown()
+	{
+		// Ensure that the submission thread is shutdown before the module is,
+		// to allow the thread to drain, so all resources will be destroyed correctly.
+		m_submissionThread.Shutdown();
 	}
 }
 
