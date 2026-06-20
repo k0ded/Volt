@@ -81,6 +81,7 @@ namespace Volt
 
 			StringView m_name;
 			uint32_t m_referenceCount = 0;
+			uint32_t m_index = 0;
 
 			// #TODO_Ivar: Switch to a sparse set when we have one.
 			Vector<Task*> m_dependencies;
@@ -103,6 +104,7 @@ namespace Volt
 
 	private:
 		void Compile();
+		void ValidateDependencyChains();
 
 		template<typename Func>
 		class TaskImpl : public Task
@@ -144,6 +146,7 @@ namespace Volt
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
+		taskDescription->m_index = static_cast<uint32_t>(m_tasks.size());
 
 		m_tasks.emplace_back(taskDescription);
 		return taskDescription;
@@ -154,6 +157,7 @@ namespace Volt
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
+		taskDescription->m_index = static_cast<uint32_t>(m_tasks.size());
 		taskDescription->AddDependencies(dependencies);
 
 		m_tasks.emplace_back(taskDescription);
@@ -165,6 +169,7 @@ namespace Volt
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
+		taskDescription->m_index = static_cast<uint32_t>(m_tasks.size());
 		taskDescription->AddDependencies(dependencies);
 
 		m_tasks.emplace_back(taskDescription);

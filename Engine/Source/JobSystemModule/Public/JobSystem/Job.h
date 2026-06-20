@@ -15,6 +15,7 @@
 namespace Volt
 {
 	class JobFiber;
+	class Job;
 
 	enum class ExecutionPolicy : uint8_t
 	{
@@ -74,6 +75,7 @@ namespace Volt
 		{
 			m_counter.store(0, std::memory_order::seq_cst);
 			m_isCompleted.store(0, std::memory_order::seq_cst);
+			m_waiterHead.store(nullptr, std::memory_order::seq_cst);
 		}
 
 		VT_INLINE uint32_t GetRefCount() const
@@ -97,6 +99,12 @@ namespace Volt
 		void NotifyCounterReady();
 
 	private:
+		friend class JobSystem;
+
+		constexpr inline static Job* const WaitingListClosed = reinterpret_cast<Job*>(uintptr_t(1));
+
+		// Used for the waiting list.
+		std::atomic<class Job*> m_waiterHead = nullptr;
 		std::atomic_int32_t m_counter = 0;
 		std::atomic_int32_t m_referenceCount = 0;
 		std::atomic_uint32_t m_isCompleted = 0;
@@ -104,10 +112,27 @@ namespace Volt
 
 	using JobCounterRef = JobCounter*;
 
+	struct JobStorage
+	{
+	public:
+		JobStorage() = default;
+		~JobStorage();
+
+		template<typename Func>
+		uint8_t* AllocateStorage();
+
+		uint8_t* GetStorage();
+
+	private:
+		inline static constexpr size_t MaxSmallJobFuncSize = 64;
+
+		uint8_t m_localStorage[MaxSmallJobFuncSize];
+		uint8_t* m_heapStorage = nullptr;
+	};
+
 	class VTJS_API alignas(std::hardware_destructive_interference_size) Job
 	{
 	public:
-		inline static constexpr size_t MaxJobFuncSize = 1024;
 
 		Job() = default;
 
@@ -157,7 +182,7 @@ namespace Volt
 			Func func;
 		};
 
-		VT_NODISCARD VT_INLINE JobFuncBase* GetJobFunction() { return reinterpret_cast<JobFuncBase*>(&m_funcStorage); }
+		VT_NODISCARD VT_INLINE JobFuncBase* GetJobFunction() { return reinterpret_cast<JobFuncBase*>(m_jobStorage.GetStorage()); }
 
 		void ExecuteInternal();
 		void AddAssociatedCounter(JobCounterRef counter);
@@ -175,10 +200,11 @@ namespace Volt
 		JobCounter* m_waitCounter = nullptr;
 		JobFiber* m_assignedFiber = nullptr;
 
-		StringView m_jobName;
+		// Used for the per job counter intrusive waiting list.
+		Job* m_nextWaiter = nullptr;
 
-		// #TODO_Ivar: Figure out if we should reduce this to get a better total size.
-		uint8_t m_funcStorage[MaxJobFuncSize];
+		StringView m_jobName;
+		JobStorage m_jobStorage;
 	};
 
 	using JobRef = Job*;
@@ -186,8 +212,6 @@ namespace Volt
 	template<typename Func>
 	void Job::Create(StringView name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, FiberStackSize stackSize, Func&& jobFunc)
 	{
-		static_assert(sizeof(Func) <= Job::MaxJobFuncSize);
-
 		m_jobName = name;
 
 		if (counter)
@@ -200,8 +224,22 @@ namespace Volt
 		m_priority = priority;
 		m_stackSize = stackSize;
 
-		void* storagePtr = &m_funcStorage;
+		void* storagePtr = m_jobStorage.AllocateStorage<Func>();
 		new(storagePtr) JobFunc<std::remove_reference_t<Func>>(std::move(jobFunc));
 		m_allocated = true;
+	}
+
+	template<typename Func>
+	uint8_t* JobStorage::AllocateStorage()
+	{
+		constexpr size_t funcSize = sizeof(Func);
+
+		if (funcSize <= MaxSmallJobFuncSize)
+		{
+			return &m_localStorage[0];
+		}
+		
+		m_heapStorage = static_cast<uint8_t*>(Memory::Malloc(sizeof(Func)));
+		return m_heapStorage;
 	}
 }

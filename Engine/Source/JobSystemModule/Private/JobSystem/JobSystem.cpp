@@ -21,7 +21,7 @@ namespace Volt
 
 	static ConsoleVariable<int32_t> g_jobSystemUseFibers(
 		"JobSystem.UseFibers",
-		0,
+		1,
 		ConsoleVariableFlags::ReadOnly,
 		"Whether to use fibers to execute jobs."
 	);
@@ -50,9 +50,13 @@ namespace Volt
 		Job* job = reinterpret_cast<Job*>(userdata);
 		
 		JobSystem::JobWorker& workerData = *JobSystem::s_instance->m_workers[g_workerId];
+		
+		if (!JobSystem::s_instance->TryEnqueueJobOnCounter(workerData.scratch.toQueueWaitCounter, job))
+		{
+			// The counter was completed, queue the job for execution.
+			JobSystem::s_instance->EnqueueJob(job);
+		}
 
-		// Put the job on the waiting list
-		JobSystem::s_instance->PushToWaitingList(job->GetPriority(), job, workerData.scratch.toQueueWaitCounter);
 		workerData.scratch.toQueueWaitCounter = nullptr;
 
 		VT_PROFILE_FIBER_LEAVE();
@@ -75,8 +79,8 @@ namespace Volt
 	
 		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(JobSystem::OnTick));
 
-		AllocateWaitingLists();
 		m_mainThreadQueue.Allocate(NumMaxMainThreadJobs);
+		m_yieldedJobsReadyToRun.Allocate(NumMaxWaitingJobs);
 
 		// Only initialize fibers if we are going to use them.
 		if (IsUsingFibers())
@@ -228,14 +232,6 @@ namespace Volt
 			g_workerId = hardwareConcurrency;
 			g_mainThreadWorkerId = g_workerId;
 		}
-
-		// Waiting list handler
-		{
-			m_waitingListManagerThread = std::thread(std::bind(&JobSystem::SpawnWaitingListManager, this));
-
-			PlatformThread::SetThreadName(m_waitingListManagerThread.native_handle(), "Volt::WaitingListManager");
-			PlatformThread::SetThreadPriority(m_waitingListManagerThread.native_handle(), ThreadPriority::High);
-		}
 	}
 
 	void JobSystem::Shutdown()
@@ -253,68 +249,6 @@ namespace Volt
 
 			m_workerAllocator.Free(worker);
 		}
-
-		m_waitingListSemaphore.release();
-		m_waitingListManagerThread.join();
-	}
-
-	void JobSystem::AllocateWaitingLists()
-	{
-		m_waitingLists.Allocate(NumMaxWaitingJobs);
-		m_yieldedJobsReadyToRun.Allocate(NumMaxWaitingJobs);
-	}
-
-	void JobSystem::PushToWaitingList(ExecutionPriority priority, JobRef job, JobCounterRef waitCounter)
-	{
-		WaitingListEntry entry
-		{
-			.job = job,
-			.waitCounter = waitCounter
-		};
-
-		m_waitingLists.Emplace(priority, entry);
-	
-		if (waitCounter->IsCompleted())
-		{
-			NotifyCounterReady();
-		}
-	}
-
-	bool JobSystem::FlushWaitingList(ExecutionPriority priority)
-	{
-		VT_PROFILE_FUNCTION();
-
-		if (m_waitingLists.Size(priority) == 0)
-		{
-			return false;
-		}
-
-		GlobalMemoryStackMark Mark;
-		GlobalMemoryStackVector<WaitingListEntry> nonReadyJobs;
-		nonReadyJobs.reserve(m_waitingLists.Size(priority));
-
-		bool anyJobRun = false;
-
-		WaitingListEntry entry;
-		while (m_waitingLists.Pop(priority, entry))
-		{
-			if (entry.waitCounter->IsCompleted())
-			{
-				m_yieldedJobsReadyToRun.Emplace(entry.job->GetPriority(), entry.job);
-				anyJobRun |= true;
-			}
-			else
-			{
-				nonReadyJobs.emplace_back(entry);
-			}
-		}
-
-		for (auto job : nonReadyJobs)
-		{
-			m_waitingLists.Emplace(job.job->GetPriority(), job);
-		}
-
-		return anyJobRun;
 	}
 
 	bool JobSystem::OnTick(AppTickEvent& event)
@@ -433,7 +367,7 @@ namespace Volt
 				successfullyRanJob = ExecuteJob(job);
 			}
 			// No fibers available, try to run a previously yielded job
-			else
+			if (!successfullyRanJob)
 			{
 				Job* job = TryGetYieldedJob();
 				workerData.currentlyExecutingJob = job;
@@ -455,57 +389,39 @@ namespace Volt
 		return worker;
 	}
 
-	void JobSystem::SpawnWaitingListManager()
-	{
-		Threads::InitializeThreadConfig(false, false);
-
-		while (m_isRunning.load(std::memory_order::relaxed))
-		{
-			VT_PROFILE_SCOPE("FlushWaitingList");
-
-			// Loop through the priorities in reverse to make sure we start with the
-			// highest priority.
-			bool anyJobRun = false;
-			for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
-			{
-				anyJobRun |= FlushWaitingList(static_cast<ExecutionPriority>(i));
-			}
-
-			if (anyJobRun)
-			{
-				// Notify all workers.
-				for (JobWorker* worker : m_workers)
-				{
-					worker->workItemsAvailable.release();
-				}
-			}
-
-			m_waitingListSemaphore.acquire();
-		}
-	}
-
-	void JobSystem::NotifyCounterReady()
-	{
-		m_waitingListSemaphore.release();
-	}
-
-	bool JobSystem::HasWorkAvailable(uint32_t workerId)
+	void JobSystem::NotifyCounterReady(JobCounterRef counter)
 	{
 		VT_PROFILE_FUNCTION();
+		JobRef list = counter->m_waiterHead.exchange(JobCounter::WaitingListClosed, std::memory_order::acq_rel);
 
-		JobWorker& workerData = *m_workers[workerId];
-
-		bool anyQueueHasWork = false;
-
-		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
+		uint32_t numYieldedJobsEnqueued = 0;
+		while (list != nullptr)
 		{
-			ExecutionPriority priority = static_cast<ExecutionPriority>(i);
+			JobRef next = list->m_nextWaiter;
+			list->m_nextWaiter = nullptr;
 
-			anyQueueHasWork |= m_yieldedJobsReadyToRun.Size(priority) > 0;
-			anyQueueHasWork |= workerData.workQueues.Size(priority) > 0;
+			if (list->GetAssignedFiber() != nullptr)
+			{
+				m_yieldedJobsReadyToRun.Emplace(list->GetPriority(), list);
+				++numYieldedJobsEnqueued;
+			}
+			else
+			{
+				EnqueueJob(list);
+			}
+
+			list = next;
 		}
 
-		return anyQueueHasWork;
+		WakeWorkers(numYieldedJobsEnqueued);
+	}
+
+	void JobSystem::WakeWorkers(uint32_t numJobs)
+	{
+		for (uint32_t i = 0; i < std::min(numJobs, m_numWorkers); ++i)
+		{
+			m_workers[i]->workItemsAvailable.release();
+		}
 	}
 
 	JobCounter* JobSystem::AllocateCounter(bool initializeWithRef)
@@ -556,21 +472,12 @@ namespace Volt
 		// Enqueue job if it's ready to run, otherwise push to waiting list.
 		if (job->GetWaitCounter()->IsCompleted())
 		{
-			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
-			{
-				const uint32_t nextQueueToPush = m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % m_numWorkers;
-
-				m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
-				m_workers[nextQueueToPush]->workItemsAvailable.release();
-			}
-			else
-			{
-				m_mainThreadQueue.Emplace(job);
-			}
+			EnqueueJob(job);
 		}
-		else
+		else if (!TryEnqueueJobOnCounter(job->GetWaitCounter(), job))
 		{
-			PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
+			// Counter was completed, just enqueue the job instead.
+			EnqueueJob(job);
 		}
 	}
 
@@ -614,6 +521,46 @@ namespace Volt
 				counter->WaitForCounterLocking();
 			}
 		}
+	}
+
+	void JobSystem::EnqueueJob(JobRef job)
+	{
+		if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
+		{
+			const uint32_t nextQueueToPush = m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % m_numWorkers;
+
+			m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
+			m_workers[nextQueueToPush]->workItemsAvailable.release();
+		}
+		else
+		{
+			m_mainThreadQueue.Emplace(job);
+		}
+	}
+
+	bool JobSystem::TryEnqueueJobOnCounter(JobCounterRef counter, JobRef job)
+	{
+		while (true)
+		{
+			JobRef listHead = counter->m_waiterHead.load(std::memory_order::acquire);
+			if (listHead == JobCounter::WaitingListClosed)
+			{
+				// Counter was completed.
+				return false;
+			}
+
+			job->m_nextWaiter = listHead;
+			if (counter->m_waiterHead.compare_exchange_weak(
+				listHead, job,
+				std::memory_order::release,
+				std::memory_order::acquire))
+			{
+				// Successfully enqueued.
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	Job* JobSystem::TryGetJob(uint32_t workerId)

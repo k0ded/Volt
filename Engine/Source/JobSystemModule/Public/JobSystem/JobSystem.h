@@ -87,21 +87,10 @@ namespace Volt
 			JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> workQueues;
 		};
 
-		struct WaitingListEntry
-		{
-			JobRef job;
-			JobCounterRef waitCounter;
-		};
-
 		void Initialize() override;
 		void Shutdown() override;
 
 		template<typename Func> VT_NODISCARD static Job* CreateJobNoCounters(StringView jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
-
-		void AllocateWaitingLists();
-
-		void PushToWaitingList(ExecutionPriority priority, JobRef job, JobCounterRef waitCounter);
-		bool FlushWaitingList(ExecutionPriority priority);
 
 		bool OnTick(AppTickEvent& event);
 		void ExecuteMainThreadJobs_ThreadMode();
@@ -115,9 +104,8 @@ namespace Volt
 
 		JobWorker* AllocateWorker(uint32_t workerId);
 
-		void SpawnWaitingListManager();
-		void NotifyCounterReady();
-		bool HasWorkAvailable(uint32_t workerId);
+		void NotifyCounterReady(JobCounterRef counter);
+		void WakeWorkers(uint32_t numJobs);
 
 		///// Job/Counter management /////
 		JobCounter* AllocateCounter(bool initializeWithRef = true);
@@ -133,6 +121,9 @@ namespace Volt
 
 		void WaitForCounter_ThreadMode(JobCounterRef counter);
 		void WaitForCounter_FiberMode(JobCounterRef counter);
+
+		void EnqueueJob(JobRef job);
+		bool TryEnqueueJobOnCounter(JobCounterRef counter, JobRef job);
 
 		///// Worker functions /////
 		Job* TryGetJob(uint32_t workerId);
@@ -151,10 +142,6 @@ namespace Volt
 
 		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
 		JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> m_yieldedJobsReadyToRun;
-		JobPriorityQueue<WaitingListEntry, QueueThreadingPolicy::MPSC> m_waitingLists;
-
-		std::counting_semaphore<> m_waitingListSemaphore{ 0 };
-		std::thread m_waitingListManagerThread;
 
 		PagedAtomicArenaAllocator<JobWorker, 16> m_workerAllocator;
 		JobAllocator<Job> m_jobAllocator;

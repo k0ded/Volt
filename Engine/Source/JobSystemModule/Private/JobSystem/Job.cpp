@@ -20,13 +20,14 @@ namespace Volt
 
 	void JobCounter::NotifyCounterReady()
 	{
-		JobSystem::s_instance->NotifyCounterReady();
+		JobSystem::s_instance->NotifyCounterReady(this);
 	}
 
 	void Job::Reset()
 	{
 		m_allocated = false;
 		m_waitCounter = nullptr;
+		m_nextWaiter = nullptr;
 		m_associatedCounters.set_capacity(0);
 	}
 
@@ -66,5 +67,23 @@ namespace Volt
 	void Job::SetWaitCounter(JobCounterRef counter)
 	{
 		m_waitCounter = counter;
+	}
+
+	JobStorage::~JobStorage()
+	{
+		if (m_heapStorage)
+		{
+			Memory::Free(m_heapStorage);
+		}
+	}
+
+	uint8_t* JobStorage::GetStorage()
+	{
+		if (m_heapStorage)
+		{
+			return m_heapStorage;
+		}
+
+		return &m_localStorage[0];
 	}
 }
