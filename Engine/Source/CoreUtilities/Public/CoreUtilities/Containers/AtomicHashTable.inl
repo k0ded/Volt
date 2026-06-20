@@ -19,7 +19,7 @@ inline bool AtomicHashTable<ValueType, AllocatorType>::Insert(const KeyType& key
 		uint64_t existing = slot.key.load(std::memory_order::acquire);
 
 		// Key exists in table, insert new value
-		if (existing == key)
+		if (existing == keyHash)
 		{
 			slot.Store(value, std::memory_order::release);
 			return true;
@@ -136,16 +136,7 @@ inline Optional<ValueType> AtomicHashTable<ValueType, AllocatorType>::GetOrInser
 		// We need to do a brief wait to ensure the value has bee written.
 		if (claimExpected == keyHash)
 		{
-			std::atomic_thread_fence(std::memory_order::acquire);
-
-			ValueType v{};
-
-			for (int32_t spin = 0; spin < 1024; ++spin)
-			{
-				v = claimSlot.Get(std::memory_order::acquire);
-			}
-
-
+			ValueType v = claimSlot.Get(std::memory_order::acquire);
 			return v;
 		}
 
@@ -186,6 +177,7 @@ inline bool AtomicHashTable<ValueType, AllocatorType>::Erase(const KeyType& key)
 			{
 				// Reset value.
 				slot.Store({}, std::memory_order::release);
+				slot.valueAvailableFlag.clear(std::memory_order::release);
 				m_size.fetch_sub(1, std::memory_order::relaxed);
 				return true;
 			}
@@ -319,11 +311,17 @@ inline void AtomicHashTable<ValueType, AllocatorType>::Slot::Store(const ValueTy
 	{
 		value = inValue;
 	}
+
+	valueAvailableFlag.test_and_set(std::memory_order::acquire);
+	valueAvailableFlag.notify_all();
 }
 
 template<typename ValueType, typename AllocatorType>
 inline ValueType AtomicHashTable<ValueType, AllocatorType>::Slot::Get(std::memory_order memoryOrder) const
 {
+	// Ensure that the value has been written
+	valueAvailableFlag.wait(false, std::memory_order::acquire);
+
 	if constexpr (ValueTypeCanBeAtomic)
 	{
 		return value.load(memoryOrder);

@@ -402,7 +402,7 @@ namespace Volt::RHI
 			}
 
 			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
-			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, nullptr); 
+			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, VT_VULKAN_ALLOCATOR);
 		}, nullptr);
 
 		m_perFrameInFlightData.clear();
