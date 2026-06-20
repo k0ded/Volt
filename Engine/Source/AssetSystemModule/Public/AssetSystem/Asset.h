@@ -27,15 +27,16 @@ namespace Volt
 			VT_ASSERT(oldValue > 0);
 		}
 
-		VT_INLINE void DecRef() const noexcept
+		void DecRef() const noexcept
 		{
 			auto oldCount = m_refCount.fetch_sub(1, std::memory_order::release);
 			VT_ASSERT(oldCount > 0);
 
-			if (oldCount == 1)
+			// The last reference is held in the asset cache.
+			if (oldCount == 2)
 			{
 				std::atomic_thread_fence(std::memory_order::acquire);
-				Unload();
+				Evict();
 			}
 		}
 
@@ -56,7 +57,7 @@ namespace Volt
 		friend class AssetManager;
 		friend class AssetCache;
 
-		VTAS_API void Unload() const;
+		VTAS_API void Evict() const;
 
 		mutable class AssetManager* m_referencedAssetManager = nullptr;
 		mutable std::atomic<int32_t> m_refCount = 1;

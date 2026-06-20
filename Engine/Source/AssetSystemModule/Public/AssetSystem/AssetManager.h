@@ -14,8 +14,7 @@
 #include <CoreUtilities/Pointers/IntRef.h> 
 #include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/WorkQueue.h>
-
-#include <filesystem>
+#include <CoreUtilities/Locks/SpinMutex.h>
 
 namespace Volt
 {
@@ -163,11 +162,10 @@ namespace Volt
 		VTAS_API void AddAssetToCache(IntRef<Asset> asset);
 		IntRef<Asset> TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle);
 
-		void QueueAssetForDestruction(AssetRefCounter* assetRefCounter);
-		void UnloadAndFreeAsset(AssetUnloadData& assetUnloadData);
-		bool DeserializeAsset(AssetReference<Asset> asset);
+		void QueueAssetForEviction(AssetRefCounter* assetRefCounter);
+		void RunGarbageCollection(uint64_t frameIndex, bool forceCleanupAll);
 
-		void FlushDestructionQueue();
+		bool DeserializeAsset(AssetReference<Asset> asset);
 
 		bool SerializeAsset(AssetReference<Asset> asset);
 		void SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion);
@@ -186,11 +184,32 @@ namespace Volt
 		Unique<AssetDependencyGraph> m_dependencyGraph;
 		AssetManagerRoot m_root;
 
-		uint64_t m_frameIndex = 0;
+		// May be read from multiple threads.
+		std::atomic<uint64_t> m_frameIndex = 0;
 
 		// Asset changes callbacks
 		WorkQueue<AssetChangedQueueInfo, QueueThreadingPolicy::MPSC> m_assetChangedQueue;
 		WorkQueue<AssetUnloadData, QueueThreadingPolicy::MPSC> m_assetDestructionQueue;
+
+		// Eviction
+		struct EvictionEntry
+		{
+			Asset* asset;
+			AssetCache::Container* cacheContainer;
+			uint64_t evictedOnFrameIndex;
+		};
+
+		struct AssetMetadataReclamationEntry
+		{
+			AssetMetadata* assetMetadata;
+			uint64_t evictedOnFrameIndex;
+		};
+
+		WorkQueue<AssetRefCounter*, QueueThreadingPolicy::MPSC> m_assetEvictionQueue;
+		Vector<EvictionEntry> m_assetReclamationList;
+
+		SpinMutex m_assetMetadataReclamationMutex;
+		Vector<AssetMetadataReclamationEntry> m_assetMetadataReclamationList;
 
 		std::mutex m_assetCallbackMutex;
 		Map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
