@@ -1009,7 +1009,12 @@ namespace Volt
 
 				for (const RGResourceAccessState& accessState : texture->lastAccess)
 				{
-					lifetime.lastPassIndex = std::max(lifetime.lastPassIndex, accessState.pass->passIndex);
+					// If a certain subresouce hasn't been access, the state
+					// will exist, but the pass will be null.
+					if (accessState.pass != nullptr)
+					{
+						lifetime.lastPassIndex = std::max(lifetime.lastPassIndex, accessState.pass->passIndex);
+					}
 				}
 			}
 		}
@@ -1125,7 +1130,8 @@ namespace Volt
 			return subResourceState.previousState.layout != subResourceState.state.layout;
 		};
 
-		constexpr auto canMergeSubResourceBarriers = [isLayoutTransitionRequired](RHI::ResourceBarrierInfo* activeBarrier, const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
+		constexpr auto canMergeSubResourceBarriers = [isLayoutTransitionRequired](RHI::ResourceBarrierInfo* activeBarrier, const RGTextureDesc& textureDesc, 
+			const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
 		{
 			// No previous barrier.
 			if (activeBarrier == nullptr)
@@ -1153,9 +1159,27 @@ namespace Volt
 			}
 
 			// Sub resource range must be continuous if the barrier isn't a global barrier.
-			if (!barrierIsGlobal && prevSubResourceIndex + 1 != subResourceIndex)
+			if (!barrierIsGlobal)
 			{
-				return false;
+				uint32_t currMip, prevMip;
+				uint32_t currLayer, prevLayer;
+				uint32_t currPlane, prevPlane;
+
+				RHI::GetSubResourceFromIndex(subResourceIndex, textureDesc.mips, textureDesc.layers,
+					currMip, currLayer, currPlane);
+
+				RHI::GetSubResourceFromIndex(prevSubResourceIndex, textureDesc.mips, textureDesc.layers,
+					prevMip, prevLayer, prevPlane);
+
+				const bool isLayerAndMipMergeable =
+					((prevMip + 1 == currMip && prevLayer == currLayer) || // If it's the next mip in the same layer
+					(prevMip == textureDesc.mips - 1 && prevLayer + 1 == currLayer)) && // If it's the first mip in the next layer.
+					(activeBarrier->imageBarrier().subResource.baseMipLevel <= currMip && activeBarrier->imageBarrier().subResource.baseArrayLayer <= currLayer); // Ensure that the baseMip and baseLayer is less than the current one. 
+
+				if (!isLayerAndMipMergeable)
+				{
+					return false;
+				}
 			}
 
 			return true;
@@ -1204,7 +1228,7 @@ namespace Volt
 					}
 
 					// Check if a new barrier is required for some reason.
-					if (!canMergeSubResourceBarriers(activeBarrier, subResourceState, subResourceIndex, prevSubResourceIndex))
+					if (!canMergeSubResourceBarriers(activeBarrier, textureDesc, subResourceState, subResourceIndex, prevSubResourceIndex))
 					{
 						if (isLayoutTransitionRequired(subResourceState))
 						{
