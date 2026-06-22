@@ -90,7 +90,7 @@ namespace Volt
 		double sX = 0.0;
 		double sY = -fsScale * m_metrics.ascenderY;
 
-		int32_t lineCount = 1;
+		//int32_t lineCount = 1;
 
 		for (int32_t i = 0; i < static_cast<int32_t>(utf32string.size()); i++)
 		{
@@ -99,7 +99,7 @@ namespace Volt
 			{
 				sX = 0.0;
 				sY += fsScale * m_metrics.lineHeight;
-				lineCount++;
+				//lineCount++;
 				continue;
 			}
 
