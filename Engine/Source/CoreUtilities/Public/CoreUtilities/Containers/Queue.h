@@ -62,7 +62,7 @@ private:
 		m_capacity = newCapacity;
 	}
 
-	Vector<T, typename AllocatorType> m_buffer;
+	Vector<T, AllocatorType> m_buffer;
 	size_t m_head = 0;
 	size_t m_tail = 0;
 	size_t m_size = 0;

@@ -66,7 +66,7 @@ private:
 	size_t GetStartIndex(uint64_t hash) const;
 	template<typename KeyType> uint64_t HashKey(const KeyType& key) const;
 
-	Vector<Slot, typename AllocatorType> m_slots;
+	Vector<Slot, AllocatorType> m_slots;
 	std::atomic<uint64_t> m_size;
 };
 
