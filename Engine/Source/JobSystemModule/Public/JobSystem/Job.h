@@ -101,7 +101,7 @@ namespace Volt
 	private:
 		friend class JobSystem;
 
-		constexpr inline static Job* const WaitingListClosed = reinterpret_cast<Job*>(uintptr_t(1));
+		inline static Job* const WaitingListClosed = reinterpret_cast<Job*>(uintptr_t(1));
 
 		// Used for the waiting list.
 		std::atomic<class Job*> m_waiterHead = nullptr;
