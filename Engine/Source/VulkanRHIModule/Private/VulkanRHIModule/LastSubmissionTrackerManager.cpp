@@ -39,4 +39,9 @@ namespace Volt::RHI
 			container.submissionTracker->MarkAsSubmitted();
 		}
 	}
+
+	LastSubmissionTrackerManager::ExtractedTrackers LastSubmissionTrackerManager::ExtractTrackers()
+	{
+		return { std::move(m_registeredTrackers), std::move(m_registeredTrackersArena) };
+	}
 }

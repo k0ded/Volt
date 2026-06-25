@@ -40,8 +40,12 @@ namespace Volt
 
 		auto InsertIntoContainer = [&](Container* container) 
 		{
-			container->asset.store(asset.GetRaw(), std::memory_order::relaxed);
+			container->asset = asset.GetRaw();
 
+			// The asset cache will hold the final reference, which is removed
+			// during garbage collection.
+			container->asset->IncRef();
+			
 			if (s_assetCacheLog.GetValue())
 			{
 				VT_LOGC(Trace, LogAssetSystem,
@@ -53,6 +57,8 @@ namespace Volt
 			}
 		};
 
+		// #Note_Ivar: Revisit why we initially try to find here,
+		//			   can the same generation be published more than once?
 		Optional<Container*> value = m_hashTable.Find(hash);
 		if (value.HasValue())
 		{
@@ -71,43 +77,11 @@ namespace Volt
 			}
 
 			InsertIntoContainer(value.Get());
+
 			return true;
 		}
 
 		return false;
-	}
-
-	bool AssetCache::TryRemove(AssetHandle assetHandle, uint64_t generation)
-	{
-		VT_ENSURE(assetHandle != Asset::Null());
-
-		const size_t hash = GetAssetHash(assetHandle, generation);
-
-		Optional<Container*> container = m_hashTable.GetAndErase(hash);
-
-		if (container.HasValue())
-		{
-			Asset* asset = container.Get()->asset.exchange(nullptr, std::memory_order::relaxed);
-
-			if (asset)
-			{
-				if (s_assetCacheLog.GetValue())
-				{
-					VT_LOGC(Trace, LogAssetSystem,
-						"Removed asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') from cache",
-						asset->GetAssetName(),
-						asset->GetAssetHandle(),
-						asset->GetType()->GetName(),
-						generation);
-				}
-			}
-		}
-		else
-		{
-			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
-		}
-
-		return container.HasValue();
 	}
 
 	bool AssetCache::TryGet(AssetHandle assetHandle, uint64_t generation, IntRef<Asset>& outAsset)
@@ -115,33 +89,78 @@ namespace Volt
 		const size_t hash = GetAssetHash(assetHandle, generation);
 
 		Optional<Container*> container = m_hashTable.Find(hash);
-		if (container.HasValue())
+		if (!container.HasValue())
 		{
-			Asset* assetPtr = container.Get()->asset.load(std::memory_order::relaxed);
-
-			// Asset hasn't been stored yet.
-			if (assetPtr == nullptr)
-			{
-				return false;
-			}
-
-			// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
-			if (assetPtr->m_generation < generation)
-			{
-				return false;
-			}
-
-			if (assetPtr->GetRefCount() > 0)
-			{
-				outAsset = IntRef<Asset>::Attach(assetPtr);
-			}
-			else
-			{
-				return false;
-			}
+			return false;
 		}
 
-		return container.HasValue();
+		Container* containerPtr = container.Get();
+		if (containerPtr == nullptr)
+		{
+			return false;
+		}
+
+		Asset* assetPtr = containerPtr->asset;
+
+		// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
+		if (assetPtr->m_generation != generation)
+		{
+			return false;
+		}
+
+		while (true)
+		{
+			int32_t currRefCount = assetPtr->m_refCount.load(std::memory_order::acquire);
+			if (currRefCount == 0)
+			{
+				return false;
+			}
+
+			if (assetPtr->m_refCount.compare_exchange_weak(currRefCount, currRefCount + 1,
+				std::memory_order::release,
+				std::memory_order::acquire))
+			{
+				// Reference is added in the CAS above.
+				outAsset = IntRef<Asset>::AttachNoRef(assetPtr);
+				return true;
+			}
+		}
+	}
+
+	AssetCache::Container* AssetCache::Evict(AssetHandle assetHandle, uint64_t generation)
+	{
+		VT_ENSURE(assetHandle != Asset::Null());
+		const size_t hash = GetAssetHash(assetHandle, generation);
+
+		Optional<Container*> container = m_hashTable.GetAndErase(hash);
+
+		if (container.HasValue())
+		{
+			if (s_assetCacheLog.GetValue())
+			{
+				Asset* asset = container.Get()->asset;
+
+				VT_LOGC(Trace, LogAssetSystem,
+					"Removed asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') from cache",
+					asset->GetAssetName(),
+					asset->GetAssetHandle(),
+					asset->GetType()->GetName(),
+					generation);
+			}
+
+			return container.Get();
+		}
+		else
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
+		}
+
+		return nullptr;
+	}
+
+	void AssetCache::FreeContainer(Container* container)
+	{
+		m_allocator.Free(container);
 	}
 
 	void AssetCache::Initialize()

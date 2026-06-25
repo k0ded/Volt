@@ -142,6 +142,7 @@ namespace Volt::RHI
 		virtual void RequestApplicationClose() = 0;
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
+		virtual void Shutdown() = 0;
 		virtual void FlushResourceDeletionQueue() = 0;
 
 		void SetFrameCapture(Ref<FrameCapture> frameCapture);

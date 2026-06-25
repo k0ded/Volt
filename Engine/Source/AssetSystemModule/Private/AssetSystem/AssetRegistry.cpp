@@ -194,16 +194,15 @@ namespace Volt
 		AssetMetadata* allocatedAssetMetadata = m_metadata.Allocate();
 		*allocatedAssetMetadata = std::move(assetMetadata);
 
-		VT_MAYBE_UNUSED bool success = m_hashTable.Insert(assetMetadata.handle, allocatedAssetMetadata);
+		VT_MAYBE_UNUSED bool success = m_hashTable.Insert(allocatedAssetMetadata->handle, allocatedAssetMetadata);
 		VT_ENSURE(success);
 
 		m_numMetadata.fetch_add(1, std::memory_order::relaxed);
 	}
 
-	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex)
+	AssetMetadata* AssetRegistry::RemoveAndGetAssetMetadata(AssetHandle assetHandle)
 	{
 		VT_ENSURE(assetHandle != Asset::Null());
-
 		// Remove the metadata from the hash table and get it's indirection index.
 		// It should now be safe to release the mutex and remove the references.
 
@@ -211,19 +210,21 @@ namespace Volt
 		if (metadataOptional.HasValue())
 		{
 			AssetMetadata* metadata = metadataOptional.Get();
-
-			if (unlockMutex)
-			{
-				metadata->m_assetMetadataMutex.unlock();
-			}
-
-			m_metadata.Free(metadata);
 			m_numMetadata.fetch_sub(1, std::memory_order::relaxed);
+		
+			return metadata;
 		}
 		else
 		{
 			VT_ENSURE_MSG(false, "Trying to remove metadata which is not in hash table!");
 		}
+
+		return nullptr;
+	}
+
+	void AssetRegistry::FreeAssetMetadata(AssetMetadata* assetMetadata)
+	{
+		m_metadata.Free(assetMetadata);
 	}
 
 	Filesystem::Path AssetRegistry::GetRelativeAssetFilepath(const Filesystem::Path& filepath) const

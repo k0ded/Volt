@@ -52,7 +52,9 @@ namespace Volt::RHI
 
 		Threads::InitializeThreadConfig(false, false);
 
-		while (m_isRunning.load(std::memory_order::relaxed))
+		// After thread has been signaled to be destroyed, allow the thread to
+		// drain all queued work, to ensure correct resource destruction.
+		while (m_isRunning.load(std::memory_order::relaxed) || !m_submissionQueue.Empty())
 		{
 			VT_PROFILE_FRAME_START("RHI Submission");
 

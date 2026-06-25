@@ -109,6 +109,7 @@ namespace Volt
 		VT_ENSURE(resource->GetResourceType() == RGResourceType::Texture);
 
 		RGTextureRef renderGraphTexture = ResourceCast<RGTexture>(resource);
+		VT_ENSURE(renderGraphTexture->GetDesc().depth > 0);
 
 		RHI::ResourceState resultState;
 
@@ -247,36 +248,6 @@ namespace Volt
 		m_nextResourceId(other.m_nextResourceId),
 		m_isCompiled(other.m_isCompiled)
 	{
-	}
-
-	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
-	{
-		if (this == &other)
-		{
-			return *this;
-		}
-
-		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
-		m_resourceAllocator = std::move(other.m_resourceAllocator);
-		m_resourceAccessorAllocator = std::move(other.m_resourceAccessorAllocator);
-		m_passParametersAllocator = std::move(other.m_passParametersAllocator);
-		m_passAllocator = std::move(other.m_passAllocator);
-		m_renderPasses = std::move(other.m_renderPasses);
-		m_resources = std::move(other.m_resources);
-		m_compiledRenderPasses = std::move(other.m_compiledRenderPasses);
-		m_executionFence = std::move(other.m_executionFence);
-		m_textureExtractions = std::move(other.m_textureExtractions);
-		m_bufferExtractions = std::move(other.m_bufferExtractions);
-		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
-		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
-		m_dataAllocator = std::move(other.m_dataAllocator);
-		m_resourceSRVs = std::move(other.m_resourceSRVs);
-		m_resourceUAVs = std::move(other.m_resourceUAVs);
-		m_resourceManager = std::move(other.m_resourceManager);
-		m_resourceLifetimes = std::move(other.m_resourceLifetimes);
-		m_isCompiled = other.m_isCompiled;
-
-		return *this;
 	}
 
 	RGBuffer* RenderGraph::CreateBuffer(const RGBufferDesc& desc)
@@ -992,7 +963,6 @@ namespace Volt
 				// Add unreferenced passes to stack.
 				if (passDep->m_refCount == 0)
 				{
-					passDep->m_isCulled = true;
 					unreferencedPasses.emplace_back(passDep);
 				}
 			}
@@ -1039,7 +1009,12 @@ namespace Volt
 
 				for (const RGResourceAccessState& accessState : texture->lastAccess)
 				{
-					lifetime.lastPassIndex = std::max(lifetime.lastPassIndex, accessState.pass->passIndex);
+					// If a certain subresouce hasn't been access, the state
+					// will exist, but the pass will be null.
+					if (accessState.pass != nullptr)
+					{
+						lifetime.lastPassIndex = std::max(lifetime.lastPassIndex, accessState.pass->passIndex);
+					}
 				}
 			}
 		}
@@ -1155,7 +1130,8 @@ namespace Volt
 			return subResourceState.previousState.layout != subResourceState.state.layout;
 		};
 
-		constexpr auto canMergeSubResourceBarriers = [isLayoutTransitionRequired](RHI::ResourceBarrierInfo* activeBarrier, const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
+		constexpr auto canMergeSubResourceBarriers = [isLayoutTransitionRequired](RHI::ResourceBarrierInfo* activeBarrier, const RGTextureDesc& textureDesc, 
+			const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
 		{
 			// No previous barrier.
 			if (activeBarrier == nullptr)
@@ -1183,9 +1159,27 @@ namespace Volt
 			}
 
 			// Sub resource range must be continuous if the barrier isn't a global barrier.
-			if (!barrierIsGlobal && prevSubResourceIndex + 1 != subResourceIndex)
+			if (!barrierIsGlobal)
 			{
-				return false;
+				uint32_t currMip, prevMip;
+				uint32_t currLayer, prevLayer;
+				uint32_t currPlane, prevPlane;
+
+				RHI::GetSubResourceFromIndex(subResourceIndex, textureDesc.mips, textureDesc.layers,
+					currMip, currLayer, currPlane);
+
+				RHI::GetSubResourceFromIndex(prevSubResourceIndex, textureDesc.mips, textureDesc.layers,
+					prevMip, prevLayer, prevPlane);
+
+				const bool isLayerAndMipMergeable =
+					((prevMip + 1 == currMip && prevLayer == currLayer) || // If it's the next mip in the same layer
+					(prevMip == textureDesc.mips - 1 && prevLayer + 1 == currLayer)) && // If it's the first mip in the next layer.
+					(activeBarrier->imageBarrier().subResource.baseMipLevel <= currMip && activeBarrier->imageBarrier().subResource.baseArrayLayer <= currLayer); // Ensure that the baseMip and baseLayer is less than the current one. 
+
+				if (!isLayerAndMipMergeable)
+				{
+					return false;
+				}
 			}
 
 			return true;
@@ -1234,7 +1228,7 @@ namespace Volt
 					}
 
 					// Check if a new barrier is required for some reason.
-					if (!canMergeSubResourceBarriers(activeBarrier, subResourceState, subResourceIndex, prevSubResourceIndex))
+					if (!canMergeSubResourceBarriers(activeBarrier, textureDesc, subResourceState, subResourceIndex, prevSubResourceIndex))
 					{
 						if (isLayoutTransitionRequired(subResourceState))
 						{
@@ -1951,7 +1945,7 @@ namespace Volt
 
 				{
 					VT_PROFILE_SCOPE(pass->m_name.data());
-					RenderContext renderContext(*renderGraphPtr, pass, commandBuffer, shaderParameterUniformBuffer);
+					RenderContext renderContext(pass, commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
 
@@ -1967,11 +1961,11 @@ namespace Volt
 			commandBuffer->End();
 		};
 
-		shaderParameterUniformBuffer->Unmap();
-
 		// This function is responsible for executing the recorded command buffers.
 		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<IntRef<PooledCommandBuffer>>& commandBuffers, IntRef<RHI::Fence> executionFence)
 		{
+			shaderParameterUniformBuffer->Unmap();
+
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
 
@@ -2252,8 +2246,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr uint64_t TotalShaderParametersByteSize = 1 * 1024 * 1024;
-
 		RGUniformBufferDesc desc{};
 		desc.size = TotalShaderParametersByteSize;
 		desc.debugName = "ShaderParameters";
@@ -2282,8 +2274,10 @@ namespace Volt
 
 	uint64_t RenderGraphShaderParameterUniformBuffer::Allocate(uint64_t size)
 	{
-		const uint64_t alignedSize = size + g_rhiCapabilities.minUniformBufferAlignment;
+		const uint64_t alignedSize = Utility::Align(size, g_rhiCapabilities.minUniformBufferAlignment);
 		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
+
+		VT_FATAL(allocOffset + size <= TotalShaderParametersByteSize);
 		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
 	}
 

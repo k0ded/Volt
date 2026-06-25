@@ -32,7 +32,8 @@ namespace Volt
 		VTAS_API int32_t GetNumMetadata() const { return m_numMetadata.load(); }
 
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
-		void RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex = false);
+		AssetMetadata* RemoveAndGetAssetMetadata(AssetHandle assetHandle);
+		void FreeAssetMetadata(AssetMetadata* assetMetadata);
 
 		// Returns a file path relative to either an engine asset directory,
 		// or the project asset directory.

@@ -99,7 +99,7 @@ inline void MemoryTagRegistry::UnregisterMemoryTag() requires(std::is_base_of_v<
 
 	MemoryTagRegistry& instance = Get();
 
-	VT_ASSERT(!instance.m_memoryTagInfos.contains(hash.hash));
+	VT_ASSERT(instance.m_memoryTagInfos.contains(hash.hash));
 	instance.m_memoryTagInfos.erase(hash.hash);
 }
 

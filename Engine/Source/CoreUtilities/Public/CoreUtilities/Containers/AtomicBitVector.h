@@ -39,6 +39,14 @@ public:
 		m_size = numBits;
 	}
 
+	void Clear()
+	{
+		for (size_t i = 0; i < m_bitArray.size(); ++i)
+		{
+			m_bitArray[i].atomic.store(0, std::memory_order::relaxed);
+		}
+	}
+
 	bool Test(const size_t index, std::memory_order memoryOrder) const
  	{
 		VT_ASSERT(index < m_size);

@@ -369,7 +369,7 @@ namespace Volt::RHI
 		}
 	}
 
-	inline static const char* s_validationLayer = "VK_LAYER_KHRONOS_validation";
+	//inline static const char* s_validationLayer = "VK_LAYER_KHRONOS_validation";
 
 	VulkanGraphicsDevice::VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer)
 	{

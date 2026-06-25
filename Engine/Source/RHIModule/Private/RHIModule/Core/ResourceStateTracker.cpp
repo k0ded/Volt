@@ -7,6 +7,9 @@ namespace Volt::RHI
 {
 	void ResourceStateTracker::Initialize(RHIResource* resource, BarrierStage stage, BarrierAccess access, ImageLayout layout)
 	{
+		// #Note: Initialize will only be called on resource creation, i.e guaranteed that access only happens from
+		//		  one thread, which is why no locking is required.
+
 		ResourceType resourceType = resource->GetType();
 
 		if (resourceType == ResourceType::Image1D ||

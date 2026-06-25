@@ -1,7 +1,6 @@
 #include "jspch.h"
 #include "TaskGraph.h"
 
-#include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
@@ -75,48 +74,60 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+#if VT_DEBUG
+		ValidateDependencyChains();
+#endif
+
 		m_graphCounter = JobSystem::CreateCounter();
 
 		GlobalMemoryStackMark memMark;
-		std::unordered_set<Task*> visited;
 
+		AtomicBitVector<uint64_t, GlobalMemoryStackAllocator> visitedBitmask;
 		GlobalMemoryStackVector<Task*> sortedTasks;
+
 		sortedTasks.reserve(m_tasks.size());
+		visitedBitmask.Resize(m_tasks.size());
 
-		// DFS order
-		auto insertFunc = [&](Task* task, auto& insertFunc)
+		// DFS sort
 		{
-			if (!visited.insert(task).second)
+			GlobalMemoryStackVector<Task*> stack;
+			stack.reserve(m_tasks.size());
+
+			for (size_t i = 0; i < m_tasks.size(); ++i)
 			{
-				return;
+				stack.emplace_back(m_tasks[i]);
 			}
 
-			for (Task* dependency : task->GetDependencies())
+			while (!stack.empty())
 			{
-				insertFunc(dependency, insertFunc);
+				Task* currTask = stack.back();
+				stack.pop_back();
+
+				if (visitedBitmask.Test(currTask->m_index, std::memory_order::relaxed))
+				{
+					continue;
+				}
+
+				for (Task* dependency : currTask->GetDependencies())
+				{
+					stack.emplace_back(dependency);
+				}
+
+				sortedTasks.emplace_back(currTask);
+				visitedBitmask.SetBit(currTask->m_index, true, std::memory_order::relaxed);
 			}
-
-			sortedTasks.emplace_back(task);
-		};
-
-		for (Task* task : m_tasks)
-		{
-			insertFunc(task, insertFunc);
 		}
 
-		Map<Task*, size_t> taskToIndex;
-		taskToIndex.reserve(sortedTasks.size());
-
-		// Create all jobs without any counters
 		for (size_t i = 0; i < sortedTasks.size(); ++i)
 		{
 			Task* task = sortedTasks[i];
+
+			// Reuse the task index, set it to the tasks sorted index.
+			task->m_index = static_cast<uint32_t>(i);
+
 			m_jobs.emplace_back(task->CreateJob(m_priority));
-			taskToIndex[task] = i;
 		}
 
-		// Build in topological order
-		// Note: index in sortedTasks matches job in m_jobs
 		for (size_t i = 0; i < sortedTasks.size(); ++i)
 		{
 			Task* task = sortedTasks[i];
@@ -128,8 +139,8 @@ namespace Volt
 			// Add wait counter as an associated counter to dependencies.
 			for (Task* dependency : task->GetDependencies())
 			{
-				const size_t dependencyIndex = taskToIndex[dependency];
-				JobRef dependencyJob = m_jobs[dependencyIndex];
+				// The task index is the sorted task index at this point.
+				JobRef dependencyJob = m_jobs[dependency->m_index];
 
 				dependencyJob->AddAssociatedCounter(waitCounter);
 			}
@@ -138,6 +149,76 @@ namespace Volt
 			if (task->GetRefCount() == 0)
 			{
 				job->AddAssociatedCounter(m_graphCounter);
+			}
+		}
+	}
+
+	void TaskGraph::ValidateDependencyChains()
+	{
+		// Detect cyclic dependencies with an iterative three-color (white/gray/black)
+		// DFS. Gray means "currently an ancestor on the active path" - finding an edge
+		// into a gray task is a back-edge, i.e. an actual cycle. Black tasks have already
+		// been fully validated and are skipped, so every task is expanded at most once.
+		enum class VisitState : uint8_t
+		{
+			White = 0,
+			Gray,
+			Black
+		};
+
+		struct StackFrame
+		{
+			Task* task;
+			size_t dependencyIndex;
+		};
+
+		GlobalMemoryStackMark memMark;
+
+		GlobalMemoryStackVector<VisitState> visitState;
+		visitState.resize(m_tasks.size(), VisitState::White);
+
+		GlobalMemoryStackVector<StackFrame> stack;
+		stack.reserve(m_tasks.size());
+
+		for (Task* startTask : m_tasks)
+		{
+			if (visitState[startTask->m_index] != VisitState::White)
+			{
+				continue;
+			}
+
+			visitState[startTask->m_index] = VisitState::Gray;
+			stack.emplace_back(StackFrame{ startTask, 0 });
+
+			while (!stack.empty())
+			{
+				StackFrame& top = stack.back();
+				std::span<Task*> dependencies = top.task->GetDependencies();
+
+				if (top.dependencyIndex >= dependencies.size())
+				{
+					visitState[top.task->m_index] = VisitState::Black;
+					stack.pop_back();
+					continue;
+				}
+
+				Task* dependency = dependencies[top.dependencyIndex];
+				// Increment before pushing below - emplace_back can reallocate
+				// the stack and invalidate the 'top' reference.
+				++top.dependencyIndex;
+
+				VisitState& depState = visitState[dependency->m_index];
+				if (depState == VisitState::Gray)
+				{
+					VT_ASSERT_MSG(false, "Cyclic dependency detected in TaskGraph!");
+					return;
+				}
+
+				if (depState == VisitState::White)
+				{
+					depState = VisitState::Gray;
+					stack.emplace_back(StackFrame{ dependency, 0 });
+				}
 			}
 		}
 	}

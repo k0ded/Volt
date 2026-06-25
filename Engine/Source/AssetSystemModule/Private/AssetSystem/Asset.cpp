@@ -10,9 +10,9 @@ namespace Volt
 	ArchiveVersionRegistrar g_registerAssetMetadataArchiveVersion(AssetMetadataArchiveVersion::guid, AssetMetadataArchiveVersion::LatestVersion, "AssetMetadataArchiveVersion");
 	ArchiveVersionRegistrar g_registerCustomAssetMetadataArchiveVersion(CustomAssetMetadataArchiveVersion::guid, CustomAssetMetadataArchiveVersion::LatestVersion, "CustomAssetMetadataArchiveVersion");
 
-	void AssetRefCounter::Unload() const
+	void AssetRefCounter::Evict() const
 	{
 		VT_ENSURE(m_referencedAssetManager != nullptr);
-		m_referencedAssetManager->QueueAssetForDestruction(const_cast<AssetRefCounter*>(this));
+		m_referencedAssetManager->QueueAssetForEviction(const_cast<AssetRefCounter*>(this));
 	}
 }

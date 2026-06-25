@@ -21,13 +21,11 @@ namespace Volt
 	}
 #endif
 
-	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
+	RenderContext::RenderContext(RGPassRef currentPass, IntRef<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_commandBuffer(commandBuffer),
-		m_renderGraph(renderGraph),
 		m_currentPass(currentPass),
 		m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
-		VT_UNUSED(m_renderGraph);
 	}
 
 	void RenderContext::Flush(IntRef<RHI::Fence> fence)
@@ -178,7 +176,7 @@ namespace Volt
 
 		IntRef<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		IntRef<RHI::Buffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
-		m_commandBuffer->DispatchMeshTasksIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
+		m_commandBuffer->DrawIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
 	}
 
 	void RenderContext::DrawIndexedIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)

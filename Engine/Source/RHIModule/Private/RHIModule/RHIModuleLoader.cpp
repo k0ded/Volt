@@ -116,6 +116,10 @@ namespace Volt::RHI
 	{
 		if (m_rhiModuleHandle && m_rhiModule)
 		{
+			// This will drain all pending work and
+			// allow all resources to be destroyed.
+			m_rhiModule->Shutdown();
+
 			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::Graphics)->WaitForQueue();
 			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::Compute)->WaitForQueue();
 			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::TransferCopy)->WaitForQueue();

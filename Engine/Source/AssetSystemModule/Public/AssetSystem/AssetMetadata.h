@@ -221,19 +221,56 @@ namespace Volt
 			isEngineAsset = other.isEngineAsset;
 			m_loadState = other.m_loadState.load();
 			m_generation = other.m_generation.load();
+			m_publishedGeneration = other.m_publishedGeneration.load();
 		}
 
 		AssetMetadata& operator=(const AssetMetadata& other)
 		{
-			handle = other.handle;
-			type = other.type;
-			flags = other.flags.load();
-			filepath = other.filepath;
-			customData = other.customData;
-			assetDependencyList = other.assetDependencyList;
-			isEngineAsset = other.isEngineAsset;
-			m_loadState = other.m_loadState.load();
-			m_generation = other.m_generation.load();
+			if (&other != this)
+			{
+				handle = other.handle;
+				type = other.type;
+				flags = other.flags.load();
+				filepath = other.filepath;
+				customData = other.customData;
+				assetDependencyList = other.assetDependencyList;
+				isEngineAsset = other.isEngineAsset;
+				m_loadState = other.m_loadState.load();
+				m_generation = other.m_generation.load();
+				m_publishedGeneration = other.m_publishedGeneration.load();
+			}
+
+			return *this;
+		}
+
+		AssetMetadata(AssetMetadata&& other)
+			: handle(other.handle),
+			type(other.type),
+			isEngineAsset(other.isEngineAsset),
+			flags(other.flags.load(std::memory_order::relaxed)),
+			filepath(std::move(other.filepath)),
+			customData(std::move(other.customData)),
+			assetDependencyList(std::move(other.assetDependencyList)),
+			m_loadState(other.m_loadState.load(std::memory_order::relaxed)),
+			m_generation(other.m_generation.load(std::memory_order::relaxed)),
+			m_publishedGeneration(other.m_publishedGeneration.load(std::memory_order::relaxed))
+		{}
+
+		AssetMetadata& operator=(AssetMetadata&& other)
+		{
+			if (&other != this)
+			{
+				handle = other.handle;
+				type = other.type;
+				flags = other.flags.load();
+				filepath = std::move(other.filepath);
+				customData = std::move(other.customData);
+				assetDependencyList = std::move(other.assetDependencyList);
+				isEngineAsset = other.isEngineAsset;
+				m_loadState = other.m_loadState.load();
+				m_generation = other.m_generation.load();
+				m_publishedGeneration = other.m_publishedGeneration.load();
+			}
 
 			return *this;
 		}

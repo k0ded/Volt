@@ -105,14 +105,9 @@ namespace IntegrationTests
 		ExpectAllPassesToBeCulled(renderGraph.GetPasses());
 	}
 
-	// #TODO_Ivar: This will fail with the current culling logic,
-	//			   haven't figured out a good way to make this work and also
-	//			   have RasterPassWithExtractUsingPreviousPassesResultIsNeverCulled working.
-#if 0
-	TEST_F(RenderGraphFixture, WriteAfterWriteIsCulled)
+	TEST_F(RenderGraphCullingFixture, WriteAfterWriteIsCulled)
 	{
-		IntRef<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef writeBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -136,7 +131,6 @@ namespace IntegrationTests
 
 		ExpectAllPassesToBeCulled(renderGraph.GetPasses());
 	}
-#endif
 
 	TEST_F(RenderGraphCullingFixture, WriteAfterWriteNeverCullIsNeverCulled)
 	{
@@ -257,7 +251,7 @@ namespace IntegrationTests
 		{
 
 			RenderTargetWithSingleTextureReadParameters* passParameters = renderGraph.AllocParameters<RenderTargetWithSingleTextureReadParameters>();
-			passParameters->Texture = renderGraph.CreateSRV(depthTexture);
+			passParameters->Texture = renderGraph.CreateSRV(colorTexture);
 			passParameters->renderTargets.renderTargets[0] = colorTexture2;
 
 			AddRasterPass(renderGraph, RenderGraphPassFlags::None, passParameters);

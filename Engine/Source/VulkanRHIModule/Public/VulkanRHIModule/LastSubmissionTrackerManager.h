@@ -45,12 +45,22 @@ namespace Volt::RHI
 	class LastSubmissionTrackerManager
 	{
 	public:
+		struct ExtractedTrackers
+		{
+			std::unordered_set<TrackerContainer> trackers;
+			std::unordered_set<TrackerContainer> trackersArena;
+		};
+
 		template<typename T>
 		void TryRegisterResource(IntRef<T> resource);
 
 		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
 		void MarkAsSubmitted();
 		void Reset();
+
+		// Extracts the tracker containers, so that they may be released independently
+		// from the lifetime of the tracker manager/when CommandBuffer::Reset is called.
+		ExtractedTrackers ExtractTrackers();
 
 	private:
 		std::unordered_set<TrackerContainer> m_registeredTrackers;

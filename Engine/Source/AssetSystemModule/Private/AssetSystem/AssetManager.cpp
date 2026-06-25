@@ -12,6 +12,7 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Locks/ScopedLock.h>
 
 Unique<Volt::AssetManager> g_assetManager;
 
@@ -31,11 +32,12 @@ namespace Volt
 		CreateDependencyGraphAndAddAssetsFromRegistry();
 		m_assetChangedQueue.Allocate(4096);
 		m_assetDestructionQueue.Allocate(4096);
+		m_assetEvictionQueue.Allocate(4096);
 	}
 
 	AssetManager::~AssetManager()
 	{
-		FlushDestructionQueue();
+		RunGarbageCollection(0, true);
 		m_assetCache.Clear();
 	}
 
@@ -150,7 +152,7 @@ namespace Volt
 
 			if (assetMetadata->filepath.IsEmpty())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
+				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetName(), asset->GetAssetHandle());
 				return;
 			}
 		}
@@ -198,7 +200,12 @@ namespace Volt
 			QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
 
 			m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
-			m_assetRegistry.RemoveAssetMetadata(assetHandle);
+
+			AssetMetadata* metadata = m_assetRegistry.RemoveAndGetAssetMetadata(assetHandle);
+			{
+				ScopedLock lock{ m_assetMetadataReclamationMutex };
+				m_assetMetadataReclamationList.emplace_back(metadata, m_frameIndex.load(std::memory_order::relaxed));
+			}
 		}
 	}
 
@@ -384,7 +391,8 @@ namespace Volt
 
 	bool AssetManager::UpdateInternal(class AppTickEvent& e)
 	{
-		m_frameIndex = e.GetFrameIndex();
+		m_frameIndex.store(e.GetFrameIndex(), std::memory_order::relaxed);
+		RunGarbageCollection(e.GetFrameIndex(), false);
 
 		{
 			std::scoped_lock lock{ m_assetCallbackMutex };
@@ -395,8 +403,6 @@ namespace Volt
 				OnAssetChanged(info.handle, info.state);
 			}
 		}
-
-		FlushDestructionQueue();
 
 		return false;
 	}
@@ -632,92 +638,9 @@ namespace Volt
 		}
 	}
 
-	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
+	void AssetManager::QueueAssetForEviction(AssetRefCounter* assetRefCounter)
 	{
-		Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
-
-		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
-
-		// This is an old instance, it shouldn't change any state on the metadata.
-		if (asset->m_generation < assetMetadata->GetGeneration())
-		{
-			// We'll just queue it for destruction.
-			m_assetDestructionQueue.Emplace(assetRefCounter);
-		}
-		else
-		{
-			AssetLoadState expectedLoadState = AssetLoadState::Loaded;
-			if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
-			{
-				VT_ENSURE(false);
-			}
-
-			uint64_t oldGeneration = assetMetadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
-
-			m_assetCache.TryRemove(assetMetadata->handle, oldGeneration);
-
-			m_dependencyGraph->OnAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
-			QueueAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
-
-			expectedLoadState = AssetLoadState::Unloading;
-			if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloaded))
-			{
-				VT_ENSURE(false);
-			}
-
-			m_assetDestructionQueue.Emplace(assetRefCounter);
-		}
-	}
-
-	void AssetManager::UnloadAndFreeAsset(AssetUnloadData& assetUnloadData)
-	{
-		// Safe to upcast like this, because AssetRefCounter should only be derived by Asset.
-		Asset* asset = reinterpret_cast<Asset*>(assetUnloadData.asset);
-
-		const AssetHandle assetHandle = asset->GetAssetHandle();
-		const String nameCopy(asset->GetAssetName());
-
-		const AssetType assetType = asset->GetType();
-
-		// Make sure we lock the metadata
-		if (m_assetRegistry.IsValidAssetHandle(assetHandle))
-		{
-			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-
-			// At this point there should be zero references left.
-			VT_ENSURE(asset->GetRefCount() == 0);
-
-			// Call destructor and free.
-			asset->~Asset();
-			m_assetAllocator.FreeAsset(assetType, asset);
-
-			// Lock metadata mutex here.
-			assetMetadata->m_assetMetadataMutex.lock();
-
-			if (!assetMetadata->IsMemoryAsset())
-			{
-				// Unlock it here as we are finished with it.
-				assetMetadata->m_assetMetadataMutex.unlock();
-			}
-			else
-			{
-				// If the asset is a memory asset, we will also remove it from the registry.
-				// There is no reason to keep it around.
-				// The mutex gets unlocked in here.
-				m_assetRegistry.RemoveAssetMetadata(assetHandle, true);
-			}
-		}
-		// The asset has been removed from the registry, just destroy it.
-		else
-		{
-			// At this point there should be zero references left.
-			VT_ENSURE(asset->GetRefCount() == 0);
-
-			asset->~Asset();
-			m_assetAllocator.FreeAsset(assetType, asset);
-		}
-
-		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
+		VT_CHECK(m_assetEvictionQueue.Emplace(assetRefCounter));
 	}
 
 	bool AssetManager::DeserializeAsset(AssetReference<Asset> asset)
@@ -818,14 +741,81 @@ namespace Volt
 		return true;
 	}
 
-	void AssetManager::FlushDestructionQueue()
+	void AssetManager::RunGarbageCollection(uint64_t frameIndex, bool forceCleanupAll)
 	{
-		VT_PROFILE_FUNCTION();
+		constexpr uint64_t Quiescence = 3;
 
-		AssetUnloadData unloadData;
-		while (m_assetDestructionQueue.Pop(unloadData))
+		AssetRefCounter* assetRefCounter = nullptr;
+		while (m_assetEvictionQueue.Pop(assetRefCounter))
 		{
-			UnloadAndFreeAsset(unloadData);
+			// Try to evict the asset
+			int32_t expected = 1;
+			if (assetRefCounter->m_refCount.compare_exchange_strong(expected, 0,
+				std::memory_order::acq_rel,
+				std::memory_order::acquire))
+			{
+				Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
+				AssetHandle assetHandle = asset->GetAssetHandle();
+
+				// Eviction successful, at this point this asset is guaranteed to never be reused again.
+				AssetCache::Container* cacheContainer = m_assetCache.Evict(assetHandle, asset->m_generation);
+
+				// The asset metadata may have been removed at this point (if RemoveAsset was called)
+				// In the case it wasn't, we will transition the asset metadata state to unloaded.
+				AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+				if (assetMetadata)
+				{
+					AssetLoadState expectedLoadState = AssetLoadState::Loaded;
+					if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
+					{
+						VT_ENSURE(false);
+					}
+				}
+
+				m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Unloaded);
+				QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
+
+				// Finally transition to unloaded.
+				if (assetMetadata)
+				{
+					AssetLoadState expectedLoadState = AssetLoadState::Unloading;
+					if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloaded))
+					{
+						VT_ENSURE(false);
+					}
+				}
+
+				m_assetReclamationList.emplace_back(asset, cacheContainer, frameIndex);
+			}
+		}
+
+		for (int32_t i = static_cast<int32_t>(m_assetReclamationList.size()) - 1; i >= 0; --i)
+		{
+			EvictionEntry& entry = m_assetReclamationList[i];
+
+			if (entry.evictedOnFrameIndex + Quiescence <= frameIndex || forceCleanupAll)
+			{
+				AssetType assetType = entry.asset->GetType();
+				entry.asset->~Asset();
+
+				m_assetAllocator.FreeAsset(assetType, entry.asset);
+				m_assetCache.FreeContainer(entry.cacheContainer);
+
+				m_assetReclamationList.erase_unsorted(m_assetReclamationList.begin() + i);
+			}
+		}
+
+		{
+			ScopedLock lock{ m_assetMetadataReclamationMutex };
+			for (int32_t i = static_cast<int32_t>(m_assetMetadataReclamationList.size()) - 1; i >= 0; --i)
+			{
+				AssetMetadataReclamationEntry& entry = m_assetMetadataReclamationList[i];
+				if (entry.evictedOnFrameIndex + Quiescence <= frameIndex || forceCleanupAll)
+				{
+					m_assetRegistry.FreeAssetMetadata(entry.assetMetadata);
+					m_assetMetadataReclamationList.erase_unsorted(m_assetMetadataReclamationList.begin() + i);
+				}
+			}
 		}
 	}
 
@@ -985,7 +975,7 @@ namespace Volt
 			return true;
 		});
 
-		return { AssetMetadataInit::Null };
+		return resultAssetMetadata;
 	}
 
 	AssetHandle AssetManager::GetAssetHandleFromFilepath(const Filesystem::Path& filepath) const

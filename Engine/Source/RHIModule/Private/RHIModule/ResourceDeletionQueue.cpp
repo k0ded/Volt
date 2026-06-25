@@ -3,6 +3,7 @@
 #include "RHIModule/ResourceDeletionQueue.h"
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <ranges>
 
@@ -24,31 +25,42 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_queueMutex };
-		VT_PROFILE_LOCK_MARK(m_queueMutex);
+		GlobalMemoryStackMark memMark;
+		GlobalMemoryStackVector<FunctionType> funcsToCall;
 
-		for (int32_t i = static_cast<int32_t>(m_queue.size()) - 1; i >= 0; --i)
 		{
-			Item& item = m_queue[i];
+			std::scoped_lock lock{ m_queueMutex };
+			VT_PROFILE_LOCK_MARK(m_queueMutex);
 
-			if (item.waitForFence)
+			funcsToCall.reserve(m_queue.size());
+
+			for (int32_t i = static_cast<int32_t>(m_queue.size()) - 1; i >= 0; --i)
 			{
-				if (!waitForFences)
+				Item& item = m_queue[i];
+
+				if (item.waitForFence)
 				{
-					if (!item.waitForFence->IsSignaled())
+					if (!waitForFences)
 					{
-						continue;
+						if (!item.waitForFence->IsSignaled())
+						{
+							continue;
+						}
+					}
+					else
+					{
+						item.waitForFence->WaitUntilSignaled();
 					}
 				}
-				else
-				{
-					item.waitForFence->WaitUntilSignaled();
-				}
+
+				funcsToCall.emplace_back(std::move(item.func));
+				m_queue.erase_unsorted(m_queue.begin() + i);
 			}
+		}
 
-			item.func();
-
-			m_queue.erase_unsorted(m_queue.begin() + i);
+		for (FunctionType& func : funcsToCall)
+		{
+			func();
 		}
 	}
 
@@ -59,6 +71,19 @@ namespace Volt::RHI
 
 	void ResourceDeletionQueue::FlushAll()
 	{
-		FlushQueue(true);
+		// Since new resource destructions may be queued during a destruction,
+		// we need to continously flush it, until it is empty post flush.
+		while (true)
+		{
+			FlushQueue(true);
+
+			{
+				std::scoped_lock lock{ m_queueMutex };
+				if (m_queue.empty())
+				{
+					break;
+				}
+			}
+		}
 	}
 }
